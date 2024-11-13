@@ -50,12 +50,12 @@ const (
 
 const (
 	Redux             pathways.RelDir = "_redux"
-	DownloadManifests pathways.RelDir = "download-manifests"
+	DownloadsMetadata pathways.RelDir = "downloads-metadata"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	Redux:             Metadata,
-	DownloadManifests: Metadata,
+	DownloadsMetadata: Metadata,
 }
 
 var AllAbsDirs = []pathways.AbsDir{
