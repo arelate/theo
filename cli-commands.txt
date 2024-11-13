@@ -8,4 +8,14 @@
 
 backup
 
+setup
+    protocol
+    address*
+    port
+    username*
+    password*
+    installation-path
+
+test-setup
+
 version
