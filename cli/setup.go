@@ -31,6 +31,13 @@ func Setup(
 	username, password string,
 	installPath string) error {
 
+	// resetting setup properties since not every property is required (e.g. port, protocol)
+	// and it would be possible to end up with a set of properties that will let to failures
+	// in non-obvious ways
+	if err := ResetSetup(); err != nil {
+		return err
+	}
+
 	sa := nod.Begin("setting up theo...")
 	defer sa.End()
 
@@ -67,7 +74,7 @@ func Setup(
 		return sa.EndWithError(err)
 	}
 
-	sa.EndWithResult("done, now you can test-setup")
+	sa.EndWithResult("done, run test-setup to validate")
 
 	return nil
 }

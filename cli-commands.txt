@@ -16,6 +16,8 @@ setup
     password*
     installation-path
 
+reset-setup
+
 test-setup
 
 version

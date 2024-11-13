@@ -48,7 +48,7 @@ func TestSetup() error {
 	return nil
 }
 
-func vangoghUrl(rdx kevlar.ReadableRedux) (*url.URL, error) {
+func vangoghUrl(path string, rdx kevlar.ReadableRedux) (*url.URL, error) {
 	protocol := "https"
 	address := ""
 
@@ -59,7 +59,7 @@ func vangoghUrl(rdx kevlar.ReadableRedux) (*url.URL, error) {
 	if addrVal, ok := rdx.GetLastVal(data.SetupProperties, data.VangoghAddressProperty); ok && addrVal != "" {
 		address = addrVal
 	} else {
-		return nil, errors.New("vangogh address cannot be empty")
+		return nil, errors.New("address cannot be empty")
 	}
 
 	if portVal, ok := rdx.GetLastVal(data.SetupProperties, data.VangoghPortProperty); ok && portVal != "" {
@@ -69,19 +69,19 @@ func vangoghUrl(rdx kevlar.ReadableRedux) (*url.URL, error) {
 	return &url.URL{
 		Scheme: protocol,
 		Host:   address,
-		Path:   "/health",
+		Path:   path,
 	}, nil
 }
 
 func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 
-	tvca := nod.Begin(" testing vangogh connectivity...")
-	defer tvca.End()
-
-	testUrl, err := vangoghUrl(rdx)
+	testUrl, err := vangoghUrl("/health", rdx)
 	if err != nil {
-		return tvca.EndWithError(err)
+		return err
 	}
+
+	tvca := nod.Begin(" testing connectivity to %s...", testUrl.String())
+	defer tvca.End()
 
 	resp, err := http.DefaultClient.Get(testUrl.String())
 	if err != nil {
@@ -99,7 +99,7 @@ func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 	}
 
 	if string(bts) != "ok" {
-		return tvca.EndWithError(errors.New("unexpected vangogh health response"))
+		return tvca.EndWithError(errors.New("unexpected health response"))
 	}
 
 	tvca.EndWithResult("done, healthy")
@@ -108,13 +108,14 @@ func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 }
 
 func testVangoghAuth(rdx kevlar.ReadableRedux) error {
-	tvaa := nod.Begin(" testing vangogh username/password...")
-	defer tvaa.End()
 
-	testUrl, err := vangoghUrl(rdx)
+	testUrl, err := vangoghUrl("/health-auth", rdx)
 	if err != nil {
-		return tvaa.EndWithError(err)
+		return err
 	}
+
+	tvaa := nod.Begin(" testing auth for %s...", testUrl.String())
+	defer tvaa.End()
 
 	req, err := http.NewRequest(http.MethodGet, testUrl.String(), nil)
 	if err != nil {
@@ -125,10 +126,10 @@ func testVangoghAuth(rdx kevlar.ReadableRedux) error {
 		if password, sure := rdx.GetLastVal(data.SetupProperties, data.VangoghPasswordProperty); sure && password != "" {
 			req.SetBasicAuth(username, password)
 		} else {
-			return tvaa.EndWithError(errors.New("vangogh password cannot be empty"))
+			return tvaa.EndWithError(errors.New("password cannot be empty"))
 		}
 	} else {
-		return tvaa.EndWithError(errors.New("vangogh username cannot be empty"))
+		return tvaa.EndWithError(errors.New("username cannot be empty"))
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -147,7 +148,7 @@ func testVangoghAuth(rdx kevlar.ReadableRedux) error {
 	}
 
 	if string(bts) != "ok" {
-		return tvaa.EndWithError(errors.New("unexpected vangogh health-auth response"))
+		return tvaa.EndWithError(errors.New("unexpected health-auth response"))
 	}
 
 	tvaa.EndWithResult("done, healthy")
@@ -157,7 +158,7 @@ func testVangoghAuth(rdx kevlar.ReadableRedux) error {
 
 func testInstallationPath(rdx kevlar.ReadableRedux) error {
 
-	tipa := nod.Begin(" testing installation path...")
+	tipa := nod.Begin(" testing installation path validity...")
 	defer tipa.End()
 
 	if ip, ok := rdx.GetLastVal(data.SetupProperties, data.InstallationPathProperty); ok && ip != "" {
@@ -166,7 +167,7 @@ func testInstallationPath(rdx kevlar.ReadableRedux) error {
 		}
 	}
 
-	tipa.EndWithResult("default installation path will be used")
+	tipa.EndWithResult("not set, will use default")
 
 	return nil
 }
