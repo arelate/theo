@@ -21,12 +21,12 @@ func TestSetup() error {
 	tsa := nod.Begin("testing theo setup...")
 	defer tsa.End()
 
-	mdp, err := pathways.GetAbsRelDir(data.Redux)
+	rdp, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(mdp, data.SetupProperties)
+	rdx, err := kevlar.NewReduxReader(rdp, data.SetupProperties)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}
@@ -48,34 +48,9 @@ func TestSetup() error {
 	return nil
 }
 
-func vangoghUrl(path string, rdx kevlar.ReadableRedux) (*url.URL, error) {
-	protocol := "https"
-	address := ""
-
-	if protoVal, ok := rdx.GetLastVal(data.SetupProperties, data.VangoghProtocolProperty); ok && protoVal != "" {
-		protocol = protoVal
-	}
-
-	if addrVal, ok := rdx.GetLastVal(data.SetupProperties, data.VangoghAddressProperty); ok && addrVal != "" {
-		address = addrVal
-	} else {
-		return nil, errors.New("address cannot be empty")
-	}
-
-	if portVal, ok := rdx.GetLastVal(data.SetupProperties, data.VangoghPortProperty); ok && portVal != "" {
-		address += ":" + portVal
-	}
-
-	return &url.URL{
-		Scheme: protocol,
-		Host:   address,
-		Path:   path,
-	}, nil
-}
-
 func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 
-	testUrl, err := vangoghUrl("/health", rdx)
+	testUrl, err := data.VangoghUrl(data.VangoghHealthPath, rdx)
 	if err != nil {
 		return err
 	}
@@ -109,7 +84,7 @@ func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 
 func testVangoghAuth(rdx kevlar.ReadableRedux) error {
 
-	testUrl, err := vangoghUrl("/health-auth", rdx)
+	testUrl, err := data.VangoghUrl(data.VangoghHealthAuthPath, rdx)
 	if err != nil {
 		return err
 	}

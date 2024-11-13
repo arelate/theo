@@ -8,6 +8,10 @@
 
 backup
 
+get-downloads-metadata
+    id^&*
+    force
+
 setup
     protocol
     address*

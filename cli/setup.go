@@ -8,6 +8,8 @@ import (
 	"net/url"
 )
 
+type SetupProperties map[string]string
+
 func SetupHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -41,12 +43,12 @@ func Setup(
 	sa := nod.Begin("setting up theo...")
 	defer sa.End()
 
-	mdp, err := pathways.GetAbsRelDir(data.Redux)
+	rdp, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return sa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(mdp, data.SetupProperties)
+	rdx, err := kevlar.NewReduxWriter(rdp, data.SetupProperties)
 	if err != nil {
 		return sa.EndWithError(err)
 	}

@@ -48,11 +48,12 @@ func main() {
 	}
 
 	clo.HandleFuncs(map[string]clo.Handler{
-		"backup":      cli.BackupHandler,
-		"setup":       cli.SetupHandler,
-		"reset-setup": cli.ResetSetupHandler,
-		"test-setup":  cli.TestSetupHandler,
-		"version":     cli.VersionHandler,
+		"backup":                 cli.BackupHandler,
+		"get-downloads-metadata": cli.GetDownloadsMetadataHandler,
+		"setup":                  cli.SetupHandler,
+		"reset-setup":            cli.ResetSetupHandler,
+		"test-setup":             cli.TestSetupHandler,
+		"version":                cli.VersionHandler,
 	})
 
 	if err := defs.AssertCommandsHaveHandlers(); err != nil {
