@@ -21,7 +21,7 @@ func TestSetup() error {
 	tsa := nod.Begin("testing theo setup...")
 	defer tsa.End()
 
-	mdp, err := pathways.GetAbsDir(data.Metadata)
+	mdp, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}

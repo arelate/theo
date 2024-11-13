@@ -32,7 +32,7 @@ func main() {
 
 	if err := pathways.Setup("",
 		theoRootDir,
-		nil,
+		data.RelToAbsDirs,
 		data.AllAbsDirs...); err != nil {
 		_ = ns.EndWithError(err)
 		os.Exit(1)

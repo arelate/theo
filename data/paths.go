@@ -30,6 +30,15 @@ func InitRootDir() (string, error) {
 		}
 	}
 
+	for rd, ad := range RelToAbsDirs {
+		absRelDir := filepath.Join(rootDir, string(ad), string(rd))
+		if _, err := os.Stat(absRelDir); os.IsNotExist(err) {
+			if err := os.MkdirAll(absRelDir, 0755); err != nil {
+				return "", err
+			}
+		}
+	}
+
 	return filepath.Join(ucd, theoDirname), nil
 }
 
@@ -38,6 +47,16 @@ const (
 	Metadata  pathways.AbsDir = "metadata"
 	Downloads pathways.AbsDir = "downloads"
 )
+
+const (
+	Redux             pathways.RelDir = "_redux"
+	DownloadManifests pathways.RelDir = "download-manifests"
+)
+
+var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
+	Redux:             Metadata,
+	DownloadManifests: Metadata,
+}
 
 var AllAbsDirs = []pathways.AbsDir{
 	Backups,

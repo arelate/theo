@@ -16,7 +16,7 @@ func ResetSetup() error {
 	rsa := nod.Begin("resetting theo setup...")
 	defer rsa.End()
 
-	mdp, err := pathways.GetAbsDir(data.Metadata)
+	mdp, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return rsa.EndWithError(err)
 	}

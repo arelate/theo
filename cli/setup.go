@@ -41,7 +41,7 @@ func Setup(
 	sa := nod.Begin("setting up theo...")
 	defer sa.End()
 
-	mdp, err := pathways.GetAbsDir(data.Metadata)
+	mdp, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return sa.EndWithError(err)
 	}
