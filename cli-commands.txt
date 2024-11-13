@@ -1,0 +1,11 @@
+# Decorators legend:
+# $ - supports environmental variable value
+# ^ - default property, value
+# & - supports multiple values
+# * - required value
+# {} - placeholder values
+# {^} - placeholder values, first value is default
+
+backup
+
+version
