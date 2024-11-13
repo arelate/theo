@@ -54,7 +54,7 @@ func GetDownloadsMetadata(ids []string, force bool) error {
 
 	for _, id := range ids {
 
-		if err = getDownloadsMetadata(id, rdx, kvdm, force); err != nil {
+		if err = getProductDownloadsMetadata(id, rdx, kvdm, force); err != nil {
 			return gdma.EndWithError(err)
 		}
 
@@ -66,7 +66,7 @@ func GetDownloadsMetadata(ids []string, force bool) error {
 	return nil
 }
 
-func getDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kv kevlar.KeyValues, force bool) error {
+func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kv kevlar.KeyValues, force bool) error {
 
 	if has, err := kv.Has(id); err == nil {
 		if has && !force {

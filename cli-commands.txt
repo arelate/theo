@@ -8,6 +8,13 @@
 
 backup
 
+download
+    id^&*
+    no-dlc
+    os
+    lang-code
+    force
+
 get-downloads-metadata
     id^&*
     force

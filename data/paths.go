@@ -46,6 +46,7 @@ const (
 	Backups   pathways.AbsDir = "backups"
 	Metadata  pathways.AbsDir = "metadata"
 	Downloads pathways.AbsDir = "downloads"
+	Extracts  pathways.AbsDir = "extracts"
 )
 
 const (

@@ -4,7 +4,7 @@ go 1.23.2
 
 require (
 	github.com/arelate/southern_light v0.1.51 // indirect
-	github.com/arelate/vangogh_local_data v0.4.32 // indirect
+	github.com/arelate/vangogh_local_data v0.4.33 // indirect
 	github.com/arelate/xargon v0.1.0 // indirect
 	github.com/boggydigital/backups v0.1.3 // indirect
 	github.com/boggydigital/busan v0.1.0 // indirect
