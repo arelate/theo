@@ -31,4 +31,9 @@ reset-setup
 
 test-setup
 
+validate
+    id^&*
+    os
+    lang-code
+
 version

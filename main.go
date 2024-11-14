@@ -54,6 +54,7 @@ func main() {
 		"setup":                  cli.SetupHandler,
 		"reset-setup":            cli.ResetSetupHandler,
 		"test-setup":             cli.TestSetupHandler,
+		"validate":               cli.ValidateHandler,
 		"version":                cli.VersionHandler,
 	})
 
