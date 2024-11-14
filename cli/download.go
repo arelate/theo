@@ -183,7 +183,7 @@ func getProductDownloadLinks(id, title string,
 
 	for _, dl := range downloadLinks {
 
-		fa := nod.NewProgress(" - %s", dl.LocalFilename)
+		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 
 		fileUrl, err := data.VangoghUrl(rdx,
 			data.VangoghFilesPath, map[string]string{

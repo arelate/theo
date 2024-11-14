@@ -19,6 +19,13 @@ get-downloads-metadata
     id^&*
     force
 
+install
+    id^&*
+    no-dlc
+    os
+    lang-code
+    force
+
 setup
     protocol
     address*

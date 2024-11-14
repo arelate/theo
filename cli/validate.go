@@ -75,6 +75,8 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 		}
 	}
 
+	va.EndWithResult("done")
+
 	return nil
 }
 
