@@ -26,6 +26,11 @@ install
     lang-code
     force
 
+remove-downloads
+    id^&*
+    os
+    lang-code
+
 reveal-downloads
     id^
 
