@@ -26,6 +26,9 @@ install
     lang-code
     force
 
+reveal-downloads
+    id^
+
 setup
     protocol
     address*
