@@ -9,6 +9,7 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
+	"runtime"
 	"slices"
 	"strings"
 )
@@ -26,7 +27,14 @@ func DownloadHandler(u *url.URL) error {
 
 	operatingSystems := vangogh_local_data.OperatingSystemsFromUrl(u)
 	if len(operatingSystems) == 0 {
-		operatingSystems = append(operatingSystems, vangogh_local_data.MacOS)
+		switch runtime.GOOS {
+		case "windows":
+			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
+		case "darwin":
+			operatingSystems = append(operatingSystems, vangogh_local_data.MacOS)
+		case "linux":
+			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
+		}
 	}
 
 	var langCodes []string
