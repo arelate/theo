@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"github.com/arelate/theo/data"
+	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -76,13 +77,12 @@ func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kv kevlar.
 		return err
 	}
 
-	vdmu, err := data.VangoghUrl(data.VangoghDownloadsMetadataPath, rdx)
+	vdmu, err := data.VangoghUrl(rdx,
+		data.VangoghDownloadsMetadataPath,
+		map[string]string{vangogh_local_data.IdProperty: id})
 	if err != nil {
 		return err
 	}
-	q := vdmu.Query()
-	q.Set("id", id)
-	vdmu.RawQuery = q.Encode()
 
 	resp, err := http.DefaultClient.Get(vdmu.String())
 	if err != nil {

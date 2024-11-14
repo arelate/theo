@@ -50,7 +50,7 @@ func TestSetup() error {
 
 func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 
-	testUrl, err := data.VangoghUrl(data.VangoghHealthPath, rdx)
+	testUrl, err := data.VangoghUrl(rdx, data.VangoghHealthPath, nil)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 
 func testVangoghAuth(rdx kevlar.ReadableRedux) error {
 
-	testUrl, err := data.VangoghUrl(data.VangoghHealthAuthPath, rdx)
+	testUrl, err := data.VangoghUrl(rdx, data.VangoghHealthAuthPath, nil)
 	if err != nil {
 		return err
 	}

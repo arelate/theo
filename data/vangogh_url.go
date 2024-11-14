@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-func VangoghUrl(path string, rdx kevlar.ReadableRedux) (*url.URL, error) {
+func VangoghUrl(rdx kevlar.ReadableRedux, path string, params map[string]string) (*url.URL, error) {
 	protocol := "https"
 	address := ""
 
@@ -28,9 +28,15 @@ func VangoghUrl(path string, rdx kevlar.ReadableRedux) (*url.URL, error) {
 		address += ":" + portVal
 	}
 
+	q := url.Values{}
+	for k, v := range params {
+		q.Set(k, v)
+	}
+
 	return &url.URL{
-		Scheme: protocol,
-		Host:   address,
-		Path:   path,
+		Scheme:   protocol,
+		Host:     address,
+		Path:     path,
+		RawQuery: q.Encode(),
 	}, nil
 }
