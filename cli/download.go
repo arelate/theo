@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/dolo"
@@ -9,7 +8,6 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
-	"slices"
 )
 
 const defaultLangCode = "en"
@@ -28,6 +26,8 @@ func Download(ids []string,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
+
+	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
 
 	da := nod.NewProgress("downloading game data from vangogh...")
 	defer da.End()
@@ -56,7 +56,11 @@ func Download(ids []string,
 
 	for _, id := range ids {
 
-		if err = getProductDownloads(id, rdx, kvdm, operatingSystems, langCodes, downloadTypes, force); err != nil {
+		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, downloadTypes, kvdm, force); err == nil {
+			if err = getProductDownloadLinks(id, title, links, rdx, force); err != nil {
+				return da.EndWithError(err)
+			}
+		} else {
 			return da.EndWithError(err)
 		}
 
@@ -64,60 +68,6 @@ func Download(ids []string,
 	}
 
 	da.EndWithResult("done")
-
-	return nil
-}
-
-func getProductDownloads(id string,
-	rdx kevlar.ReadableRedux,
-	kv kevlar.KeyValues,
-	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
-	force bool) error {
-
-	dma := nod.Begin(" loading downloads metadata for %s...", id)
-	defer dma.End()
-
-	if has, err := kv.Has(id); err == nil {
-		if !has {
-			if err = GetDownloadsMetadata([]string{id}, force); err != nil {
-				return dma.EndWithError(err)
-			}
-		}
-	} else {
-		return dma.EndWithError(err)
-	}
-
-	dmrc, err := kv.Get(id)
-	if err != nil {
-		return dma.EndWithError(err)
-	}
-	defer dmrc.Close()
-
-	var downloadMetadata vangogh_local_data.DownloadMetadata
-	if err = json.NewDecoder(dmrc).Decode(&downloadMetadata); err != nil {
-		return dma.EndWithError(err)
-	}
-
-	var downloadLinks []vangogh_local_data.DownloadLink
-	for _, link := range downloadMetadata.DownloadLinks {
-		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
-		linkType := vangogh_local_data.ParseDownloadType(link.Type)
-		linkLangCode := link.LanguageCode
-
-		if slices.Contains(operatingSystems, linkOs) &&
-			slices.Contains(downloadTypes, linkType) &&
-			slices.Contains(langCodes, linkLangCode) {
-			downloadLinks = append(downloadLinks, link)
-		}
-	}
-
-	if err = getProductDownloadLinks(id, downloadMetadata.Title, downloadLinks, rdx, force); err != nil {
-		return dma.EndWithError(err)
-	}
-
-	dma.EndWithResult("done")
 
 	return nil
 }

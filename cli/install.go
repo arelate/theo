@@ -19,5 +19,8 @@ func Install(ids []string,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
+
+	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
+
 	return nil
 }

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"crypto/md5"
-	"encoding/json"
 	"fmt"
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
@@ -13,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
 )
 
 func ValidateHandler(u *url.URL) error {
@@ -25,10 +23,13 @@ func ValidateHandler(u *url.URL) error {
 }
 
 func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSystem, langCodes []string) error {
+
+	PrintParams(ids, operatingSystems, langCodes, nil)
+
 	va := nod.NewProgress("validating downloads...")
 	defer va.End()
 
-	ddp, err := pathways.GetAbsDir(data.Downloads)
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
 		return va.EndWithError(err)
 	}
@@ -44,47 +45,19 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 	}
 
 	for _, id := range ids {
-		if err = validateDownload(id, operatingSystems, langCodes, ddp, kvdm); err != nil {
+
+		if _, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, kvdm, false); err == nil {
+			for _, dl := range links {
+				if err = validateLink(id, dl, downloadsDir); err != nil {
+					return va.EndWithError(err)
+				}
+			}
+		} else {
 			return va.EndWithError(err)
 		}
 	}
 
 	va.EndWithResult("done")
-
-	return nil
-}
-
-func validateDownload(id string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string,
-	downloadsDir string,
-	kv kevlar.KeyValues) error {
-
-	dmrc, err := kv.Get(id)
-	if err != nil {
-		return err
-	}
-	defer dmrc.Close()
-
-	var downloadMetadata vangogh_local_data.DownloadMetadata
-	if err := json.NewDecoder(dmrc).Decode(&downloadMetadata); err != nil {
-		return err
-	}
-
-	for _, dl := range downloadMetadata.DownloadLinks {
-
-		os := vangogh_local_data.ParseOperatingSystem(dl.OS)
-		if !slices.Contains(operatingSystems, os) {
-			continue
-		}
-		if !slices.Contains(langCodes, dl.LanguageCode) {
-			continue
-		}
-
-		if err = validateLink(id, dl, downloadsDir); err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
