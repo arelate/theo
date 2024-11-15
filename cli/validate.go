@@ -9,10 +9,38 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"golang.org/x/exp/slices"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+type ValidationResult string
+
+const (
+	ValResMismatch        = "mismatch"
+	ValResError           = "error"
+	ValResMissingChecksum = "missing checksum"
+	ValResFileNotFound    = "file not found"
+	ValResValid           = "valid"
+)
+
+var allValidationResults = []ValidationResult{
+	ValResMismatch,
+	ValResError,
+	ValResMissingChecksum,
+	ValResFileNotFound,
+	ValResValid,
+}
+
+var valResMessageTemplates = map[ValidationResult]string{
+	ValResMismatch:        "%s files did not match expected checksum",
+	ValResError:           "%s files encountered errors during validation",
+	ValResMissingChecksum: "%s files are missing checksums",
+	ValResFileNotFound:    "%s files were not found",
+	ValResValid:           "%s files are matching checksums",
+}
 
 func ValidateHandler(u *url.URL) error {
 
@@ -46,11 +74,9 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 
 	for _, id := range ids {
 
-		if _, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, kvdm, false); err == nil {
-			for _, dl := range links {
-				if err = validateLink(id, dl, downloadsDir); err != nil {
-					return va.EndWithError(err)
-				}
+		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, kvdm, false); err == nil {
+			if err = validateLinks(id, title, links, downloadsDir); err != nil {
+				return va.EndWithError(err)
 			}
 		} else {
 			return va.EndWithError(err)
@@ -62,7 +88,29 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 	return nil
 }
 
-func validateLink(id string, dl vangogh_local_data.DownloadLink, downloadsDir string) error {
+func validateLinks(id, title string, downloadLinks []vangogh_local_data.DownloadLink, downloadsDir string) error {
+
+	vla := nod.NewProgress("validating %s...", title)
+	defer vla.End()
+
+	vla.TotalInt(len(downloadLinks))
+
+	results := make([]ValidationResult, 0, len(downloadLinks))
+
+	for _, dl := range downloadLinks {
+		vr, err := validateLink(id, dl, downloadsDir)
+		if err != nil {
+			vla.Error(err)
+		}
+		results = append(results, vr)
+	}
+
+	vla.EndWithResult(summarizeValidationResults(results))
+
+	return nil
+}
+
+func validateLink(id string, dl vangogh_local_data.DownloadLink, downloadsDir string) (ValidationResult, error) {
 
 	dla := nod.NewProgress(" - %s...", dl.LocalFilename)
 	defer dla.End()
@@ -73,33 +121,59 @@ func validateLink(id string, dl vangogh_local_data.DownloadLink, downloadsDir st
 	var err error
 
 	if stat, err = os.Stat(absDownloadPath); os.IsNotExist(err) {
-		dla.EndWithResult("not present")
-		return nil
+		dla.EndWithResult(ValResFileNotFound)
+		return ValResFileNotFound, nil
 	}
 
 	if dl.Md5 == "" {
-		dla.EndWithResult("missing md5")
-		return nil
+		dla.EndWithResult(ValResMissingChecksum)
+		return ValResMissingChecksum, nil
 	}
 
 	dla.Total(uint64(stat.Size()))
 
 	localFile, err := os.Open(absDownloadPath)
 	if err != nil {
-		return dla.EndWithError(err)
+		return ValResError, dla.EndWithError(err)
 	}
 
 	h := md5.New()
 	if err = dolo.CopyWithProgress(h, localFile, dla); err != nil {
-		return dla.EndWithError(err)
+		return ValResError, dla.EndWithError(err)
 	}
 
 	computedMd5 := fmt.Sprintf("%x", h.Sum(nil))
 	if dl.Md5 == computedMd5 {
-		dla.EndWithResult("valid md5")
+		dla.EndWithResult(ValResValid)
+		return ValResValid, nil
 	} else {
-		dla.EndWithResult("md5 mismatch")
+		dla.EndWithResult(ValResMismatch)
+		return ValResMismatch, nil
+	}
+}
+
+func summarizeValidationResults(results []ValidationResult) string {
+
+	desc := make([]string, 0)
+
+	for _, vr := range allValidationResults {
+		if slices.Contains(results, vr) {
+			someAll := "some"
+			if isSameResult(vr, results) {
+				someAll = "all"
+			}
+			desc = append(desc, fmt.Sprintf(valResMessageTemplates[vr], someAll))
+		}
 	}
 
-	return nil
+	return strings.Join(desc, "; ")
+}
+
+func isSameResult(exp ValidationResult, results []ValidationResult) bool {
+	for _, vr := range results {
+		if vr != exp {
+			return false
+		}
+	}
+	return true
 }

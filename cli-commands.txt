@@ -11,8 +11,8 @@ backup
 download
     id^&*
     no-dlc
-    os
-    lang-code
+    os&
+    lang-code&
     force
 
 get-downloads-metadata
@@ -22,14 +22,14 @@ get-downloads-metadata
 install
     id^&*
     no-dlc
-    os
-    lang-code
+    os&
+    lang-code&
     force
 
 remove-downloads
     id^&*
-    os
-    lang-code
+    os&
+    lang-code&
 
 reveal-downloads
     id^
@@ -48,7 +48,7 @@ test-setup
 
 validate
     id^&*
-    os
-    lang-code
+    os&
+    lang-code&
 
 version
