@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"net/url"
+	"runtime/debug"
 )
 
 var (
@@ -11,7 +12,11 @@ var (
 
 func VersionHandler(_ *url.URL) error {
 	if GitTag == "" {
-		fmt.Println("unknown version")
+		if bi, ok := debug.ReadBuildInfo(); ok {
+			fmt.Println(bi)
+		} else {
+			fmt.Println("unknown version")
+		}
 	} else {
 		fmt.Println(GitTag)
 	}
