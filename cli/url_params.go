@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+var goOperatingSystems = map[string]vangogh_local_data.OperatingSystem{
+	"windows": vangogh_local_data.Windows,
+	"darwin":  vangogh_local_data.MacOS,
+	"linux":   vangogh_local_data.Linux,
+}
+
 func Ids(u *url.URL) []string {
 
 	q := u.Query()
@@ -19,20 +25,21 @@ func Ids(u *url.URL) []string {
 	return ids
 }
 
+func CurrentOS() vangogh_local_data.OperatingSystem {
+	if os, ok := goOperatingSystems[runtime.GOOS]; ok {
+		return os
+	} else {
+		panic("unsupported operating system")
+	}
+}
+
 func OsLangCodeDownloadType(u *url.URL) ([]vangogh_local_data.OperatingSystem, []string, []vangogh_local_data.DownloadType) {
 
 	q := u.Query()
 
 	operatingSystems := vangogh_local_data.OperatingSystemsFromUrl(u)
 	if len(operatingSystems) == 0 {
-		switch runtime.GOOS {
-		case "windows":
-			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
-		case "darwin":
-			operatingSystems = append(operatingSystems, vangogh_local_data.MacOS)
-		case "linux":
-			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
-		}
+		operatingSystems = append(operatingSystems, CurrentOS())
 	}
 
 	var langCodes []string

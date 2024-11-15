@@ -23,5 +23,9 @@ func Install(ids []string,
 
 	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
 
+	if err := Download(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+		return err
+	}
+
 	return errors.New("install cmd is not implemented")
 }
