@@ -9,19 +9,12 @@ import (
 	"github.com/boggydigital/pathways"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 func GetDownloadsMetadataHandler(u *url.URL) error {
 
-	q := u.Query()
-
-	var ids []string
-	if q.Has("id") {
-		ids = strings.Split(q.Get("id"), ",")
-	}
-
-	force := q.Has("force")
+	ids := Ids(u)
+	force := u.Query().Has("force")
 
 	return GetDownloadsMetadata(ids, force)
 }

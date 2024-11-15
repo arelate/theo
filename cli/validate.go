@@ -13,39 +13,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"slices"
-	"strings"
 )
 
 func ValidateHandler(u *url.URL) error {
 
-	q := u.Query()
-
-	var ids []string
-	if q.Has(vangogh_local_data.IdProperty) {
-		ids = strings.Split(q.Get(vangogh_local_data.IdProperty), ",")
-	}
-
-	operatingSystems := vangogh_local_data.OperatingSystemsFromUrl(u)
-	if len(operatingSystems) == 0 {
-		switch runtime.GOOS {
-		case "windows":
-			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
-		case "darwin":
-			operatingSystems = append(operatingSystems, vangogh_local_data.MacOS)
-		case "linux":
-			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
-		}
-	}
-
-	var langCodes []string
-	if q.Has(vangogh_local_data.LanguageCodeProperty) {
-		langCodes = strings.Split(q.Get(vangogh_local_data.LanguageCodeProperty), ",")
-	}
-	if len(langCodes) == 0 {
-		langCodes = append(langCodes, defaultLangCode)
-	}
+	ids := Ids(u)
+	operatingSystems, langCodes, _ := OsLangCodeDownloadType(u)
 
 	return Validate(ids, operatingSystems, langCodes)
 }

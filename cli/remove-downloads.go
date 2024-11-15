@@ -11,47 +11,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 )
 
 func RemoveDownloadsHandler(u *url.URL) error {
 
-	q := u.Query()
-
-	var ids []string
-	if q.Has(vangogh_local_data.IdProperty) {
-		ids = strings.Split(q.Get(vangogh_local_data.IdProperty), ",")
-	}
-
-	operatingSystems := vangogh_local_data.OperatingSystemsFromUrl(u)
-	if len(operatingSystems) == 0 {
-		switch runtime.GOOS {
-		case "windows":
-			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
-		case "darwin":
-			operatingSystems = append(operatingSystems, vangogh_local_data.MacOS)
-		case "linux":
-			operatingSystems = append(operatingSystems, vangogh_local_data.Windows)
-		}
-	}
-
-	var langCodes []string
-	if q.Has(vangogh_local_data.LanguageCodeProperty) {
-		langCodes = strings.Split(q.Get(vangogh_local_data.LanguageCodeProperty), ",")
-	}
-
-	if len(langCodes) == 0 {
-		langCodes = append(langCodes, defaultLangCode)
-	}
-
-	downloadTypes := []vangogh_local_data.DownloadType{vangogh_local_data.Installer}
-
-	if !q.Has("no-dlc") {
-		downloadTypes = append(downloadTypes, vangogh_local_data.DLC)
-	}
-
-	force := q.Has("force")
+	ids := Ids(u)
+	operatingSystems, langCodes, _ := OsLangCodeDownloadType(u)
+	force := u.Query().Has("force")
 
 	return RemoveDownloads(ids, operatingSystems, langCodes, force)
 }
@@ -135,7 +101,7 @@ func removeProductDownloads(id string,
 		return rda.EndWithError(err)
 	}
 
-	if err = removeProductDownloadLinks(id, downloadsDir, downloadMetadata.Title, downloadLinks, force); err != nil {
+	if err = removeProductDownloadLinks(id, downloadMetadata.Title, downloadsDir, downloadLinks, force); err != nil {
 		return rda.EndWithError(err)
 	}
 
