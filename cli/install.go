@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/vangogh_local_data"
 	"net/url"
 )
@@ -22,5 +23,5 @@ func Install(ids []string,
 
 	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
 
-	return nil
+	return errors.New("install cmd is not implemented")
 }
