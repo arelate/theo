@@ -52,6 +52,7 @@ const (
 const (
 	Redux             pathways.RelDir = "_redux"
 	DownloadsMetadata pathways.RelDir = "downloads-metadata"
+	InstalledMetadata pathways.RelDir = "installed-metadata"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
