@@ -15,6 +15,13 @@ download
     lang-code&
     force
 
+extract
+    id^&*
+    no-dlc
+    os&
+    lang-code&
+    force
+
 get-downloads-metadata
     id^&*
     force
