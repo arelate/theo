@@ -15,8 +15,6 @@ import (
 const (
 	pkgExt = ".pkg"
 	exeExt = ".exe"
-
-	relScriptsPath = "package.pkg/Scripts"
 )
 
 func ExtractHandler(u *url.URL) error {
@@ -111,13 +109,13 @@ func extractMacOsInstaller(link vangogh_local_data.DownloadLink, productDownload
 		return errors.New("extracting .pkg installers is only supported on macOS")
 	}
 
-	macOsExtractsDir := filepath.Join(productExtractsDir, vangogh_local_data.MacOS.String())
+	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
 	// if the product extracts dir already exists - that would imply that the product
 	// has been extracted already. Remove the directory with contents if forced
 	// Return early otherwise (if not forced).
-	if _, err := os.Stat(macOsExtractsDir); err == nil {
+	if _, err := os.Stat(localFilenameExtractsDir); err == nil {
 		if force {
-			if err := os.RemoveAll(macOsExtractsDir); err != nil {
+			if err := os.RemoveAll(localFilenameExtractsDir); err != nil {
 				return err
 			}
 		} else {
@@ -127,7 +125,7 @@ func extractMacOsInstaller(link vangogh_local_data.DownloadLink, productDownload
 
 	localDownload := filepath.Join(productDownloadsDir, link.LocalFilename)
 
-	cmd := exec.Command("pkgutil", "--expand-full", localDownload, macOsExtractsDir)
+	cmd := exec.Command("pkgutil", "--expand-full", localDownload, localFilenameExtractsDir)
 
 	return cmd.Run()
 }
