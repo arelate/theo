@@ -58,10 +58,12 @@ const (
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	Redux:             Metadata,
 	DownloadsMetadata: Metadata,
+	InstalledMetadata: Metadata,
 }
 
 var AllAbsDirs = []pathways.AbsDir{
 	Backups,
 	Metadata,
 	Downloads,
+	Extracts,
 }
