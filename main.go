@@ -53,6 +53,7 @@ func main() {
 		"extract":                cli.ExtractHandler,
 		"get-downloads-metadata": cli.GetDownloadsMetadataHandler,
 		"install":                cli.InstallHandler,
+		"pin-installed-metadata": cli.PinInstalledMetadataHandler,
 		"setup":                  cli.SetupHandler,
 		"remove-downloads":       cli.RemoveDownloadsHandler,
 		"reveal-downloads":       cli.RevealDownloadsHandler,
