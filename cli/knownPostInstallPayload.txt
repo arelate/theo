@@ -1,0 +1,45 @@
+#!/bin/bash
+# www.gog.com
+ExecuteSupportScripts() {
+  ls -ctr support/*.sh | while read script
+  do
+    bash $script --install-path="${1}"
+    rm $script
+  done
+}
+gog_bundle_location=`osascript -e $'tell application "SystemUIServer" to try \n return POSIX path of (choose folder) \n on error errorMsg \n return errorMsg \n end try'`
+if [[ $gog_bundle_location == *"User canceled."* ]]
+then
+  echo "Aborted"
+  exit 1
+fi
+if [[ $gog_bundle_location == *"SystemUIServer"* ]]
+then
+  gog_bundle_location="/Applications/"
+fi
+gog_full_path="${gog_bundle_location}${gog_bundle_name}"
+if [ "$gog_installer_type" != "dlc" ]; then
+  if [ -d "${gog_full_path}" ]; then
+   ret=`osascript -e "set question to display dialog \"${gog_full_path} already exists and will be removed!\" buttons {\"Yes\", \"No\"} default button 2"`
+   if [[ $ret == *"Yes"* ]]; then
+     rm -rf "${gog_full_path}"
+   else
+    echo "Aborted."
+    exit 1
+   fi
+  fi
+fi
+if [ "$gog_installer_type" == "dlc" ]; then
+  mkdir -p "${gog_full_path}"
+  cp -rf payload/* "${gog_full_path}"
+else
+  mkdir -p "${gog_full_path}"
+  mv payload/* "${gog_full_path}"
+fi
+ExecuteSupportScripts "${gog_full_path}"
+xattr -d com.apple.quarantine "${gog_full_path}"
+xattr -r -d com.apple.quarantine "${gog_full_path}"
+chown "$USER":staff "${gog_full_path}"
+chown -R "$USER":staff "${gog_full_path}"
+chown -R :staff "${gog_full_path}"
+exit 0
