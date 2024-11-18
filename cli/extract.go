@@ -88,16 +88,9 @@ func extractProductDownloadLinks(id, title string, links []vangogh_local_data.Do
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 	productExtractsDir := filepath.Join(extractsDir, id)
 
-	// if the product extracts dir already exists - that would imply that the product
-	// has been extracted already. Remove the directory with contents if forced
-	// Return early otherwise (if not forced).
-	if _, err := os.Stat(productExtractsDir); err == nil {
-		if force {
-			if err := os.RemoveAll(productExtractsDir); err != nil {
-				return epdla.EndWithError(err)
-			}
-		} else {
-			return nil
+	if _, err := os.Stat(productExtractsDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(productExtractsDir, 0755); err != nil {
+			return epdla.EndWithError(err)
 		}
 	}
 
@@ -107,12 +100,12 @@ func extractProductDownloadLinks(id, title string, links []vangogh_local_data.Do
 		linkExt := filepath.Ext(link.LocalFilename)
 
 		if linkOs == vangogh_local_data.MacOS && linkExt == pkgExt {
-			if err := extractPkg(link, productDownloadsDir, productExtractsDir); err != nil {
+			if err := extractMacOsInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
 				return epdla.EndWithError(err)
 			}
 		}
 		if linkOs == vangogh_local_data.Windows && linkExt == exeExt {
-			if err := extractInnosetup(link, productDownloadsDir, productExtractsDir); err != nil {
+			if err := extractWindowsInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
 				return epdla.EndWithError(err)
 			}
 		}
@@ -123,19 +116,33 @@ func extractProductDownloadLinks(id, title string, links []vangogh_local_data.Do
 	return nil
 }
 
-func extractPkg(link vangogh_local_data.DownloadLink, productDownloadsDir, productExtractsDir string) error {
+func extractMacOsInstaller(link vangogh_local_data.DownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
 
 	if CurrentOS() != vangogh_local_data.MacOS {
 		return errors.New("extracting .pkg installers is only supported on macOS")
 	}
 
+	macOsExtractsDir := filepath.Join(productExtractsDir, vangogh_local_data.MacOS.String())
+	// if the product extracts dir already exists - that would imply that the product
+	// has been extracted already. Remove the directory with contents if forced
+	// Return early otherwise (if not forced).
+	if _, err := os.Stat(macOsExtractsDir); err == nil {
+		if force {
+			if err := os.RemoveAll(macOsExtractsDir); err != nil {
+				return err
+			}
+		} else {
+			return nil
+		}
+	}
+
 	localDownload := filepath.Join(productDownloadsDir, link.LocalFilename)
 
-	cmd := exec.Command("pkgutil", "--expand-full", localDownload, productExtractsDir)
+	cmd := exec.Command("pkgutil", "--expand-full", localDownload, macOsExtractsDir)
 
 	return cmd.Run()
 }
 
-func extractInnosetup(link vangogh_local_data.DownloadLink, downloadsDir, extractsDir string) error {
+func extractWindowsInstaller(link vangogh_local_data.DownloadLink, downloadsDir, extractsDir string, force bool) error {
 	return nil
 }

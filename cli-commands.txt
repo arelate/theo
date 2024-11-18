@@ -22,6 +22,11 @@ extract
     lang-code&
     force
 
+#finalize-installation
+#    id^&*
+#    os&
+#    force
+
 get-downloads-metadata
     id^&*
     force
@@ -36,6 +41,16 @@ install
 pin-installed-metadata
     id^&*
     force
+
+place-extracts
+    id^&*
+    no-dlc
+    os&
+    lang-code&
+    force
+
+#remove-extracts
+#    id^&*
 
 remove-downloads
     id^&*
