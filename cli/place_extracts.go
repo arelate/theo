@@ -152,7 +152,19 @@ func placeMacOsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir
 		}
 	}
 
-	return os.Rename(absExtractPayloadPath, absInstallationPath)
+	installerType := postInstallScript.InstallerType()
+	switch installerType {
+	case "game":
+		if err := os.Rename(absExtractPayloadPath, absInstallationPath); err != nil {
+			return err
+		}
+	case "dlc":
+	// not implemented yet
+	default:
+		return errors.New("unknown postinstall script installer type: " + installerType)
+	}
+
+	return nil
 }
 
 func placeWindowsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir, installationDir string, force bool) error {
