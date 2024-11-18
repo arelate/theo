@@ -33,6 +33,10 @@ install
     lang-code&
     force
 
+pin-installed-metadata
+    id^&*
+    force
+
 remove-downloads
     id^&*
     os&

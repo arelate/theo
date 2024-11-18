@@ -23,6 +23,14 @@ func Install(ids []string,
 
 	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
 
+	if err := Backup(); err != nil {
+		return err
+	}
+
+	if err := PinInstalledMetadata(ids, force); err != nil {
+		return err
+	}
+
 	if err := Download(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
 		return err
 	}

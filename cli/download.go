@@ -34,30 +34,39 @@ func Download(ids []string,
 
 	da.TotalInt(len(ids))
 
-	dmd, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
+	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
 	if err != nil {
 		return da.EndWithError(err)
 	}
 
-	kvdm, err := kevlar.NewKeyValues(dmd, kevlar.JsonExt)
+	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return da.EndWithError(err)
 	}
 
-	rdp, err := pathways.GetAbsRelDir(data.Redux)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return da.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(rdp, data.SetupProperties)
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
 	if err != nil {
 		return da.EndWithError(err)
 	}
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, downloadTypes, kvdm, force); err == nil {
-			if err = getProductDownloadLinks(id, title, links, rdx, force); err != nil {
+		if title, links, err := GetTitleDownloadLinks(id,
+			operatingSystems,
+			langCodes,
+			downloadTypes,
+			kvDownloadsMetadata,
+			force); err == nil {
+			if err = getProductDownloadLinks(id,
+				title,
+				links,
+				rdx,
+				force); err != nil {
 				return da.EndWithError(err)
 			}
 		} else {

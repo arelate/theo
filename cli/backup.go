@@ -17,17 +17,17 @@ func Backup() error {
 	ba := nod.NewProgress("backing up local data...")
 	defer ba.End()
 
-	abp, err := pathways.GetAbsDir(data.Backups)
+	backupsDir, err := pathways.GetAbsDir(data.Backups)
 	if err != nil {
 		return ba.EndWithError(err)
 	}
 
-	amp, err := pathways.GetAbsDir(data.Metadata)
+	metadataDir, err := pathways.GetAbsDir(data.Metadata)
 	if err != nil {
 		return ba.EndWithError(err)
 	}
 
-	if err := backups.Compress(amp, abp); err != nil {
+	if err := backups.Compress(metadataDir, backupsDir); err != nil {
 		return ba.EndWithError(err)
 	}
 
@@ -36,7 +36,7 @@ func Backup() error {
 	ca := nod.NewProgress("cleaning up old backups...")
 	defer ca.End()
 
-	if err := backups.Cleanup(abp, true, ca); err != nil {
+	if err := backups.Cleanup(backupsDir, true, ca); err != nil {
 		return ca.EndWithError(err)
 	}
 
