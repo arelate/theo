@@ -1,18 +1,23 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
+	"os"
+	"os/exec"
 	"path/filepath"
 )
 
 const (
 	pkgExt = ".pkg"
 	exeExt = ".exe"
+
+	relScriptsPath = "package.pkg/Scripts"
 )
 
 func ExtractHandler(u *url.URL) error {
@@ -67,15 +72,34 @@ func Extract(ids []string,
 
 func extractProductDownloadLinks(id, title string, links []vangogh_local_data.DownloadLink, force bool) error {
 
-	epdla := nod.NewProgress(" extracting %s...", title)
+	epdla := nod.NewProgress(" extracting %s, please wait...", title)
 	defer epdla.End()
+
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return epdla.EndWithError(err)
+	}
 
 	extractsDir, err := pathways.GetAbsDir(data.Extracts)
 	if err != nil {
 		return epdla.EndWithError(err)
 	}
 
+	productDownloadsDir := filepath.Join(downloadsDir, id)
 	productExtractsDir := filepath.Join(extractsDir, id)
+
+	// if the product extracts dir already exists - that would imply that the product
+	// has been extracted already. Remove the directory with contents if forced
+	// Return early otherwise (if not forced).
+	if _, err := os.Stat(productExtractsDir); err == nil {
+		if force {
+			if err := os.RemoveAll(productExtractsDir); err != nil {
+				return epdla.EndWithError(err)
+			}
+		} else {
+			return nil
+		}
+	}
 
 	for _, link := range links {
 
@@ -83,12 +107,12 @@ func extractProductDownloadLinks(id, title string, links []vangogh_local_data.Do
 		linkExt := filepath.Ext(link.LocalFilename)
 
 		if linkOs == vangogh_local_data.MacOS && linkExt == pkgExt {
-			if err := extractPkgScripts(link, productExtractsDir); err != nil {
+			if err := extractPkg(link, productDownloadsDir, productExtractsDir); err != nil {
 				return epdla.EndWithError(err)
 			}
 		}
 		if linkOs == vangogh_local_data.Windows && linkExt == exeExt {
-			if err := extractInnosetup(link, productExtractsDir); err != nil {
+			if err := extractInnosetup(link, productDownloadsDir, productExtractsDir); err != nil {
 				return epdla.EndWithError(err)
 			}
 		}
@@ -99,10 +123,19 @@ func extractProductDownloadLinks(id, title string, links []vangogh_local_data.Do
 	return nil
 }
 
-func extractPkgScripts(link vangogh_local_data.DownloadLink, dir string) error {
-	return nil
+func extractPkg(link vangogh_local_data.DownloadLink, productDownloadsDir, productExtractsDir string) error {
+
+	if CurrentOS() != vangogh_local_data.MacOS {
+		return errors.New("extracting .pkg installers is only supported on macOS")
+	}
+
+	localDownload := filepath.Join(productDownloadsDir, link.LocalFilename)
+
+	cmd := exec.Command("pkgutil", "--expand-full", localDownload, productExtractsDir)
+
+	return cmd.Run()
 }
 
-func extractInnosetup(link vangogh_local_data.DownloadLink, dir string) error {
+func extractInnosetup(link vangogh_local_data.DownloadLink, downloadsDir, extractsDir string) error {
 	return nil
 }
