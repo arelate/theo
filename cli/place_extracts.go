@@ -7,6 +7,7 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -136,11 +137,28 @@ func placeMacOsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir
 	}
 
 	bundleName := postInstallScript.BundleName()
+
 	if bundleName == "" {
 		return errors.New("cannot determine bundle name from postinstall file")
 	}
+
+	installerType := postInstallScript.InstallerType()
+
 	absInstallationPath := filepath.Join(installationDir, bundleName)
 
+	switch installerType {
+	case "game":
+		return placeMacOsGame(absExtractPayloadPath, absInstallationPath, force)
+	case "dlc":
+		return placeMacOsDlc(absExtractPayloadPath, absInstallationPath, force)
+	default:
+		return errors.New("unknown postinstall script installer type: " + installerType)
+	}
+}
+
+func placeMacOsGame(absExtractsPayloadPath, absInstallationPath string, force bool) error {
+
+	// when installing a game
 	if _, err := os.Stat(absInstallationPath); err == nil {
 		if force {
 			if err := os.RemoveAll(absInstallationPath); err != nil {
@@ -152,21 +170,54 @@ func placeMacOsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir
 		}
 	}
 
-	installerType := postInstallScript.InstallerType()
-	switch installerType {
-	case "game":
-		if err := os.Rename(absExtractPayloadPath, absInstallationPath); err != nil {
+	return os.Rename(absExtractsPayloadPath, absInstallationPath)
+}
+
+func placeMacOsDlc(absExtractsPayloadPath, absInstallationPath string, force bool) error {
+
+	if _, err := os.Stat(absInstallationPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(absInstallationPath, 0755); err != nil {
 			return err
 		}
-	case "dlc":
-	// not implemented yet
-	default:
-		return errors.New("unknown postinstall script installer type: " + installerType)
+	}
+
+	// enumerate all DLC files in the payload directory
+	dlcFiles := make([]string, 0)
+
+	if err := filepath.Walk(absExtractsPayloadPath, func(path string, info fs.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
+			if relPath, err := filepath.Rel(absExtractsPayloadPath, path); err == nil {
+				dlcFiles = append(dlcFiles, relPath)
+			} else {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for _, dlcFile := range dlcFiles {
+
+		absDstPath := filepath.Join(absInstallationPath, dlcFile)
+		absDstDir, _ := filepath.Split(absDstPath)
+
+		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
+			if err := os.MkdirAll(absDstDir, 0755); err != nil {
+				return err
+			}
+		}
+
+		absSrcPath := filepath.Join(absExtractsPayloadPath, dlcFile)
+
+		if err := os.Rename(absSrcPath, absDstPath); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func placeWindowsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir, installationDir string, force bool) error {
-	return nil
+	return errors.New("placing Windows extracts is not supported")
 }
