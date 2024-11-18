@@ -27,10 +27,10 @@ func Download(ids []string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
 
-	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
-
 	da := nod.NewProgress("downloading game data from vangogh...")
 	defer da.End()
+
+	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
 
 	da.TotalInt(len(ids))
 

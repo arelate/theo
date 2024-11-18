@@ -25,10 +25,10 @@ func RemoveDownloads(ids []string,
 	langCodes []string,
 	force bool) error {
 
-	PrintParams(ids, operatingSystems, langCodes, nil)
-
 	rda := nod.NewProgress("removing downloads...")
 	defer rda.End()
+
+	PrintParams(ids, operatingSystems, langCodes, nil)
 
 	rda.TotalInt(len(ids))
 

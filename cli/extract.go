@@ -30,10 +30,10 @@ func Extract(ids []string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
 
-	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
-
 	ea := nod.NewProgress("extracting installers game data...")
 	defer ea.End()
+
+	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
 
 	ea.TotalInt(len(ids))
 

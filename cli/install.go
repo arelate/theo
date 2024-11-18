@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"github.com/arelate/vangogh_local_data"
+	"github.com/boggydigital/nod"
 	"net/url"
 )
 
@@ -21,6 +22,9 @@ func Install(ids []string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
 
+	ia := nod.Begin("installing products...")
+	defer ia.EndWithResult("done")
+
 	PrintParams(ids, operatingSystems, langCodes, downloadTypes)
 
 	if err := Backup(); err != nil {
@@ -35,9 +39,15 @@ func Install(ids []string,
 		return err
 	}
 
+	if err := Validate(ids, operatingSystems, langCodes); err != nil {
+		return err
+	}
+
 	if err := Extract(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
 		return err
 	}
+
+	ia.EndWithResult("done")
 
 	return errors.New("install cmd is not implemented")
 }

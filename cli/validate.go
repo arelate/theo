@@ -52,10 +52,10 @@ func ValidateHandler(u *url.URL) error {
 
 func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSystem, langCodes []string) error {
 
-	PrintParams(ids, operatingSystems, langCodes, nil)
-
 	va := nod.NewProgress("validating downloads...")
 	defer va.End()
+
+	PrintParams(ids, operatingSystems, langCodes, nil)
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
