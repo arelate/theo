@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
@@ -42,19 +41,9 @@ func Extract(ids []string,
 
 	ea.TotalInt(len(ids))
 
-	dmd, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
-	if err != nil {
-		return ea.EndWithError(err)
-	}
-
-	kvdm, err := kevlar.NewKeyValues(dmd, kevlar.JsonExt)
-	if err != nil {
-		return ea.EndWithError(err)
-	}
-
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, downloadTypes, kvdm, force); err == nil {
+		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
 			if err = extractProductDownloadLinks(id, title, links, force); err != nil {
 				return ea.EndWithError(err)
 			}

@@ -26,29 +26,29 @@ func GetDownloadsMetadata(ids []string, force bool) error {
 
 	gdma.TotalInt(len(ids))
 
-	dmd, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
+	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
 	if err != nil {
 		return gdma.EndWithError(err)
 	}
 
-	kvdm, err := kevlar.NewKeyValues(dmd, kevlar.JsonExt)
+	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return gdma.EndWithError(err)
 	}
 
-	rdp, err := pathways.GetAbsRelDir(data.Redux)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return gdma.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(rdp, data.SetupProperties)
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
 	if err != nil {
 		return gdma.EndWithError(err)
 	}
 
 	for _, id := range ids {
 
-		if err = getProductDownloadsMetadata(id, rdx, kvdm, force); err != nil {
+		if err = getProductDownloadsMetadata(id, rdx, kvDownloadsMetadata, force); err != nil {
 			return gdma.EndWithError(err)
 		}
 
@@ -60,9 +60,9 @@ func GetDownloadsMetadata(ids []string, force bool) error {
 	return nil
 }
 
-func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kv kevlar.KeyValues, force bool) error {
+func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kvDownloadsMetadata kevlar.KeyValues, force bool) error {
 
-	if has, err := kv.Has(id); err == nil {
+	if has, err := kvDownloadsMetadata.Has(id); err == nil {
 		if has && !force {
 			return nil
 		}
@@ -87,5 +87,5 @@ func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kv kevlar.
 		return errors.New(resp.Status)
 	}
 
-	return kv.Set(id, resp.Body)
+	return kvDownloadsMetadata.Set(id, resp.Body)
 }

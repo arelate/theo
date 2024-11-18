@@ -22,10 +22,9 @@ extract
     lang-code&
     force
 
-#finalize-installation
-#    id^&*
-#    os&
-#    force
+finalize-installation
+    id^&*
+    os&
 
 get-downloads-metadata
     id^&*

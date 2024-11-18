@@ -43,12 +43,12 @@ func Setup(
 	sa := nod.Begin("setting up theo...")
 	defer sa.End()
 
-	rdp, err := pathways.GetAbsRelDir(data.Redux)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return sa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(rdp, data.SetupProperties)
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SetupProperties)
 	if err != nil {
 		return sa.EndWithError(err)
 	}

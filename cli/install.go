@@ -47,6 +47,14 @@ func Install(ids []string,
 		return err
 	}
 
+	if err := PlaceExtracts(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+		return err
+	}
+
+	if err := FinalizeInstallation(ids, operatingSystems); err != nil {
+		return err
+	}
+
 	ia.EndWithResult("done")
 
 	return errors.New("install cmd is not implemented")

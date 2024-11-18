@@ -34,16 +34,6 @@ func Download(ids []string,
 
 	da.TotalInt(len(ids))
 
-	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
-	if err != nil {
-		return da.EndWithError(err)
-	}
-
-	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
-	if err != nil {
-		return da.EndWithError(err)
-	}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return da.EndWithError(err)
@@ -60,7 +50,6 @@ func Download(ids []string,
 			operatingSystems,
 			langCodes,
 			downloadTypes,
-			kvDownloadsMetadata,
 			force); err == nil {
 			if err = getProductDownloadLinks(id,
 				title,
@@ -101,7 +90,7 @@ func getProductDownloadLinks(id, title string,
 		}
 	}
 
-	ddp, err := pathways.GetAbsDir(data.Downloads)
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
 		return gpdla.EndWithError(err)
 	}
@@ -119,7 +108,7 @@ func getProductDownloadLinks(id, title string,
 			continue
 		}
 
-		if err := dc.Download(fileUrl, force, fa, ddp, id, dl.LocalFilename); err != nil {
+		if err := dc.Download(fileUrl, force, fa, downloadsDir, id, dl.LocalFilename); err != nil {
 			_ = fa.EndWithError(err)
 			continue
 		}

@@ -51,6 +51,7 @@ func main() {
 		"backup":                 cli.BackupHandler,
 		"download":               cli.DownloadHandler,
 		"extract":                cli.ExtractHandler,
+		"finalize-installation":  cli.FinalizeInstallationHandler,
 		"get-downloads-metadata": cli.GetDownloadsMetadataHandler,
 		"install":                cli.InstallHandler,
 		"pin-installed-metadata": cli.PinInstalledMetadataHandler,

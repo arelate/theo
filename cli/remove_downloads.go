@@ -3,7 +3,6 @@ package cli
 import (
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
@@ -32,16 +31,6 @@ func RemoveDownloads(ids []string,
 
 	rda.TotalInt(len(ids))
 
-	dmd, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
-	if err != nil {
-		return rda.EndWithError(err)
-	}
-
-	kvdm, err := kevlar.NewKeyValues(dmd, kevlar.JsonExt)
-	if err != nil {
-		return rda.EndWithError(err)
-	}
-
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
 		return rda.EndWithError(err)
@@ -49,7 +38,7 @@ func RemoveDownloads(ids []string,
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, kvdm, force); err == nil {
+		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, force); err == nil {
 			if err = removeProductDownloadLinks(id, title, downloadsDir, links); err != nil {
 				return rda.EndWithError(err)
 			}

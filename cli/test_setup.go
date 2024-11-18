@@ -21,12 +21,12 @@ func TestSetup() error {
 	tsa := nod.Begin("testing theo setup...")
 	defer tsa.End()
 
-	rdp, err := pathways.GetAbsRelDir(data.Redux)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(rdp, data.SetupProperties)
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}

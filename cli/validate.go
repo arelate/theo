@@ -6,7 +6,6 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/dolo"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"golang.org/x/exp/slices"
@@ -62,19 +61,9 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 		return va.EndWithError(err)
 	}
 
-	dmdp, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
-	if err != nil {
-		return va.EndWithError(err)
-	}
-
-	kvdm, err := kevlar.NewKeyValues(dmdp, kevlar.JsonExt)
-	if err != nil {
-		return va.EndWithError(err)
-	}
-
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, kvdm, false); err == nil {
+		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, false); err == nil {
 			if err = validateLinks(id, title, links, downloadsDir); err != nil {
 				return va.EndWithError(err)
 			}

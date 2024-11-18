@@ -16,12 +16,12 @@ func ResetSetup() error {
 	rsa := nod.Begin("resetting theo setup...")
 	defer rsa.End()
 
-	rdp, err := pathways.GetAbsRelDir(data.Redux)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return rsa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(rdp, data.SetupProperties)
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SetupProperties)
 	if err != nil {
 		return rsa.EndWithError(err)
 	}

@@ -2,9 +2,11 @@ package cli
 
 import (
 	"encoding/json"
+	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"golang.org/x/exp/slices"
 )
 
@@ -12,7 +14,6 @@ func GetTitleDownloadLinks(id string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
-	kv kevlar.KeyValues,
 	force bool) (string, []vangogh_local_data.DownloadLink, error) {
 
 	// if not download-type was specified - add all to avoid filtering on them
@@ -26,7 +27,17 @@ func GetTitleDownloadLinks(id string,
 	fdla := nod.Begin("filtering downloads metadata links for %s...", id)
 	defer fdla.End()
 
-	if has, err := kv.Has(id); err == nil {
+	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
+	if err != nil {
+		return "", nil, err
+	}
+
+	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if has, err := kvDownloadsMetadata.Has(id); err == nil {
 		if !has {
 			if err = GetDownloadsMetadata([]string{id}, force); err != nil {
 				return "", nil, fdla.EndWithError(err)
@@ -36,7 +47,7 @@ func GetTitleDownloadLinks(id string,
 		return "", nil, fdla.EndWithError(err)
 	}
 
-	dmrc, err := kv.Get(id)
+	dmrc, err := kvDownloadsMetadata.Get(id)
 	if err != nil {
 		return "", nil, fdla.EndWithError(err)
 	}
