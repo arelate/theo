@@ -10,15 +10,17 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
+	keepDownloads := u.Query().Has("keep-downloads")
 	force := u.Query().Has("force")
 
-	return Install(ids, operatingSystems, langCodes, downloadTypes, force)
+	return Install(ids, operatingSystems, langCodes, downloadTypes, keepDownloads, force)
 }
 
 func Install(ids []string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
+	keepDownloads bool,
 	force bool) error {
 
 	ia := nod.Begin("installing products...")
@@ -56,6 +58,12 @@ func Install(ids []string,
 
 	if err := RemoveExtracts(ids, operatingSystems, langCodes, force); err != nil {
 		return err
+	}
+
+	if !keepDownloads {
+		if err := RemoveDownloads(ids, operatingSystems, langCodes, force); err != nil {
+			return err
+		}
 	}
 
 	if err := RevealInstalled(ids, operatingSystems, langCodes); err != nil {

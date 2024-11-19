@@ -36,6 +36,7 @@ install
     no-dlc
     os&
     lang-code&
+    keep-downloads
     force
 
 pin-installed-metadata
