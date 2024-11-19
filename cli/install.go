@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"net/url"
@@ -51,7 +50,7 @@ func Install(ids []string,
 		return err
 	}
 
-	if err := FinalizeInstallation(ids, operatingSystems); err != nil {
+	if err := FinalizeInstallation(ids, operatingSystems, langCodes); err != nil {
 		return err
 	}
 
@@ -61,5 +60,5 @@ func Install(ids []string,
 
 	ia.EndWithResult("done")
 
-	return errors.New("install cmd is not implemented")
+	return nil
 }

@@ -25,6 +25,7 @@ extract
 finalize-installation
     id^&*
     os&
+    lang-code&
 
 get-downloads-metadata
     id^&*

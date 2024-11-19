@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	relPostInstallScriptPath = "package.pkg/Scripts/postinstall"
-	relPayloadPath           = "package.pkg/Scripts/payload"
+	relPayloadPath = "package.pkg/Scripts/payload"
 
 	defaultInstallationDir = "/Applications"
 )
@@ -122,9 +121,7 @@ func placeMacOsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir
 		return errors.New("placing .pkg extracts is only supported on macOS")
 	}
 
-	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
-	absPostInstallScriptPath := filepath.Join(localFilenameExtractsDir, relPostInstallScriptPath)
-
+	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
 	postInstallScript, err := ParsePostInstallScript(absPostInstallScriptPath)
 	if err != nil {
 		return err

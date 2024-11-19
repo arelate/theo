@@ -3,18 +3,22 @@ package cli
 import (
 	"bufio"
 	_ "embed"
+	"github.com/arelate/vangogh_local_data"
 	"golang.org/x/exp/slices"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 const (
 	bundleNamePfx    = "gog_bundle_name="
 	installerTypePfx = "gog_installer_type="
+
+	relPostInstallScriptPath = "package.pkg/Scripts/postinstall"
 )
 
-//go:embed "knownPostInstallPayload.txt"
-var knownPostInstallPayload string
+//go:embed "known_postinstall.txt"
+var knownPostInstall string
 
 type PostInstallScript struct {
 	path           string
@@ -48,7 +52,7 @@ func ParsePostInstallScript(path string) (*PostInstallScript, error) {
 	defer scriptFile.Close()
 
 	pis := &PostInstallScript{}
-	knownPostInstallLines := strings.Split(knownPostInstallPayload, "\n")
+	knownPostInstallLines := strings.Split(knownPostInstall, "\n")
 
 	scriptScanner := bufio.NewScanner(scriptFile)
 	for scriptScanner.Scan() {
@@ -76,4 +80,9 @@ func ParsePostInstallScript(path string) (*PostInstallScript, error) {
 	}
 
 	return pis, nil
+}
+
+func PostInstallScriptPath(productExtractsDir string, link vangogh_local_data.DownloadLink) string {
+	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
+	return filepath.Join(localFilenameExtractsDir, relPostInstallScriptPath)
 }
