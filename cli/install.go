@@ -55,6 +55,10 @@ func Install(ids []string,
 		return err
 	}
 
+	if err := RemoveExtracts(ids, operatingSystems, langCodes, force); err != nil {
+		return err
+	}
+
 	ia.EndWithResult("done")
 
 	return errors.New("install cmd is not implemented")

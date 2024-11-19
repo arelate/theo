@@ -48,8 +48,10 @@ place-extracts
     lang-code&
     force
 
-#remove-extracts
-#    id^&*
+remove-extracts
+    id^&*
+    os&
+    lang-code&
 
 remove-downloads
     id^&*

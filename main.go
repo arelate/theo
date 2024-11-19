@@ -57,6 +57,7 @@ func main() {
 		"pin-installed-metadata": cli.PinInstalledMetadataHandler,
 		"place-extracts":         cli.PlaceExtractsHandler,
 		"setup":                  cli.SetupHandler,
+		"remove-extracts":        cli.RemoveExtractsHandler,
 		"remove-downloads":       cli.RemoveDownloadsHandler,
 		"reveal-downloads":       cli.RevealDownloadsHandler,
 		"reset-setup":            cli.ResetSetupHandler,
