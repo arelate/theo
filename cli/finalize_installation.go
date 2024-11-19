@@ -230,6 +230,10 @@ func execCatFiles(srcGlob string, dstPath string) error {
 
 		ecfa.Increment()
 		_ = srcFile.Close()
+
+		if err := os.Remove(match); err != nil {
+			return ecfa.EndWithError(err)
+		}
 	}
 
 	return nil
