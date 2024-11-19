@@ -15,6 +15,7 @@ import (
 const (
 	pkgExt = ".pkg"
 	exeExt = ".exe"
+	shExt  = ".sh"
 )
 
 func ExtractHandler(u *url.URL) error {

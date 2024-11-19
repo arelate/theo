@@ -34,6 +34,11 @@ func Download(ids []string,
 
 	da.TotalInt(len(ids))
 
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return da.EndWithError(err)
+	}
+
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return da.EndWithError(err)
@@ -54,6 +59,7 @@ func Download(ids []string,
 			if err = getProductDownloadLinks(id,
 				title,
 				links,
+				downloadsDir,
 				rdx,
 				force); err != nil {
 				return da.EndWithError(err)
@@ -72,6 +78,7 @@ func Download(ids []string,
 
 func getProductDownloadLinks(id, title string,
 	downloadLinks []vangogh_local_data.DownloadLink,
+	downloadsDir string,
 	rdx kevlar.ReadableRedux,
 	force bool) error {
 
@@ -88,11 +95,6 @@ func getProductDownloadLinks(id, title string,
 		if password, sure := rdx.GetLastVal(data.SetupProperties, data.VangoghPasswordProperty); sure && password != "" {
 			dc.SetBasicAuth(username, password)
 		}
-	}
-
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return gpdla.EndWithError(err)
 	}
 
 	for _, dl := range downloadLinks {

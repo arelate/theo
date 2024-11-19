@@ -144,11 +144,7 @@ func removeXattrs(path string) error {
 
 	// xattr -c -r /Applications/Bundle Name.app
 	cmd := exec.Command("xattr", "-c", "-r", path)
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 func processCustomCommands(commands []string, productDownloadsDir, bundleInstallPath string) error {

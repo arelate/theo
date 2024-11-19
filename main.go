@@ -54,6 +54,7 @@ func main() {
 		"finalize-installation":  cli.FinalizeInstallationHandler,
 		"get-downloads-metadata": cli.GetDownloadsMetadataHandler,
 		"install":                cli.InstallHandler,
+		"native-install":         cli.NativeInstallHandler,
 		"pin-installed-metadata": cli.PinInstalledMetadataHandler,
 		"place-extracts":         cli.PlaceExtractsHandler,
 		"setup":                  cli.SetupHandler,

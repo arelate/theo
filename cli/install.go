@@ -8,18 +8,22 @@ import (
 
 func InstallHandler(u *url.URL) error {
 
+	q := u.Query()
+
 	ids := Ids(u)
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	keepDownloads := u.Query().Has("keep-downloads")
-	force := u.Query().Has("force")
+	native := q.Has("native")
+	keepDownloads := q.Has("keep-downloads")
+	force := q.Has("force")
 
-	return Install(ids, operatingSystems, langCodes, downloadTypes, keepDownloads, force)
+	return Install(ids, operatingSystems, langCodes, downloadTypes, native, keepDownloads, force)
 }
 
 func Install(ids []string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
+	native bool,
 	keepDownloads bool,
 	force bool) error {
 
@@ -44,20 +48,30 @@ func Install(ids []string,
 		return err
 	}
 
-	if err := Extract(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
-		return err
-	}
+	if native {
 
-	if err := PlaceExtracts(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
-		return err
-	}
+		if err := NativeInstall(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+			return err
+		}
 
-	if err := FinalizeInstallation(ids, operatingSystems, langCodes); err != nil {
-		return err
-	}
+	} else {
 
-	if err := RemoveExtracts(ids, operatingSystems, langCodes, force); err != nil {
-		return err
+		if err := Extract(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+			return err
+		}
+
+		if err := PlaceExtracts(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+			return err
+		}
+
+		if err := FinalizeInstallation(ids, operatingSystems, langCodes); err != nil {
+			return err
+		}
+
+		if err := RemoveExtracts(ids, operatingSystems, langCodes, force); err != nil {
+			return err
+		}
+
 	}
 
 	if !keepDownloads {

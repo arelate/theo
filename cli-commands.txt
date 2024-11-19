@@ -36,7 +36,15 @@ install
     no-dlc
     os&
     lang-code&
+    native
     keep-downloads
+    force
+
+native-install
+    id^&*
+    no-dlc
+    os&
+    lang-code&
     force
 
 pin-installed-metadata
