@@ -12,20 +12,38 @@ import (
 )
 
 func RevealDownloadsHandler(u *url.URL) error {
-	return RevealDownloads(u.Query().Get("id"))
+
+	ids := Ids(u)
+
+	return RevealDownloads(ids)
 }
 
-func RevealDownloads(id string) error {
+func RevealDownloads(ids []string) error {
 
-	rda := nod.Begin("revealing downloads for %s...", id)
-	defer rda.End()
+	rda := nod.Begin("revealing downloads...")
+	defer rda.EndWithResult("done")
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
 		return rda.EndWithError(err)
 	}
 
-	path := filepath.Join(downloadsDir, id)
+	if len(ids) == 0 {
+		return revealCurrentOs(downloadsDir)
+	}
+
+	for _, id := range ids {
+		if err := revealCurrentOs(filepath.Join(downloadsDir, id)); err != nil {
+			return rda.EndWithError(err)
+		}
+	}
+
+	return nil
+}
+
+func revealCurrentOs(path string) error {
+
+	var err error
 
 	switch CurrentOS() {
 	case vangogh_local_data.MacOS:
@@ -38,13 +56,7 @@ func RevealDownloads(id string) error {
 		err = errors.New("cannot reveal on unknown operating system")
 	}
 
-	if err != nil {
-		return rda.EndWithError(err)
-	}
-
-	rda.EndWithResult("done")
-
-	return nil
+	return err
 }
 
 func revealMacOs(path string) error {

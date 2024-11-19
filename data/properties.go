@@ -9,4 +9,6 @@ const (
 	VangoghUsernameProperty  = "vangogh-username"
 	VangoghPasswordProperty  = "vangogh-password"
 	InstallationPathProperty = "installation-path"
+
+	BundleNameProperty = "bundle-name"
 )

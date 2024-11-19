@@ -60,7 +60,12 @@ remove-downloads
     lang-code&
 
 reveal-downloads
-    id^
+    id^&
+
+reveal-installed
+    id^&
+    os&
+    lang-code&
 
 setup
     protocol

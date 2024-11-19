@@ -35,7 +35,7 @@ func FinalizeInstallation(ids []string,
 		return fia.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SetupProperties, data.BundleNameProperty)
 	if err != nil {
 		return fia.EndWithError(err)
 	}
@@ -50,7 +50,7 @@ func FinalizeInstallation(ids []string,
 	for _, id := range ids {
 
 		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, installerDownloadType, false); err == nil {
-			if err = finalizeProductInstallation(id, title, links, installationDir); err != nil {
+			if err = finalizeProductInstallation(id, title, links, installationDir, rdx); err != nil {
 				return fia.EndWithError(err)
 			}
 		} else {
@@ -65,7 +65,10 @@ func FinalizeInstallation(ids []string,
 	return nil
 }
 
-func finalizeProductInstallation(id, title string, links []vangogh_local_data.DownloadLink, installationDir string) error {
+func finalizeProductInstallation(id, title string,
+	links []vangogh_local_data.DownloadLink,
+	installationDir string,
+	rdx kevlar.WriteableRedux) error {
 	fpia := nod.NewProgress(" finalizing installation for %s...", title)
 	defer fpia.End()
 
@@ -93,12 +96,16 @@ func finalizeProductInstallation(id, title string, links []vangogh_local_data.Do
 
 		bundleName := pis.BundleName()
 
+		// storing bundle name to use later
+		if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
+			return fpia.EndWithError(err)
+		}
+
 		bundlePath := filepath.Join(installationDir, bundleName)
 
 		if err := removeXattrs(bundlePath); err != nil {
-			return err
+			return fpia.EndWithError(err)
 		}
-
 	}
 
 	fpia.EndWithResult("done")

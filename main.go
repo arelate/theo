@@ -60,6 +60,7 @@ func main() {
 		"remove-extracts":        cli.RemoveExtractsHandler,
 		"remove-downloads":       cli.RemoveDownloadsHandler,
 		"reveal-downloads":       cli.RevealDownloadsHandler,
+		"reveal-installed":       cli.RevealInstalledHandler,
 		"reset-setup":            cli.ResetSetupHandler,
 		"test-setup":             cli.TestSetupHandler,
 		"validate":               cli.ValidateHandler,

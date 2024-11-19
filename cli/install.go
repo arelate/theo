@@ -58,6 +58,10 @@ func Install(ids []string,
 		return err
 	}
 
+	if err := RevealInstalled(ids, operatingSystems, langCodes); err != nil {
+		return err
+	}
+
 	ia.EndWithResult("done")
 
 	return nil
