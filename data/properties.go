@@ -11,4 +11,5 @@ const (
 	InstallationPathProperty = "installation-path"
 
 	BundleNameProperty = "bundle-name"
+	TitleProperty      = "title"
 )

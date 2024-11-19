@@ -27,6 +27,16 @@ func GetTitleDownloadLinks(id string,
 	fdla := nod.Begin("filtering downloads metadata links for %s...", id)
 	defer fdla.End()
 
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return "", nil, err
+	}
+
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.TitleProperty)
+	if err != nil {
+		return "", nil, err
+	}
+
 	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
 	if err != nil {
 		return "", nil, err
@@ -55,6 +65,10 @@ func GetTitleDownloadLinks(id string,
 
 	var downloadMetadata vangogh_local_data.DownloadMetadata
 	if err = json.NewDecoder(dmrc).Decode(&downloadMetadata); err != nil {
+		return "", nil, fdla.EndWithError(err)
+	}
+
+	if err := rdx.AddValues(vangogh_local_data.TitleProperty, id, downloadMetadata.Title); err != nil {
 		return "", nil, fdla.EndWithError(err)
 	}
 
