@@ -68,7 +68,7 @@ func GetTitleDownloadLinks(id string,
 		return "", nil, fdla.EndWithError(err)
 	}
 
-	if err := rdx.AddValues(vangogh_local_data.TitleProperty, id, downloadMetadata.Title); err != nil {
+	if err := rdx.AddValues(data.TitleProperty, id, downloadMetadata.Title); err != nil {
 		return "", nil, fdla.EndWithError(err)
 	}
 

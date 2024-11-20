@@ -40,6 +40,8 @@ install
     keep-downloads
     force
 
+list-installed
+
 native-install
     id^&*
     no-dlc
