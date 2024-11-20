@@ -22,7 +22,7 @@ func main() {
 
 	nod.EnableStdOutPresenter()
 
-	ns := nod.Begin("theo is improving your vangogh experience")
+	ns := nod.Begin("theo is complementing vangogh experience")
 	defer ns.End()
 
 	theoRootDir, err := data.InitRootDir()
