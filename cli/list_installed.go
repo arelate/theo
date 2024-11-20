@@ -18,12 +18,12 @@ func ListInstalled() error {
 	lia := nod.Begin("listing installed products...")
 	defer lia.EndWithResult("done")
 
-	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
+	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
 		return lia.EndWithError(err)
 	}
 
-	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
+	kvInstalledMetadata, err := kevlar.NewKeyValues(installedMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return lia.EndWithError(err)
 	}
@@ -46,7 +46,7 @@ func ListInstalled() error {
 		installationDir = setupInstallDir
 	}
 
-	ids, err := kvDownloadsMetadata.Keys()
+	ids, err := kvInstalledMetadata.Keys()
 	if err != nil {
 		return lia.EndWithError(err)
 	}

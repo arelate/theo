@@ -108,6 +108,11 @@ func placeExtractedProductDownloadLinks(id, title string, links []vangogh_local_
 				return pedla.EndWithError(err)
 			}
 		}
+		if linkOs == vangogh_local_data.Linux && linkExt == shExt {
+			if err := placeLinuxExtracts(link, productExtractsDir, installationDir, force); err != nil {
+				return pedla.EndWithError(err)
+			}
+		}
 	}
 
 	pedla.EndWithResult("done")
@@ -216,5 +221,9 @@ func placeMacOsDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 }
 
 func placeWindowsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir, installationDir string, force bool) error {
-	return errors.New("placing Windows extracts is not supported")
+	return errors.New("placing Windows extracts is not implemented")
+}
+
+func placeLinuxExtracts(link vangogh_local_data.DownloadLink, productExtractsDir, installationDir string, force bool) error {
+	return errors.New("placing Linux extracts is not implemented")
 }

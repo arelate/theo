@@ -65,6 +65,7 @@ func main() {
 		"reveal-installed":       cli.RevealInstalledHandler,
 		"reset-setup":            cli.ResetSetupHandler,
 		"test-setup":             cli.TestSetupHandler,
+		"uninstall":              cli.UninstallHandler,
 		"validate":               cli.ValidateHandler,
 		"version":                cli.VersionHandler,
 	})

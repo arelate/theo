@@ -90,6 +90,12 @@ reset-setup
 
 test-setup
 
+uninstall
+    id^&*
+    os&
+    keep-downloads
+    force
+
 validate
     id^&*
     os&
