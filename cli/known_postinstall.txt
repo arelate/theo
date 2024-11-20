@@ -7,6 +7,7 @@ ExecuteSupportScripts() {
     rm $script
   done
 }
+# Current version of location selection script
 gog_bundle_location=`osascript -e $'tell application "SystemUIServer" to try \n return POSIX path of (choose folder) \n on error errorMsg \n return errorMsg \n end try'`
 if [[ $gog_bundle_location == *"User canceled."* ]]
 then
@@ -17,6 +18,18 @@ if [[ $gog_bundle_location == *"SystemUIServer"* ]]
 then
   gog_bundle_location="/Applications/"
 fi
+# Older version of location selection script
+gog_bundle_location=`osascript -e 'tell application "SystemUIServer" to return POSIX path of (choose folder)' 2>&1`
+if [[ $gog_bundle_location == *"User canceled."* ]]
+then
+  echo "Aborted"
+  exit 1
+fi
+if [[ $gog_bundle_location == *"AppleEvent timed out"* ]]
+then
+  gog_bundle_location="/Applications/"
+fi
+# End Current/Older version of location selection script
 gog_full_path="${gog_bundle_location}${gog_bundle_name}"
 if [ "$gog_installer_type" != "dlc" ]; then
   if [ -d "${gog_full_path}" ]; then
