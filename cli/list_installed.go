@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
@@ -62,11 +63,10 @@ func ListInstalled() error {
 		if bn, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok {
 			bundleName = bn
 		}
-		if title != "" {
-			summary[id] = append(summary[id], title)
-		}
-		if bundleName != "" {
-			summary[id] = append(summary[id], filepath.Join(installationDir, bundleName))
+		if title != "" && bundleName != "" {
+			heading := fmt.Sprintf("%s (%s)", title, id)
+			bundlePath := filepath.Join(installationDir, bundleName)
+			summary[heading] = append(summary[heading], bundlePath)
 		}
 	}
 
