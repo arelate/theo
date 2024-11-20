@@ -70,7 +70,11 @@ func ListInstalled() error {
 		}
 	}
 
-	lia.EndWithSummary("installed:", summary)
+	if len(summary) == 0 {
+		lia.EndWithResult("found nothing")
+	} else {
+		lia.EndWithSummary("found the following products:", summary)
+	}
 
 	return nil
 }
