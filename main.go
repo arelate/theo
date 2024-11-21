@@ -58,6 +58,7 @@ func main() {
 		"native-install":         cli.NativeInstallHandler,
 		"pin-installed-metadata": cli.PinInstalledMetadataHandler,
 		"place-extracts":         cli.PlaceExtractsHandler,
+		"renew-certificates":     cli.RenewCertificatesHandler,
 		"serve":                  cli.ServeHandler,
 		"setup":                  cli.SetupHandler,
 		"remove-extracts":        cli.RemoveExtractsHandler,

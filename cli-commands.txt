@@ -70,6 +70,9 @@ remove-downloads
     os&
     lang-code&
 
+renew-certificates
+    force
+
 reveal-downloads
     id^&
 
@@ -79,7 +82,7 @@ reveal-installed
     lang-code&
 
 serve
-    port$*
+    port$
     stderr$
 
 setup

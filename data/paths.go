@@ -43,10 +43,11 @@ func InitRootDir() (string, error) {
 }
 
 const (
-	Backups   pathways.AbsDir = "backups"
-	Metadata  pathways.AbsDir = "metadata"
-	Downloads pathways.AbsDir = "downloads"
-	Extracts  pathways.AbsDir = "extracts"
+	Backups      pathways.AbsDir = "backups"
+	Metadata     pathways.AbsDir = "metadata"
+	Downloads    pathways.AbsDir = "downloads"
+	Extracts     pathways.AbsDir = "extracts"
+	Certificates pathways.AbsDir = "certs"
 )
 
 const (
@@ -66,4 +67,5 @@ var AllAbsDirs = []pathways.AbsDir{
 	Metadata,
 	Downloads,
 	Extracts,
+	Certificates,
 }
