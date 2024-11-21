@@ -13,3 +13,11 @@ const (
 	BundleNameProperty = "bundle-name"
 	TitleProperty      = "title"
 )
+
+func AllProperties() []string {
+	return []string{
+		SetupProperties,
+		BundleNameProperty,
+		TitleProperty,
+	}
+}

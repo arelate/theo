@@ -78,6 +78,10 @@ reveal-installed
     os&
     lang-code&
 
+serve
+    port$*
+    stderr$
+
 setup
     protocol
     address*
