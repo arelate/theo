@@ -17,9 +17,7 @@ import (
 )
 
 const (
-	pkgPathPfx              = "pkgpath=$(dirname \"$PACKAGE_PATH\")"
-	catCmdPfx               = "cat "
-	gameSpecificCodeComment = "#GAME_SPECIFIC_CODE"
+	catCmdPfx = "cat "
 )
 
 func FinalizeInstallationHandler(u *url.URL) error {
@@ -155,11 +153,6 @@ func processCustomCommands(commands []string, productDownloadsDir, bundleInstall
 	pcca.TotalInt(len(commands))
 
 	for _, cmd := range commands {
-		if strings.HasPrefix(cmd, pkgPathPfx) {
-			// do nothing, we'll be using downloads location as ${pkgpath}
-			pcca.Increment()
-			continue
-		}
 		if strings.HasPrefix(cmd, catCmdPfx) {
 			if catCmdParts := strings.Split(strings.TrimPrefix(cmd, catCmdPfx), " "); len(catCmdParts) == 3 {
 				srcGlob := strings.Trim(strings.Replace(catCmdParts[0], "\"${pkgpath}\"", productDownloadsDir, 1), "\"")
@@ -168,11 +161,6 @@ func processCustomCommands(commands []string, productDownloadsDir, bundleInstall
 					return pcca.EndWithError(err)
 				}
 			}
-			pcca.Increment()
-			continue
-		}
-		if strings.HasPrefix(cmd, gameSpecificCodeComment) {
-			// do nothing, this is a known comment
 			pcca.Increment()
 			continue
 		}

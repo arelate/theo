@@ -49,6 +49,9 @@ else
   mkdir -p "${gog_full_path}"
   mv payload/* "${gog_full_path}"
 fi
+pkgpath=$(dirname "$PACKAGE_PATH")
+#GOG_Large_File_Location
+#GAME_SPECIFIC_CODE
 ExecuteSupportScripts "${gog_full_path}"
 xattr -d com.apple.quarantine "${gog_full_path}"
 xattr -r -d com.apple.quarantine "${gog_full_path}"
