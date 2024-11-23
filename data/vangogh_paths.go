@@ -1,8 +1,8 @@
 package data
 
 const (
-	VangoghHealthPath            = "/health"
-	VangoghHealthAuthPath        = "/health-auth"
-	VangoghDownloadsMetadataPath = "/downloads-metadata"
+	VangoghHealthPath            = "/api/health"
+	VangoghHealthAuthPath        = "/api/health-auth"
+	VangoghDownloadsMetadataPath = "/api/downloads-metadata"
 	VangoghFilesPath             = "/files"
 )
