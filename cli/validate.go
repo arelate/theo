@@ -54,7 +54,7 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 	va := nod.NewProgress("validating downloads...")
 	defer va.End()
 
-	PrintParams(ids, operatingSystems, langCodes, nil)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil)
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {

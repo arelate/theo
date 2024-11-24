@@ -27,7 +27,7 @@ func RemoveDownloads(ids []string,
 	rda := nod.NewProgress("removing downloads...")
 	defer rda.End()
 
-	PrintParams(ids, operatingSystems, langCodes, nil)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil)
 
 	rda.TotalInt(len(ids))
 
