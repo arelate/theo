@@ -3,9 +3,9 @@ module github.com/arelate/theo
 go 1.23.3
 
 require (
-	github.com/arelate/vangogh_local_data v0.4.35
+	github.com/arelate/vangogh_local_data v0.4.37
 	github.com/boggydigital/backups v0.1.3
-	github.com/boggydigital/clo v1.0.4
+	github.com/boggydigital/clo v1.0.5
 	github.com/boggydigital/dolo v0.2.19
 	github.com/boggydigital/kevlar v0.5.19
 	github.com/boggydigital/nod v0.1.21
