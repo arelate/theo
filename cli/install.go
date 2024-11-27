@@ -30,7 +30,7 @@ func Install(ids []string,
 	ia := nod.Begin("installing products...")
 	defer ia.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	if err := Backup(); err != nil {
 		return err

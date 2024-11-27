@@ -36,7 +36,7 @@ func Extract(ids []string,
 	ea := nod.NewProgress("extracting installers game data...")
 	defer ea.End()
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	ea.TotalInt(len(ids))
 

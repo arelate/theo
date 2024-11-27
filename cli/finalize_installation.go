@@ -35,7 +35,7 @@ func FinalizeInstallation(ids []string,
 	fia := nod.NewProgress("finalizing installation...")
 	defer fia.End()
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, nil, nil)
+	vangogh_local_data.PrintParams(ids, operatingSystems, nil, nil, true)
 
 	fia.TotalInt(len(ids))
 

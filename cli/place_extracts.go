@@ -37,7 +37,7 @@ func PlaceExtracts(ids []string,
 	pea := nod.NewProgress("placing extracts to the installation directory...")
 	defer pea.End()
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	pea.TotalInt(len(ids))
 

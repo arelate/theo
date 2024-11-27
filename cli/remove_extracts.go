@@ -28,7 +28,7 @@ func RemoveExtracts(ids []string,
 	rea := nod.NewProgress("removing extracts...")
 	defer rea.End()
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
 
 	rea.TotalInt(len(ids))
 

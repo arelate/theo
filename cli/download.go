@@ -30,7 +30,7 @@ func Download(ids []string,
 	da := nod.NewProgress("downloading game data from vangogh...")
 	defer da.End()
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	da.TotalInt(len(ids))
 

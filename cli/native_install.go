@@ -31,7 +31,7 @@ func NativeInstall(ids []string,
 	nia := nod.NewProgress("running native OS installation methods...")
 	defer nia.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	nia.TotalInt(len(ids))
 
