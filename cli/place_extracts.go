@@ -64,8 +64,8 @@ func PlaceExtracts(ids []string,
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
-			if err = placeExtractedProductDownloadLinks(id, title, links, installationDir, force); err != nil {
+		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
+			if err = placeExtractedProductDownloadLinks(id, metadata, installationDir, force); err != nil {
 				return pea.EndWithError(err)
 			}
 		} else {
@@ -81,9 +81,9 @@ func PlaceExtracts(ids []string,
 
 }
 
-func placeExtractedProductDownloadLinks(id, title string, links []vangogh_local_data.DownloadLink, installationDir string, force bool) error {
+func placeExtractedProductDownloadLinks(id string, metadata *vangogh_local_data.DownloadMetadata, installationDir string, force bool) error {
 
-	pedla := nod.NewProgress(" placing extracted data for %s...", title)
+	pedla := nod.NewProgress(" placing extracted data for %s...", metadata.Title)
 	defer pedla.End()
 
 	extractsDir, err := pathways.GetAbsDir(data.Extracts)
@@ -93,7 +93,7 @@ func placeExtractedProductDownloadLinks(id, title string, links []vangogh_local_
 
 	productExtractsDir := filepath.Join(extractsDir, id)
 
-	for _, link := range links {
+	for _, link := range metadata.DownloadLinks {
 
 		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
 		linkExt := filepath.Ext(link.LocalFilename)

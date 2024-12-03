@@ -42,8 +42,8 @@ func Extract(ids []string,
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
-			if err = extractProductDownloadLinks(id, title, links, force); err != nil {
+		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
+			if err = extractProductDownloadLinks(id, metadata, force); err != nil {
 				return ea.EndWithError(err)
 			}
 		} else {
@@ -58,9 +58,9 @@ func Extract(ids []string,
 	return nil
 }
 
-func extractProductDownloadLinks(id, title string, links []vangogh_local_data.DownloadLink, force bool) error {
+func extractProductDownloadLinks(id string, metadata *vangogh_local_data.DownloadMetadata, force bool) error {
 
-	epdla := nod.NewProgress(" extracting %s, please wait...", title)
+	epdla := nod.NewProgress(" extracting %s, please wait...", metadata.Title)
 	defer epdla.End()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
@@ -82,7 +82,7 @@ func extractProductDownloadLinks(id, title string, links []vangogh_local_data.Do
 		}
 	}
 
-	for _, link := range links {
+	for _, link := range metadata.DownloadLinks {
 
 		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
 		linkExt := filepath.Ext(link.LocalFilename)

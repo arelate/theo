@@ -12,6 +12,7 @@ const (
 
 	BundleNameProperty = "bundle-name"
 	TitleProperty      = "title"
+	SlugProperty       = "slug"
 )
 
 func AllProperties() []string {

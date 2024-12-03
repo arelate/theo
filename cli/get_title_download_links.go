@@ -10,11 +10,11 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func GetTitleDownloadLinks(id string,
+func GetDownloadMetadata(id string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
-	force bool) (string, []vangogh_local_data.DownloadLink, error) {
+	force bool) (*vangogh_local_data.DownloadMetadata, error) {
 
 	// if not download-type was specified - add all to avoid filtering on them
 	if downloadTypes == nil {
@@ -29,47 +29,53 @@ func GetTitleDownloadLinks(id string,
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.TitleProperty)
+	rdx, err := kevlar.NewReduxWriter(reduxDir,
+		data.TitleProperty,
+		data.SlugProperty)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	if has, err := kvDownloadsMetadata.Has(id); err == nil {
 		if !has {
 			if err = GetDownloadsMetadata([]string{id}, force); err != nil {
-				return "", nil, fdla.EndWithError(err)
+				return nil, fdla.EndWithError(err)
 			}
 		}
 	} else {
-		return "", nil, fdla.EndWithError(err)
+		return nil, fdla.EndWithError(err)
 	}
 
 	dmrc, err := kvDownloadsMetadata.Get(id)
 	if err != nil {
-		return "", nil, fdla.EndWithError(err)
+		return nil, fdla.EndWithError(err)
 	}
 	defer dmrc.Close()
 
 	var downloadMetadata vangogh_local_data.DownloadMetadata
 	if err = json.NewDecoder(dmrc).Decode(&downloadMetadata); err != nil {
-		return "", nil, fdla.EndWithError(err)
+		return nil, fdla.EndWithError(err)
 	}
 
-	if err := rdx.AddValues(data.TitleProperty, id, downloadMetadata.Title); err != nil {
-		return "", nil, fdla.EndWithError(err)
+	if err := rdx.ReplaceValues(data.TitleProperty, id, downloadMetadata.Title); err != nil {
+		return nil, fdla.EndWithError(err)
+	}
+
+	if err := rdx.ReplaceValues(data.SlugProperty, id, downloadMetadata.Slug); err != nil {
+		return nil, fdla.EndWithError(err)
 	}
 
 	var downloadLinks []vangogh_local_data.DownloadLink
@@ -85,10 +91,12 @@ func GetTitleDownloadLinks(id string,
 		}
 	}
 
+	downloadMetadata.DownloadLinks = downloadLinks
+
 	if len(downloadLinks) == 0 {
 		fdla.EndWithResult("no links found (%d total)", len(downloadMetadata.DownloadLinks))
-		return downloadMetadata.Title, nil, nil
+		return nil, nil
 	}
 
-	return downloadMetadata.Title, downloadLinks, nil
+	return &downloadMetadata, nil
 }

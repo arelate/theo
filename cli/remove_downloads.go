@@ -38,8 +38,8 @@ func RemoveDownloads(ids []string,
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, force); err == nil {
-			if err = removeProductDownloadLinks(id, title, downloadsDir, links); err != nil {
+		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, nil, force); err == nil {
+			if err = removeProductDownloadLinks(id, metadata, downloadsDir); err != nil {
 				return rda.EndWithError(err)
 			}
 		} else {
@@ -54,11 +54,11 @@ func RemoveDownloads(ids []string,
 	return nil
 }
 
-func removeProductDownloadLinks(id, title string,
-	downloadsDir string,
-	downloadLinks []vangogh_local_data.DownloadLink) error {
+func removeProductDownloadLinks(id string,
+	metadata *vangogh_local_data.DownloadMetadata,
+	downloadsDir string) error {
 
-	rdla := nod.Begin(" removing downloads for %s...", title)
+	rdla := nod.Begin(" removing downloads for %s...", metadata.Title)
 	defer rdla.End()
 
 	idPath := filepath.Join(downloadsDir, id)
@@ -67,7 +67,7 @@ func removeProductDownloadLinks(id, title string,
 		return nil
 	}
 
-	for _, dl := range downloadLinks {
+	for _, dl := range metadata.DownloadLinks {
 
 		path := filepath.Join(downloadsDir, id, dl.LocalFilename)
 

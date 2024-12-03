@@ -57,8 +57,8 @@ func NativeInstall(ids []string,
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
-			if err = nativeProductInstall(id, title, downloadsDir, installationDir, links); err != nil {
+		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
+			if err = nativeProductInstall(id, metadata, downloadsDir, installationDir); err != nil {
 				return nia.EndWithError(err)
 			}
 		} else {
@@ -71,13 +71,13 @@ func NativeInstall(ids []string,
 	return nil
 }
 
-func nativeProductInstall(id, title string, downloadsDir, installationDir string, links []vangogh_local_data.DownloadLink) error {
-	npia := nod.Begin(" natively installing %s...", title)
+func nativeProductInstall(id string, metadata *vangogh_local_data.DownloadMetadata, downloadsDir, installationDir string) error {
+	npia := nod.Begin(" natively installing %s...", metadata.Title)
 	defer npia.EndWithResult("done")
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
-	for _, link := range links {
+	for _, link := range metadata.DownloadLinks {
 		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
 		linkExt := filepath.Ext(link.LocalFilename)
 		localFilePath := filepath.Join(productDownloadsDir, link.LocalFilename)

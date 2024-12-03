@@ -51,14 +51,13 @@ func Download(ids []string,
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id,
+		if metadata, err := GetDownloadMetadata(id,
 			operatingSystems,
 			langCodes,
 			downloadTypes,
 			force); err == nil {
 			if err = getProductDownloadLinks(id,
-				title,
-				links,
+				metadata,
 				downloadsDir,
 				rdx,
 				force); err != nil {
@@ -76,13 +75,13 @@ func Download(ids []string,
 	return nil
 }
 
-func getProductDownloadLinks(id, title string,
-	downloadLinks []vangogh_local_data.DownloadLink,
+func getProductDownloadLinks(id string,
+	metadata *vangogh_local_data.DownloadMetadata,
 	downloadsDir string,
 	rdx kevlar.ReadableRedux,
 	force bool) error {
 
-	gpdla := nod.Begin(" downloading %s...", title)
+	gpdla := nod.Begin(" downloading %s...", metadata.Title)
 	defer gpdla.End()
 
 	if err := rdx.MustHave(data.SetupProperties); err != nil {
@@ -97,7 +96,7 @@ func getProductDownloadLinks(id, title string,
 		}
 	}
 
-	for _, dl := range downloadLinks {
+	for _, dl := range metadata.DownloadLinks {
 
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 

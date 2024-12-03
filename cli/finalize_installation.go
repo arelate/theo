@@ -58,8 +58,8 @@ func FinalizeInstallation(ids []string,
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, installerDownloadType, false); err == nil {
-			if err = finalizeProductInstallation(id, title, links, installationDir, rdx); err != nil {
+		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, installerDownloadType, false); err == nil {
+			if err = finalizeProductInstallation(id, metadata, installationDir, rdx); err != nil {
 				return fia.EndWithError(err)
 			}
 		} else {
@@ -74,11 +74,11 @@ func FinalizeInstallation(ids []string,
 	return nil
 }
 
-func finalizeProductInstallation(id, title string,
-	links []vangogh_local_data.DownloadLink,
+func finalizeProductInstallation(id string,
+	metadata *vangogh_local_data.DownloadMetadata,
 	installationDir string,
 	rdx kevlar.WriteableRedux) error {
-	fpia := nod.NewProgress(" finalizing installation for %s...", title)
+	fpia := nod.NewProgress(" finalizing installation for %s...", metadata.Title)
 	defer fpia.End()
 
 	extractsDir, err := pathways.GetAbsDir(data.Extracts)
@@ -95,7 +95,7 @@ func finalizeProductInstallation(id, title string,
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
-	for _, link := range links {
+	for _, link := range metadata.DownloadLinks {
 
 		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
 		if linkOs != vangogh_local_data.MacOS {

@@ -63,8 +63,8 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 
 	for _, id := range ids {
 
-		if title, links, err := GetTitleDownloadLinks(id, operatingSystems, langCodes, nil, false); err == nil {
-			if err = validateLinks(id, title, links, downloadsDir); err != nil {
+		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, nil, false); err == nil {
+			if err = validateLinks(id, metadata, downloadsDir); err != nil {
 				return va.EndWithError(err)
 			}
 		} else {
@@ -77,16 +77,16 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 	return nil
 }
 
-func validateLinks(id, title string, downloadLinks []vangogh_local_data.DownloadLink, downloadsDir string) error {
+func validateLinks(id string, metadata *vangogh_local_data.DownloadMetadata, downloadsDir string) error {
 
-	vla := nod.NewProgress("validating %s...", title)
+	vla := nod.NewProgress("validating %s...", metadata.Title)
 	defer vla.End()
 
-	vla.TotalInt(len(downloadLinks))
+	vla.TotalInt(len(metadata.DownloadLinks))
 
-	results := make([]ValidationResult, 0, len(downloadLinks))
+	results := make([]ValidationResult, 0, len(metadata.DownloadLinks))
 
-	for _, dl := range downloadLinks {
+	for _, dl := range metadata.DownloadLinks {
 		vr, err := validateLink(id, dl, downloadsDir)
 		if err != nil {
 			vla.Error(err)
