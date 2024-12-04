@@ -159,7 +159,7 @@ func cacheRepoReleases(ghr *data.GitHubRepository, releases []github_integration
 
 func cacheRepoRelease(ghr *data.GitHubRepository, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
 
-	crra := nod.Begin(" %s...", release.Name)
+	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.EndWithResult("done")
 
 	asset, err := selectAsset(ghr, release)
@@ -177,9 +177,9 @@ func cacheRepoRelease(ghr *data.GitHubRepository, release *github_integration.Gi
 		return crra.EndWithError(err)
 	}
 
-	destDir := filepath.Join(binariesDir, ghr.String(), busan.Sanitize(release.Name))
+	destDir := filepath.Join(binariesDir, ghr.String(), busan.Sanitize(release.TagName))
 
-	dra := nod.NewProgress(" - %s", asset.Name)
+	dra := nod.NewProgress(" - asset: %s", asset.Name)
 	defer dra.EndWithResult("done")
 
 	if err := dc.Download(ru, force, dra, destDir); err != nil {
