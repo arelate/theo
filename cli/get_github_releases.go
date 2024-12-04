@@ -10,6 +10,11 @@ import (
 	"github.com/boggydigital/pathways"
 	"net/http"
 	"net/url"
+	"time"
+)
+
+const (
+	forceUpdateDays = 30
 )
 
 func GetGitHubReleasesHandler(u *url.URL) error {
@@ -22,32 +27,45 @@ func GetGitHubReleasesHandler(u *url.URL) error {
 
 func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, force bool) error {
 
-	glra := nod.Begin("getting latest GitHub releases...")
-	defer glra.EndWithResult("done")
+	gra := nod.Begin("getting GitHub releases...")
+	defer gra.EndWithResult("done")
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return gra.EndWithError(err)
+	}
+
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.GitHubReleasesUpdatedProperty)
+	if err != nil {
+		return gra.EndWithError(err)
+	}
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
-		return glra.EndWithError(err)
+		return gra.EndWithError(err)
 	}
 
 	kvGitHubReleases, err := kevlar.NewKeyValues(gitHubReleasesDir, kevlar.JsonExt)
 	if err != nil {
-		return glra.EndWithError(err)
+		return gra.EndWithError(err)
 	}
 
 	for _, os := range operatingSystems {
+
+		forceRepoUpdate := force
+
 		for _, repo := range data.OperatingSystemRepos[os] {
-			has, err := kvGitHubReleases.Has(repo.String())
-			if err != nil {
-				return glra.EndWithError(err)
+
+			if ghru, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.String()); ok && ghru != "" {
+				if ghrut, err := time.Parse(time.RFC3339, ghru); err == nil {
+					if ghrut.AddDate(0, 0, forceUpdateDays).Before(time.Now()) {
+						forceRepoUpdate = true
+					}
+				}
 			}
 
-			if has && !force {
-				continue
-			}
-
-			if err := getRepoLatestReleases(&repo, kvGitHubReleases); err != nil {
-				return glra.EndWithError(err)
+			if err := getRepoReleases(&repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
+				return gra.EndWithError(err)
 			}
 		}
 	}
@@ -55,10 +73,20 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 	return nil
 }
 
-func getRepoLatestReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.KeyValues) error {
+func getRepoReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.KeyValues, rdx kevlar.WriteableRedux, force bool) error {
 
 	grlra := nod.Begin(" %s...", ghr.String())
-	grlra.EndWithResult("done")
+	defer grlra.EndWithResult("done")
+
+	has, err := kvGitHubReleases.Has(ghr.String())
+	if err != nil {
+		return grlra.EndWithError(err)
+	}
+
+	if has && !force {
+		grlra.EndWithResult("skipped existing")
+		return nil
+	}
 
 	ghru := github_integration.ReleasesUrl(ghr.Owner, ghr.Repo)
 
@@ -72,5 +100,11 @@ func getRepoLatestReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.K
 		return grlra.EndWithError(errors.New(resp.Status))
 	}
 
-	return kvGitHubReleases.Set(ghr.String(), resp.Body)
+	if err := kvGitHubReleases.Set(ghr.String(), resp.Body); err != nil {
+		return grlra.EndWithError(err)
+	}
+
+	ft := time.Now().Format(time.RFC3339)
+	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, ghr.String(), ft)
+
 }

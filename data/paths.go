@@ -75,4 +75,5 @@ var AllAbsDirs = []pathways.AbsDir{
 	Metadata,
 	Downloads,
 	Extracts,
+	Cellars,
 }

@@ -8,6 +8,14 @@
 
 backup
 
+cache-github-releases
+    os&
+    owner
+    repo
+    tag&
+    all
+    force
+
 download
     id^&*
     no-dlc

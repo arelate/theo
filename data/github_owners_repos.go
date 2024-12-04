@@ -6,9 +6,10 @@ import (
 )
 
 type GitHubRepository struct {
-	Owner       string
-	Repo        string
-	Description string
+	Owner          string
+	Repo           string
+	Description    string
+	AssetSelectors []string
 }
 
 func (ghr *GitHubRepository) String() string {
@@ -17,9 +18,10 @@ func (ghr *GitHubRepository) String() string {
 
 var MacOsWineStaging = GitHubRepository{
 	//https://github.com/Gcenx/macOS_Wine_builds
-	Owner:       "Gcenx",
-	Repo:        "macOS_Wine_builds",
-	Description: "Official Winehq macOS Packages",
+	Owner:          "Gcenx",
+	Repo:           "macOS_Wine_builds",
+	Description:    "Official Winehq macOS Packages",
+	AssetSelectors: []string{"wine-stable", "wine-staging"},
 }
 
 var MacOsDxVk = GitHubRepository{
@@ -38,9 +40,10 @@ var MacOsGamePortingToolkit = GitHubRepository{
 
 var LinuxGeProton = GitHubRepository{
 	//https://github.com/GloriousEggroll/proton-ge-custom
-	Owner:       "GloriousEggroll",
-	Repo:        "proton-ge-custom",
-	Description: "Compatibility tool for Steam Play based on Wine and additional components",
+	Owner:          "GloriousEggroll",
+	Repo:           "proton-ge-custom",
+	Description:    "Compatibility tool for Steam Play based on Wine and additional components",
+	AssetSelectors: []string{".tar.gz"},
 }
 
 var OperatingSystemRepos = map[vangogh_local_data.OperatingSystem][]GitHubRepository{

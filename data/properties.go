@@ -13,6 +13,8 @@ const (
 	BundleNameProperty = "bundle-name"
 	TitleProperty      = "title"
 	SlugProperty       = "slug"
+
+	GitHubReleasesUpdatedProperty = "github-releases-updated"
 )
 
 func AllProperties() []string {
