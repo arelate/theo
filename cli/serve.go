@@ -2,14 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"github.com/arelate/theo/data"
 	"github.com/arelate/theo/rest"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"strconv"
 )
 
@@ -39,23 +36,11 @@ func Serve(port int, stderr bool) error {
 		nod.DisableOutput(nod.StdOut)
 	}
 
-	if err := RenewCertificates(false); err != nil {
-		return err
-	}
-
 	if err := rest.Init(); err != nil {
 		return err
 	}
 
 	rest.HandleFuncs()
 
-	certsDir, err := pathways.GetAbsDir(data.Certificates)
-	if err != nil {
-		return err
-	}
-
-	certPath := filepath.Join(certsDir, certFilename)
-	priveKeyPath := filepath.Join(certsDir, privKeyFilename)
-
-	return http.ListenAndServeTLS(fmt.Sprintf(":%d", port), certPath, priveKeyPath, nil)
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }

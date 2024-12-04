@@ -43,23 +43,31 @@ func InitRootDir() (string, error) {
 }
 
 const (
-	Backups      pathways.AbsDir = "backups"
-	Metadata     pathways.AbsDir = "metadata"
-	Downloads    pathways.AbsDir = "downloads"
-	Extracts     pathways.AbsDir = "extracts"
-	Certificates pathways.AbsDir = "certs"
+	Backups   pathways.AbsDir = "backups"
+	Metadata  pathways.AbsDir = "metadata"
+	Downloads pathways.AbsDir = "downloads"
+	Extracts  pathways.AbsDir = "extracts"
+	Cellars   pathways.AbsDir = "cellars"
 )
 
 const (
 	Redux             pathways.RelDir = "_redux"
 	DownloadsMetadata pathways.RelDir = "downloads-metadata"
 	InstalledMetadata pathways.RelDir = "installed-metadata"
+	GitHubReleases    pathways.RelDir = "github-releases"
+	Releases          pathways.RelDir = "rel"
+	Binaries          pathways.RelDir = "bin"
+	Prefixes          pathways.RelDir = "pfx"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	Redux:             Metadata,
 	DownloadsMetadata: Metadata,
 	InstalledMetadata: Metadata,
+	GitHubReleases:    Metadata,
+	Releases:          Cellars,
+	Binaries:          Cellars,
+	Prefixes:          Cellars,
 }
 
 var AllAbsDirs = []pathways.AbsDir{
@@ -67,5 +75,4 @@ var AllAbsDirs = []pathways.AbsDir{
 	Metadata,
 	Downloads,
 	Extracts,
-	Certificates,
 }
