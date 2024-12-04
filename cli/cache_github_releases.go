@@ -48,6 +48,9 @@ func releaseSelectorFromUrl(u *url.URL) *GitHubReleaseSelector {
 
 func selectReleases(ghr *data.GitHubRepository, releases []github_integration.GitHubRelease, selector *GitHubReleaseSelector) []github_integration.GitHubRelease {
 	if selector == nil {
+		if len(releases) > 0 {
+			return []github_integration.GitHubRelease{releases[0]}
+		}
 		return releases
 	}
 
@@ -83,10 +86,10 @@ func CacheGitHubReleasesHandler(u *url.URL) error {
 	q := u.Query()
 
 	operatingSystems, _, _ := OsLangCodeDownloadType(u)
-	releseSelector := releaseSelectorFromUrl(u)
+	releaseSelector := releaseSelectorFromUrl(u)
 	force := q.Has("force")
 
-	return CacheGitHubReleases(operatingSystems, releseSelector, force)
+	return CacheGitHubReleases(operatingSystems, releaseSelector, force)
 }
 
 func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector, force bool) error {
