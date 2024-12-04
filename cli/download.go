@@ -28,7 +28,7 @@ func Download(ids []string,
 	force bool) error {
 
 	da := nod.NewProgress("downloading game data from vangogh...")
-	defer da.End()
+	defer da.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
@@ -69,8 +69,6 @@ func Download(ids []string,
 
 		da.Increment()
 	}
-
-	da.EndWithResult("done")
 
 	return nil
 }

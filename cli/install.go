@@ -84,7 +84,5 @@ func Install(ids []string,
 		return err
 	}
 
-	ia.EndWithResult("done")
-
 	return nil
 }

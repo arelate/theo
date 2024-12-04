@@ -52,7 +52,7 @@ func ValidateHandler(u *url.URL) error {
 func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSystem, langCodes []string) error {
 
 	va := nod.NewProgress("validating downloads...")
-	defer va.End()
+	defer va.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
 
@@ -71,8 +71,6 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 			return va.EndWithError(err)
 		}
 	}
-
-	va.EndWithResult("done")
 
 	return nil
 }

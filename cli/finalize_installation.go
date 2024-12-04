@@ -33,7 +33,7 @@ func FinalizeInstallation(ids []string,
 	langCodes []string) error {
 
 	fia := nod.NewProgress("finalizing installation...")
-	defer fia.End()
+	defer fia.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, nil, nil, true)
 
@@ -69,8 +69,6 @@ func FinalizeInstallation(ids []string,
 		fia.Increment()
 	}
 
-	fia.EndWithResult("done")
-
 	return nil
 }
 
@@ -78,8 +76,9 @@ func finalizeProductInstallation(id string,
 	metadata *vangogh_local_data.DownloadMetadata,
 	installationDir string,
 	rdx kevlar.WriteableRedux) error {
+
 	fpia := nod.NewProgress(" finalizing installation for %s...", metadata.Title)
-	defer fpia.End()
+	defer fpia.EndWithResult("done")
 
 	extractsDir, err := pathways.GetAbsDir(data.Extracts)
 	if err != nil {
@@ -134,7 +133,6 @@ func finalizeProductInstallation(id string,
 		}
 	}
 
-	fpia.EndWithResult("done")
 	return nil
 }
 

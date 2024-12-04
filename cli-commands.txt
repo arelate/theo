@@ -16,6 +16,9 @@ cache-github-releases
     all
     force
 
+cleanup-github-releases
+    os&
+
 download
     id^&*
     no-dlc

@@ -20,7 +20,7 @@ func PinInstalledMetadataHandler(u *url.URL) error {
 func PinInstalledMetadata(ids []string, force bool) error {
 
 	pima := nod.NewProgress("pinning metadata as installed...")
-	defer pima.End()
+	defer pima.EndWithResult("done")
 
 	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
 	if err != nil {
@@ -53,8 +53,6 @@ func PinInstalledMetadata(ids []string, force bool) error {
 		pima.Increment()
 
 	}
-
-	pima.EndWithResult("done")
 
 	return nil
 }

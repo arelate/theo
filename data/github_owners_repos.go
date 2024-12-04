@@ -6,10 +6,11 @@ import (
 )
 
 type GitHubRepository struct {
-	Owner          string
-	Repo           string
-	Description    string
-	AssetSelectors []string
+	Owner        string
+	Repo         string
+	Description  string
+	AssetInclude []string
+	AssetExclude []string
 }
 
 func (ghr *GitHubRepository) String() string {
@@ -18,17 +19,18 @@ func (ghr *GitHubRepository) String() string {
 
 var MacOsWineStaging = GitHubRepository{
 	//https://github.com/Gcenx/macOS_Wine_builds
-	Owner:          "Gcenx",
-	Repo:           "macOS_Wine_builds",
-	Description:    "Official Winehq macOS Packages",
-	AssetSelectors: []string{"wine-stable", "wine-staging"},
+	Owner:        "Gcenx",
+	Repo:         "macOS_Wine_builds",
+	Description:  "Official Winehq macOS Packages",
+	AssetInclude: []string{"wine-stable", "wine-staging"},
 }
 
 var MacOsDxVk = GitHubRepository{
 	//https://github.com/Gcenx/DXVK-macOS
-	Owner:       "Gcenx",
-	Repo:        "DXVK-macOS",
-	Description: "Vulkan-based implementation of D3D10 and D3D11 for macOS / Wine",
+	Owner:        "Gcenx",
+	Repo:         "DXVK-macOS",
+	Description:  "Vulkan-based implementation of D3D10 and D3D11 for macOS / Wine",
+	AssetExclude: []string{"CrossOver", "crossover", "async"},
 }
 
 var MacOsGamePortingToolkit = GitHubRepository{
@@ -40,10 +42,10 @@ var MacOsGamePortingToolkit = GitHubRepository{
 
 var LinuxGeProton = GitHubRepository{
 	//https://github.com/GloriousEggroll/proton-ge-custom
-	Owner:          "GloriousEggroll",
-	Repo:           "proton-ge-custom",
-	Description:    "Compatibility tool for Steam Play based on Wine and additional components",
-	AssetSelectors: []string{".tar.gz"},
+	Owner:        "GloriousEggroll",
+	Repo:         "proton-ge-custom",
+	Description:  "Compatibility tool for Steam Play based on Wine and additional components",
+	AssetInclude: []string{".tar.gz"},
 }
 
 var OperatingSystemRepos = map[vangogh_local_data.OperatingSystem][]GitHubRepository{

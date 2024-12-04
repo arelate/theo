@@ -62,12 +62,3 @@ func RevealInstalled(ids []string,
 
 	return nil
 }
-
-func revealProductInstallation(title string, link vangogh_local_data.DownloadLink) error {
-	rpia := nod.Begin(" revealing %s...", title)
-	defer rpia.End()
-
-	rpia.EndWithResult("done")
-
-	return nil
-}

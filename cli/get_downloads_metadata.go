@@ -22,7 +22,7 @@ func GetDownloadsMetadataHandler(u *url.URL) error {
 func GetDownloadsMetadata(ids []string, force bool) error {
 
 	gdma := nod.NewProgress("getting downloads metadata...")
-	defer gdma.End()
+	defer gdma.EndWithResult("done")
 
 	gdma.TotalInt(len(ids))
 
@@ -54,8 +54,6 @@ func GetDownloadsMetadata(ids []string, force bool) error {
 
 		gdma.Increment()
 	}
-
-	gdma.EndWithResult("done")
 
 	return nil
 }

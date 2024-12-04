@@ -26,7 +26,7 @@ func RemoveExtracts(ids []string,
 	force bool) error {
 
 	rea := nod.NewProgress("removing extracts...")
-	defer rea.End()
+	defer rea.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
 
@@ -50,8 +50,6 @@ func RemoveExtracts(ids []string,
 		rea.Increment()
 	}
 
-	rea.EndWithResult("done")
-
 	return nil
 }
 
@@ -60,7 +58,7 @@ func removeProductExtracts(id string,
 	extractsDir string) error {
 
 	rela := nod.Begin(" removing extracts for %s...", metadata.Title)
-	defer rela.End()
+	defer rela.EndWithResult("done")
 
 	idPath := filepath.Join(extractsDir, id)
 	if _, err := os.Stat(idPath); os.IsNotExist(err) {
@@ -86,23 +84,11 @@ func removeProductExtracts(id string,
 		fa.EndWithResult("done")
 	}
 
-	if entries, err := os.ReadDir(idPath); err == nil && len(entries) == 0 {
-		rdda := nod.Begin(" removing empty product extracts directory...")
-		if err := os.Remove(idPath); err != nil {
-			return rdda.EndWithError(err)
-		}
-		rdda.EndWithResult("done")
-	} else if err == nil && hasOnlyDSStore(entries) {
-		rdda := nod.Begin(" removing product extracts directory with .DS_Store...")
-		if err := os.RemoveAll(idPath); err != nil {
-			return rdda.EndWithError(err)
-		}
-		rdda.EndWithResult("done")
-	} else if err != nil {
-		return rela.EndWithError(err)
+	rdda := nod.Begin(" removing empty product extracts directory...")
+	if err := removeDirIfEmpty(idPath); err != nil {
+		return rdda.EndWithError(err)
 	}
-
-	rela.EndWithResult("done")
+	rdda.EndWithResult("done")
 
 	return nil
 }
@@ -112,4 +98,19 @@ func hasOnlyDSStore(entries []fs.DirEntry) bool {
 		return entries[0].Name() == ".DS_Store"
 	}
 	return false
+}
+
+func removeDirIfEmpty(dirPath string) error {
+	if entries, err := os.ReadDir(dirPath); err == nil && len(entries) == 0 {
+		if err := os.Remove(dirPath); err != nil {
+			return err
+		}
+	} else if err == nil && hasOnlyDSStore(entries) {
+		if err := os.RemoveAll(dirPath); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	return nil
 }

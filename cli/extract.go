@@ -34,7 +34,7 @@ func Extract(ids []string,
 	force bool) error {
 
 	ea := nod.NewProgress("extracting installers game data...")
-	defer ea.End()
+	defer ea.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
@@ -53,15 +53,13 @@ func Extract(ids []string,
 		ea.Increment()
 	}
 
-	ea.EndWithResult("done")
-
 	return nil
 }
 
 func extractProductDownloadLinks(id string, metadata *vangogh_local_data.DownloadMetadata, force bool) error {
 
 	epdla := nod.NewProgress(" extracting %s, please wait...", metadata.Title)
-	defer epdla.End()
+	defer epdla.EndWithResult("done")
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
@@ -98,8 +96,6 @@ func extractProductDownloadLinks(id string, metadata *vangogh_local_data.Downloa
 			}
 		}
 	}
-
-	epdla.EndWithResult("done")
 
 	return nil
 }

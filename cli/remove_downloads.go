@@ -25,7 +25,7 @@ func RemoveDownloads(ids []string,
 	force bool) error {
 
 	rda := nod.NewProgress("removing downloads...")
-	defer rda.End()
+	defer rda.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
 
@@ -49,8 +49,6 @@ func RemoveDownloads(ids []string,
 		rda.Increment()
 	}
 
-	rda.EndWithResult("done")
-
 	return nil
 }
 
@@ -59,7 +57,7 @@ func removeProductDownloadLinks(id string,
 	downloadsDir string) error {
 
 	rdla := nod.Begin(" removing downloads for %s...", metadata.Title)
-	defer rdla.End()
+	defer rdla.EndWithResult("done")
 
 	idPath := filepath.Join(downloadsDir, id)
 	if _, err := os.Stat(idPath); os.IsNotExist(err) {
@@ -95,8 +93,6 @@ func removeProductDownloadLinks(id string,
 	} else {
 		return rdla.EndWithError(err)
 	}
-
-	rdla.EndWithResult("done")
 
 	return nil
 }

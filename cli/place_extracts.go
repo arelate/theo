@@ -35,7 +35,7 @@ func PlaceExtracts(ids []string,
 	force bool) error {
 
 	pea := nod.NewProgress("placing extracts to the installation directory...")
-	defer pea.End()
+	defer pea.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
@@ -75,8 +75,6 @@ func PlaceExtracts(ids []string,
 		pea.Increment()
 	}
 
-	pea.EndWithResult("done")
-
 	return nil
 
 }
@@ -84,7 +82,7 @@ func PlaceExtracts(ids []string,
 func placeExtractedProductDownloadLinks(id string, metadata *vangogh_local_data.DownloadMetadata, installationDir string, force bool) error {
 
 	pedla := nod.NewProgress(" placing extracted data for %s...", metadata.Title)
-	defer pedla.End()
+	defer pedla.EndWithResult("done")
 
 	extractsDir, err := pathways.GetAbsDir(data.Extracts)
 	if err != nil {
@@ -114,8 +112,6 @@ func placeExtractedProductDownloadLinks(id string, metadata *vangogh_local_data.
 			}
 		}
 	}
-
-	pedla.EndWithResult("done")
 
 	return nil
 }
