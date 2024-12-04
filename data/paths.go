@@ -43,7 +43,6 @@ func InitRootDir() (string, error) {
 }
 
 const (
-	Config    pathways.AbsDir = "_config"
 	Backups   pathways.AbsDir = "backups"
 	Metadata  pathways.AbsDir = "metadata"
 	Downloads pathways.AbsDir = "downloads"
@@ -72,7 +71,6 @@ var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 }
 
 var AllAbsDirs = []pathways.AbsDir{
-	Config,
 	Backups,
 	Metadata,
 	Downloads,
