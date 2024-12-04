@@ -54,11 +54,11 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 
 		forceRepoUpdate := force
 
-		for _, repo := range data.OperatingSystemRepos[os] {
+		for _, repo := range data.OsGitHubSources[os] {
 
-			if ghru, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.String()); ok && ghru != "" {
-				if ghrut, err := time.Parse(time.RFC3339, ghru); err == nil {
-					if ghrut.AddDate(0, 0, forceUpdateDays).Before(time.Now()) {
+			if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.String()); ok && ghsu != "" {
+				if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
+					if ghsut.AddDate(0, 0, forceUpdateDays).Before(time.Now()) {
 						forceRepoUpdate = true
 					}
 				}
@@ -73,12 +73,12 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 	return nil
 }
 
-func getRepoReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.KeyValues, rdx kevlar.WriteableRedux, force bool) error {
+func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx kevlar.WriteableRedux, force bool) error {
 
-	grlra := nod.Begin(" %s...", ghr.String())
+	grlra := nod.Begin(" %s...", ghs.String())
 	defer grlra.EndWithResult("done")
 
-	has, err := kvGitHubReleases.Has(ghr.String())
+	has, err := kvGitHubReleases.Has(ghs.String())
 	if err != nil {
 		return grlra.EndWithError(err)
 	}
@@ -88,9 +88,9 @@ func getRepoReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.KeyValu
 		return nil
 	}
 
-	ghru := github_integration.ReleasesUrl(ghr.Owner, ghr.Repo)
+	ghsu := github_integration.ReleasesUrl(ghs.Owner, ghs.Repo)
 
-	resp, err := http.DefaultClient.Get(ghru.String())
+	resp, err := http.DefaultClient.Get(ghsu.String())
 	if err != nil {
 		return grlra.EndWithError(err)
 	}
@@ -100,11 +100,11 @@ func getRepoReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.KeyValu
 		return grlra.EndWithError(errors.New(resp.Status))
 	}
 
-	if err := kvGitHubReleases.Set(ghr.String(), resp.Body); err != nil {
+	if err := kvGitHubReleases.Set(ghs.String(), resp.Body); err != nil {
 		return grlra.EndWithError(err)
 	}
 
 	ft := time.Now().Format(time.RFC3339)
-	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, ghr.String(), ft)
+	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, ghs.String(), ft)
 
 }

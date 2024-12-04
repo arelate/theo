@@ -52,7 +52,7 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 	dc := dolo.DefaultClient
 
 	for _, os := range operatingSystems {
-		for _, repo := range data.OperatingSystemRepos[os] {
+		for _, repo := range data.OsGitHubSources[os] {
 
 			rcReleases, err := kvGitHubReleases.Get(repo.String())
 			if err != nil {
@@ -84,14 +84,14 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 	return nil
 }
 
-func cacheRepoReleases(ghr *data.GitHubRepository, releases []github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
+func cacheRepoReleases(ghs *data.GitHubSource, releases []github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
 
-	crrsa := nod.Begin(" %s...", ghr.String())
+	crrsa := nod.Begin(" %s...", ghs.String())
 	defer crrsa.EndWithResult("cached requested releases")
 
 	for _, rel := range releases {
 
-		if err := cacheRepoRelease(ghr, &rel, dc, force); err != nil {
+		if err := cacheRepoRelease(ghs, &rel, dc, force); err != nil {
 			return crrsa.EndWithError(err)
 		}
 	}
@@ -99,12 +99,12 @@ func cacheRepoReleases(ghr *data.GitHubRepository, releases []github_integration
 	return nil
 }
 
-func cacheRepoRelease(ghr *data.GitHubRepository, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
+func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
 
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.EndWithResult("done")
 
-	asset := selectAsset(ghr, release)
+	asset := selectAsset(ghs, release)
 	if asset == nil {
 		crra.EndWithResult("asset not found")
 		return nil
@@ -115,7 +115,7 @@ func cacheRepoRelease(ghr *data.GitHubRepository, release *github_integration.Gi
 		return crra.EndWithError(err)
 	}
 
-	relDir, err := releaseDir(ghr, release)
+	relDir, err := releaseDir(ghs, release)
 	if err != nil {
 		return crra.EndWithError(err)
 	}
@@ -131,17 +131,17 @@ func cacheRepoRelease(ghr *data.GitHubRepository, release *github_integration.Gi
 
 }
 
-func releaseDir(ghr *data.GitHubRepository, release *github_integration.GitHubRelease) (string, error) {
+func releaseDir(ghs *data.GitHubSource, release *github_integration.GitHubRelease) (string, error) {
 
 	binariesDir, err := pathways.GetAbsRelDir(data.Binaries)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(binariesDir, ghr.String(), busan.Sanitize(release.TagName)), nil
+	return filepath.Join(binariesDir, ghs.String(), busan.Sanitize(release.TagName)), nil
 }
 
-func selectAsset(ghr *data.GitHubRepository, release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
+func selectAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
 
 	if len(release.Assets) == 1 {
 		return &release.Assets[0]
@@ -151,7 +151,7 @@ func selectAsset(ghr *data.GitHubRepository, release *github_integration.GitHubR
 
 	for _, asset := range release.Assets {
 		skipAsset := false
-		for _, exc := range ghr.AssetExclude {
+		for _, exc := range ghs.AssetExclude {
 			if exc != "" && strings.Contains(asset.Name, exc) {
 				skipAsset = true
 			}
@@ -167,7 +167,7 @@ func selectAsset(ghr *data.GitHubRepository, release *github_integration.GitHubR
 	}
 
 	for _, asset := range filteredAssets {
-		for _, inc := range ghr.AssetInclude {
+		for _, inc := range ghs.AssetInclude {
 			if inc != "" && strings.Contains(asset.Name, inc) {
 				return &asset
 			}
@@ -183,24 +183,24 @@ func releaseSelectorFromUrl(u *url.URL) *GitHubReleaseSelector {
 
 	if q.Has("owner") || q.Has("repo") || q.Has("tag") || q.Has("all") {
 
-		ghrs := &GitHubReleaseSelector{
+		ghss := &GitHubReleaseSelector{
 			Owner: q.Get("owner"),
 			Repo:  q.Get("repo"),
 			All:   q.Has("all"),
 		}
 
 		if q.Has("tag") {
-			ghrs.Tags = strings.Split(q.Get("tag"), ",")
+			ghss.Tags = strings.Split(q.Get("tag"), ",")
 		}
 
-		return ghrs
+		return ghss
 
 	}
 
 	return nil
 }
 
-func selectReleases(ghr *data.GitHubRepository, releases []github_integration.GitHubRelease, selector *GitHubReleaseSelector) []github_integration.GitHubRelease {
+func selectReleases(ghs *data.GitHubSource, releases []github_integration.GitHubRelease, selector *GitHubReleaseSelector) []github_integration.GitHubRelease {
 	if selector == nil {
 		if len(releases) > 0 {
 			return []github_integration.GitHubRelease{releases[0]}
@@ -208,11 +208,11 @@ func selectReleases(ghr *data.GitHubRepository, releases []github_integration.Gi
 		return releases
 	}
 
-	if selector.Owner != "" && ghr.Owner != selector.Owner {
+	if selector.Owner != "" && ghs.Owner != selector.Owner {
 		return nil
 	}
 
-	if selector.Repo != "" && ghr.Repo != selector.Repo {
+	if selector.Repo != "" && ghs.Repo != selector.Repo {
 		return nil
 	}
 

@@ -5,7 +5,7 @@ import (
 	"path"
 )
 
-type GitHubRepository struct {
+type GitHubSource struct {
 	Owner        string
 	Repo         string
 	Description  string
@@ -13,11 +13,11 @@ type GitHubRepository struct {
 	AssetExclude []string
 }
 
-func (ghr *GitHubRepository) String() string {
-	return path.Join(ghr.Owner, ghr.Repo)
+func (ghs *GitHubSource) String() string {
+	return path.Join(ghs.Owner, ghs.Repo)
 }
 
-var MacOsWineStaging = GitHubRepository{
+var MacOsWineStaging = GitHubSource{
 	//https://github.com/Gcenx/macOS_Wine_builds
 	Owner:        "Gcenx",
 	Repo:         "macOS_Wine_builds",
@@ -25,7 +25,7 @@ var MacOsWineStaging = GitHubRepository{
 	AssetInclude: []string{"wine-stable", "wine-staging"},
 }
 
-var MacOsDxVk = GitHubRepository{
+var MacOsDxVk = GitHubSource{
 	//https://github.com/Gcenx/DXVK-macOS
 	Owner:        "Gcenx",
 	Repo:         "DXVK-macOS",
@@ -33,14 +33,14 @@ var MacOsDxVk = GitHubRepository{
 	AssetExclude: []string{"CrossOver", "crossover", "async"},
 }
 
-var MacOsGamePortingToolkit = GitHubRepository{
+var MacOsGamePortingToolkit = GitHubSource{
 	//https://github.com/Gcenx/game-porting-toolkit
 	Owner:       "Gcenx",
 	Repo:        "game-porting-toolkit",
 	Description: "Apple's Game Porting Toolkit",
 }
 
-var LinuxGeProton = GitHubRepository{
+var LinuxGeProton = GitHubSource{
 	//https://github.com/GloriousEggroll/proton-ge-custom
 	Owner:        "GloriousEggroll",
 	Repo:         "proton-ge-custom",
@@ -48,7 +48,7 @@ var LinuxGeProton = GitHubRepository{
 	AssetInclude: []string{".tar.gz"},
 }
 
-var OperatingSystemRepos = map[vangogh_local_data.OperatingSystem][]GitHubRepository{
+var OsGitHubSources = map[vangogh_local_data.OperatingSystem][]GitHubSource{
 	vangogh_local_data.MacOS: {MacOsWineStaging, MacOsDxVk, MacOsGamePortingToolkit},
 	vangogh_local_data.Linux: {LinuxGeProton},
 }

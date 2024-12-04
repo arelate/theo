@@ -37,7 +37,7 @@ func CleanupGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem
 	}
 
 	for _, os := range operatingSystems {
-		for _, repo := range data.OperatingSystemRepos[os] {
+		for _, repo := range data.OsGitHubSources[os] {
 			if err := cleanupRepoReleases(&repo, kvGitHubReleases); err != nil {
 				return cra.EndWithError(err)
 			}
@@ -47,11 +47,11 @@ func CleanupGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem
 	return nil
 }
 
-func cleanupRepoReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.KeyValues) error {
-	crra := nod.Begin(" %s...", ghr.String())
+func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues) error {
+	crra := nod.Begin(" %s...", ghs.String())
 	defer crra.EndWithResult("done")
 
-	rcReleases, err := kvGitHubReleases.Get(ghr.String())
+	rcReleases, err := kvGitHubReleases.Get(ghs.String())
 	if err != nil {
 		return crra.EndWithError(err)
 	}
@@ -69,12 +69,12 @@ func cleanupRepoReleases(ghr *data.GitHubRepository, kvGitHubReleases kevlar.Key
 			continue
 		}
 
-		relDir, err := releaseDir(ghr, &release)
+		relDir, err := releaseDir(ghs, &release)
 		if err != nil {
 			return crra.EndWithError(err)
 		}
 
-		asset := selectAsset(ghr, &release)
+		asset := selectAsset(ghs, &release)
 		if asset == nil {
 			continue
 		}
