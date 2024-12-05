@@ -77,8 +77,7 @@ func UnpackGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem,
 			selectedReleases := selectReleases(&repo, releases, releaseSelector)
 
 			if len(selectedReleases) == 0 {
-				err = errors.New("no releases selected for unpacking")
-				return ura.EndWithError(err)
+				continue
 			}
 
 			if err := unpackRepoReleases(&repo, selectedReleases, force); err != nil {
@@ -97,12 +96,12 @@ func unpackRepoReleases(ghs *data.GitHubSource, releases []github_integration.Gi
 
 	for _, release := range releases {
 
-		relDir, err := data.GetAbsReleasesDir(ghs, &release)
+		binDir, err := data.GetAbsBinariesDir(ghs, &release)
 		if err != nil {
 			return urra.EndWithError(err)
 		}
 
-		if _, err := os.Stat(relDir); err == nil && !force {
+		if _, err := os.Stat(binDir); err == nil && !force {
 			urra.EndWithResult("already exists")
 			return nil
 		}

@@ -93,6 +93,7 @@ remove-github-binaries
     repo
     tag&
     all
+    force
 
 reveal-downloads
     id^&
