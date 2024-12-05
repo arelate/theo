@@ -24,13 +24,15 @@ func FinalizeInstallationHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	operatingSystems, langCodes, _ := OsLangCodeDownloadType(u)
+	sign := u.Query().Has("sign")
 
-	return FinalizeInstallation(ids, operatingSystems, langCodes)
+	return FinalizeInstallation(ids, operatingSystems, langCodes, sign)
 }
 
 func FinalizeInstallation(ids []string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string) error {
+	langCodes []string,
+	sign bool) error {
 
 	fia := nod.NewProgress("finalizing installation...")
 	defer fia.EndWithResult("done")
@@ -59,7 +61,7 @@ func FinalizeInstallation(ids []string,
 	for _, id := range ids {
 
 		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, installerDownloadType, false); err == nil {
-			if err = finalizeProductInstallation(id, metadata, installationDir, rdx); err != nil {
+			if err = finalizeProductInstallation(id, metadata, installationDir, rdx, sign); err != nil {
 				return fia.EndWithError(err)
 			}
 		} else {
@@ -75,7 +77,8 @@ func FinalizeInstallation(ids []string,
 func finalizeProductInstallation(id string,
 	metadata *vangogh_local_data.DownloadMetadata,
 	installationDir string,
-	rdx kevlar.WriteableRedux) error {
+	rdx kevlar.WriteableRedux,
+	sign bool) error {
 
 	fpia := nod.NewProgress(" finalizing installation for %s...", metadata.Title)
 	defer fpia.EndWithResult("done")
@@ -131,6 +134,12 @@ func finalizeProductInstallation(id string,
 		if err := removeXattrs(bundleInstallPath); err != nil {
 			return fpia.EndWithError(err)
 		}
+
+		if sign {
+			if err := codeSign(bundleInstallPath); err != nil {
+				return fpia.EndWithError(err)
+			}
+		}
 	}
 
 	return nil
@@ -138,8 +147,14 @@ func finalizeProductInstallation(id string,
 
 func removeXattrs(path string) error {
 
-	// xattr -c -r /Applications/Bundle Name.app
-	cmd := exec.Command("xattr", "-c", "-r", path)
+	// xattr -cr /Applications/Bundle Name.app
+	cmd := exec.Command("xattr", "-cr", path)
+	return cmd.Run()
+}
+
+func codeSign(path string) error {
+	// codesign --force --deep --sign - /Applications/Bundle Name.app
+	cmd := exec.Command("codesign", "--force", "--deep", "--sign", "-", path)
 	return cmd.Run()
 }
 

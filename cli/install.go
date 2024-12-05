@@ -14,9 +14,10 @@ func InstallHandler(u *url.URL) error {
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	native := q.Has("native")
 	keepDownloads := q.Has("keep-downloads")
+	sign := q.Has("sign")
 	force := q.Has("force")
 
-	return Install(ids, operatingSystems, langCodes, downloadTypes, native, keepDownloads, force)
+	return Install(ids, operatingSystems, langCodes, downloadTypes, native, keepDownloads, sign, force)
 }
 
 func Install(ids []string,
@@ -25,6 +26,7 @@ func Install(ids []string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	native bool,
 	keepDownloads bool,
+	sign bool,
 	force bool) error {
 
 	ia := nod.Begin("installing products...")
@@ -64,7 +66,7 @@ func Install(ids []string,
 			return err
 		}
 
-		if err := FinalizeInstallation(ids, operatingSystems, langCodes); err != nil {
+		if err := FinalizeInstallation(ids, operatingSystems, langCodes, sign); err != nil {
 			return err
 		}
 

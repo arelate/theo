@@ -36,6 +36,7 @@ func UnpackGitHubReleasesHandler(u *url.URL) error {
 }
 
 func UnpackGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector, force bool) error {
+
 	ura := nod.Begin("unpacking GitHub releases...")
 	defer ura.EndWithResult("done")
 
