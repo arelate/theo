@@ -51,7 +51,7 @@ get-github-releases
     force
 
 init-prefix
-    name*
+    name*^
     owner
     repo
     tag
@@ -142,6 +142,12 @@ unpack-github-releases
     tag&
     all
     force
+
+update-prefix
+    name*^
+    owner
+    repo
+    tag
 
 update-wine
     os&

@@ -74,6 +74,7 @@ func main() {
 		"test-setup":              cli.TestSetupHandler,
 		"uninstall":               cli.UninstallHandler,
 		"unpack-github-releases":  cli.UnpackGitHubReleasesHandler,
+		"update-prefix":           cli.UpdatePrefixHandler,
 		"update-wine":             cli.UpdateWineHandler,
 		"validate":                cli.ValidateHandler,
 		"version":                 cli.VersionHandler,

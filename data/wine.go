@@ -39,6 +39,10 @@ func InitWinePrefix(wineBinPath, absPrefixPath string) error {
 	return wineCmd(wineBinPath, absPrefixPath, winebootBin, "--init")
 }
 
+func UpdateWinePrefix(wineBinPath, absPrefixPath string) error {
+	return wineCmd(wineBinPath, absPrefixPath, winebootBin, "--update")
+}
+
 func WinePrefixEnv(absPrefixPath string) string {
 	return strings.Join([]string{WinePrefixEnvVar, absPrefixPath}, "=")
 }

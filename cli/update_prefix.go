@@ -11,17 +11,7 @@ import (
 	"path/filepath"
 )
 
-var defaultOsWineOwners = map[vangogh_local_data.OperatingSystem]string{
-	vangogh_local_data.MacOS: "Gcenx",
-	vangogh_local_data.Linux: "GloriousEggroll",
-}
-
-var defaultOsWineRepos = map[vangogh_local_data.OperatingSystem]string{
-	vangogh_local_data.MacOS: "game-porting-toolkit",
-	vangogh_local_data.Linux: "proton-ge-custom",
-}
-
-func InitPrefixHandler(u *url.URL) error {
+func UpdatePrefixHandler(u *url.URL) error {
 
 	releaseSelector := data.ReleaseSelectorFromUrl(u)
 
@@ -38,46 +28,43 @@ func InitPrefixHandler(u *url.URL) error {
 	q := u.Query()
 
 	name := q.Get("name")
-	force := q.Has("force")
 
-	return InitPrefix(name, releaseSelector, force)
+	return UpdatePrefix(name, releaseSelector)
 }
 
-func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force bool) error {
+func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) error {
 
-	cpa := nod.Begin("initializing prefix %s...", name)
-	defer cpa.EndWithResult("done")
+	upa := nod.Begin("updating prefix %s...", name)
+	defer upa.EndWithResult("done")
 
 	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{CurrentOS()}, releaseSelector)
 
 	prefixesDir, err := pathways.GetAbsRelDir(data.Prefixes)
 	if err != nil {
-		return cpa.EndWithError(err)
+		return upa.EndWithError(err)
 	}
 
 	absPrefixDir := filepath.Join(prefixesDir, busan.Sanitize(name))
 
-	if _, err := os.Stat(absPrefixDir); err == nil {
-		if !force {
-			cpa.EndWithResult("already exists")
-			return nil
-		}
+	if _, err := os.Stat(absPrefixDir); os.IsNotExist(err) {
+		upa.EndWithResult("prefix not initialized")
+		return nil
 	}
 
 	absWineBin, err := data.GetWineBinary(CurrentOS(), releaseSelector)
 	if err != nil {
-		return cpa.EndWithError(err)
+		return upa.EndWithError(err)
 	}
 
 	if _, err := os.Stat(absWineBin); err != nil {
-		return cpa.EndWithError(err)
+		return upa.EndWithError(err)
 	}
 
-	iwpa := nod.Begin(" executing `wineboot --init`, please wait... ")
+	iwpa := nod.Begin(" executing `wineboot --update`, please wait... ")
 	defer iwpa.EndWithResult("done")
 
-	if err := data.InitWinePrefix(absWineBin, absPrefixDir); err != nil {
-		return cpa.EndWithError(err)
+	if err := data.UpdateWinePrefix(absWineBin, absPrefixDir); err != nil {
+		return upa.EndWithError(err)
 	}
 
 	return nil
