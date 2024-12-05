@@ -16,6 +16,8 @@ cache-github-releases
     all
     force
 
+check-gstreamer
+
 cleanup-github-releases
     os&
 

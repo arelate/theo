@@ -50,6 +50,7 @@ func main() {
 	clo.HandleFuncs(map[string]clo.Handler{
 		"backup":                  cli.BackupHandler,
 		"cache-github-releases":   cli.CacheGitHubReleasesHandler,
+		"check-gstreamer":         cli.CheckGstreamerHandler,
 		"cleanup-github-releases": cli.CleanupGitHubReleasesHandler,
 		"download":                cli.DownloadHandler,
 		"extract":                 cli.ExtractHandler,

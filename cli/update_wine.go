@@ -19,6 +19,10 @@ func UpdateWine(operatingSystems []vangogh_local_data.OperatingSystem, force boo
 	uwa := nod.Begin("updating WINE...")
 	defer uwa.EndWithResult("done")
 
+	if err := CheckGstreamer(); err != nil {
+		return uwa.EndWithError(err)
+	}
+
 	if err := GetGitHubReleases(operatingSystems, force); err != nil {
 		return uwa.EndWithError(err)
 	}
