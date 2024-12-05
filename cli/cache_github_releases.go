@@ -9,30 +9,21 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"golang.org/x/exp/slices"
 	"net/url"
-	"strings"
 )
-
-type GitHubReleaseSelector struct {
-	Owner string
-	Repo  string
-	Tags  []string
-	All   bool
-}
 
 func CacheGitHubReleasesHandler(u *url.URL) error {
 
 	q := u.Query()
 
 	operatingSystems, _, _ := OsLangCodeDownloadType(u)
-	releaseSelector := releaseSelectorFromUrl(u)
+	releaseSelector := data.ReleaseSelectorFromUrl(u)
 	force := q.Has("force")
 
 	return CacheGitHubReleases(operatingSystems, releaseSelector, force)
 }
 
-func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector, force bool) error {
+func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *data.GitHubReleaseSelector, force bool) error {
 
 	cra := nod.Begin("caching GitHub releases...")
 	defer cra.EndWithResult("done")
@@ -73,7 +64,7 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 				return cra.EndWithError(err)
 			}
 
-			selectedReleases := selectReleases(&repo, releases, releaseSelector)
+			selectedReleases := data.SelectReleases(&repo, releases, releaseSelector)
 
 			if len(selectedReleases) == 0 {
 				continue
@@ -108,7 +99,7 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.EndWithResult("done")
 
-	asset := selectAsset(ghs, release)
+	asset := data.SelectAsset(ghs, release)
 	if asset == nil {
 		crra.EndWithResult("asset not found")
 		return nil
@@ -133,101 +124,4 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 
 	return nil
 
-}
-
-func selectAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
-
-	if len(release.Assets) == 1 {
-		return &release.Assets[0]
-	}
-
-	filteredAssets := make([]github_integration.GitHubAsset, 0, len(release.Assets))
-
-	for _, asset := range release.Assets {
-		skipAsset := false
-		for _, exc := range ghs.AssetExclude {
-			if exc != "" && strings.Contains(asset.Name, exc) {
-				skipAsset = true
-			}
-		}
-		if skipAsset {
-			continue
-		}
-		filteredAssets = append(filteredAssets, asset)
-	}
-
-	if len(filteredAssets) == 1 {
-		return &filteredAssets[0]
-	}
-
-	for _, asset := range filteredAssets {
-		for _, inc := range ghs.AssetInclude {
-			if inc != "" && strings.Contains(asset.Name, inc) {
-				return &asset
-			}
-		}
-	}
-
-	return nil
-
-}
-
-func releaseSelectorFromUrl(u *url.URL) *GitHubReleaseSelector {
-	q := u.Query()
-
-	if q.Has(data.GitHubOwnerProperty) ||
-		q.Has(data.GitHubRepoProperty) ||
-		q.Has(data.GitHubTagProperty) ||
-		q.Has(data.GitHubAllReleasesProperty) {
-
-		ghss := &GitHubReleaseSelector{
-			Owner: q.Get(data.GitHubOwnerProperty),
-			Repo:  q.Get(data.GitHubRepoProperty),
-			All:   q.Has(data.GitHubAllReleasesProperty),
-		}
-
-		if q.Has(data.GitHubTagProperty) {
-			ghss.Tags = strings.Split(q.Get(data.GitHubTagProperty), ",")
-		}
-
-		return ghss
-
-	}
-
-	return nil
-}
-
-func selectReleases(ghs *data.GitHubSource, releases []github_integration.GitHubRelease, selector *GitHubReleaseSelector) []github_integration.GitHubRelease {
-	if selector == nil {
-		if len(releases) > 0 {
-			return []github_integration.GitHubRelease{releases[0]}
-		}
-		return releases
-	}
-
-	if selector.Owner != "" && ghs.Owner != selector.Owner {
-		return nil
-	}
-
-	if selector.Repo != "" && ghs.Repo != selector.Repo {
-		return nil
-	}
-
-	if len(selector.Tags) == 0 {
-		if selector.All {
-			return releases
-		} else if len(releases) > 0 {
-			return []github_integration.GitHubRelease{releases[0]}
-		}
-	}
-
-	var taggedReleases []github_integration.GitHubRelease
-
-	for _, rel := range releases {
-		if slices.Contains(selector.Tags, rel.TagName) {
-			taggedReleases = append(taggedReleases, rel)
-		}
-	}
-
-	return taggedReleases
 }

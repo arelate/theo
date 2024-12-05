@@ -73,7 +73,7 @@ func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValu
 			continue
 		}
 
-		asset := selectAsset(ghs, &release)
+		asset := data.SelectAsset(ghs, &release)
 		if asset == nil {
 			continue
 		}

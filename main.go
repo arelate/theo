@@ -57,6 +57,7 @@ func main() {
 		"finalize-installation":   cli.FinalizeInstallationHandler,
 		"get-downloads-metadata":  cli.GetDownloadsMetadataHandler,
 		"get-github-releases":     cli.GetGitHubReleasesHandler,
+		"init-prefix":             cli.InitPrefixHandler,
 		"install":                 cli.InstallHandler,
 		"list-installed":          cli.ListInstalledHandler,
 		"native-install":          cli.NativeInstallHandler,

@@ -25,13 +25,13 @@ func UnpackGitHubReleasesHandler(u *url.URL) error {
 	q := u.Query()
 
 	operatingSystems, _, _ := OsLangCodeDownloadType(u)
-	releaseSelector := releaseSelectorFromUrl(u)
+	releaseSelector := data.ReleaseSelectorFromUrl(u)
 	force := q.Has("force")
 
 	return UnpackGitHubReleases(operatingSystems, releaseSelector, force)
 }
 
-func UnpackGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector, force bool) error {
+func UnpackGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *data.GitHubReleaseSelector, force bool) error {
 
 	ura := nod.Begin("unpacking GitHub releases...")
 	defer ura.EndWithResult("done")
@@ -70,7 +70,7 @@ func UnpackGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem,
 				return ura.EndWithError(err)
 			}
 
-			selectedReleases := selectReleases(&repo, releases, releaseSelector)
+			selectedReleases := data.SelectReleases(&repo, releases, releaseSelector)
 
 			if len(selectedReleases) == 0 {
 				continue
@@ -102,7 +102,7 @@ func unpackRepoReleases(ghs *data.GitHubSource, releases []github_integration.Gi
 			return nil
 		}
 
-		if asset := selectAsset(ghs, &release); asset != nil {
+		if asset := data.SelectAsset(ghs, &release); asset != nil {
 
 			if err := unpackAsset(ghs, &release, asset); err != nil {
 				return urra.EndWithError(err)

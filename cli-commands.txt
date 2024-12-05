@@ -21,6 +21,7 @@ check-gstreamer
 cleanup-github-releases
     os&
 
+
 download
     id^&*
     no-dlc
@@ -47,6 +48,13 @@ get-downloads-metadata
 
 get-github-releases
     os&
+    force
+
+init-prefix
+    name*
+    owner
+    repo
+    tag
     force
 
 install

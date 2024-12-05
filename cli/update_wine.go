@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
+	"golang.org/x/exp/slices"
 	"net/url"
 )
 
@@ -18,6 +20,11 @@ func UpdateWine(operatingSystems []vangogh_local_data.OperatingSystem, force boo
 
 	uwa := nod.Begin("updating WINE...")
 	defer uwa.EndWithResult("done")
+
+	if slices.Contains(operatingSystems, vangogh_local_data.Windows) {
+		err := errors.New("WINE is not required on Windows")
+		return uwa.EndWithError(err)
+	}
 
 	if err := CheckGstreamer(); err != nil {
 		return uwa.EndWithError(err)

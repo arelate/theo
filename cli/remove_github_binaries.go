@@ -16,13 +16,13 @@ func RemoveGitHubBinariesHandler(u *url.URL) error {
 	q := u.Query()
 
 	operatingSystems, _, _ := OsLangCodeDownloadType(u)
-	releaseSelector := releaseSelectorFromUrl(u)
+	releaseSelector := data.ReleaseSelectorFromUrl(u)
 	force := q.Has("force")
 
 	return RemoveGitHubBinaries(operatingSystems, releaseSelector, force)
 }
 
-func RemoveGitHubBinaries(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector, force bool) error {
+func RemoveGitHubBinaries(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *data.GitHubReleaseSelector, force bool) error {
 
 	rba := nod.Begin("removing unpacked GitHub binaries...")
 	defer rba.EndWithResult("done")
@@ -61,7 +61,7 @@ func RemoveGitHubBinaries(operatingSystems []vangogh_local_data.OperatingSystem,
 				return rba.EndWithError(err)
 			}
 
-			selectedReleases := selectReleases(&repo, releases, releaseSelector)
+			selectedReleases := data.SelectReleases(&repo, releases, releaseSelector)
 
 			if len(selectedReleases) == 0 {
 				continue

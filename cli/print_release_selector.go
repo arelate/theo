@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func PrintReleaseSelector(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector) {
+func PrintReleaseSelector(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *data.GitHubReleaseSelector) {
 	prsa := nod.Begin("GitHub releases selectors:")
 	defer prsa.End()
 
