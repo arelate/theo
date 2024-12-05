@@ -133,6 +133,10 @@ unpack-github-releases
     all
     force
 
+update-wine
+    os&
+    force
+
 validate
     id^&*
     os&

@@ -88,7 +88,7 @@ func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, 
 	}
 
 	if has && !force {
-		grlra.EndWithResult("skipped existing")
+		grlra.EndWithResult("skip recently updated")
 		return nil
 	}
 
