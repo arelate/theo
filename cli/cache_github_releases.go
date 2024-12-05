@@ -5,14 +5,12 @@ import (
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
-	"github.com/boggydigital/busan"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"golang.org/x/exp/slices"
 	"net/url"
-	"path/filepath"
 	"strings"
 )
 
@@ -121,7 +119,7 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 		return crra.EndWithError(err)
 	}
 
-	relDir, err := releaseDir(ghs, release)
+	relDir, err := data.GetAbsReleasesDir(ghs, release)
 	if err != nil {
 		return crra.EndWithError(err)
 	}
@@ -135,16 +133,6 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 
 	return nil
 
-}
-
-func releaseDir(ghs *data.GitHubSource, release *github_integration.GitHubRelease) (string, error) {
-
-	releasesDir, err := pathways.GetAbsRelDir(data.Releases)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(releasesDir, ghs.String(), busan.Sanitize(release.TagName)), nil
 }
 
 func selectAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelease) *github_integration.GitHubAsset {

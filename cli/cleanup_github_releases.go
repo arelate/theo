@@ -11,7 +11,6 @@ import (
 	"golang.org/x/exp/maps"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -74,19 +73,15 @@ func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValu
 			continue
 		}
 
-		relDir, err := releaseDir(ghs, &release)
-		if err != nil {
-			return crra.EndWithError(err)
-		}
-
 		asset := selectAsset(ghs, &release)
 		if asset == nil {
 			continue
 		}
 
-		_, fn := path.Split(asset.BrowserDownloadUrl)
-
-		absReleaseAssetPath := filepath.Join(relDir, fn)
+		absReleaseAssetPath, err := data.GetAbsReleaseAssetPath(ghs, &release, asset)
+		if err != nil {
+			return crra.EndWithError(err)
+		}
 
 		if _, err := os.Stat(absReleaseAssetPath); err == nil {
 			cleanupFiles = append(cleanupFiles, absReleaseAssetPath)

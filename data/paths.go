@@ -1,8 +1,11 @@
 package data
 
 import (
+	"github.com/arelate/southern_light/github_integration"
+	"github.com/boggydigital/busan"
 	"github.com/boggydigital/pathways"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -76,4 +79,35 @@ var AllAbsDirs = []pathways.AbsDir{
 	Downloads,
 	Extracts,
 	Cellars,
+}
+
+func GetAbsBinariesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
+
+	binDir, err := pathways.GetAbsRelDir(Binaries)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(binDir, ghs.String(), busan.Sanitize(release.TagName)), nil
+}
+
+func GetAbsReleasesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
+
+	releasesDir, err := pathways.GetAbsRelDir(Releases)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(releasesDir, ghs.String(), busan.Sanitize(release.TagName)), nil
+}
+
+func GetAbsReleaseAssetPath(ghs *GitHubSource, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) (string, error) {
+	relDir, err := GetAbsReleasesDir(ghs, release)
+	if err != nil {
+		return "", err
+	}
+
+	_, fn := path.Split(asset.BrowserDownloadUrl)
+
+	return filepath.Join(relDir, fn), nil
 }
