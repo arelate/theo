@@ -54,7 +54,11 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 
 		forceRepoUpdate := force
 
-		for _, repo := range data.OsGitHubSources[os] {
+		for _, repo := range data.AllGitHubSources() {
+
+			if repo.OS != os {
+				continue
+			}
 
 			if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.String()); ok && ghsu != "" {
 				if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {

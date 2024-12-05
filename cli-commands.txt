@@ -115,6 +115,14 @@ uninstall
     keep-downloads
     force
 
+unpack-github-releases
+    os&
+    owner
+    repo
+    tag&
+    all
+    force
+    
 validate
     id^&*
     os&

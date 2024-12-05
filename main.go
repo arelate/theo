@@ -70,6 +70,7 @@ func main() {
 		"reset-setup":             cli.ResetSetupHandler,
 		"test-setup":              cli.TestSetupHandler,
 		"uninstall":               cli.UninstallHandler,
+		"unpack-github-releases":  cli.UnpackGitHubReleasesHandler,
 		"validate":                cli.ValidateHandler,
 		"version":                 cli.VersionHandler,
 	})

@@ -39,6 +39,8 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 	cra := nod.Begin("caching GitHub releases...")
 	defer cra.EndWithResult("done")
 
+	PrintReleaseSelector(operatingSystems, releaseSelector)
+
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
 		return cra.EndWithError(err)
@@ -52,7 +54,11 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 	dc := dolo.DefaultClient
 
 	for _, os := range operatingSystems {
-		for _, repo := range data.OsGitHubSources[os] {
+		for _, repo := range data.AllGitHubSources() {
+
+			if repo.OS != os {
+				continue
+			}
 
 			rcReleases, err := kvGitHubReleases.Get(repo.String())
 			if err != nil {
@@ -133,12 +139,12 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 
 func releaseDir(ghs *data.GitHubSource, release *github_integration.GitHubRelease) (string, error) {
 
-	binariesDir, err := pathways.GetAbsRelDir(data.Binaries)
+	releasesDir, err := pathways.GetAbsRelDir(data.Releases)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(binariesDir, ghs.String(), busan.Sanitize(release.TagName)), nil
+	return filepath.Join(releasesDir, ghs.String(), busan.Sanitize(release.TagName)), nil
 }
 
 func selectAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
@@ -181,16 +187,19 @@ func selectAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelea
 func releaseSelectorFromUrl(u *url.URL) *GitHubReleaseSelector {
 	q := u.Query()
 
-	if q.Has("owner") || q.Has("repo") || q.Has("tag") || q.Has("all") {
+	if q.Has(data.GitHubOwnerProperty) ||
+		q.Has(data.GitHubRepoProperty) ||
+		q.Has(data.GitHubTagProperty) ||
+		q.Has(data.GitHubAllReleasesProperty) {
 
 		ghss := &GitHubReleaseSelector{
-			Owner: q.Get("owner"),
-			Repo:  q.Get("repo"),
-			All:   q.Has("all"),
+			Owner: q.Get(data.GitHubOwnerProperty),
+			Repo:  q.Get(data.GitHubRepoProperty),
+			All:   q.Has(data.GitHubAllReleasesProperty),
 		}
 
-		if q.Has("tag") {
-			ghss.Tags = strings.Split(q.Get("tag"), ",")
+		if q.Has(data.GitHubTagProperty) {
+			ghss.Tags = strings.Split(q.Get(data.GitHubTagProperty), ",")
 		}
 
 		return ghss

@@ -37,7 +37,12 @@ func CleanupGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem
 	}
 
 	for _, os := range operatingSystems {
-		for _, repo := range data.OsGitHubSources[os] {
+		for _, repo := range data.AllGitHubSources() {
+
+			if repo.OS != os {
+				continue
+			}
+
 			if err := cleanupRepoReleases(&repo, kvGitHubReleases); err != nil {
 				return cra.EndWithError(err)
 			}
