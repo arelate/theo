@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"github.com/arelate/southern_light/github_integration"
@@ -11,11 +9,9 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"github.com/xi2/xz"
-	"io"
 	"net/url"
 	"os"
-	"path/filepath"
+	"os/exec"
 	"strings"
 )
 
@@ -132,75 +128,23 @@ func unpackAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelea
 		return uaa.EndWithError(err)
 	}
 
-	srcFile, err := os.Open(absPackedAssetPath)
-	if err != nil {
-		return uaa.EndWithError(err)
-	}
-	defer srcFile.Close()
-
 	if strings.HasSuffix(absPackedAssetPath, tarGzExt) {
-		return extractTarGz(srcFile, binDir)
+		return extractTar(absPackedAssetPath, binDir)
 	} else if strings.HasSuffix(absPackedAssetPath, tarXzExt) {
-		return extractTarXz(srcFile, binDir)
+		return extractTar(absPackedAssetPath, binDir)
 	} else {
 		return uaa.EndWithError(errors.New("archive type is not supported"))
 	}
 }
 
-func extractTarGz(srcReader io.Reader, dstPath string) error {
-	if gzReader, err := gzip.NewReader(srcReader); err == nil {
-		return extractTarFiles(gzReader, dstPath)
-	} else {
-		return err
-	}
-}
+func extractTar(srcPath, dstPath string) error {
 
-func extractTarXz(srcReader io.Reader, dstPath string) error {
-	if xzReader, err := xz.NewReader(srcReader, 0); err == nil {
-		return extractTarFiles(xzReader, dstPath)
-	} else {
-		return err
-	}
-}
-
-func extractTarFiles(reader io.Reader, dstPath string) error {
-	tarReader := tar.NewReader(reader)
-
-	for {
-		header, err := tarReader.Next()
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
+	if _, err := os.Stat(dstPath); err != nil {
+		if err := os.MkdirAll(dstPath, 0755); err != nil {
 			return err
 		}
-
-		dstFilePath := filepath.Join(dstPath, header.Name)
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if _, err := os.Stat(dstFilePath); err != nil {
-				if err := os.MkdirAll(dstFilePath, 0755); err != nil {
-					return err
-				}
-			}
-		case tar.TypeReg:
-			dstFile, err := os.Create(dstFilePath)
-			if err != nil {
-				return err
-			}
-
-			if _, err := io.Copy(dstFile, tarReader); err != nil {
-				dstFile.Close()
-				return err
-			}
-
-			dstFile.Close()
-		}
-
 	}
 
-	return nil
+	cmd := exec.Command("tar", "-xf", srcPath, "-C", dstPath)
+	return cmd.Run()
 }
