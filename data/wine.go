@@ -21,7 +21,7 @@ const (
 	updateFlag = "--update"
 )
 
-type WineRequest struct {
+type WineContext struct {
 	BinPath    string
 	PrefixPath string
 }
@@ -45,18 +45,18 @@ func GetWineBinary(os vangogh_local_data.OperatingSystem, releaseSelector *GitHu
 	return filepath.Join(binDir, wineSource.BinaryPath), nil
 }
 
-func InitWinePrefix(req *WineRequest) error {
+func InitWinePrefix(wcx *WineContext) error {
 	env := map[string]string{
-		winePfxEnvVar: req.PrefixPath,
+		winePfxEnvVar: wcx.PrefixPath,
 	}
-	return wineCmd(req.BinPath, env, winebootBin, initFlag)
+	return wineCmd(wcx.BinPath, env, winebootBin, initFlag)
 }
 
-func UpdateWinePrefix(req *WineRequest) error {
+func UpdateWinePrefix(wcx *WineContext) error {
 	env := map[string]string{
-		winePfxEnvVar: req.PrefixPath,
+		winePfxEnvVar: wcx.PrefixPath,
 	}
-	return wineCmd(req.BinPath, env, winebootBin, updateFlag)
+	return wineCmd(wcx.BinPath, env, winebootBin, updateFlag)
 }
 
 func wineCmd(absWineBinPath string, env map[string]string, args ...string) error {

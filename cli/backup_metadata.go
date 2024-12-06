@@ -8,13 +8,13 @@ import (
 	"net/url"
 )
 
-func BackupHandler(_ *url.URL) error {
-	return Backup()
+func BackupMetadataHandler(_ *url.URL) error {
+	return BackupMetadata()
 }
 
-func Backup() error {
+func BackupMetadata() error {
 
-	ba := nod.NewProgress("backing up local data...")
+	ba := nod.NewProgress("backing up local metadata...")
 	defer ba.EndWithResult("done")
 
 	backupsDir, err := pathways.GetAbsDir(data.Backups)

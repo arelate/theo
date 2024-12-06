@@ -76,7 +76,7 @@ func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force 
 	iwpa := nod.Begin(" executing `wineboot --init`, please wait... ")
 	defer iwpa.EndWithResult("done")
 
-	if err := data.InitWinePrefix(&data.WineRequest{
+	if err := data.InitWinePrefix(&data.WineContext{
 		BinPath:    absWineBin,
 		PrefixPath: absPrefixDir,
 	}); err != nil {

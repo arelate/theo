@@ -6,7 +6,10 @@
 # {} - placeholder values
 # {^} - placeholder values, first value is default
 
-backup
+archive-prefix
+    name*^
+
+backup-metadata
 
 cache-github-releases
     os&
@@ -20,7 +23,6 @@ check-gstreamer
 
 cleanup-github-releases
     os&
-
 
 download
     id^&*

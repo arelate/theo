@@ -63,7 +63,7 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 	iwpa := nod.Begin(" executing `wineboot --update`, please wait... ")
 	defer iwpa.EndWithResult("done")
 
-	if err := data.UpdateWinePrefix(&data.WineRequest{
+	if err := data.UpdateWinePrefix(&data.WineContext{
 		BinPath:    absWineBin,
 		PrefixPath: absPrefixDir,
 	}); err != nil {

@@ -34,7 +34,7 @@ func Install(ids []string,
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
-	if err := Backup(); err != nil {
+	if err := BackupMetadata(); err != nil {
 		return err
 	}
 

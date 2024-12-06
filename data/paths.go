@@ -61,6 +61,7 @@ const (
 	Releases          pathways.RelDir = "rel"
 	Binaries          pathways.RelDir = "bin"
 	Prefixes          pathways.RelDir = "pfx"
+	PrefixArchive     pathways.RelDir = "pfx-archive"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
@@ -71,6 +72,7 @@ var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	Releases:          Cellars,
 	Binaries:          Cellars,
 	Prefixes:          Cellars,
+	PrefixArchive:     Backups,
 }
 
 var AllAbsDirs = []pathways.AbsDir{
