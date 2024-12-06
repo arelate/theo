@@ -70,6 +70,7 @@ func main() {
 		"remove-github-binaries":  cli.RemoveGitHubBinariesHandler,
 		"reveal-downloads":        cli.RevealDownloadsHandler,
 		"reveal-installed":        cli.RevealInstalledHandler,
+		"reveal-prefix":           cli.RevealPrefixHandler,
 		"reset-setup":             cli.ResetSetupHandler,
 		"test-setup":              cli.TestSetupHandler,
 		"uninstall":               cli.UninstallHandler,

@@ -113,6 +113,9 @@ reveal-installed
     os&
     lang-code&
 
+reveal-prefix
+    name*^
+
 serve
     port$
     stderr$

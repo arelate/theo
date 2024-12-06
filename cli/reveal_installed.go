@@ -25,7 +25,7 @@ func RevealInstalled(ids []string,
 	fia := nod.NewProgress("revealing installed products...")
 	defer fia.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, nil, nil, true)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
 
 	fia.TotalInt(len(ids))
 

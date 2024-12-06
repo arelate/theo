@@ -16,6 +16,12 @@ const (
 	winebootBin = "wineboot"
 )
 
+const (
+	initFlag   = "--init"
+	updateFlag = "--update"
+	forceFlag  = "--force"
+)
+
 func GetWineBinary(os vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector) (string, error) {
 
 	wineSource, release, err := GetWineSourceRelease(os, releaseSelector)
@@ -35,20 +41,24 @@ func GetWineBinary(os vangogh_local_data.OperatingSystem, releaseSelector *GitHu
 	return filepath.Join(binDir, wineSource.BinaryPath), nil
 }
 
-func InitWinePrefix(wineBinPath, absPrefixPath string) error {
-	return wineCmd(wineBinPath, absPrefixPath, winebootBin, "--init")
+func InitWinePrefix(absWineBinPath, absPrefixPath string) error {
+	return wineCmd(absWineBinPath, absPrefixPath, winebootBin, initFlag)
 }
 
-func UpdateWinePrefix(wineBinPath, absPrefixPath string) error {
-	return wineCmd(wineBinPath, absPrefixPath, winebootBin, "--update")
+func UpdateWinePrefix(absWineBinPath, absPrefixPath string) error {
+	return wineCmd(absWineBinPath, absPrefixPath, winebootBin, updateFlag)
+}
+
+func ForceExitWinePrefix(absWineBinPath, absPrefixPath string) error {
+	return wineCmd(absWineBinPath, absPrefixPath, winebootBin, forceFlag)
 }
 
 func WinePrefixEnv(absPrefixPath string) string {
 	return strings.Join([]string{WinePrefixEnvVar, absPrefixPath}, "=")
 }
 
-func wineCmd(wineBinPath, absPrefixPath string, args ...string) error {
-	cmd := exec.Command(wineBinPath, args...)
+func wineCmd(absWineBinPath, absPrefixPath string, args ...string) error {
+	cmd := exec.Command(absWineBinPath, args...)
 	cmd.Env = append(cmd.Env, WinePrefixEnv(absPrefixPath))
 	return cmd.Run()
 }
