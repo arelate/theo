@@ -25,6 +25,7 @@ type GitHubSource struct {
 type WineGitHubSource struct {
 	*GitHubSource
 	BinaryPath string
+	Default    bool
 }
 
 type GitHubReleaseSelector struct {
@@ -68,6 +69,7 @@ var MacOsGamePortingToolkit = &WineGitHubSource{
 		Description: "Apple's Game Porting Toolkit",
 	},
 	BinaryPath: "Game Porting Toolkit.app/Contents/Resources/wine/bin/wine64",
+	Default:    true,
 }
 
 var LinuxGeProton = &WineGitHubSource{
@@ -79,6 +81,7 @@ var LinuxGeProton = &WineGitHubSource{
 		Description:  "Compatibility tool for Steam Play based on Wine and additional components",
 		AssetInclude: []string{".tar.gz"},
 	},
+	Default: true,
 }
 
 func AllGitHubSources() ([]*GitHubSource, error) {
@@ -251,4 +254,20 @@ func GetWineSourceRelease(os vangogh_local_data.OperatingSystem, releaseSelector
 	}
 
 	return wineSource, &selRels[0], nil
+}
+
+func GetDefaultWineSource(os vangogh_local_data.OperatingSystem) (*WineGitHubSource, error) {
+	wineSources, err := AllWineSources()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ws := range wineSources {
+		if ws.OS == os &&
+			ws.Default {
+			return ws, nil
+		}
+	}
+
+	return nil, errors.New("cannot determine default WINE source for " + os.String())
 }

@@ -15,16 +15,6 @@ func UpdatePrefixHandler(u *url.URL) error {
 
 	releaseSelector := data.ReleaseSelectorFromUrl(u)
 
-	if releaseSelector == nil {
-		releaseSelector = &data.GitHubReleaseSelector{}
-	}
-
-	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		cos := CurrentOS()
-		releaseSelector.Owner = defaultOsWineOwners[cos]
-		releaseSelector.Repo = defaultOsWineRepos[cos]
-	}
-
 	q := u.Query()
 
 	name := q.Get("name")
@@ -36,6 +26,19 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 
 	upa := nod.Begin("updating prefix %s...", name)
 	defer upa.EndWithResult("done")
+
+	if releaseSelector == nil {
+		releaseSelector = &data.GitHubReleaseSelector{}
+	}
+
+	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
+		dws, err := data.GetDefaultWineSource(CurrentOS())
+		if err != nil {
+			return upa.EndWithError(err)
+		}
+		releaseSelector.Owner = dws.Owner
+		releaseSelector.Repo = dws.Repo
+	}
 
 	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{CurrentOS()}, releaseSelector)
 

@@ -11,29 +11,9 @@ import (
 	"path/filepath"
 )
 
-var defaultOsWineOwners = map[vangogh_local_data.OperatingSystem]string{
-	vangogh_local_data.MacOS: "Gcenx",
-	vangogh_local_data.Linux: "GloriousEggroll",
-}
-
-var defaultOsWineRepos = map[vangogh_local_data.OperatingSystem]string{
-	vangogh_local_data.MacOS: "game-porting-toolkit",
-	vangogh_local_data.Linux: "proton-ge-custom",
-}
-
 func InitPrefixHandler(u *url.URL) error {
 
 	releaseSelector := data.ReleaseSelectorFromUrl(u)
-
-	if releaseSelector == nil {
-		releaseSelector = &data.GitHubReleaseSelector{}
-	}
-
-	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		cos := CurrentOS()
-		releaseSelector.Owner = defaultOsWineOwners[cos]
-		releaseSelector.Repo = defaultOsWineRepos[cos]
-	}
 
 	q := u.Query()
 
@@ -49,6 +29,19 @@ func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force 
 	defer cpa.EndWithResult("done")
 
 	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{CurrentOS()}, releaseSelector)
+
+	if releaseSelector == nil {
+		releaseSelector = &data.GitHubReleaseSelector{}
+	}
+
+	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
+		dws, err := data.GetDefaultWineSource(CurrentOS())
+		if err != nil {
+			return cpa.EndWithError(err)
+		}
+		releaseSelector.Owner = dws.Owner
+		releaseSelector.Repo = dws.Repo
+	}
 
 	prefixesDir, err := pathways.GetAbsRelDir(data.Prefixes)
 	if err != nil {
