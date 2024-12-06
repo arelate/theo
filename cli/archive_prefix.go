@@ -20,7 +20,7 @@ func ArchivePrefixHandler(u *url.URL) error {
 
 func ArchivePrefix(name string) error {
 
-	apa := nod.NewProgress("archiving prefix drive_c for %s...", name)
+	apa := nod.NewProgress("archiving prefix %s...", name)
 	defer apa.EndWithResult("done")
 
 	prefixArchiveDir, err := pathways.GetAbsRelDir(data.PrefixArchive)
