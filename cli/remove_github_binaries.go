@@ -39,8 +39,13 @@ func RemoveGitHubBinaries(operatingSystems []vangogh_local_data.OperatingSystem,
 		return rba.EndWithError(err)
 	}
 
+	githubSources, err := data.AllGitHubSources()
+	if err != nil {
+		return rba.EndWithError(err)
+	}
+
 	for _, os := range operatingSystems {
-		for _, repo := range data.AllGitHubSources() {
+		for _, repo := range githubSources {
 
 			if repo.OS != os {
 				continue
@@ -61,13 +66,13 @@ func RemoveGitHubBinaries(operatingSystems []vangogh_local_data.OperatingSystem,
 				return rba.EndWithError(err)
 			}
 
-			selectedReleases := data.SelectReleases(&repo, releases, releaseSelector)
+			selectedReleases := data.SelectReleases(repo, releases, releaseSelector)
 
 			if len(selectedReleases) == 0 {
 				continue
 			}
 
-			if err := removeRepoBinaries(&repo, selectedReleases, force); err != nil {
+			if err := removeRepoBinaries(repo, selectedReleases, force); err != nil {
 				return rba.EndWithError(err)
 			}
 		}

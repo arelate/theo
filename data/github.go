@@ -23,7 +23,7 @@ type GitHubSource struct {
 }
 
 type WineGitHubSource struct {
-	GitHubSource
+	*GitHubSource
 	BinaryPath string
 }
 
@@ -38,9 +38,9 @@ func (ghs *GitHubSource) String() string {
 	return path.Join(ghs.Owner, ghs.Repo)
 }
 
-var MacOsWineStaging = WineGitHubSource{
+var MacOsWineStaging = &WineGitHubSource{
 	//https://github.com/Gcenx/macOS_Wine_builds
-	GitHubSource: GitHubSource{
+	GitHubSource: &GitHubSource{
 		OS:           vangogh_local_data.MacOS,
 		Owner:        "Gcenx",
 		Repo:         "macOS_Wine_builds",
@@ -59,9 +59,9 @@ var MacOsDxVk = GitHubSource{
 	AssetExclude: []string{"CrossOver", "crossover", "async"},
 }
 
-var MacOsGamePortingToolkit = WineGitHubSource{
+var MacOsGamePortingToolkit = &WineGitHubSource{
 	//https://github.com/Gcenx/game-porting-toolkit
-	GitHubSource: GitHubSource{
+	GitHubSource: &GitHubSource{
 		OS:          vangogh_local_data.MacOS,
 		Owner:       "Gcenx",
 		Repo:        "game-porting-toolkit",
@@ -70,9 +70,9 @@ var MacOsGamePortingToolkit = WineGitHubSource{
 	BinaryPath: "Game Porting Toolkit.app/Contents/Resources/wine/bin/wine64",
 }
 
-var LinuxGeProton = WineGitHubSource{
+var LinuxGeProton = &WineGitHubSource{
 	//https://github.com/GloriousEggroll/proton-ge-custom
-	GitHubSource: GitHubSource{
+	GitHubSource: &GitHubSource{
 		OS:           vangogh_local_data.Linux,
 		Owner:        "GloriousEggroll",
 		Repo:         "proton-ge-custom",
@@ -81,32 +81,38 @@ var LinuxGeProton = WineGitHubSource{
 	},
 }
 
-func AllGitHubSources() []GitHubSource {
-	return []GitHubSource{
+func AllGitHubSources() ([]*GitHubSource, error) {
+	return []*GitHubSource{
 		MacOsWineStaging.GitHubSource,
-		MacOsDxVk,
+		&MacOsDxVk,
 		MacOsGamePortingToolkit.GitHubSource,
 		LinuxGeProton.GitHubSource,
-	}
+	}, nil
 }
 
-func AllWineSources() []WineGitHubSource {
-	return []WineGitHubSource{
+func AllWineSources() ([]*WineGitHubSource, error) {
+	return []*WineGitHubSource{
 		MacOsWineStaging,
 		MacOsGamePortingToolkit,
 		LinuxGeProton,
-	}
+	}, nil
 }
 
-func GetWineSource(os vangogh_local_data.OperatingSystem, owner, repo string) *WineGitHubSource {
-	for _, ws := range AllWineSources() {
+func GetWineSource(os vangogh_local_data.OperatingSystem, owner, repo string) (*WineGitHubSource, error) {
+
+	wineSources, err := AllWineSources()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ws := range wineSources {
 		if ws.OS == os &&
 			ws.Owner == owner &&
 			ws.Repo == repo {
-			return &ws
+			return ws, nil
 		}
 	}
-	return nil
+	return nil, errors.New("WINE source not found")
 }
 
 func SelectAsset(ghs *GitHubSource, release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
@@ -218,8 +224,8 @@ func GetWineSourceRelease(os vangogh_local_data.OperatingSystem, releaseSelector
 		return nil, nil, err
 	}
 
-	wineSource := GetWineSource(os, releaseSelector.Owner, releaseSelector.Repo)
-	if wineSource == nil {
+	wineSource, err := GetWineSource(os, releaseSelector.Owner, releaseSelector.Repo)
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -234,7 +240,7 @@ func GetWineSourceRelease(os vangogh_local_data.OperatingSystem, releaseSelector
 		return nil, nil, err
 	}
 
-	selRels := SelectReleases(&wineSource.GitHubSource, releases, releaseSelector)
+	selRels := SelectReleases(wineSource.GitHubSource, releases, releaseSelector)
 
 	if selRels == nil {
 		return nil, nil, errors.New("nil releases match selector")

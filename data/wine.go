@@ -37,7 +37,7 @@ func GetWineBinary(os vangogh_local_data.OperatingSystem, releaseSelector *GitHu
 		return "", errors.New("nil wine source selected")
 	}
 
-	binDir, err := GetAbsBinariesDir(&wineSource.GitHubSource, release)
+	binDir, err := GetAbsBinariesDir(wineSource.GitHubSource, release)
 	if err != nil {
 		return "", err
 	}

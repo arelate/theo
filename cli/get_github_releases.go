@@ -50,11 +50,16 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 		return gra.EndWithError(err)
 	}
 
+	githubSources, err := data.AllGitHubSources()
+	if err != nil {
+		return gra.EndWithError(err)
+	}
+
 	for _, os := range operatingSystems {
 
 		forceRepoUpdate := force
 
-		for _, repo := range data.AllGitHubSources() {
+		for _, repo := range githubSources {
 
 			if repo.OS != os {
 				continue
@@ -68,7 +73,7 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 				}
 			}
 
-			if err := getRepoReleases(&repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
+			if err := getRepoReleases(repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
 				return gra.EndWithError(err)
 			}
 		}

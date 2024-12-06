@@ -42,8 +42,13 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 
 	dc := dolo.DefaultClient
 
+	githubSources, err := data.AllGitHubSources()
+	if err != nil {
+		return cra.EndWithError(err)
+	}
+
 	for _, os := range operatingSystems {
-		for _, repo := range data.AllGitHubSources() {
+		for _, repo := range githubSources {
 
 			if repo.OS != os {
 				continue
@@ -64,13 +69,13 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 				return cra.EndWithError(err)
 			}
 
-			selectedReleases := data.SelectReleases(&repo, releases, releaseSelector)
+			selectedReleases := data.SelectReleases(repo, releases, releaseSelector)
 
 			if len(selectedReleases) == 0 {
 				continue
 			}
 
-			if err := cacheRepoReleases(&repo, selectedReleases, dc, force); err != nil {
+			if err := cacheRepoReleases(repo, selectedReleases, dc, force); err != nil {
 				return cra.EndWithError(err)
 			}
 		}
