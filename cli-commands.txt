@@ -107,6 +107,8 @@ remove-github-binaries
     all
     force
 
+reveal-backups
+
 reveal-downloads
     id^&
 

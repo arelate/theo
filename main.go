@@ -74,6 +74,7 @@ func main() {
 		"remove-downloads":        cli.RemoveDownloadsHandler,
 		"remove-extracts":         cli.RemoveExtractsHandler,
 		"remove-github-binaries":  cli.RemoveGitHubBinariesHandler,
+		"reveal-backups":          cli.RevealBackupsHandler,
 		"reveal-downloads":        cli.RevealDownloadsHandler,
 		"reveal-installed":        cli.RevealInstalledHandler,
 		"reveal-prefix":           cli.RevealPrefixHandler,
