@@ -107,6 +107,11 @@ remove-github-binaries
     all
     force
 
+remove-prefix
+    name*^
+    no-archive
+    force
+
 reveal-backups
 
 reveal-downloads
