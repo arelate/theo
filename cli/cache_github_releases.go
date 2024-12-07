@@ -42,7 +42,7 @@ func CacheGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, 
 
 	dc := dolo.DefaultClient
 
-	githubSources, err := data.AllGitHubSources()
+	githubSources, err := data.LoadGitHubSources()
 	if err != nil {
 		return cra.EndWithError(err)
 	}

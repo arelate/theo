@@ -48,7 +48,7 @@ func UnpackGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem,
 		return ura.EndWithError(err)
 	}
 
-	githubSources, err := data.AllGitHubSources()
+	githubSources, err := data.LoadGitHubSources()
 	if err != nil {
 		return ura.EndWithError(err)
 	}

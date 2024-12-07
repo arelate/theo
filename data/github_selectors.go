@@ -9,113 +9,14 @@ import (
 	"github.com/boggydigital/pathways"
 	"golang.org/x/exp/slices"
 	"net/url"
-	"path"
 	"strings"
 )
-
-type GitHubSource struct {
-	OS           vangogh_local_data.OperatingSystem
-	Owner        string
-	Repo         string
-	Description  string
-	AssetInclude []string
-	AssetExclude []string
-}
-
-type WineGitHubSource struct {
-	*GitHubSource
-	BinaryPath string
-	Default    bool
-}
 
 type GitHubReleaseSelector struct {
 	Owner string
 	Repo  string
 	Tags  []string
 	All   bool
-}
-
-func (ghs *GitHubSource) String() string {
-	return path.Join(ghs.Owner, ghs.Repo)
-}
-
-var MacOsWineStaging = &WineGitHubSource{
-	//https://github.com/Gcenx/macOS_Wine_builds
-	GitHubSource: &GitHubSource{
-		OS:           vangogh_local_data.MacOS,
-		Owner:        "Gcenx",
-		Repo:         "macOS_Wine_builds",
-		Description:  "Official Winehq macOS Packages",
-		AssetInclude: []string{"wine-stable", "wine-staging"},
-	},
-	BinaryPath: "Wine Staging.app/Contents/Resources/wine/bin/wine",
-}
-
-var MacOsDxVk = GitHubSource{
-	//https://github.com/Gcenx/DXVK-macOS
-	OS:           vangogh_local_data.MacOS,
-	Owner:        "Gcenx",
-	Repo:         "DXVK-macOS",
-	Description:  "Vulkan-based implementation of D3D10 and D3D11 for macOS / Wine",
-	AssetExclude: []string{"CrossOver", "crossover", "async"},
-}
-
-var MacOsGamePortingToolkit = &WineGitHubSource{
-	//https://github.com/Gcenx/game-porting-toolkit
-	GitHubSource: &GitHubSource{
-		OS:          vangogh_local_data.MacOS,
-		Owner:       "Gcenx",
-		Repo:        "game-porting-toolkit",
-		Description: "Apple's Game Porting Toolkit",
-	},
-	BinaryPath: "Game Porting Toolkit.app/Contents/Resources/wine/bin/wine64",
-	Default:    true,
-}
-
-var LinuxGeProton = &WineGitHubSource{
-	//https://github.com/GloriousEggroll/proton-ge-custom
-	GitHubSource: &GitHubSource{
-		OS:           vangogh_local_data.Linux,
-		Owner:        "GloriousEggroll",
-		Repo:         "proton-ge-custom",
-		Description:  "Compatibility tool for Steam Play based on Wine and additional components",
-		AssetInclude: []string{".tar.gz"},
-	},
-	Default: true,
-}
-
-func AllGitHubSources() ([]*GitHubSource, error) {
-	return []*GitHubSource{
-		MacOsWineStaging.GitHubSource,
-		&MacOsDxVk,
-		MacOsGamePortingToolkit.GitHubSource,
-		LinuxGeProton.GitHubSource,
-	}, nil
-}
-
-func AllWineSources() ([]*WineGitHubSource, error) {
-	return []*WineGitHubSource{
-		MacOsWineStaging,
-		MacOsGamePortingToolkit,
-		LinuxGeProton,
-	}, nil
-}
-
-func GetWineSource(os vangogh_local_data.OperatingSystem, owner, repo string) (*WineGitHubSource, error) {
-
-	wineSources, err := AllWineSources()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, ws := range wineSources {
-		if ws.OS == os &&
-			ws.Owner == owner &&
-			ws.Repo == repo {
-			return ws, nil
-		}
-	}
-	return nil, errors.New("WINE source not found")
 }
 
 func SelectAsset(ghs *GitHubSource, release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
@@ -254,20 +155,4 @@ func GetWineSourceRelease(os vangogh_local_data.OperatingSystem, releaseSelector
 	}
 
 	return wineSource, &selRels[0], nil
-}
-
-func GetDefaultWineSource(os vangogh_local_data.OperatingSystem) (*WineGitHubSource, error) {
-	wineSources, err := AllWineSources()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, ws := range wineSources {
-		if ws.OS == os &&
-			ws.Default {
-			return ws, nil
-		}
-	}
-
-	return nil, errors.New("cannot determine default WINE source for " + os.String())
 }

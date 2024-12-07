@@ -46,11 +46,12 @@ func InitRootDir() (string, error) {
 }
 
 const (
-	Backups   pathways.AbsDir = "backups"
-	Metadata  pathways.AbsDir = "metadata"
-	Downloads pathways.AbsDir = "downloads"
-	Extracts  pathways.AbsDir = "extracts"
-	Cellars   pathways.AbsDir = "cellars"
+	Backups       pathways.AbsDir = "backups"
+	Metadata      pathways.AbsDir = "metadata"
+	Downloads     pathways.AbsDir = "downloads"
+	Extracts      pathways.AbsDir = "extracts"
+	Cellars       pathways.AbsDir = "cellars"
+	GitHubSources pathways.AbsDir = "github-sources"
 )
 
 const (
@@ -81,6 +82,7 @@ var AllAbsDirs = []pathways.AbsDir{
 	Downloads,
 	Extracts,
 	Cellars,
+	GitHubSources,
 }
 
 func GetAbsBinariesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {

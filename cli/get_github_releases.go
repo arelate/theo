@@ -50,7 +50,7 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 		return gra.EndWithError(err)
 	}
 
-	githubSources, err := data.AllGitHubSources()
+	githubSources, err := data.LoadGitHubSources()
 	if err != nil {
 		return gra.EndWithError(err)
 	}

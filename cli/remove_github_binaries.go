@@ -39,7 +39,7 @@ func RemoveGitHubBinaries(operatingSystems []vangogh_local_data.OperatingSystem,
 		return rba.EndWithError(err)
 	}
 
-	githubSources, err := data.AllGitHubSources()
+	githubSources, err := data.LoadGitHubSources()
 	if err != nil {
 		return rba.EndWithError(err)
 	}
