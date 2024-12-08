@@ -69,5 +69,6 @@ func revealWindows(path string) error {
 }
 
 func revealLinux(path string) error {
-	return errors.New("support for reveal on Linux is not implemented")
+	cmd := exec.Command("xdg-open", path)
+	return cmd.Run()
 }
