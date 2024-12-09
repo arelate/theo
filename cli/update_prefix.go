@@ -3,12 +3,9 @@ package cli
 import (
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
-	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
-	"path/filepath"
 )
 
 func UpdatePrefixHandler(u *url.URL) error {
@@ -42,12 +39,10 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 
 	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{CurrentOS()}, releaseSelector)
 
-	prefixesDir, err := pathways.GetAbsRelDir(data.Prefixes)
+	absPrefixDir, err := data.GetAbsPrefixDir(name)
 	if err != nil {
 		return upa.EndWithError(err)
 	}
-
-	absPrefixDir := filepath.Join(prefixesDir, busan.Sanitize(name))
 
 	if _, err := os.Stat(absPrefixDir); os.IsNotExist(err) {
 		upa.EndWithResult("prefix not initialized")

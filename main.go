@@ -66,6 +66,7 @@ func main() {
 		"init-prefix":             cli.InitPrefixHandler,
 		"install":                 cli.InstallHandler,
 		"list-installed":          cli.ListInstalledHandler,
+		"mod-prefix":              cli.ModPrefixHandler,
 		"native-install":          cli.NativeInstallHandler,
 		"pin-installed-metadata":  cli.PinInstalledMetadataHandler,
 		"place-extracts":          cli.PlaceExtractsHandler,

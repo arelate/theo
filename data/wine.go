@@ -14,6 +14,7 @@ const (
 
 const (
 	winebootBin = "wineboot"
+	regeditBin  = "regedit"
 )
 
 const (
@@ -57,6 +58,13 @@ func UpdateWinePrefix(wcx *WineContext) error {
 		winePfxEnvVar: wcx.PrefixPath,
 	}
 	return wineCmd(wcx.BinPath, env, winebootBin, updateFlag)
+}
+
+func RegeditWinePrefix(wcx *WineContext, absRegPath string) error {
+	env := map[string]string{
+		winePfxEnvVar: wcx.PrefixPath,
+	}
+	return wineCmd(wcx.BinPath, env, regeditBin, absRegPath)
 }
 
 func wineCmd(absWineBinPath string, env map[string]string, args ...string) error {

@@ -115,3 +115,13 @@ func GetAbsReleaseAssetPath(ghs *GitHubSource, release *github_integration.GitHu
 
 	return filepath.Join(relDir, fn), nil
 }
+
+func GetAbsPrefixDir(name string) (string, error) {
+	prefixesDir, err := pathways.GetAbsRelDir(Prefixes)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(prefixesDir, busan.Sanitize(name)), nil
+
+}

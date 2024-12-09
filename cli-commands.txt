@@ -71,6 +71,14 @@ install
 
 list-installed
 
+mod-prefix
+    name*^
+    owner
+    repo
+    tag
+    on=dxvk,retina
+    off=dxvk,retina
+
 native-install
     id^&*
     no-dlc

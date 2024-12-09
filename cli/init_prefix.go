@@ -3,12 +3,9 @@ package cli
 import (
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
-	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
-	"path/filepath"
 )
 
 func InitPrefixHandler(u *url.URL) error {
@@ -43,12 +40,10 @@ func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force 
 		releaseSelector.Repo = dws.Repo
 	}
 
-	prefixesDir, err := pathways.GetAbsRelDir(data.Prefixes)
+	absPrefixDir, err := data.GetAbsPrefixDir(name)
 	if err != nil {
 		return cpa.EndWithError(err)
 	}
-
-	absPrefixDir := filepath.Join(prefixesDir, busan.Sanitize(name))
 
 	if _, err := os.Stat(absPrefixDir); err == nil {
 		if !force {

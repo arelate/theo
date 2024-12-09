@@ -28,11 +28,6 @@ func ArchivePrefix(name string) error {
 		return apa.EndWithError(err)
 	}
 
-	prefixesDir, err := pathways.GetAbsRelDir(data.Prefixes)
-	if err != nil {
-		return apa.EndWithError(err)
-	}
-
 	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, busan.Sanitize(name))
 
 	if _, err := os.Stat(absPrefixNameArchiveDir); err != nil {
@@ -41,7 +36,10 @@ func ArchivePrefix(name string) error {
 		}
 	}
 
-	absPrefixDir := filepath.Join(prefixesDir, busan.Sanitize(name))
+	absPrefixDir, err := data.GetAbsPrefixDir(name)
+	if err != nil {
+		return apa.EndWithError(err)
+	}
 
 	if err := backups.Compress(absPrefixDir, absPrefixNameArchiveDir); err != nil {
 		return apa.EndWithError(err)

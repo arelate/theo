@@ -2,12 +2,9 @@ package cli
 
 import (
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
-	"path/filepath"
 )
 
 func RemovePrefixHandler(u *url.URL) error {
@@ -25,12 +22,10 @@ func RemovePrefix(name string, noArchive, force bool) error {
 	rpa := nod.NewProgress("removing prefix %s...", name)
 	defer rpa.EndWithResult("done")
 
-	prefixesDir, err := pathways.GetAbsRelDir(data.Prefixes)
+	absPrefixDir, err := data.GetAbsPrefixDir(name)
 	if err != nil {
 		return rpa.EndWithError(err)
 	}
-
-	absPrefixDir := filepath.Join(prefixesDir, busan.Sanitize(name))
 
 	if _, err := os.Stat(absPrefixDir); os.IsNotExist(err) {
 		rpa.EndWithResult("not present")
