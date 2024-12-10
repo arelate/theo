@@ -152,27 +152,7 @@ func LoadWineSources() ([]*WineGitHubSource, error) {
 	return wineSources, nil
 }
 
-func LoadGitHubSources() ([]*GitHubSource, error) {
-	githubSources := make([]*GitHubSource, 0)
-
-	wineSources, err := LoadWineSources()
-	if err != nil {
-		return nil, err
-	}
-	for _, ws := range wineSources {
-		githubSources = append(githubSources, ws.GitHubSource)
-	}
-
-	dxVkSources, err := AllDxVkSources()
-	if err != nil {
-		return nil, err
-	}
-	githubSources = append(githubSources, dxVkSources...)
-
-	return githubSources, nil
-}
-
-func AllDxVkSources() ([]*GitHubSource, error) {
+func LoadDxVkSources() ([]*GitHubSource, error) {
 	urlKv, err := loadGitHubSectionKeyValue(dxVkSourcesFilename)
 	if err != nil {
 		return nil, err
@@ -189,6 +169,26 @@ func AllDxVkSources() ([]*GitHubSource, error) {
 	}
 
 	return dxVkSources, nil
+}
+
+func LoadGitHubSources() ([]*GitHubSource, error) {
+	githubSources := make([]*GitHubSource, 0)
+
+	wineSources, err := LoadWineSources()
+	if err != nil {
+		return nil, err
+	}
+	for _, ws := range wineSources {
+		githubSources = append(githubSources, ws.GitHubSource)
+	}
+
+	dxVkSources, err := LoadDxVkSources()
+	if err != nil {
+		return nil, err
+	}
+	githubSources = append(githubSources, dxVkSources...)
+
+	return githubSources, nil
 }
 
 func GetWineSource(os vangogh_local_data.OperatingSystem, owner, repo string) (*WineGitHubSource, error) {
@@ -222,6 +222,35 @@ func GetDefaultWineSource(os vangogh_local_data.OperatingSystem) (*WineGitHubSou
 	}
 
 	return nil, errors.New("cannot determine default WINE source for " + os.String())
+}
+
+func GetDxVkSource(os vangogh_local_data.OperatingSystem, owner, repo string) (*GitHubSource, error) {
+	githubSources, err := LoadDxVkSources()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, gs := range githubSources {
+		if gs.OS == os &&
+			gs.Owner == owner &&
+			gs.Repo == repo {
+			return gs, nil
+		}
+	}
+	return nil, errors.New("DXVK source not found")
+}
+
+func GetFirstDxVkSource(os vangogh_local_data.OperatingSystem) (*GitHubSource, error) {
+	githubSources, err := LoadDxVkSources()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(githubSources) > 0 {
+		return githubSources[0], nil
+	} else {
+		return nil, errors.New("no DXVK sources set for " + os.String())
+	}
 }
 
 func InitGitHubSources() error {

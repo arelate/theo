@@ -71,13 +71,21 @@ install
 
 list-installed
 
-mod-prefix
+mod-prefix-dxvk
     name*^
     owner
     repo
     tag
-    on=dxvk,retina
-    off=dxvk,retina
+    revert
+    force
+
+mod-prefix-retina
+    name*^
+    owner
+    repo
+    tag
+    revert
+    force
 
 native-install
     id^&*

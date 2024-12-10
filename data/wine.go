@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/arelate/vangogh_local_data"
+	"os"
 	"os/exec"
 	"path/filepath"
 )
 
 const (
-	winePfxEnvVar = "WINEPREFIX"
+	winePfxEnvVar   = "WINEPREFIX"
+	RelPfxDriveCDir = "drive_c"
 )
 
 const (
@@ -70,7 +72,7 @@ func RegeditWinePrefix(wcx *WineContext, absRegPath string) error {
 func wineCmd(absWineBinPath string, env map[string]string, args ...string) error {
 	cmd := exec.Command(absWineBinPath, args...)
 	for p, v := range env {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", p, v))
+		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", p, v))
 	}
 	return cmd.Run()
 }

@@ -147,12 +147,52 @@ func GetWineSourceRelease(os vangogh_local_data.OperatingSystem, releaseSelector
 	selRels := SelectReleases(wineSource.GitHubSource, releases, releaseSelector)
 
 	if selRels == nil {
-		return nil, nil, errors.New("nil releases match selector")
+		return nil, nil, errors.New("nil WINE releases match selector")
 	} else if len(selRels) == 0 {
-		return nil, nil, errors.New("no releases match selector")
+		return nil, nil, errors.New("no WINE releases match selector")
 	} else if len(selRels) > 1 {
-		return nil, nil, errors.New("multiple releases match selector")
+		return nil, nil, errors.New("multiple WINE releases match selector")
 	}
 
 	return wineSource, &selRels[0], nil
+}
+
+func GetDxVkSourceRelease(os vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector) (*GitHubSource, *github_integration.GitHubRelease, error) {
+	gitHubReleasesDir, err := pathways.GetAbsRelDir(GitHubReleases)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	kvGitHubReleases, err := kevlar.NewKeyValues(gitHubReleasesDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dxVkSource, err := GetDxVkSource(os, releaseSelector.Owner, releaseSelector.Repo)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rcReleases, err := kvGitHubReleases.Get(dxVkSource.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rcReleases.Close()
+
+	var releases []github_integration.GitHubRelease
+	if err := json.NewDecoder(rcReleases).Decode(&releases); err != nil {
+		return nil, nil, err
+	}
+
+	selRels := SelectReleases(dxVkSource, releases, releaseSelector)
+
+	if selRels == nil {
+		return nil, nil, errors.New("nil DXVK releases match selector")
+	} else if len(selRels) == 0 {
+		return nil, nil, errors.New("no DXVK releases match selector")
+	} else if len(selRels) > 1 {
+		return nil, nil, errors.New("multiple DXVK releases match selector")
+	}
+
+	return dxVkSource, &selRels[0], nil
 }

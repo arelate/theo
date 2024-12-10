@@ -8,10 +8,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	driveCpath = "drive_c"
-)
-
 func RevealPrefixHandler(u *url.URL) error {
 
 	name := u.Query().Get("name")
@@ -34,7 +30,7 @@ func RevealPrefix(name string) error {
 		return nil
 	}
 
-	absPrefixDriveCPath := filepath.Join(absPrefixDir, driveCpath)
+	absPrefixDriveCPath := filepath.Join(absPrefixDir, data.RelPfxDriveCDir)
 
 	if err := revealCurrentOs(absPrefixDriveCPath); err != nil {
 		return rpa.EndWithError(err)
