@@ -122,7 +122,7 @@ func placeMacOsExtracts(link vangogh_local_data.DownloadLink, productExtractsDir
 		return errors.New("placing .pkg extracts is only supported on macOS")
 	}
 
-	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
+	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, &link)
 	postInstallScript, err := ParsePostInstallScript(absPostInstallScriptPath)
 	if err != nil {
 		return err

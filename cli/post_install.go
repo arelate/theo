@@ -20,21 +20,19 @@ const (
 	catCmdPfx = "cat "
 )
 
-func FinalizeInstallationHandler(u *url.URL) error {
+func PostInstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	operatingSystems, langCodes, _ := OsLangCodeDownloadType(u)
-	sign := u.Query().Has("sign")
 
-	return FinalizeInstallation(ids, operatingSystems, langCodes, sign)
+	return PostInstall(ids, operatingSystems, langCodes)
 }
 
-func FinalizeInstallation(ids []string,
+func PostInstall(ids []string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string,
-	sign bool) error {
+	langCodes []string) error {
 
-	fia := nod.NewProgress("finalizing installation...")
+	fia := nod.NewProgress("performing post install actions...")
 	defer fia.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, nil, nil, true)
@@ -51,19 +49,22 @@ func FinalizeInstallation(ids []string,
 		return fia.EndWithError(err)
 	}
 
-	installationDir := defaultInstallationDir
-	if setupInstallDir, ok := rdx.GetLastVal(data.SetupProperties, data.InstallationPathProperty); ok && setupInstallDir != "" {
-		installationDir = setupInstallDir
-	}
-
 	installerDownloadType := []vangogh_local_data.DownloadType{vangogh_local_data.Installer}
 
 	for _, id := range ids {
 
 		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, installerDownloadType, false); err == nil {
-			if err = finalizeProductInstallation(id, metadata, installationDir, rdx, sign); err != nil {
-				return fia.EndWithError(err)
+
+			for _, link := range metadata.DownloadLinks {
+
+				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
+				if linkOs == vangogh_local_data.MacOS {
+					if err := postMacOsProductInstall(id, &link, rdx); err != nil {
+						return fia.EndWithError(err)
+					}
+				}
 			}
+
 		} else {
 			return fia.EndWithError(err)
 		}
@@ -74,72 +75,65 @@ func FinalizeInstallation(ids []string,
 	return nil
 }
 
-func finalizeProductInstallation(id string,
-	metadata *vangogh_local_data.DownloadMetadata,
-	installationDir string,
-	rdx kevlar.WriteableRedux,
-	sign bool) error {
+func postMacOsProductInstall(id string,
+	link *vangogh_local_data.DownloadLink,
+	rdx kevlar.WriteableRedux) error {
 
-	fpia := nod.NewProgress(" finalizing installation for %s...", metadata.Title)
-	defer fpia.EndWithResult("done")
+	pmia := nod.Begin(" performing post install macOS actions...")
+	defer pmia.EndWithResult("done")
 
-	extractsDir, err := pathways.GetAbsDir(data.Extracts)
-	if err != nil {
-		return fpia.EndWithError(err)
+	if filepath.Ext(link.LocalFilename) != pkgExt {
+		// for macOS - there's nothing to be done for additional files (that are not .pkg installers)
+		return nil
 	}
-
-	productExtractsDir := filepath.Join(extractsDir, id)
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return fpia.EndWithError(err)
+		return pmia.EndWithError(err)
 	}
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
-	for _, link := range metadata.DownloadLinks {
+	extractsDir, err := pathways.GetAbsDir(data.Extracts)
+	if err != nil {
+		return pmia.EndWithError(err)
+	}
 
-		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
-		if linkOs != vangogh_local_data.MacOS {
-			// currently only macOS finalization is supported (required?)
-			continue
+	productExtractsDir := filepath.Join(extractsDir, id)
+
+	installationDir := defaultInstallationDir
+	if setupInstallDir, ok := rdx.GetLastVal(data.SetupProperties, data.InstallationPathProperty); ok && setupInstallDir != "" {
+		installationDir = setupInstallDir
+	}
+
+	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
+
+	pis, err := ParsePostInstallScript(absPostInstallScriptPath)
+	if err != nil {
+		return pmia.EndWithError(err)
+	}
+
+	bundleName := pis.BundleName()
+
+	// storing bundle name to use later
+	if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
+		return pmia.EndWithError(err)
+	}
+
+	bundleInstallPath := filepath.Join(installationDir, bundleName)
+
+	if customCommands := pis.CustomCommands(); len(customCommands) > 0 {
+		if err := processPostInstallScript(customCommands, productDownloadsDir, bundleInstallPath); err != nil {
+			return pmia.EndWithError(err)
 		}
-		if filepath.Ext(link.LocalFilename) != pkgExt {
-			// for macOS - there's no need to finalize additional files (not .pkg installers)
-			continue
-		}
+	}
 
-		absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
+	if err := removeXattrs(bundleInstallPath); err != nil {
+		return pmia.EndWithError(err)
+	}
 
-		pis, err := ParsePostInstallScript(absPostInstallScriptPath)
-		if err != nil {
-			return fpia.EndWithError(err)
-		}
-
-		bundleName := pis.BundleName()
-
-		// storing bundle name to use later
-		if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
-			return fpia.EndWithError(err)
-		}
-
-		bundleInstallPath := filepath.Join(installationDir, bundleName)
-
-		if customCommands := pis.CustomCommands(); len(customCommands) > 0 {
-			if err := processCustomCommands(customCommands, productDownloadsDir, bundleInstallPath); err != nil {
-				return fpia.EndWithError(err)
-			}
-		}
-
-		if err := removeXattrs(bundleInstallPath); err != nil {
-			return fpia.EndWithError(err)
-		}
-
-		if sign {
-			if err := codeSign(bundleInstallPath); err != nil {
-				return fpia.EndWithError(err)
-			}
-		}
+	if err := codeSign(bundleInstallPath); err != nil {
+		return pmia.EndWithError(err)
 	}
 
 	return nil
@@ -158,7 +152,7 @@ func codeSign(path string) error {
 	return cmd.Run()
 }
 
-func processCustomCommands(commands []string, productDownloadsDir, bundleInstallPath string) error {
+func processPostInstallScript(commands []string, productDownloadsDir, bundleInstallPath string) error {
 
 	pcca := nod.NewProgress(" processing custom commands...")
 	defer pcca.EndWithResult("done")

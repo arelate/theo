@@ -66,7 +66,7 @@ func Install(ids []string,
 			return err
 		}
 
-		if err := FinalizeInstallation(ids, operatingSystems, langCodes, sign); err != nil {
+		if err := PostInstall(ids, operatingSystems, langCodes); err != nil {
 			return err
 		}
 

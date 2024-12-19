@@ -38,12 +38,6 @@ extract
     lang-code&
     force
 
-finalize-installation
-    id^&*
-    os&
-    lang-code&
-    sign
-
 get-downloads-metadata
     id^&*
     force
@@ -104,6 +98,11 @@ place-extracts
     os&
     lang-code&
     force
+
+post-install
+    id^&*
+    os&
+    lang-code&
 
 remove-downloads
     id^&*
