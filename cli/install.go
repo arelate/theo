@@ -42,6 +42,10 @@ func Install(ids []string,
 		return err
 	}
 
+	if err := PostDownload(ids, operatingSystems, langCodes); err != nil {
+		return err
+	}
+
 	if err := Validate(ids, operatingSystems, langCodes); err != nil {
 		return err
 	}

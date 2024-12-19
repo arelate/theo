@@ -70,6 +70,7 @@ func main() {
 		"native-install":          cli.NativeInstallHandler,
 		"pin-installed-metadata":  cli.PinInstalledMetadataHandler,
 		"place-extracts":          cli.PlaceExtractsHandler,
+		"post-download":           cli.PostDownloadHandler,
 		"post-install":            cli.PostInstallHandler,
 		"serve":                   cli.ServeHandler,
 		"setup":                   cli.SetupHandler,

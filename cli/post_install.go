@@ -32,21 +32,21 @@ func PostInstall(ids []string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string) error {
 
-	fia := nod.NewProgress("performing post install actions...")
-	defer fia.EndWithResult("done")
+	pia := nod.NewProgress("performing post-install actions...")
+	defer pia.EndWithResult("done")
 
 	vangogh_local_data.PrintParams(ids, operatingSystems, nil, nil, true)
 
-	fia.TotalInt(len(ids))
+	pia.TotalInt(len(ids))
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return fia.EndWithError(err)
+		return pia.EndWithError(err)
 	}
 
 	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SetupProperties, data.BundleNameProperty)
 	if err != nil {
-		return fia.EndWithError(err)
+		return pia.EndWithError(err)
 	}
 
 	installerDownloadType := []vangogh_local_data.DownloadType{vangogh_local_data.Installer}
@@ -59,28 +59,28 @@ func PostInstall(ids []string,
 
 				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
 				if linkOs == vangogh_local_data.MacOS {
-					if err := postMacOsProductInstall(id, &link, rdx); err != nil {
-						return fia.EndWithError(err)
+					if err := macOsPostInstallActions(id, &link, rdx); err != nil {
+						return pia.EndWithError(err)
 					}
 				}
 			}
 
 		} else {
-			return fia.EndWithError(err)
+			return pia.EndWithError(err)
 		}
 
-		fia.Increment()
+		pia.Increment()
 	}
 
 	return nil
 }
 
-func postMacOsProductInstall(id string,
+func macOsPostInstallActions(id string,
 	link *vangogh_local_data.DownloadLink,
 	rdx kevlar.WriteableRedux) error {
 
-	pmia := nod.Begin(" performing post install macOS actions...")
-	defer pmia.EndWithResult("done")
+	mpia := nod.Begin(" performing post-install macOS actions for %s...", id)
+	defer mpia.EndWithResult("done")
 
 	if filepath.Ext(link.LocalFilename) != pkgExt {
 		// for macOS - there's nothing to be done for additional files (that are not .pkg installers)
@@ -89,14 +89,14 @@ func postMacOsProductInstall(id string,
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return pmia.EndWithError(err)
+		return mpia.EndWithError(err)
 	}
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
 	extractsDir, err := pathways.GetAbsDir(data.Extracts)
 	if err != nil {
-		return pmia.EndWithError(err)
+		return mpia.EndWithError(err)
 	}
 
 	productExtractsDir := filepath.Join(extractsDir, id)
@@ -110,30 +110,30 @@ func postMacOsProductInstall(id string,
 
 	pis, err := ParsePostInstallScript(absPostInstallScriptPath)
 	if err != nil {
-		return pmia.EndWithError(err)
+		return mpia.EndWithError(err)
 	}
 
 	bundleName := pis.BundleName()
 
 	// storing bundle name to use later
 	if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
-		return pmia.EndWithError(err)
+		return mpia.EndWithError(err)
 	}
 
 	bundleInstallPath := filepath.Join(installationDir, bundleName)
 
 	if customCommands := pis.CustomCommands(); len(customCommands) > 0 {
 		if err := processPostInstallScript(customCommands, productDownloadsDir, bundleInstallPath); err != nil {
-			return pmia.EndWithError(err)
+			return mpia.EndWithError(err)
 		}
 	}
 
 	if err := removeXattrs(bundleInstallPath); err != nil {
-		return pmia.EndWithError(err)
+		return mpia.EndWithError(err)
 	}
 
 	if err := codeSign(bundleInstallPath); err != nil {
-		return pmia.EndWithError(err)
+		return mpia.EndWithError(err)
 	}
 
 	return nil

@@ -99,6 +99,11 @@ place-extracts
     lang-code&
     force
 
+post-download
+    id^&*
+    os&
+    lang-code&
+
 post-install
     id^&*
     os&
