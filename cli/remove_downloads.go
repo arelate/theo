@@ -67,6 +67,17 @@ func removeProductDownloadLinks(id string,
 
 	for _, dl := range metadata.DownloadLinks {
 
+		vr := vangogh_local_data.ParseValidationResult(dl.ValidationResult)
+		if vr != vangogh_local_data.ValidatedSuccessfully &&
+			vr != vangogh_local_data.ValidatedMissingChecksum {
+			continue
+		}
+
+		// if we don't do this - product downloads dir itself will be removed
+		if dl.LocalFilename == "" {
+			continue
+		}
+
 		path := filepath.Join(downloadsDir, id, dl.LocalFilename)
 
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)

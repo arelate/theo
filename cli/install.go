@@ -117,7 +117,7 @@ func currentOsInstall(ids []string,
 		return ia.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.TitleProperty, data.BundleNameProperty)
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
 	if err != nil {
 		return ia.EndWithError(err)
 	}
@@ -209,7 +209,7 @@ func linuxInstall(id string,
 	absInstallerPath, installedAppsDir string,
 	rdx kevlar.WriteableRedux) error {
 
-	if err := rdx.MustHave(data.TitleProperty, data.BundleNameProperty); err != nil {
+	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
 		return err
 	}
 
@@ -221,7 +221,7 @@ func linuxInstall(id string,
 		return err
 	}
 
-	productTitle, _ := rdx.GetLastVal(data.TitleProperty, id)
+	productTitle, _ := rdx.GetLastVal(data.SlugProperty, id)
 
 	if err := rdx.ReplaceValues(data.BundleNameProperty, id, productTitle); err != nil {
 		return err
@@ -230,7 +230,7 @@ func linuxInstall(id string,
 	productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.Linux, link.LanguageCode), productTitle)
 
 	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
-	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", "\""+productInstalledAppDir+"\"")
+	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", productInstalledAppDir)
 	return cmd.Run()
 }
 
