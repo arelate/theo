@@ -37,12 +37,21 @@ func PostDownload(ids []string,
 
 			for _, link := range metadata.DownloadLinks {
 
+				err = nil
 				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
-				if linkOs == vangogh_local_data.Linux {
-					if err := linuxPostDownloadActions(id, &link); err != nil {
-						return pda.EndWithError(err)
-					}
+				switch linkOs {
+				case vangogh_local_data.Linux:
+					err = linuxPostDownloadActions(id, &link)
+				case vangogh_local_data.MacOS:
+					err = macOsPostDownloadActions(id, &link)
+				default:
+					// do nothing - no post-download actions required
 				}
+
+				if err != nil {
+					return pda.EndWithError(err)
+				}
+
 			}
 
 		} else {
@@ -68,6 +77,20 @@ func linuxPostDownloadActions(id string, link *vangogh_local_data.DownloadLink) 
 	productInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
 	return chmodExecutable(productInstallerPath)
+}
+
+func macOsPostDownloadActions(id string, link *vangogh_local_data.DownloadLink) error {
+	mpda := nod.Begin(" performing macOS post-download actions for %s...", id)
+	defer mpda.EndWithResult("done")
+
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return mpda.EndWithError(err)
+	}
+
+	productInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+
+	return removeXattrs(productInstallerPath)
 }
 
 func chmodExecutable(path string) error {

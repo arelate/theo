@@ -83,17 +83,17 @@ func nativeProductInstall(id string, metadata *vangogh_local_data.DownloadMetada
 		localFilePath := filepath.Join(productDownloadsDir, link.LocalFilename)
 
 		if linkOs == vangogh_local_data.MacOS && linkExt == pkgExt {
-			if err := nativeMacOsInstall(localFilePath); err != nil {
+			if err := macOsNativeInstall(localFilePath); err != nil {
 				return npia.EndWithError(err)
 			}
 		}
 		if linkOs == vangogh_local_data.Windows && linkExt == exeExt {
-			if err := nativeWindowsInstall(localFilePath, installationDir); err != nil {
+			if err := windowsNativeInstall(localFilePath, installationDir); err != nil {
 				return npia.EndWithError(err)
 			}
 		}
 		if linkOs == vangogh_local_data.Linux && linkExt == shExt {
-			if err := nativeLinuxInstall(localFilePath, installationDir); err != nil {
+			if err := linuxNativeInstall(localFilePath, installationDir); err != nil {
 				return npia.EndWithError(err)
 			}
 		}
@@ -102,13 +102,9 @@ func nativeProductInstall(id string, metadata *vangogh_local_data.DownloadMetada
 	return nil
 }
 
-func nativeMacOsInstall(installerPath string) error {
+func macOsNativeInstall(installerPath string) error {
 
 	if _, err := os.Stat(installerPath); err != nil {
-		return err
-	}
-
-	if err := removeXattrs(installerPath); err != nil {
 		return err
 	}
 
@@ -118,10 +114,10 @@ func nativeMacOsInstall(installerPath string) error {
 	return cmd.Run()
 }
 
-func nativeWindowsInstall(installerPath, installationDir string) error {
+func windowsNativeInstall(installerPath, installationDir string) error {
 	return errors.New("native Windows installation is not implemented")
 }
 
-func nativeLinuxInstall(installerPath, installationDir string) error {
+func linuxNativeInstall(installerPath, installationDir string) error {
 	return errors.New("native Linux installation is not implemented")
 }
