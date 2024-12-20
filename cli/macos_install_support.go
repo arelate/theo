@@ -54,10 +54,14 @@ func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloa
 	return cmd.Run()
 }
 
-func macOsPlaceExtracts(link *vangogh_local_data.DownloadLink, productExtractsDir, osLangInstalledAppsDir string, force bool) error {
+func macOsPlaceExtracts(id string, link *vangogh_local_data.DownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx kevlar.WriteableRedux, force bool) error {
 
 	if CurrentOS() != vangogh_local_data.MacOS {
 		return errors.New("placing .pkg extracts is only supported on macOS")
+	}
+
+	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
+		return err
 	}
 
 	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
@@ -76,6 +80,10 @@ func macOsPlaceExtracts(link *vangogh_local_data.DownloadLink, productExtractsDi
 
 	if bundleName == "" {
 		return errors.New("cannot determine bundle name from postinstall file")
+	}
+
+	if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
+		return err
 	}
 
 	installerType := postInstallScript.InstallerType()
@@ -184,16 +192,6 @@ func macOsPostInstallActions(id string,
 		return nil
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return mpia.EndWithError(err)
-	}
-
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.BundleNameProperty)
-	if err != nil {
-		return mpia.EndWithError(err)
-	}
-
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
 		return mpia.EndWithError(err)
@@ -216,11 +214,6 @@ func macOsPostInstallActions(id string,
 	}
 
 	bundleName := pis.BundleName()
-
-	// storing bundle name to use later
-	if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
-		return mpia.EndWithError(err)
-	}
 
 	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode), bundleName)
 

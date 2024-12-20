@@ -26,5 +26,6 @@ func AllProperties() []string {
 		SetupProperties,
 		BundleNameProperty,
 		TitleProperty,
+		SlugProperty,
 	}
 }

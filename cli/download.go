@@ -96,6 +96,12 @@ func getProductDownloadLinks(id string,
 
 	for _, dl := range metadata.DownloadLinks {
 
+		vr := vangogh_local_data.ParseValidationResult(dl.ValidationResult)
+		if vr != vangogh_local_data.ValidatedSuccessfully &&
+			vr != vangogh_local_data.ValidatedMissingChecksum {
+			continue
+		}
+
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 
 		fileUrl, err := data.VangoghUrl(rdx,

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
@@ -111,6 +112,16 @@ func currentOsInstall(ids []string,
 		return ia.EndWithError(err)
 	}
 
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return ia.EndWithError(err)
+	}
+
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.TitleProperty, data.BundleNameProperty)
+	if err != nil {
+		return ia.EndWithError(err)
+	}
+
 	for _, id := range ids {
 
 		if metadata, err := GetDownloadMetadata(id, currentOs, langCodes, downloadTypes, force); err == nil {
@@ -132,19 +143,19 @@ func currentOsInstall(ids []string,
 					}
 
 					if linkExt == pkgExt {
-						if err := macOsInstall(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, force); err != nil {
+						if err := macOsInstall(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, rdx, force); err != nil {
+							return ia.EndWithError(err)
+						}
+					}
+				case vangogh_local_data.Linux:
+					if linkExt == shExt {
+						if err := linuxInstall(id, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
 							return ia.EndWithError(err)
 						}
 					}
 				case vangogh_local_data.Windows:
 					if linkExt == exeExt {
 						if err := windowsInstall(id, &link, absInstallerPath, installedAppsDir); err != nil {
-							return ia.EndWithError(err)
-						}
-					}
-				case vangogh_local_data.Linux:
-					if linkExt == shExt {
-						if err := linuxInstall(id, &link, absInstallerPath, installedAppsDir); err != nil {
 							return ia.EndWithError(err)
 						}
 					}
@@ -167,6 +178,7 @@ func macOsInstall(id string,
 	metadata *vangogh_local_data.DownloadMetadata,
 	link *vangogh_local_data.DownloadLink,
 	downloadsDir, extractsDir, installedAppsDir string,
+	rdx kevlar.WriteableRedux,
 	force bool) error {
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
@@ -177,7 +189,7 @@ func macOsInstall(id string,
 		return err
 	}
 
-	if err := macOsPlaceExtracts(link, productExtractsDir, osLangInstalledAppsDir, force); err != nil {
+	if err := macOsPlaceExtracts(id, link, productExtractsDir, osLangInstalledAppsDir, rdx, force); err != nil {
 		return err
 	}
 
@@ -194,7 +206,12 @@ func macOsInstall(id string,
 
 func linuxInstall(id string,
 	link *vangogh_local_data.DownloadLink,
-	absInstallerPath, installedAppsDir string) error {
+	absInstallerPath, installedAppsDir string,
+	rdx kevlar.WriteableRedux) error {
+
+	if err := rdx.MustHave(data.TitleProperty, data.BundleNameProperty); err != nil {
+		return err
+	}
 
 	if _, err := os.Stat(absInstallerPath); err != nil {
 		return err
@@ -204,10 +221,16 @@ func linuxInstall(id string,
 		return err
 	}
 
-	productInstalledDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.Linux, link.LanguageCode))
+	productTitle, _ := rdx.GetLastVal(data.TitleProperty, id)
+
+	if err := rdx.ReplaceValues(data.BundleNameProperty, id, productTitle); err != nil {
+		return err
+	}
+
+	productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.Linux, link.LanguageCode), productTitle)
 
 	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
-	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", productInstalledDir)
+	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", "\""+productInstalledAppDir+"\"")
 	return cmd.Run()
 }
 

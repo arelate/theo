@@ -50,7 +50,7 @@ func GetDownloadMetadata(id string,
 	}
 
 	if has, err := kvDownloadsMetadata.Has(id); err == nil {
-		if !has {
+		if !has || force {
 			if err = GetDownloadsMetadata([]string{id}, force); err != nil {
 				return nil, fdla.EndWithError(err)
 			}

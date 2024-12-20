@@ -26,6 +26,8 @@ func Ids(u *url.URL) []string {
 }
 
 func CurrentOS() vangogh_local_data.OperatingSystem {
+	return vangogh_local_data.Linux
+
 	if os, ok := goOperatingSystems[runtime.GOOS]; ok {
 		return os
 	} else {
