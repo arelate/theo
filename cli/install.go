@@ -118,7 +118,7 @@ func currentOsInstall(ids []string,
 			for _, link := range metadata.DownloadLinks {
 				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
 				linkExt := filepath.Ext(link.LocalFilename)
-				absInstallerPath := filepath.Join(downloadsDir, link.LocalFilename)
+				absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
 				if linkOs != CurrentOS() {
 					continue
