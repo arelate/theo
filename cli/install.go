@@ -137,7 +137,7 @@ func currentOsInstall(ids []string,
 
 				switch linkOs {
 				case vangogh_local_data.MacOS:
-					extractsDir, err := pathways.GetAbsRelDir(data.Extracts)
+					extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
 					if err != nil {
 						return ia.EndWithError(err)
 					}

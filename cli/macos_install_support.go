@@ -199,7 +199,7 @@ func macOsPostInstallActions(id string,
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
-	extractsDir, err := pathways.GetAbsRelDir(data.Extracts)
+	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
 	if err != nil {
 		return mpia.EndWithError(err)
 	}
