@@ -31,13 +31,6 @@ download
     lang-code&
     force
 
-extract
-    id^&*
-    no-dlc
-    os&
-    lang-code&
-    force
-
 get-downloads-metadata
     id^&*
     force
@@ -58,9 +51,7 @@ install
     no-dlc
     os&
     lang-code&
-    native
     keep-downloads
-    sign
     force
 
 list-installed
@@ -81,40 +72,11 @@ mod-prefix-retina
     revert
     force
 
-native-install
-    id^&*
-    no-dlc
-    os&
-    lang-code&
-    force
-
 pin-installed-metadata
     id^&*
     force
 
-place-extracts
-    id^&*
-    no-dlc
-    os&
-    lang-code&
-    force
-
-post-download
-    id^&*
-    os&
-    lang-code&
-
-post-install
-    id^&*
-    os&
-    lang-code&
-
 remove-downloads
-    id^&*
-    os&
-    lang-code&
-
-remove-extracts
     id^&*
     os&
     lang-code&
@@ -131,6 +93,8 @@ remove-prefix
     name*^
     no-archive
     force
+
+reset-vangogh-connection
 
 reveal-backups
 
@@ -149,17 +113,14 @@ serve
     port$
     stderr$
 
-setup
+set-vangogh-connection
     protocol
     address*
     port
     username*
     password*
-    installation-path
 
-reset-setup
-
-test-setup
+test-vangogh-connection
 
 uninstall
     id^&*

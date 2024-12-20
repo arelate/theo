@@ -61,9 +61,9 @@ func Uninstall(ids []string,
 		return ua.EndWithError(err)
 	}
 
-	installationDir := defaultInstallationDir
-	if setupInstallDir, ok := rdx.GetLastVal(data.SetupProperties, data.InstallationPathProperty); ok && setupInstallDir != "" {
-		installationDir = setupInstallDir
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return ua.EndWithError(err)
 	}
 
 	ua.TotalInt(len(ids))
@@ -74,19 +74,19 @@ func Uninstall(ids []string,
 		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
 
 		if slices.Contains(operatingSystems, vangogh_local_data.MacOS) {
-			if err := uninstallMacOsProduct(title, installationDir, bundleName); err != nil {
+			if err := uninstallMacOsProduct(title, installedAppsDir, bundleName); err != nil {
 				return ua.EndWithError(err)
 			}
 		}
 
 		if slices.Contains(operatingSystems, vangogh_local_data.Windows) {
-			if err := uninstallWindowsProduct(title, installationDir, bundleName); err != nil {
+			if err := uninstallWindowsProduct(title, installedAppsDir, bundleName); err != nil {
 				return ua.EndWithError(err)
 			}
 		}
 
 		if slices.Contains(operatingSystems, vangogh_local_data.Linux) {
-			if err := uninstallLinuxProduct(title, installationDir, bundleName); err != nil {
+			if err := uninstallLinuxProduct(title, installedAppsDir, bundleName); err != nil {
 				return ua.EndWithError(err)
 			}
 		}
@@ -111,7 +111,7 @@ func uninstallMacOsProduct(title, installationDir, bundleName string) error {
 		return errors.New("product must have bundle name for uninstall")
 	}
 
-	bundlePath := filepath.Join(installationDir, bundleName)
+	bundlePath := filepath.Join(installationDir, vangogh_local_data.MacOS.String(), bundleName)
 
 	if _, err := os.Stat(bundlePath); os.IsNotExist(err) {
 		umpa.EndWithResult("not present")

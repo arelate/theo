@@ -42,9 +42,9 @@ func ListInstalled() error {
 		return lia.EndWithError(err)
 	}
 
-	installationDir := defaultInstallationDir
-	if setupInstallDir, ok := rdx.GetLastVal(data.SetupProperties, data.InstallationPathProperty); ok && setupInstallDir != "" {
-		installationDir = setupInstallDir
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return lia.EndWithError(err)
 	}
 
 	ids, err := kvInstalledMetadata.Keys()
@@ -65,7 +65,9 @@ func ListInstalled() error {
 		}
 		if title != "" && bundleName != "" {
 			heading := fmt.Sprintf("%s (%s)", title, id)
-			bundlePath := filepath.Join(installationDir, bundleName)
+
+			// TODO: this needs to be OS-specific
+			bundlePath := filepath.Join(installedAppsDir, bundleName)
 			summary[heading] = append(summary[heading], bundlePath)
 		}
 	}

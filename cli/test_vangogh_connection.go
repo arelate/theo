@@ -9,17 +9,16 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 )
 
-func TestSetupHandler(_ *url.URL) error {
-	return TestSetup()
+func TestVangoghConnectionHandler(_ *url.URL) error {
+	return TestVangoghConnection()
 }
 
-func TestSetup() error {
+func TestVangoghConnection() error {
 
-	tsa := nod.Begin("testing theo setup...")
-	defer tsa.End()
+	tsa := nod.Begin("testing vangogh connection...")
+	defer tsa.EndWithResult("success - theo setup is valid")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -38,12 +37,6 @@ func TestSetup() error {
 	if err := testVangoghAuth(rdx); err != nil {
 		return tsa.EndWithError(err)
 	}
-
-	if err := testInstallationPath(rdx); err != nil {
-		return tsa.EndWithError(err)
-	}
-
-	tsa.EndWithResult("success - theo setup is valid")
 
 	return nil
 }
@@ -127,22 +120,6 @@ func testVangoghAuth(rdx kevlar.ReadableRedux) error {
 	}
 
 	tvaa.EndWithResult("done, healthy")
-
-	return nil
-}
-
-func testInstallationPath(rdx kevlar.ReadableRedux) error {
-
-	tipa := nod.Begin(" testing installation path validity...")
-	defer tipa.End()
-
-	if ip, ok := rdx.GetLastVal(data.SetupProperties, data.InstallationPathProperty); ok && ip != "" {
-		if _, err := os.Stat(ip); err != nil {
-			return tipa.EndWithError(err)
-		}
-	}
-
-	tipa.EndWithResult("not set, will use default")
 
 	return nil
 }

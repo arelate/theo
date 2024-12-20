@@ -10,7 +10,7 @@ import (
 
 type SetupProperties map[string]string
 
-func SetupHandler(u *url.URL) error {
+func SetVangoghConnectionHandler(u *url.URL) error {
 
 	q := u.Query()
 
@@ -21,27 +21,22 @@ func SetupHandler(u *url.URL) error {
 	username := q.Get("username")
 	password := q.Get("password")
 
-	installPath := q.Get("installation-path")
-
-	return Setup(protocol, address, port,
-		username, password,
-		installPath)
+	return SetVangoghConnection(protocol, address, port, username, password)
 }
 
-func Setup(
+func SetVangoghConnection(
 	protocol, address, port string,
-	username, password string,
-	installPath string) error {
+	username, password string) error {
 
 	// resetting setup properties since not every property is required (e.g. port, protocol)
 	// and it would be possible to end up with a set of properties that will let to failures
 	// in non-obvious ways
-	if err := ResetSetup(); err != nil {
+	if err := ResetVangoghConnection(); err != nil {
 		return err
 	}
 
-	sa := nod.Begin("setting up theo...")
-	defer sa.End()
+	sa := nod.Begin("setting up vangogh connection...")
+	defer sa.EndWithResult("done, run test-setup to validate")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -68,15 +63,9 @@ func Setup(
 	setupProperties[data.VangoghUsernameProperty] = []string{username}
 	setupProperties[data.VangoghPasswordProperty] = []string{password}
 
-	if installPath != "" {
-		setupProperties[data.InstallationPathProperty] = []string{installPath}
-	}
-
 	if err := rdx.BatchReplaceValues(data.SetupProperties, setupProperties); err != nil {
 		return sa.EndWithError(err)
 	}
-
-	sa.EndWithResult("done, run test-setup to validate")
 
 	return nil
 }

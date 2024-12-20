@@ -8,13 +8,13 @@ import (
 	"net/url"
 )
 
-func ResetSetupHandler(_ *url.URL) error {
-	return ResetSetup()
+func ResetVangoghConnectionHandler(_ *url.URL) error {
+	return ResetVangoghConnection()
 }
 
-func ResetSetup() error {
-	rsa := nod.Begin("resetting theo setup...")
-	defer rsa.End()
+func ResetVangoghConnection() error {
+	rsa := nod.Begin("resetting vangogh connection setup...")
+	defer rsa.EndWithResult("done, run setup to init")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -32,14 +32,11 @@ func ResetSetup() error {
 		data.VangoghPortProperty,
 		data.VangoghUsernameProperty,
 		data.VangoghPasswordProperty,
-		data.InstallationPathProperty,
 	}
 
 	if err := rdx.CutKeys(data.SetupProperties, setupProperties...); err != nil {
 		return rsa.EndWithError(err)
 	}
-
-	rsa.EndWithResult("done, run setup to init")
 
 	return nil
 }

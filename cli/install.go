@@ -1,9 +1,25 @@
 package cli
 
 import (
+	"errors"
+	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+)
+
+const (
+	pkgExt = ".pkg"
+	exeExt = ".exe"
+	shExt  = ".sh"
+)
+
+const (
+	relPayloadPath = "package.pkg/Scripts/payload"
 )
 
 func InstallHandler(u *url.URL) error {
@@ -12,21 +28,17 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	native := q.Has("native")
 	keepDownloads := q.Has("keep-downloads")
-	sign := q.Has("sign")
 	force := q.Has("force")
 
-	return Install(ids, operatingSystems, langCodes, downloadTypes, native, keepDownloads, sign, force)
+	return Install(ids, operatingSystems, langCodes, downloadTypes, keepDownloads, force)
 }
 
 func Install(ids []string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
-	native bool,
 	keepDownloads bool,
-	sign bool,
 	force bool) error {
 
 	ia := nod.Begin("installing products...")
@@ -42,10 +54,6 @@ func Install(ids []string,
 		return err
 	}
 
-	if err := PostDownload(ids, operatingSystems, langCodes); err != nil {
-		return err
-	}
-
 	if err := Validate(ids, operatingSystems, langCodes); err != nil {
 		return err
 	}
@@ -54,30 +62,8 @@ func Install(ids []string,
 		return err
 	}
 
-	if native {
-
-		if err := NativeInstall(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
-			return err
-		}
-
-	} else {
-
-		if err := Extract(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
-			return err
-		}
-
-		if err := PlaceExtracts(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
-			return err
-		}
-
-		if err := PostInstall(ids, operatingSystems, langCodes); err != nil {
-			return err
-		}
-
-		if err := RemoveExtracts(ids, operatingSystems, langCodes, force); err != nil {
-			return err
-		}
-
+	if err := platformInstall(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+		return err
 	}
 
 	if !keepDownloads {
@@ -91,4 +77,126 @@ func Install(ids []string,
 	}
 
 	return nil
+}
+
+func platformInstall(ids []string,
+	operatingSystems []vangogh_local_data.OperatingSystem,
+	langCodes []string,
+	downloadTypes []vangogh_local_data.DownloadType,
+	force bool) error {
+
+	ia := nod.NewProgress("installing products...")
+	defer ia.EndWithResult("done")
+
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+
+	ia.TotalInt(len(ids))
+
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return ia.EndWithError(err)
+	}
+
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return ia.EndWithError(err)
+	}
+
+	for _, id := range ids {
+
+		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
+
+			for _, link := range metadata.DownloadLinks {
+				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
+				linkExt := filepath.Ext(link.LocalFilename)
+				absInstallerPath := filepath.Join(downloadsDir, link.LocalFilename)
+
+				switch linkOs {
+				case vangogh_local_data.MacOS:
+					extractsDir, err := pathways.GetAbsRelDir(data.Extracts)
+					if err != nil {
+						return ia.EndWithError(err)
+					}
+
+					if linkExt == pkgExt {
+						if err := macOsInstall(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, force); err != nil {
+							return ia.EndWithError(err)
+						}
+					}
+				case vangogh_local_data.Windows:
+					if linkExt == exeExt {
+						if err := windowsInstall(id, &link, absInstallerPath, installedAppsDir); err != nil {
+							return ia.EndWithError(err)
+						}
+					}
+				case vangogh_local_data.Linux:
+					if linkExt == shExt {
+						if err := linuxInstall(id, &link, absInstallerPath, installedAppsDir); err != nil {
+							return ia.EndWithError(err)
+						}
+					}
+				default:
+					return ia.EndWithError(errors.New("unknown os" + linkOs.String()))
+				}
+			}
+
+		} else {
+			return ia.EndWithError(err)
+		}
+
+		ia.Increment()
+	}
+
+	return nil
+}
+
+func macOsInstall(id string, metadata *vangogh_local_data.DownloadMetadata, link *vangogh_local_data.DownloadLink, downloadsDir, extractsDir, installedAppsDir string, force bool) error {
+
+	productDownloadsDir := filepath.Join(downloadsDir, id)
+	productExtractsDir := filepath.Join(extractsDir, id)
+	osInstalledAppsDir := filepath.Join(installedAppsDir, vangogh_local_data.MacOS.String())
+
+	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
+		return err
+	}
+
+	if err := macOsPlaceExtracts(link, productExtractsDir, osInstalledAppsDir, force); err != nil {
+		return err
+	}
+
+	if err := macOsPostInstallActions(id, link, installedAppsDir); err != nil {
+		return err
+	}
+
+	if err := macOsRemoveProductExtracts(id, metadata, extractsDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func linuxInstall(id string, link *vangogh_local_data.DownloadLink, absInstallerPath, installedAppsDir string) error {
+
+	if _, err := os.Stat(absInstallerPath); err != nil {
+		return err
+	}
+
+	if err := linuxPostDownloadActions(id, link); err != nil {
+		return err
+	}
+
+	productInstalledDir := filepath.Join(installedAppsDir, vangogh_local_data.Linux.String())
+
+	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
+	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", productInstalledDir)
+	return cmd.Run()
+}
+
+func windowsInstall(id string, link *vangogh_local_data.DownloadLink, absInstallerPath, installedAppsDir string) error {
+
+	if CurrentOS() != vangogh_local_data.Windows {
+		return errors.New("Windows install is only supported on Windows, use wine-install to install Windows version on " + CurrentOS().String())
+	}
+
+	return errors.New("native Windows installation is not implemented")
 }

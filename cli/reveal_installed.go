@@ -39,20 +39,21 @@ func RevealInstalled(ids []string,
 		return fia.EndWithError(err)
 	}
 
-	installationDir := defaultInstallationDir
-	if setupInstallDir, ok := rdx.GetLastVal(data.SetupProperties, data.InstallationPathProperty); ok && setupInstallDir != "" {
-		installationDir = setupInstallDir
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return fia.EndWithError(err)
 	}
 
 	if len(ids) == 0 {
-		return revealCurrentOs(installationDir)
+		return revealCurrentOs(installedAppsDir)
 	}
 
 	for _, id := range ids {
 
 		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
 
-		installedPath := filepath.Join(installationDir, bundleName)
+		// TODO: this needs to be OS-specific
+		installedPath := filepath.Join(installedAppsDir, CurrentOS().String(), bundleName)
 		if err := revealCurrentOs(installedPath); err != nil {
 			return fia.EndWithError(err)
 		}
