@@ -49,8 +49,7 @@ init-prefix
 install
     id^&*
     no-dlc
-    os&
-    lang-code&
+    lang-code
     keep-downloads
     force
 
@@ -103,8 +102,7 @@ reveal-downloads
 
 reveal-installed
     id^&
-    os&
-    lang-code&
+    lang-code
 
 reveal-prefix
     name*^
@@ -124,7 +122,6 @@ test-vangogh-connection
 
 uninstall
     id^&*
-    os&
     keep-downloads
     force
 

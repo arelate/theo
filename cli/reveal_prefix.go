@@ -32,7 +32,7 @@ func RevealPrefix(name string) error {
 
 	absPrefixDriveCPath := filepath.Join(absPrefixDir, data.RelPfxDriveCDir)
 
-	if err := revealCurrentOs(absPrefixDriveCPath); err != nil {
+	if err := currentOsReveal(absPrefixDriveCPath); err != nil {
 		return rpa.EndWithError(err)
 	}
 

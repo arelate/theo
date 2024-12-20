@@ -54,7 +54,7 @@ func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloa
 	return cmd.Run()
 }
 
-func macOsPlaceExtracts(link *vangogh_local_data.DownloadLink, productExtractsDir, osInstalledAppsDir string, force bool) error {
+func macOsPlaceExtracts(link *vangogh_local_data.DownloadLink, productExtractsDir, osLangInstalledAppsDir string, force bool) error {
 
 	if CurrentOS() != vangogh_local_data.MacOS {
 		return errors.New("placing .pkg extracts is only supported on macOS")
@@ -79,7 +79,7 @@ func macOsPlaceExtracts(link *vangogh_local_data.DownloadLink, productExtractsDi
 	}
 
 	installerType := postInstallScript.InstallerType()
-	absBundlePath := filepath.Join(osInstalledAppsDir, bundleName)
+	absBundlePath := filepath.Join(osLangInstalledAppsDir, bundleName)
 
 	switch installerType {
 	case "game":
@@ -102,6 +102,13 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 		} else {
 			// already installed, overwrite won't be forced
 			return nil
+		}
+	}
+
+	installationDir, _ := filepath.Split(absInstallationPath)
+	if _, err := os.Stat(installationDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(installationDir, 0755); err != nil {
+			return err
 		}
 	}
 
@@ -215,7 +222,7 @@ func macOsPostInstallActions(id string,
 		return mpia.EndWithError(err)
 	}
 
-	absBundlePath := filepath.Join(installedAppsDir, vangogh_local_data.MacOS.String(), bundleName)
+	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode), bundleName)
 
 	if customCommands := pis.CustomCommands(); len(customCommands) > 0 {
 		if err := macOsProcessPostInstallScript(customCommands, productDownloadsDir, absBundlePath); err != nil {

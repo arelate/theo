@@ -23,52 +23,49 @@ func RevealDownloads(ids []string) error {
 	rda := nod.Begin("revealing downloads...")
 	defer rda.EndWithResult("done")
 
+	return currentOsRevealDownloads(ids...)
+}
+
+func currentOsRevealDownloads(ids ...string) error {
+
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return rda.EndWithError(err)
-	}
-
-	if len(ids) == 0 {
-		return revealCurrentOs(downloadsDir)
+		return err
 	}
 
 	for _, id := range ids {
-		if err := revealCurrentOs(filepath.Join(downloadsDir, id)); err != nil {
-			return rda.EndWithError(err)
+		productDownloadsDir := filepath.Join(downloadsDir, id)
+		if err := currentOsReveal(productDownloadsDir); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func revealCurrentOs(path string) error {
-
-	var err error
-
+func currentOsReveal(path string) error {
 	switch CurrentOS() {
 	case vangogh_local_data.MacOS:
-		err = revealMacOs(path)
+		return macOsReveal(path)
 	case vangogh_local_data.Windows:
-		err = revealWindows(path)
+		return windowsReveal(path)
 	case vangogh_local_data.Linux:
-		err = revealLinux(path)
+		return linuxReveal(path)
 	default:
-		err = errors.New("cannot reveal on unknown operating system")
+		return errors.New("cannot reveal on unknown operating system")
 	}
-
-	return err
 }
 
-func revealMacOs(path string) error {
+func macOsReveal(path string) error {
 	cmd := exec.Command("open", "-R", path)
 	return cmd.Run()
 }
 
-func revealWindows(path string) error {
+func windowsReveal(path string) error {
 	return errors.New("support for reveal on Windows is not implemented")
 }
 
-func revealLinux(path string) error {
+func linuxReveal(path string) error {
 	cmd := exec.Command("xdg-open", path)
 	return cmd.Run()
 }

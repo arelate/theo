@@ -27,16 +27,20 @@ func InstallHandler(u *url.URL) error {
 	q := u.Query()
 
 	ids := Ids(u)
-	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
+	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	keepDownloads := q.Has("keep-downloads")
 	force := q.Has("force")
 
-	return Install(ids, operatingSystems, langCodes, downloadTypes, keepDownloads, force)
+	langCode := defaultLangCode
+	if len(langCodes) > 0 {
+		langCode = langCodes[0]
+	}
+
+	return Install(ids, langCode, downloadTypes, keepDownloads, force)
 }
 
 func Install(ids []string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string,
+	langCode string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	keepDownloads bool,
 	force bool) error {
@@ -44,17 +48,20 @@ func Install(ids []string,
 	ia := nod.Begin("installing products...")
 	defer ia.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+	currentOs := []vangogh_local_data.OperatingSystem{CurrentOS()}
+	langCodes := []string{langCode}
+
+	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
 
 	if err := BackupMetadata(); err != nil {
 		return err
 	}
 
-	if err := Download(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+	if err := Download(ids, currentOs, langCodes, downloadTypes, force); err != nil {
 		return err
 	}
 
-	if err := Validate(ids, operatingSystems, langCodes); err != nil {
+	if err := Validate(ids, currentOs, langCodes); err != nil {
 		return err
 	}
 
@@ -62,33 +69,35 @@ func Install(ids []string,
 		return err
 	}
 
-	if err := platformInstall(ids, operatingSystems, langCodes, downloadTypes, force); err != nil {
+	if err := currentOsInstall(ids, langCode, downloadTypes, force); err != nil {
 		return err
 	}
 
 	if !keepDownloads {
-		if err := RemoveDownloads(ids, operatingSystems, langCodes, force); err != nil {
+		if err := RemoveDownloads(ids, currentOs, langCodes, force); err != nil {
 			return err
 		}
 	}
 
-	if err := RevealInstalled(ids, operatingSystems, langCodes); err != nil {
+	if err := RevealInstalled(ids, langCode); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func platformInstall(ids []string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string,
+func currentOsInstall(ids []string,
+	langCode string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
 
 	ia := nod.NewProgress("installing products...")
 	defer ia.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+	currentOs := []vangogh_local_data.OperatingSystem{CurrentOS()}
+	langCodes := []string{langCode}
+
+	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
 
 	ia.TotalInt(len(ids))
 
@@ -104,12 +113,16 @@ func platformInstall(ids []string,
 
 	for _, id := range ids {
 
-		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, downloadTypes, force); err == nil {
+		if metadata, err := GetDownloadMetadata(id, currentOs, langCodes, downloadTypes, force); err == nil {
 
 			for _, link := range metadata.DownloadLinks {
 				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
 				linkExt := filepath.Ext(link.LocalFilename)
 				absInstallerPath := filepath.Join(downloadsDir, link.LocalFilename)
+
+				if linkOs != CurrentOS() {
+					continue
+				}
 
 				switch linkOs {
 				case vangogh_local_data.MacOS:
@@ -150,17 +163,21 @@ func platformInstall(ids []string,
 	return nil
 }
 
-func macOsInstall(id string, metadata *vangogh_local_data.DownloadMetadata, link *vangogh_local_data.DownloadLink, downloadsDir, extractsDir, installedAppsDir string, force bool) error {
+func macOsInstall(id string,
+	metadata *vangogh_local_data.DownloadMetadata,
+	link *vangogh_local_data.DownloadLink,
+	downloadsDir, extractsDir, installedAppsDir string,
+	force bool) error {
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 	productExtractsDir := filepath.Join(extractsDir, id)
-	osInstalledAppsDir := filepath.Join(installedAppsDir, vangogh_local_data.MacOS.String())
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode))
 
 	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
 		return err
 	}
 
-	if err := macOsPlaceExtracts(link, productExtractsDir, osInstalledAppsDir, force); err != nil {
+	if err := macOsPlaceExtracts(link, productExtractsDir, osLangInstalledAppsDir, force); err != nil {
 		return err
 	}
 
@@ -175,7 +192,9 @@ func macOsInstall(id string, metadata *vangogh_local_data.DownloadMetadata, link
 	return nil
 }
 
-func linuxInstall(id string, link *vangogh_local_data.DownloadLink, absInstallerPath, installedAppsDir string) error {
+func linuxInstall(id string,
+	link *vangogh_local_data.DownloadLink,
+	absInstallerPath, installedAppsDir string) error {
 
 	if _, err := os.Stat(absInstallerPath); err != nil {
 		return err
@@ -185,14 +204,16 @@ func linuxInstall(id string, link *vangogh_local_data.DownloadLink, absInstaller
 		return err
 	}
 
-	productInstalledDir := filepath.Join(installedAppsDir, vangogh_local_data.Linux.String())
+	productInstalledDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.Linux, link.LanguageCode))
 
 	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
 	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", productInstalledDir)
 	return cmd.Run()
 }
 
-func windowsInstall(id string, link *vangogh_local_data.DownloadLink, absInstallerPath, installedAppsDir string) error {
+func windowsInstall(id string,
+	link *vangogh_local_data.DownloadLink,
+	absInstallerPath, installedAppsDir string) error {
 
 	if CurrentOS() != vangogh_local_data.Windows {
 		return errors.New("Windows install is only supported on Windows, use wine-install to install Windows version on " + CurrentOS().String())

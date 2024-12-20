@@ -18,8 +18,8 @@ func RevealBackups() error {
 
 	backupsDir, err := pathways.GetAbsDir(data.Backups)
 	if err != nil {
-		return rda.EndWithError(err)
+		return err
 	}
 
-	return revealCurrentOs(backupsDir)
+	return currentOsReveal(backupsDir)
 }

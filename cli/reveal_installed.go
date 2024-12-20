@@ -13,19 +13,24 @@ import (
 func RevealInstalledHandler(u *url.URL) error {
 
 	ids := Ids(u)
-	operatingSystems, langCodes, _ := OsLangCodeDownloadType(u)
 
-	return RevealInstalled(ids, operatingSystems, langCodes)
+	langCode := defaultLangCode
+	if u.Query().Has(vangogh_local_data.LanguageCodeProperty) {
+		langCode = u.Query().Get(vangogh_local_data.LanguageCodeProperty)
+	}
+
+	return RevealInstalled(ids, langCode)
 }
 
-func RevealInstalled(ids []string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string) error {
+func RevealInstalled(ids []string, langCode string) error {
 
 	fia := nod.NewProgress("revealing installed products...")
 	defer fia.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
+	currentOs := []vangogh_local_data.OperatingSystem{CurrentOS()}
+	langCodes := []string{langCode}
+
+	vangogh_local_data.PrintParams(ids, currentOs, langCodes, nil, true)
 
 	fia.TotalInt(len(ids))
 
@@ -39,26 +44,22 @@ func RevealInstalled(ids []string,
 		return fia.EndWithError(err)
 	}
 
+	return currentOsRevealInstalledApps(langCode, rdx, ids...)
+}
+
+func currentOsRevealInstalledApps(langCode string, rdx kevlar.ReadableRedux, ids ...string) error {
+
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
-		return fia.EndWithError(err)
-	}
-
-	if len(ids) == 0 {
-		return revealCurrentOs(installedAppsDir)
+		return err
 	}
 
 	for _, id := range ids {
-
 		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-
-		// TODO: this needs to be OS-specific
-		installedPath := filepath.Join(installedAppsDir, CurrentOS().String(), bundleName)
-		if err := revealCurrentOs(installedPath); err != nil {
-			return fia.EndWithError(err)
+		productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(CurrentOS(), langCode), bundleName)
+		if err := currentOsReveal(productInstalledAppDir); err != nil {
+			return err
 		}
-
-		fia.Increment()
 	}
 
 	return nil
