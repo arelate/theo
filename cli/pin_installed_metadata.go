@@ -19,15 +19,15 @@ func PinInstalledMetadataHandler(u *url.URL) error {
 
 func PinInstalledMetadata(ids []string, force bool) error {
 
-	pima := nod.NewProgress("pinning metadata as installed...")
+	pima := nod.NewProgress("pinning theo metadata as installed...")
 	defer pima.EndWithResult("done")
 
-	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
+	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {
 		return pima.EndWithError(err)
 	}
 
-	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
+	kvTheoMetadata, err := kevlar.NewKeyValues(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return pima.EndWithError(err)
 	}
@@ -46,7 +46,7 @@ func PinInstalledMetadata(ids []string, force bool) error {
 
 	for _, id := range ids {
 
-		if err := pinDownloadsMetadata(id, kvDownloadsMetadata, kvInstalledMetadata, force); err != nil {
+		if err := pinTheoMetadata(id, kvTheoMetadata, kvInstalledMetadata, force); err != nil {
 			return pima.EndWithError(err)
 		}
 
@@ -57,15 +57,15 @@ func PinInstalledMetadata(ids []string, force bool) error {
 	return nil
 }
 
-func pinDownloadsMetadata(id string, kvDownloadsMetadata, kvInstalledMetadata kevlar.KeyValues, force bool) error {
+func pinTheoMetadata(id string, kvTheoMetadata, kvInstalledMetadata kevlar.KeyValues, force bool) error {
 
-	hasDownloadsMetadata, err := kvDownloadsMetadata.Has(id)
+	hasTheoMetadata, err := kvTheoMetadata.Has(id)
 	if err != nil {
 		return err
 	}
 
-	if !hasDownloadsMetadata {
-		return errors.New("downloads metadata not found for: " + id)
+	if !hasTheoMetadata {
+		return errors.New("theo metadata not found for: " + id)
 	}
 
 	hasInstalledMetadata, err := kvInstalledMetadata.Has(id)
@@ -77,7 +77,7 @@ func pinDownloadsMetadata(id string, kvDownloadsMetadata, kvInstalledMetadata ke
 		return nil
 	}
 
-	src, err := kvDownloadsMetadata.Get(id)
+	src, err := kvTheoMetadata.Get(id)
 	if err != nil {
 		return err
 	}

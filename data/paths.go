@@ -58,7 +58,7 @@ const (
 
 const (
 	Redux             pathways.RelDir = "_redux"
-	DownloadsMetadata pathways.RelDir = "downloads-metadata"
+	TheoMetadata      pathways.RelDir = "theo-metadata"
 	InstalledMetadata pathways.RelDir = "installed-metadata"
 	MacOsExtracts     pathways.RelDir = "_macos_extracts"
 	GitHubReleases    pathways.RelDir = "github-releases"
@@ -70,7 +70,7 @@ const (
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	Redux:             Metadata,
-	DownloadsMetadata: Metadata,
+	TheoMetadata:      Metadata,
 	InstalledMetadata: Metadata,
 	GitHubReleases:    Metadata,
 	Releases:          Cellars,

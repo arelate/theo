@@ -11,27 +11,27 @@ import (
 	"net/url"
 )
 
-func GetDownloadsMetadataHandler(u *url.URL) error {
+func GetTheoMetadataHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	force := u.Query().Has("force")
 
-	return GetDownloadsMetadata(ids, force)
+	return GetTheoMetadata(ids, force)
 }
 
-func GetDownloadsMetadata(ids []string, force bool) error {
+func GetTheoMetadata(ids []string, force bool) error {
 
-	gdma := nod.NewProgress("getting downloads metadata...")
+	gdma := nod.NewProgress("getting theo metadata...")
 	defer gdma.EndWithResult("done")
 
 	gdma.TotalInt(len(ids))
 
-	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
+	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {
 		return gdma.EndWithError(err)
 	}
 
-	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
+	kvTheoMetadata, err := kevlar.NewKeyValues(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return gdma.EndWithError(err)
 	}
@@ -48,7 +48,7 @@ func GetDownloadsMetadata(ids []string, force bool) error {
 
 	for _, id := range ids {
 
-		if err = getProductDownloadsMetadata(id, rdx, kvDownloadsMetadata, force); err != nil {
+		if err = getProductTheoMetadata(id, rdx, kvTheoMetadata, force); err != nil {
 			return gdma.EndWithError(err)
 		}
 
@@ -58,9 +58,9 @@ func GetDownloadsMetadata(ids []string, force bool) error {
 	return nil
 }
 
-func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kvDownloadsMetadata kevlar.KeyValues, force bool) error {
+func getProductTheoMetadata(id string, rdx kevlar.ReadableRedux, kvTheoMetadata kevlar.KeyValues, force bool) error {
 
-	if has, err := kvDownloadsMetadata.Has(id); err == nil {
+	if has, err := kvTheoMetadata.Has(id); err == nil {
 		if has && !force {
 			return nil
 		}
@@ -69,7 +69,7 @@ func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kvDownload
 	}
 
 	vdmu, err := data.VangoghUrl(rdx,
-		data.VangoghDownloadsMetadataPath,
+		data.VangoghTheoMetadataPath,
 		map[string]string{vangogh_local_data.IdProperty: id})
 	if err != nil {
 		return err
@@ -85,5 +85,5 @@ func getProductDownloadsMetadata(id string, rdx kevlar.ReadableRedux, kvDownload
 		return errors.New(resp.Status)
 	}
 
-	return kvDownloadsMetadata.Set(id, resp.Body)
+	return kvTheoMetadata.Set(id, resp.Body)
 }

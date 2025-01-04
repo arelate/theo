@@ -38,7 +38,7 @@ func RemoveDownloads(ids []string,
 
 	for _, id := range ids {
 
-		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, nil, force); err == nil {
+		if metadata, err := LoadOrFetchTheoMetadata(id, operatingSystems, langCodes, nil, force); err == nil {
 			if err = removeProductDownloadLinks(id, metadata, downloadsDir); err != nil {
 				return rda.EndWithError(err)
 			}
@@ -53,7 +53,7 @@ func RemoveDownloads(ids []string,
 }
 
 func removeProductDownloadLinks(id string,
-	metadata *vangogh_local_data.DownloadMetadata,
+	metadata *vangogh_local_data.TheoMetadata,
 	downloadsDir string) error {
 
 	rdla := nod.Begin(" removing downloads for %s...", metadata.Title)

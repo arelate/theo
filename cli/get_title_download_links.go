@@ -10,11 +10,11 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func GetDownloadMetadata(id string,
+func LoadOrFetchTheoMetadata(id string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
-	force bool) (*vangogh_local_data.DownloadMetadata, error) {
+	force bool) (*vangogh_local_data.TheoMetadata, error) {
 
 	// if not download-type was specified - add all to avoid filtering on them
 	if downloadTypes == nil {
@@ -24,7 +24,7 @@ func GetDownloadMetadata(id string,
 		}
 	}
 
-	fdla := nod.Begin("filtering downloads metadata links for %s...", id)
+	fdla := nod.Begin("filtering theo metadata links for %s...", id)
 	defer fdla.End()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
@@ -39,19 +39,19 @@ func GetDownloadMetadata(id string,
 		return nil, err
 	}
 
-	downloadsMetadataDir, err := pathways.GetAbsRelDir(data.DownloadsMetadata)
+	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {
 		return nil, err
 	}
 
-	kvDownloadsMetadata, err := kevlar.NewKeyValues(downloadsMetadataDir, kevlar.JsonExt)
+	kvTheoMetadata, err := kevlar.NewKeyValues(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return nil, err
 	}
 
-	if has, err := kvDownloadsMetadata.Has(id); err == nil {
+	if has, err := kvTheoMetadata.Has(id); err == nil {
 		if !has || force {
-			if err = GetDownloadsMetadata([]string{id}, force); err != nil {
+			if err = GetTheoMetadata([]string{id}, force); err != nil {
 				return nil, fdla.EndWithError(err)
 			}
 		}
@@ -59,13 +59,13 @@ func GetDownloadMetadata(id string,
 		return nil, fdla.EndWithError(err)
 	}
 
-	dmrc, err := kvDownloadsMetadata.Get(id)
+	dmrc, err := kvTheoMetadata.Get(id)
 	if err != nil {
 		return nil, fdla.EndWithError(err)
 	}
 	defer dmrc.Close()
 
-	var downloadMetadata vangogh_local_data.DownloadMetadata
+	var downloadMetadata vangogh_local_data.TheoMetadata
 	if err = json.NewDecoder(dmrc).Decode(&downloadMetadata); err != nil {
 		return nil, fdla.EndWithError(err)
 	}

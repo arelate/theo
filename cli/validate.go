@@ -63,7 +63,7 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 
 	for _, id := range ids {
 
-		if metadata, err := GetDownloadMetadata(id, operatingSystems, langCodes, nil, false); err == nil {
+		if metadata, err := LoadOrFetchTheoMetadata(id, operatingSystems, langCodes, nil, false); err == nil {
 			if err = validateLinks(id, metadata, downloadsDir); err != nil {
 				return va.EndWithError(err)
 			}
@@ -75,7 +75,7 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 	return nil
 }
 
-func validateLinks(id string, metadata *vangogh_local_data.DownloadMetadata, downloadsDir string) error {
+func validateLinks(id string, metadata *vangogh_local_data.TheoMetadata, downloadsDir string) error {
 
 	vla := nod.NewProgress("validating %s...", metadata.Title)
 	defer vla.End()

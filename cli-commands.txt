@@ -31,7 +31,7 @@ download
     lang-code&
     force
 
-get-downloads-metadata
+get-theo-metadata
     id^&*
     force
 

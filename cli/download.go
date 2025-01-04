@@ -51,7 +51,7 @@ func Download(ids []string,
 
 	for _, id := range ids {
 
-		if metadata, err := GetDownloadMetadata(id,
+		if metadata, err := LoadOrFetchTheoMetadata(id,
 			operatingSystems,
 			langCodes,
 			downloadTypes,
@@ -74,7 +74,7 @@ func Download(ids []string,
 }
 
 func getProductDownloadLinks(id string,
-	metadata *vangogh_local_data.DownloadMetadata,
+	metadata *vangogh_local_data.TheoMetadata,
 	downloadsDir string,
 	rdx kevlar.ReadableRedux,
 	force bool) error {

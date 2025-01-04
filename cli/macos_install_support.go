@@ -332,7 +332,7 @@ func macOsExecCatFiles(srcGlob string, dstPath string) error {
 }
 
 func macOsRemoveProductExtracts(id string,
-	metadata *vangogh_local_data.DownloadMetadata,
+	metadata *vangogh_local_data.TheoMetadata,
 	extractsDir string) error {
 
 	rela := nod.Begin(" removing extracts for %s...", metadata.Title)

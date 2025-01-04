@@ -124,7 +124,7 @@ func currentOsInstall(ids []string,
 
 	for _, id := range ids {
 
-		if metadata, err := GetDownloadMetadata(id, currentOs, langCodes, downloadTypes, force); err == nil {
+		if metadata, err := LoadOrFetchTheoMetadata(id, currentOs, langCodes, downloadTypes, force); err == nil {
 
 			for _, link := range metadata.DownloadLinks {
 				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
@@ -175,7 +175,7 @@ func currentOsInstall(ids []string,
 }
 
 func macOsInstall(id string,
-	metadata *vangogh_local_data.DownloadMetadata,
+	metadata *vangogh_local_data.TheoMetadata,
 	link *vangogh_local_data.DownloadLink,
 	downloadsDir, extractsDir, installedAppsDir string,
 	rdx kevlar.WriteableRedux,
