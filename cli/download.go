@@ -55,7 +55,7 @@ func Download(ids []string,
 			operatingSystems,
 			langCodes,
 			downloadTypes,
-			force); err == nil {
+			force); err == nil && metadata != nil {
 			if err = getProductDownloadLinks(id,
 				metadata,
 				downloadsDir,
@@ -63,6 +63,9 @@ func Download(ids []string,
 				force); err != nil {
 				return da.EndWithError(err)
 			}
+		} else if metadata == nil {
+			da.EndWithResult("no metadata found for specified operating parameters")
+			return nil
 		} else {
 			return da.EndWithError(err)
 		}
