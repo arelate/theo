@@ -6,18 +6,19 @@ import (
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"os"
 	"os/exec"
 	"path/filepath"
 )
 
 func linuxPostDownloadActions(id string, link *vangogh_local_data.DownloadLink) error {
 
-	if CurrentOS() != vangogh_local_data.Linux {
-		return errors.New("Linux post-download actions are only supported on Linux")
-	}
-
 	lpda := nod.Begin(" performing Linux post-download actions for %s...", id)
 	defer lpda.EndWithResult("done")
+
+	if CurrentOS() != vangogh_local_data.Linux {
+		return lpda.EndWithError(errors.New("Linux post-download actions are only supported on Linux"))
+	}
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
@@ -31,7 +32,13 @@ func linuxPostDownloadActions(id string, link *vangogh_local_data.DownloadLink) 
 
 func chmodExecutable(path string) error {
 
+	cea := nod.Begin(" setting executable attribute...")
+	defer cea.EndWithResult("done")
+
 	// chmod +x path/to/file
 	cmd := exec.Command("chmod", "+x", path)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
 	return cmd.Run()
 }
