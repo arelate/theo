@@ -21,7 +21,7 @@ const (
 )
 
 const (
-	relMacOsCodeSignaturePath = "Contents/_CodeSignature"
+	relMacOsCodeSignaturePath = "Contents/_CodeSignature/CodeResources"
 )
 
 func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
