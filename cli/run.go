@@ -59,9 +59,13 @@ func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux) error {
 	}
 
 	bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-	productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(CurrentOS(), langCode), bundleName)
+	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(CurrentOS(), langCode), bundleName)
 
-	if err := currentOsExecute(productInstalledAppDir); err != nil {
+	if _, err := os.Stat(absBundlePath); err != nil {
+		return err
+	}
+
+	if err := currentOsExecute(absBundlePath); err != nil {
 		return err
 	}
 
@@ -82,6 +86,9 @@ func currentOsExecute(path string) error {
 }
 
 func macOsExecute(path string) error {
+
+	path = macOsLocateAppBundle(path)
+
 	cmd := exec.Command("open", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -94,9 +101,6 @@ func windowsExecute(path string) error {
 }
 
 func linuxExecute(path string) error {
-	cmd := exec.Command("xdg-open", path)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
+	// TODO: investigate what we need to specify on Linux to be able to run apps
+	return errors.New("support for running executables on Linux is not implemented")
 }
