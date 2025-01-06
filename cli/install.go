@@ -55,14 +55,11 @@ func Install(ids []string,
 
 	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
 
-	cia := nod.Begin(" checking existing installations...")
-	if notInstalled, installed, err := filterInstalled(langCode, ids...); err == nil {
+	if notInstalled, err := filterNotInstalled(langCode, ids...); err == nil {
 
 		if len(notInstalled) > 0 {
-			cia.EndWithResult("not installed, proceeding with installation: " + strings.Join(notInstalled, ","))
 			ids = notInstalled
 		} else if !force {
-			cia.EndWithResult("all requested products already installed: " + strings.Join(installed, ","))
 			return nil
 		}
 
@@ -103,8 +100,54 @@ func Install(ids []string,
 	return nil
 }
 
-func filterInstalled(langCode string, ids ...string) (notInstalled []string, installed []string, err error) {
-	return ids, nil, nil
+func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
+
+	fia := nod.Begin(" checking existing installations...")
+	defer fia.EndWithResult("done")
+
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return nil, fia.EndWithError(err)
+	}
+
+	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(CurrentOS(), langCode))
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return nil, fia.EndWithError(err)
+	}
+
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
+	if err != nil {
+		return nil, fia.EndWithError(err)
+	}
+
+	notInstalled := make([]string, 0, len(ids))
+
+	for _, id := range ids {
+
+		if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" {
+
+			bundlePath := filepath.Join(osLangCodeDir, bundleName)
+			if _, err := os.Stat(bundlePath); os.IsNotExist(err) {
+				notInstalled = append(notInstalled, id)
+			}
+
+		} else {
+			notInstalled = append(notInstalled, id)
+		}
+	}
+
+	if len(notInstalled) == 0 {
+		fia.EndWithResult("products have existing installations: %s", strings.Join(ids, ","))
+	} else {
+		fia.EndWithResult(
+			"%d product require installation: %s",
+			len(notInstalled),
+			strings.Join(notInstalled, ","))
+	}
+
+	return notInstalled, nil
 }
 
 func currentOsInstall(ids []string,
