@@ -20,10 +20,17 @@ const (
 	catCmdPfx = "cat "
 )
 
+const (
+	relMacOsCodeSignaturePath = "Contents/_CodeSignature"
+)
+
 func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
 
+	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
+	defer meia.EndWithResult("done")
+
 	if CurrentOS() != vangogh_local_data.MacOS {
-		return errors.New("extracting .pkg installers is only supported on macOS")
+		return meia.EndWithError(errors.New("extracting .pkg installers is only supported on macOS"))
 	}
 
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
@@ -33,7 +40,7 @@ func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloa
 	if _, err := os.Stat(localFilenameExtractsDir); err == nil {
 		if force {
 			if err := os.RemoveAll(localFilenameExtractsDir); err != nil {
-				return err
+				return meia.EndWithError(err)
 			}
 		} else {
 			return nil
@@ -43,47 +50,52 @@ func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloa
 	productExtractDir, _ := filepath.Split(localFilenameExtractsDir)
 	if _, err := os.Stat(productExtractDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(productExtractDir, 0755); err != nil {
-			return err
+			return meia.EndWithError(err)
 		}
 	}
 
 	localDownload := filepath.Join(productDownloadsDir, link.LocalFilename)
 
 	cmd := exec.Command("pkgutil", "--expand-full", localDownload, localFilenameExtractsDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }
 
 func macOsPlaceExtracts(id string, link *vangogh_local_data.DownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx kevlar.WriteableRedux, force bool) error {
 
+	mpea := nod.Begin(" placing product installation files...")
+	defer mpea.EndWithResult("done")
+
 	if CurrentOS() != vangogh_local_data.MacOS {
-		return errors.New("placing .pkg extracts is only supported on macOS")
+		return mpea.EndWithError(errors.New("placing .pkg extracts is only supported on macOS"))
 	}
 
 	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
-		return err
+		return mpea.EndWithError(err)
 	}
 
 	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
 	postInstallScript, err := ParsePostInstallScript(absPostInstallScriptPath)
 	if err != nil {
-		return err
+		return mpea.EndWithError(err)
 	}
 
 	absExtractPayloadPath := filepath.Join(productExtractsDir, link.LocalFilename, relPayloadPath)
 
 	if _, err := os.Stat(absExtractPayloadPath); os.IsNotExist(err) {
-		return errors.New("cannot locate extracts payload")
+		return mpea.EndWithError(errors.New("cannot locate extracts payload"))
 	}
 
 	bundleName := postInstallScript.BundleName()
 
 	if bundleName == "" {
-		return errors.New("cannot determine bundle name from postinstall file")
+		return mpea.EndWithError(errors.New("cannot determine bundle name from postinstall file"))
 	}
 
 	if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
-		return err
+		return mpea.EndWithError(err)
 	}
 
 	installerType := postInstallScript.InstallerType()
@@ -101,11 +113,14 @@ func macOsPlaceExtracts(id string, link *vangogh_local_data.DownloadLink, produc
 
 func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bool) error {
 
+	mpga := nod.Begin(" placing game installation files...")
+	defer mpga.EndWithResult("done")
+
 	// when installing a game
 	if _, err := os.Stat(absInstallationPath); err == nil {
 		if force {
 			if err := os.RemoveAll(absInstallationPath); err != nil {
-				return err
+				return mpga.EndWithError(err)
 			}
 		} else {
 			// already installed, overwrite won't be forced
@@ -116,7 +131,7 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 	installationDir, _ := filepath.Split(absInstallationPath)
 	if _, err := os.Stat(installationDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(installationDir, 0755); err != nil {
-			return err
+			return mpga.EndWithError(err)
 		}
 	}
 
@@ -125,9 +140,12 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 
 func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force bool) error {
 
+	mpda := nod.Begin(" placing downloadable content files...")
+	defer mpda.EndWithResult("done")
+
 	if _, err := os.Stat(absInstallationPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(absInstallationPath, 0755); err != nil {
-			return err
+			return mpda.EndWithError(err)
 		}
 	}
 
@@ -139,12 +157,12 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 			if relPath, err := filepath.Rel(absExtractsPayloadPath, path); err == nil {
 				dlcFiles = append(dlcFiles, relPath)
 			} else {
-				return err
+				return mpda.EndWithError(err)
 			}
 		}
 		return nil
 	}); err != nil {
-		return err
+		return mpda.EndWithError(err)
 	}
 
 	for _, dlcFile := range dlcFiles {
@@ -154,30 +172,18 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 
 		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(absDstDir, 0755); err != nil {
-				return err
+				return mpda.EndWithError(err)
 			}
 		}
 
 		absSrcPath := filepath.Join(absExtractsPayloadPath, dlcFile)
 
 		if err := os.Rename(absSrcPath, absDstPath); err != nil {
-			return err
+			return mpda.EndWithError(err)
 		}
 	}
 
 	return nil
-}
-
-func macOsPostDownloadActions(id, path string) error {
-
-	if CurrentOS() != vangogh_local_data.MacOS {
-		return errors.New("macOS post-download actions are only supported on macOS")
-	}
-
-	mpda := nod.Begin(" performing macOS post-download actions for %s...", id)
-	defer mpda.EndWithResult("done")
-
-	return macOsRemoveXattrs(path)
 }
 
 func macOsPostInstallActions(id string,
@@ -227,7 +233,7 @@ func macOsPostInstallActions(id string,
 		return mpia.EndWithError(err)
 	}
 
-	if err := macOsCodeSign(absBundlePath); err != nil {
+	if err := macOsCodeSignIfNot(absBundlePath); err != nil {
 		return mpia.EndWithError(err)
 	}
 
@@ -236,20 +242,39 @@ func macOsPostInstallActions(id string,
 
 func macOsRemoveXattrs(path string) error {
 
+	mrxa := nod.Begin(" removing xattrs...")
+	defer mrxa.EndWithResult("done")
+
 	// xattr -cr /Applications/Bundle Name.app
 	cmd := exec.Command("xattr", "-cr", path)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
 	return cmd.Run()
 }
 
-func macOsCodeSign(path string) error {
+func macOsCodeSignIfNot(path string) error {
+
+	mcsa := nod.Begin(" code-signing...")
+	defer mcsa.EndWithResult("done")
+
+	absCodeSignaturePath := filepath.Join(path, relMacOsCodeSignaturePath)
+	if _, err := os.Stat(absCodeSignaturePath); err == nil {
+		mcsa.EndWithResult("already signed")
+		return nil
+	}
+
 	// codesign --force --deep --sign - /Applications/Bundle Name.app
 	cmd := exec.Command("codesign", "--force", "--deep", "--sign", "-", path)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
 	return cmd.Run()
 }
 
 func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundleInstallPath string) error {
 
-	pcca := nod.NewProgress(" processing custom commands...")
+	pcca := nod.NewProgress(" processing post-install commands...")
 	defer pcca.EndWithResult("done")
 
 	pcca.TotalInt(len(commands))

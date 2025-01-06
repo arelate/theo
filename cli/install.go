@@ -149,13 +149,13 @@ func currentOsInstall(ids []string,
 					}
 				case vangogh_local_data.Linux:
 					if linkExt == shExt {
-						if err := linuxInstall(id, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
+						if err := linuxInstall(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
 							return ia.EndWithError(err)
 						}
 					}
 				case vangogh_local_data.Windows:
 					if linkExt == exeExt {
-						if err := windowsInstall(id, &link, absInstallerPath, installedAppsDir); err != nil {
+						if err := windowsInstall(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
 							return ia.EndWithError(err)
 						}
 					}
@@ -181,6 +181,9 @@ func macOsInstall(id string,
 	rdx kevlar.WriteableRedux,
 	force bool) error {
 
+	mia := nod.Begin("installing macOS version of %s...", metadata.Title)
+	defer mia.EndWithResult("done")
+
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 	productExtractsDir := filepath.Join(extractsDir, id)
 	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode))
@@ -205,9 +208,13 @@ func macOsInstall(id string,
 }
 
 func linuxInstall(id string,
+	metadata *vangogh_local_data.TheoMetadata,
 	link *vangogh_local_data.DownloadLink,
 	absInstallerPath, installedAppsDir string,
 	rdx kevlar.WriteableRedux) error {
+
+	lia := nod.Begin("installing Linux version of %s...")
+	defer lia.EndWithResult("done")
 
 	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
 		return err
@@ -235,12 +242,12 @@ func linuxInstall(id string,
 }
 
 func windowsInstall(id string,
+	metadata *vangogh_local_data.TheoMetadata,
 	link *vangogh_local_data.DownloadLink,
 	absInstallerPath, installedAppsDir string) error {
 
-	if CurrentOS() != vangogh_local_data.Windows {
-		return errors.New("Windows install is only supported on Windows, use wine-install to install Windows version on " + CurrentOS().String())
-	}
+	wia := nod.Begin("installing Windows version of %s...", metadata.Title)
+	defer wia.EndWithResult("done")
 
-	return errors.New("native Windows installation is not implemented")
+	return errors.New("Windows installation is not implemented")
 }
