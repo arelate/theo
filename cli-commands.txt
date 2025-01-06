@@ -54,6 +54,8 @@ install
     force
 
 list-installed
+    lang-code
+    size
 
 mod-prefix-dxvk
     name*^

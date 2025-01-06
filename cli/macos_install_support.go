@@ -243,10 +243,6 @@ func macOsPostInstallActions(id string,
 		return mpia.EndWithError(err)
 	}
 
-	//if err := macOsCodeSignIfNot(absBundlePath); err != nil {
-	//	return mpia.EndWithError(err)
-	//}
-
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -54,6 +55,21 @@ func Install(ids []string,
 
 	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
 
+	cia := nod.Begin(" checking existing installations...")
+	if notInstalled, installed, err := filterInstalled(langCode, ids...); err == nil {
+
+		if len(notInstalled) > 0 {
+			cia.EndWithResult("not installed, proceeding with installation: " + strings.Join(notInstalled, ","))
+			ids = notInstalled
+		} else if !force {
+			cia.EndWithResult("all requested products already installed: " + strings.Join(installed, ","))
+			return nil
+		}
+
+	} else {
+		return err
+	}
+
 	if err := BackupMetadata(); err != nil {
 		return err
 	}
@@ -85,6 +101,10 @@ func Install(ids []string,
 	}
 
 	return nil
+}
+
+func filterInstalled(langCode string, ids ...string) (notInstalled []string, installed []string, err error) {
+	return ids, nil, nil
 }
 
 func currentOsInstall(ids []string,
