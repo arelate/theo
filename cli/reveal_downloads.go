@@ -33,6 +33,10 @@ func currentOsRevealDownloads(ids ...string) error {
 		return err
 	}
 
+	if len(ids) == 0 {
+		return currentOsReveal(downloadsDir)
+	}
+
 	for _, id := range ids {
 		productDownloadsDir := filepath.Join(downloadsDir, id)
 		if err := currentOsReveal(productDownloadsDir); err != nil {
