@@ -243,9 +243,9 @@ func macOsPostInstallActions(id string,
 		return mpia.EndWithError(err)
 	}
 
-	if err := macOsCodeSignIfNot(absBundlePath); err != nil {
-		return mpia.EndWithError(err)
-	}
+	//if err := macOsCodeSignIfNot(absBundlePath); err != nil {
+	//	return mpia.EndWithError(err)
+	//}
 
 	return nil
 }
@@ -272,30 +272,6 @@ func macOsRemoveXattrs(path string) error {
 
 	// xattr -cr /Applications/Bundle Name.app
 	cmd := exec.Command("xattr", "-cr", path)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
-}
-
-func macOsCodeSignIfNot(path string) error {
-
-	mcsa := nod.Begin(" code-signing...")
-	defer mcsa.EndWithResult("done")
-
-	if !strings.HasSuffix(path, macOsAppBundleExt) {
-		mcsa.EndWithResult("skip codesign on a path that doesn't end with .app")
-		return nil
-	}
-
-	absCodeSignaturePath := filepath.Join(path, relMacOsCodeSignaturePath)
-	if _, err := os.Stat(absCodeSignaturePath); err == nil {
-		mcsa.EndWithResult("already signed")
-		return nil
-	}
-
-	// codesign --force --deep --sign - /Applications/Bundle Name.app
-	cmd := exec.Command("codesign", "--force", "--deep", "--sign", "-", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
