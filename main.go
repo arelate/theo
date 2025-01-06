@@ -77,6 +77,7 @@ func main() {
 		"reveal-installed":         cli.RevealInstalledHandler,
 		"reveal-prefix":            cli.RevealPrefixHandler,
 		"reset-vangogh-connection": cli.ResetVangoghConnectionHandler,
+		"run":                      cli.RunHandler,
 		"test-vangogh-connection":  cli.TestVangoghConnectionHandler,
 		"uninstall":                cli.UninstallHandler,
 		"unpack-github-releases":   cli.UnpackGitHubReleasesHandler,

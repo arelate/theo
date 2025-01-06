@@ -107,6 +107,10 @@ reveal-installed
 reveal-prefix
     name*^
 
+run
+    id^
+    lang-code
+
 serve
     port$
     stderr$
