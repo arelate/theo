@@ -24,6 +24,10 @@ const (
 	relMacOsCodeSignaturePath = "Contents/_CodeSignature/CodeResources"
 )
 
+const (
+	macOsAppBundleExt = ".app"
+)
+
 func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
@@ -223,6 +227,12 @@ func macOsPostInstallActions(id string,
 
 	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode), bundleName)
 
+	// some macOS bundles point to a directory, not an .app package
+	// try to locate .app package inside the bundle dir
+	if !strings.HasSuffix(absBundlePath, macOsAppBundleExt) {
+		absBundlePath = macOsLocateAppBundle(absBundlePath)
+	}
+
 	if customCommands := pis.CustomCommands(); len(customCommands) > 0 {
 		if err := macOsProcessPostInstallScript(customCommands, productDownloadsDir, absBundlePath); err != nil {
 			return mpia.EndWithError(err)
@@ -238,6 +248,21 @@ func macOsPostInstallActions(id string,
 	}
 
 	return nil
+}
+
+func macOsLocateAppBundle(path string) string {
+
+	if strings.HasSuffix(path, macOsAppBundleExt) {
+		return path
+	}
+
+	if matches, err := filepath.Glob(filepath.Join(path, "*"+macOsAppBundleExt)); err == nil {
+		if len(matches) == 1 {
+			return matches[0]
+		}
+	}
+
+	return path
 }
 
 func macOsRemoveXattrs(path string) error {
@@ -257,6 +282,11 @@ func macOsCodeSignIfNot(path string) error {
 
 	mcsa := nod.Begin(" code-signing...")
 	defer mcsa.EndWithResult("done")
+
+	if !strings.HasSuffix(path, macOsAppBundleExt) {
+		mcsa.EndWithResult("skip codesign on a path that doesn't end with .app")
+		return nil
+	}
 
 	absCodeSignaturePath := filepath.Join(path, relMacOsCodeSignaturePath)
 	if _, err := os.Stat(absCodeSignaturePath); err == nil {
