@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"net/url"
@@ -19,7 +20,7 @@ func CheckGstreamer() error {
 	cga := nod.Begin("checking whether GStreamer.framework is installed...")
 	defer cga.EndWithResult("done")
 
-	if CurrentOS() != vangogh_local_data.MacOS {
+	if data.CurrentOS() != vangogh_local_data.MacOS {
 		cga.EndWithResult("skipping. GStreamer is only required on macOS")
 		return nil
 	}

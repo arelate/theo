@@ -48,7 +48,7 @@ func currentOsRevealDownloads(ids ...string) error {
 }
 
 func currentOsReveal(path string) error {
-	switch CurrentOS() {
+	switch data.CurrentOS() {
 	case vangogh_local_data.MacOS:
 		return macOsReveal(path)
 	case vangogh_local_data.Windows:

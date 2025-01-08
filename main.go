@@ -53,6 +53,7 @@ func main() {
 	}
 
 	clo.HandleFuncs(map[string]clo.Handler{
+		"add-steam-shortcut":       cli.AddSteamShortcutHandler,
 		"archive-prefix":           cli.ArchivePrefixHandler,
 		"backup-metadata":          cli.BackupMetadataHandler,
 		"cache-github-releases":    cli.CacheGitHubReleasesHandler,

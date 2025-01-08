@@ -29,9 +29,9 @@ func ModPrefixDxVk(name string, releaseSelector *data.GitHubReleaseSelector, rev
 	mpa := nod.Begin("modding DXVK in prefix %s...", name)
 	defer mpa.EndWithResult("done")
 
-	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{CurrentOS()}, releaseSelector)
+	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{data.CurrentOS()}, releaseSelector)
 
-	if CurrentOS() != vangogh_local_data.MacOS {
+	if data.CurrentOS() != vangogh_local_data.MacOS {
 		mpa.EndWithResult("DXVK prefix mod is only applicable to macOS")
 		return nil
 	}
@@ -41,7 +41,7 @@ func ModPrefixDxVk(name string, releaseSelector *data.GitHubReleaseSelector, rev
 	}
 
 	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		dxVkSource, err := data.GetFirstDxVkSource(CurrentOS())
+		dxVkSource, err := data.GetFirstDxVkSource(data.CurrentOS())
 		if err != nil {
 			return mpa.EndWithError(err)
 		}
@@ -54,7 +54,7 @@ func ModPrefixDxVk(name string, releaseSelector *data.GitHubReleaseSelector, rev
 		return mpa.EndWithError(err)
 	}
 
-	dxVkSource, release, err := data.GetDxVkSourceRelease(CurrentOS(), releaseSelector)
+	dxVkSource, release, err := data.GetDxVkSourceRelease(data.CurrentOS(), releaseSelector)
 	if err != nil {
 		return mpa.EndWithError(err)
 	}

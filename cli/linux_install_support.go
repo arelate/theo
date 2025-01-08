@@ -16,7 +16,7 @@ func linuxPostDownloadActions(id string, link *vangogh_local_data.DownloadLink) 
 	lpda := nod.Begin(" performing Linux post-download actions for %s...", id)
 	defer lpda.EndWithResult("done")
 
-	if CurrentOS() != vangogh_local_data.Linux {
+	if data.CurrentOS() != vangogh_local_data.Linux {
 		return lpda.EndWithError(errors.New("Linux post-download actions are only supported on Linux"))
 	}
 

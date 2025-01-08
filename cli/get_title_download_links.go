@@ -16,11 +16,20 @@ func LoadOrFetchTheoMetadata(id string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) (*vangogh_local_data.TheoMetadata, error) {
 
-	// if not download-type was specified - add all to avoid filtering on them
-	if downloadTypes == nil {
+	// if no download-type was specified - add all to avoid filtering on them
+	if downloadTypes == nil ||
+		(len(downloadTypes) == 1 && downloadTypes[0] == vangogh_local_data.AnyDownloadType) {
 		downloadTypes = []vangogh_local_data.DownloadType{
 			vangogh_local_data.Installer,
 			vangogh_local_data.DLC,
+		}
+	}
+	if operatingSystems == nil ||
+		(len(operatingSystems) == 1 && operatingSystems[0] == vangogh_local_data.AnyOperatingSystem) {
+		operatingSystems = []vangogh_local_data.OperatingSystem{
+			vangogh_local_data.Windows,
+			vangogh_local_data.MacOS,
+			vangogh_local_data.Linux,
 		}
 	}
 

@@ -5,4 +5,5 @@ const (
 	VangoghHealthAuthPath   = "/api/health-auth"
 	VangoghTheoMetadataPath = "/api/metadata"
 	VangoghFilesPath        = "/files"
+	VangoghImagePath        = "/image"
 )

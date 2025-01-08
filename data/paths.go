@@ -14,12 +14,12 @@ import (
 const theoDirname = "theo"
 
 func InitRootDir() (string, error) {
-	ucd, err := os.UserConfigDir()
+	udhd, err := UserDataHomeDir()
 	if err != nil {
 		return "", err
 	}
 
-	rootDir := filepath.Join(ucd, theoDirname)
+	rootDir := filepath.Join(udhd, theoDirname)
 	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(rootDir, 0755); err != nil {
 			return "", err
@@ -44,7 +44,7 @@ func InitRootDir() (string, error) {
 		}
 	}
 
-	return filepath.Join(ucd, theoDirname), nil
+	return filepath.Join(udhd, theoDirname), nil
 }
 
 const (

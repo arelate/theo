@@ -6,6 +6,11 @@
 # {} - placeholder values
 # {^} - placeholder values, first value is default
 
+add-steam-shortcut
+    id^&
+    lang-code
+    force
+
 archive-prefix
     name*^
 

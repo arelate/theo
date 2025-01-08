@@ -27,7 +27,7 @@ func RevealInstalled(ids []string, langCode string) error {
 	fia := nod.NewProgress("revealing installed products...")
 	defer fia.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{CurrentOS()}
+	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
 	vangogh_local_data.PrintParams(ids, currentOs, langCodes, nil, true)
@@ -60,7 +60,7 @@ func currentOsRevealInstalledApps(langCode string, rdx kevlar.ReadableRedux, ids
 
 	for _, id := range ids {
 		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-		productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(CurrentOS(), langCode), bundleName)
+		productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOS(), langCode), bundleName)
 		if err := currentOsReveal(productInstalledAppDir); err != nil {
 			return err
 		}

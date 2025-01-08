@@ -29,7 +29,7 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 	}
 
 	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		dws, err := data.GetDefaultWineSource(CurrentOS())
+		dws, err := data.GetDefaultWineSource(data.CurrentOS())
 		if err != nil {
 			return upa.EndWithError(err)
 		}
@@ -37,7 +37,7 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 		releaseSelector.Repo = dws.Repo
 	}
 
-	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{CurrentOS()}, releaseSelector)
+	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{data.CurrentOS()}, releaseSelector)
 
 	absPrefixDir, err := data.GetAbsPrefixDir(name)
 	if err != nil {
@@ -49,7 +49,7 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 		return nil
 	}
 
-	absWineBin, err := data.GetWineBinary(CurrentOS(), releaseSelector)
+	absWineBin, err := data.GetWineBinary(data.CurrentOS(), releaseSelector)
 	if err != nil {
 		return upa.EndWithError(err)
 	}

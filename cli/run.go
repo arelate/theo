@@ -15,14 +15,12 @@ import (
 
 func RunHandler(u *url.URL) error {
 
-	var id string
-	if ids := Ids(u); len(ids) >= 1 {
-		id = ids[0]
-	}
+	q := u.Query()
 
+	id := q.Get(vangogh_local_data.IdProperty)
 	langCode := defaultLangCode
-	if u.Query().Has(vangogh_local_data.LanguageCodeProperty) {
-		langCode = u.Query().Get(vangogh_local_data.LanguageCodeProperty)
+	if q.Has(vangogh_local_data.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_local_data.LanguageCodeProperty)
 	}
 
 	return Run(id, langCode)
@@ -33,7 +31,7 @@ func Run(id string, langCode string) error {
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{CurrentOS()}
+	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
 	vangogh_local_data.PrintParams([]string{id}, currentOs, langCodes, nil, true)
@@ -59,7 +57,7 @@ func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux) error {
 	}
 
 	bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(CurrentOS(), langCode), bundleName)
+	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOS(), langCode), bundleName)
 
 	if _, err := os.Stat(absBundlePath); err != nil {
 		return err
@@ -73,7 +71,7 @@ func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux) error {
 }
 
 func currentOsExecute(path string) error {
-	switch CurrentOS() {
+	switch data.CurrentOS() {
 	case vangogh_local_data.MacOS:
 		return macOsExecute(path)
 	case vangogh_local_data.Windows:

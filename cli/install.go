@@ -50,7 +50,7 @@ func Install(ids []string,
 	ia := nod.Begin("installing products...")
 	defer ia.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{CurrentOS()}
+	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
 	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
@@ -110,7 +110,7 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 		return nil, fia.EndWithError(err)
 	}
 
-	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(CurrentOS(), langCode))
+	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOS(), langCode))
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -158,7 +158,7 @@ func currentOsInstall(ids []string,
 	ia := nod.NewProgress("installing products...")
 	defer ia.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{CurrentOS()}
+	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
 	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
@@ -194,7 +194,7 @@ func currentOsInstall(ids []string,
 				linkExt := filepath.Ext(link.LocalFilename)
 				absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-				if linkOs != CurrentOS() {
+				if linkOs != data.CurrentOS() {
 					continue
 				}
 

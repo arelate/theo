@@ -25,14 +25,14 @@ func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force 
 	cpa := nod.Begin("initializing prefix %s...", name)
 	defer cpa.EndWithResult("done")
 
-	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{CurrentOS()}, releaseSelector)
+	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{data.CurrentOS()}, releaseSelector)
 
 	if releaseSelector == nil {
 		releaseSelector = &data.GitHubReleaseSelector{}
 	}
 
 	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		dws, err := data.GetDefaultWineSource(CurrentOS())
+		dws, err := data.GetDefaultWineSource(data.CurrentOS())
 		if err != nil {
 			return cpa.EndWithError(err)
 		}
@@ -52,7 +52,7 @@ func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force 
 		}
 	}
 
-	absWineBin, err := data.GetWineBinary(CurrentOS(), releaseSelector)
+	absWineBin, err := data.GetWineBinary(data.CurrentOS(), releaseSelector)
 	if err != nil {
 		return cpa.EndWithError(err)
 	}
