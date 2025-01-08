@@ -31,6 +31,7 @@ func InstallHandler(u *url.URL) error {
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	keepDownloads := q.Has("keep-downloads")
+	addSteamShortcut := !q.Has("no-steam-shortcut")
 	force := q.Has("force")
 
 	langCode := defaultLangCode
@@ -38,13 +39,14 @@ func InstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return Install(ids, langCode, downloadTypes, keepDownloads, force)
+	return Install(ids, langCode, downloadTypes, keepDownloads, addSteamShortcut, force)
 }
 
 func Install(ids []string,
 	langCode string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	keepDownloads bool,
+	addSteamShortcut bool,
 	force bool) error {
 
 	ia := nod.Begin("installing products...")
@@ -85,6 +87,12 @@ func Install(ids []string,
 
 	if err := currentOsInstall(ids, langCode, downloadTypes, force); err != nil {
 		return err
+	}
+
+	if addSteamShortcut {
+		if err := AddSteamShortcut(langCode, force, ids...); err != nil {
+			return err
+		}
 	}
 
 	if !keepDownloads {
