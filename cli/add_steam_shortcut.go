@@ -127,23 +127,23 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 	dc := dolo.DefaultClient
 
-	imageProperties := make(map[string]string)
+	imageProperties := make(map[vangogh_local_data.ImageType]string)
 	if imagesMetadata.Image != "" {
-		imageProperties[vangogh_local_data.ImageProperty] = imagesMetadata.Image
+		imageProperties[vangogh_local_data.Image] = imagesMetadata.Image
 	}
 	if imagesMetadata.VerticalImage != "" {
-		imageProperties[vangogh_local_data.VerticalImageProperty] = imagesMetadata.VerticalImage
+		imageProperties[vangogh_local_data.VerticalImage] = imagesMetadata.VerticalImage
 	}
 	if imagesMetadata.Hero != "" {
-		imageProperties[vangogh_local_data.HeroProperty] = imagesMetadata.Hero
+		imageProperties[vangogh_local_data.Hero] = imagesMetadata.Hero
 	}
 	if imagesMetadata.Logo != "" {
-		imageProperties[vangogh_local_data.LogoProperty] = imagesMetadata.Logo
+		imageProperties[vangogh_local_data.Logo] = imagesMetadata.Logo
 	}
 	if imagesMetadata.IconSquare != "" {
-		imageProperties[vangogh_local_data.IconSquareProperty] = imagesMetadata.IconSquare
+		imageProperties[vangogh_local_data.IconSquare] = imagesMetadata.IconSquare
 	} else if imagesMetadata.Icon != "" {
-		imageProperties[vangogh_local_data.IconProperty] = imagesMetadata.Icon
+		imageProperties[vangogh_local_data.Icon] = imagesMetadata.Icon
 	}
 
 	for ip, imageId := range imageProperties {
