@@ -24,8 +24,8 @@ func InstalledTheoOrCurrentProcessPath() (string, error) {
 
 	if binPath, err := exec.LookPath(binFilename); err == nil && binPath != "" {
 		return binPath, nil
-	} else if len(os.Args) > 0 {
-		return os.Args[0], nil
+	} else if executable, err := os.Executable(); err == nil {
+		return executable, nil
 	}
 
 	return "", errors.New("theo binary not found, please add it to a PATH location")
