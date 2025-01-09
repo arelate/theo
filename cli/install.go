@@ -9,7 +9,6 @@ import (
 	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -298,19 +297,19 @@ func macOsInstallProduct(id string,
 	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode))
 
 	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
-		return err
+		return mia.EndWithError(err)
 	}
 
 	if err := macOsPlaceExtracts(id, link, productExtractsDir, osLangInstalledAppsDir, rdx, force); err != nil {
-		return err
+		return mia.EndWithError(err)
 	}
 
 	if err := macOsPostInstallActions(id, link, installedAppsDir); err != nil {
-		return err
+		return mia.EndWithError(err)
 	}
 
 	if err := macOsRemoveProductExtracts(id, metadata, extractsDir); err != nil {
-		return err
+		return mia.EndWithError(err)
 	}
 
 	return nil
@@ -322,32 +321,35 @@ func linuxInstallProduct(id string,
 	absInstallerPath, installedAppsDir string,
 	rdx kevlar.WriteableRedux) error {
 
-	lia := nod.Begin("installing Linux version of %s...")
+	lia := nod.Begin("installing %s version of %s...", vangogh_local_data.Linux, metadata.Title)
 	defer lia.EndWithResult("done")
 
 	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
-		return err
+		return lia.EndWithError(err)
 	}
 
 	if _, err := os.Stat(absInstallerPath); err != nil {
-		return err
-	}
-
-	if err := linuxPostDownloadActions(id, link); err != nil {
-		return err
+		return lia.EndWithError(err)
 	}
 
 	productTitle, _ := rdx.GetLastVal(data.SlugProperty, id)
 
 	if err := rdx.ReplaceValues(data.BundleNameProperty, id, productTitle); err != nil {
-		return err
+		return lia.EndWithError(err)
 	}
 
-	productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.Linux, link.LanguageCode), productTitle)
+	osLangCodeDir := data.OsLangCodeDir(vangogh_local_data.Linux, link.LanguageCode)
+	productInstalledAppDir := filepath.Join(installedAppsDir, osLangCodeDir, productTitle)
 
-	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
-	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", productInstalledAppDir)
-	return cmd.Run()
+	if err := linuxPostDownloadActions(id, link); err != nil {
+		return lia.EndWithError(err)
+	}
+
+	if err := linuxExecuteInstaller(absInstallerPath, productInstalledAppDir); err != nil {
+		return lia.EndWithError(err)
+	}
+
+	return nil
 }
 
 func windowsInstallProduct(id string,

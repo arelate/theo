@@ -11,9 +11,24 @@ import (
 	"path/filepath"
 )
 
+func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) error {
+
+	_, fp := filepath.Split(absInstallerPath)
+
+	leia := nod.Begin(" executing %s, please wait...", fp)
+	defer leia.EndWithResult("done")
+
+	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
+	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", productInstalledAppDir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
 func linuxPostDownloadActions(id string, link *vangogh_local_data.TheoDownloadLink) error {
 
-	lpda := nod.Begin(" performing Linux post-download actions for %s...", id)
+	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_local_data.Linux, id)
 	defer lpda.EndWithResult("done")
 
 	if data.CurrentOS() != vangogh_local_data.Linux {
