@@ -51,6 +51,13 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 		return rsfua.EndWithError(err)
 	}
 
+	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
+		if len(kvShortcuts.Values) == 0 {
+			rsfua.EndWithResult("%s has no shortcuts", loginUser)
+			return nil
+		}
+	}
+
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return rsfua.EndWithError(err)
