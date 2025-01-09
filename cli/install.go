@@ -92,10 +92,6 @@ func Install(ids []string,
 		return ia.EndWithError(err)
 	}
 
-	if err = pinInstalledMetadata(ids, force); err != nil {
-		return ia.EndWithError(err)
-	}
-
 	for _, id := range ids {
 		if err := currentOsInstallProduct(id, langCode, downloadTypes, force); err != nil {
 			return ia.EndWithError(err)
@@ -112,6 +108,10 @@ func Install(ids []string,
 		if err = RemoveDownloads(ids, currentOs, langCodes, downloadTypes, force); err != nil {
 			return ia.EndWithError(err)
 		}
+	}
+
+	if err = pinInstalledMetadata(ids, force); err != nil {
+		return ia.EndWithError(err)
 	}
 
 	if err = RevealInstalled(ids, langCode); err != nil {
