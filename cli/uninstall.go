@@ -95,13 +95,12 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 }
 
 func currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName string) error {
-	switch data.CurrentOS() {
+	currentOs := data.CurrentOS()
+	switch currentOs {
 	case vangogh_local_data.MacOS:
-		if err := macOsUninstallProduct(title, installedAppsDir, langCode, bundleName); err != nil {
-			return err
-		}
+		fallthrough
 	case vangogh_local_data.Linux:
-		if err := linuxUninstallProduct(title, installedAppsDir, langCode, bundleName); err != nil {
+		if err := nixUninstallProduct(title, currentOs, installedAppsDir, langCode, bundleName); err != nil {
 			return err
 		}
 	case vangogh_local_data.Windows:
@@ -114,16 +113,16 @@ func currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName str
 	return nil
 }
 
-func macOsUninstallProduct(title, installationDir, langCode, bundleName string) error {
+func nixUninstallProduct(title string, operatingSystem vangogh_local_data.OperatingSystem, installationDir, langCode, bundleName string) error {
 
-	umpa := nod.Begin(" uninstalling %s version of %s...", vangogh_local_data.MacOS, title)
+	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, title)
 	defer umpa.EndWithResult("done")
 
 	if bundleName == "" {
 		return errors.New("product must have bundle name for uninstall")
 	}
 
-	osLangCodeDir := data.OsLangCodeDir(vangogh_local_data.MacOS, langCode)
+	osLangCodeDir := data.OsLangCodeDir(operatingSystem, langCode)
 	bundlePath := filepath.Join(installationDir, osLangCodeDir, bundleName)
 
 	if _, err := os.Stat(bundlePath); os.IsNotExist(err) {
