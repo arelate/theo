@@ -1,0 +1,73 @@
+package cli
+
+import (
+	"github.com/arelate/southern_light/steam_vdf"
+	"github.com/boggydigital/nod"
+	"golang.org/x/exp/slices"
+	"net/url"
+)
+
+func ListSteamShortcutsHandler(u *url.URL) error {
+	return ListSteamShortcuts()
+}
+
+func ListSteamShortcuts() error {
+	lssa := nod.Begin("listing Steam shortcuts for all users...")
+	defer lssa.EndWithResult("done")
+
+	loginUsers, err := getSteamLoginUsers()
+	if err != nil {
+		return lssa.EndWithError(err)
+	}
+
+	for _, loginUser := range loginUsers {
+		if err := listUserShortcuts(loginUser); err != nil {
+			return lssa.EndWithError(err)
+		}
+	}
+
+	return nil
+}
+
+func listUserShortcuts(loginUser string) error {
+
+	lusa := nod.Begin("listing shortcuts for %s...", loginUser)
+	defer lusa.EndWithResult("done")
+
+	kvUserShortcuts, err := readUserShortcuts(loginUser)
+	if err != nil {
+		return err
+	}
+
+	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
+
+		for _, shortcut := range kvShortcuts.Values {
+			printShortcut(shortcut)
+		}
+
+	} else {
+		lusa.EndWithResult("no shortcuts found")
+	}
+
+	return nil
+}
+
+var printedKeys = []string{
+	"appid",
+	"appname",
+	"Exe",
+	"StartDir",
+	"LaunchOptions",
+}
+
+func printShortcut(shortcut *steam_vdf.KeyValues) {
+	psa := nod.Begin("shortcut: %s", shortcut.Key)
+	defer psa.End()
+
+	for _, kv := range shortcut.Values {
+		if slices.Contains(printedKeys, kv.Key) {
+			pk := nod.Begin("- %s: %v", kv.Key, kv.TypedValue)
+			pk.End()
+		}
+	}
+}

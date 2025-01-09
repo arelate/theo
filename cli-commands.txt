@@ -63,6 +63,8 @@ list-installed
     lang-code
     size
 
+list-steam-shortcuts
+
 mod-prefix-dxvk
     name*^
     owner
@@ -101,6 +103,9 @@ remove-prefix
     no-archive
     force
 
+remove-steam-shortcut
+    id^&
+
 reset-vangogh-connection
 
 reveal-backups
@@ -134,7 +139,6 @@ test-vangogh-connection
 
 uninstall
     id^&*
-    keep-downloads
     force
 
 unpack-github-releases

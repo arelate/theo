@@ -7,7 +7,6 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"golang.org/x/exp/slices"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -18,17 +17,12 @@ func UninstallHandler(u *url.URL) error {
 	q := u.Query()
 
 	ids := Ids(u)
-	operatingSystems, _, _ := OsLangCodeDownloadType(u)
-	keepDownloads := q.Has("keep-downloads")
 	force := q.Has("force")
 
-	return Uninstall(ids, operatingSystems, keepDownloads, force)
+	return Uninstall(ids, force)
 }
 
-func Uninstall(ids []string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
-	keepDownloads bool,
-	force bool) error {
+func Uninstall(ids []string, force bool) error {
 
 	ua := nod.NewProgress("uninstalling products...")
 	defer ua.EndWithResult("done")
@@ -73,22 +67,8 @@ func Uninstall(ids []string,
 		title, _ := rdx.GetLastVal(data.TitleProperty, id)
 		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
 
-		if slices.Contains(operatingSystems, vangogh_local_data.MacOS) {
-			if err := uninstallMacOsProduct(title, installedAppsDir, bundleName); err != nil {
-				return ua.EndWithError(err)
-			}
-		}
-
-		if slices.Contains(operatingSystems, vangogh_local_data.Windows) {
-			if err := uninstallWindowsProduct(title, installedAppsDir, bundleName); err != nil {
-				return ua.EndWithError(err)
-			}
-		}
-
-		if slices.Contains(operatingSystems, vangogh_local_data.Linux) {
-			if err := uninstallLinuxProduct(title, installedAppsDir, bundleName); err != nil {
-				return ua.EndWithError(err)
-			}
+		if err := currentOsUninstallProduct(title, installedAppsDir, bundleName); err != nil {
+			return ua.EndWithError(err)
 		}
 
 		if _, err := kvInstalledMetadata.Cut(id); err != nil {
@@ -98,11 +78,35 @@ func Uninstall(ids []string,
 		ua.Increment()
 	}
 
+	if err := RemoveSteamShortcut(ids...); err != nil {
+		return ua.EndWithError(err)
+	}
+
 	return nil
 
 }
 
-func uninstallMacOsProduct(title, installationDir, bundleName string) error {
+func currentOsUninstallProduct(title, installedAppsDir, bundleName string) error {
+	switch data.CurrentOS() {
+	case vangogh_local_data.MacOS:
+		if err := macOsUninstallProduct(title, installedAppsDir, bundleName); err != nil {
+			return err
+		}
+	case vangogh_local_data.Linux:
+		if err := linuxUninstallProduct(title, installedAppsDir, bundleName); err != nil {
+			return err
+		}
+	case vangogh_local_data.Windows:
+		if err := windowsUninstallProduct(title, installedAppsDir, bundleName); err != nil {
+			return err
+		}
+	default:
+		panic("unsupported operating system")
+	}
+	return nil
+}
+
+func macOsUninstallProduct(title, installationDir, bundleName string) error {
 
 	umpa := nod.Begin(" uninstalling macOS version of %s...", title)
 	defer umpa.EndWithResult("done")
@@ -125,10 +129,10 @@ func uninstallMacOsProduct(title, installationDir, bundleName string) error {
 	return nil
 }
 
-func uninstallWindowsProduct(title, installationDir, bundleName string) error {
+func windowsUninstallProduct(title, installationDir, bundleName string) error {
 	return errors.New("uninstalling Windows products is not implemented")
 }
 
-func uninstallLinuxProduct(title, installationDir, bundleName string) error {
+func linuxUninstallProduct(title, installationDir, bundleName string) error {
 	return errors.New("uninstalling Linux products is not implemented")
 }

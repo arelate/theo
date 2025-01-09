@@ -37,7 +37,7 @@ func AddSteamShortcutHandler(u *url.URL) error {
 }
 
 func AddSteamShortcut(langCode string, force bool, ids ...string) error {
-	assa := nod.Begin("adding Steam shortcut for %s...", strings.Join(ids, ","))
+	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer assa.EndWithResult("done")
 
 	loginUsers, err := getSteamLoginUsers()
@@ -56,7 +56,7 @@ func AddSteamShortcut(langCode string, force bool, ids ...string) error {
 
 func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids ...string) error {
 
-	asfua := nod.Begin(" adding Steam user %s shortcut for %s...",
+	asfua := nod.Begin(" adding Steam user %s shortcuts for %s...",
 		loginUser,
 		strings.Join(ids, ","))
 	defer asfua.EndWithResult("done")
