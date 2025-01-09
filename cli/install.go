@@ -57,16 +57,28 @@ func Install(ids []string,
 
 	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
 
-	if notInstalled, err := filterNotInstalled(langCode, ids...); err == nil {
-
-		if len(notInstalled) > 0 {
-			ids = notInstalled
-		} else if !force {
-			return nil
-		}
-
-	} else {
+	supported, err := filterNotSupported(langCode, force, ids...)
+	if err != nil {
 		return err
+	}
+
+	if len(supported) > 0 {
+		ids = supported
+	} else {
+		ia.EndWithResult("requested products are not supported on %s", data.CurrentOS())
+		return nil
+	}
+
+	notInstalled, err := filterNotInstalled(langCode, ids...)
+	if err != nil {
+		return err
+	}
+
+	if len(notInstalled) > 0 {
+		ids = notInstalled
+	} else if !force {
+		ia.EndWithResult("all requested product are already installed")
+		return nil
 	}
 
 	if err := BackupMetadata(); err != nil {
@@ -158,6 +170,37 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 	}
 
 	return notInstalled, nil
+}
+
+func filterNotSupported(langCode string, force bool, ids ...string) ([]string, error) {
+
+	fnsa := nod.NewProgress(" checking operating systems support...")
+	defer fnsa.EndWithResult("done")
+
+	fnsa.TotalInt(len(ids))
+
+	supported := make([]string, 0, len(ids))
+
+	for _, id := range ids {
+
+		metadata, err := getTheoMetadata(id, force)
+		if err != nil {
+			return nil, fnsa.EndWithError(err)
+		}
+
+		dls := metadata.DownloadLinks.
+			FilterOperatingSystems(data.CurrentOS()).
+			FilterLanguageCodes(langCode).
+			FilterDownloadTypes(vangogh_local_data.Installer)
+
+		if len(dls) > 0 {
+			supported = append(supported, id)
+		}
+
+		fnsa.Increment()
+	}
+
+	return supported, nil
 }
 
 func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_local_data.DownloadType, force bool) error {
