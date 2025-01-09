@@ -1,111 +1,107 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"golang.org/x/exp/slices"
+	"io"
+	"net/http"
 )
 
-func LoadOrFetchTheoMetadata(id string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
-	force bool) (*vangogh_local_data.TheoMetadata, error) {
+func getTheoMetadata(id string, force bool) (*vangogh_local_data.TheoMetadata, error) {
 
-	// if no download-type was specified - add all to avoid filtering on them
-	if downloadTypes == nil ||
-		(len(downloadTypes) == 1 && downloadTypes[0] == vangogh_local_data.AnyDownloadType) {
-		downloadTypes = []vangogh_local_data.DownloadType{
-			vangogh_local_data.Installer,
-			vangogh_local_data.DLC,
-		}
-	}
-	if operatingSystems == nil ||
-		(len(operatingSystems) == 1 && operatingSystems[0] == vangogh_local_data.AnyOperatingSystem) {
-		operatingSystems = []vangogh_local_data.OperatingSystem{
-			vangogh_local_data.Windows,
-			vangogh_local_data.MacOS,
-			vangogh_local_data.Linux,
-		}
-	}
-
-	fdla := nod.Begin("filtering theo metadata links for %s...", id)
-	defer fdla.End()
-
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return nil, err
-	}
-
-	rdx, err := kevlar.NewReduxWriter(reduxDir,
-		data.TitleProperty,
-		data.SlugProperty)
-	if err != nil {
-		return nil, err
-	}
+	gtma := nod.NewProgress(" getting theo metadata...")
+	defer gtma.End()
 
 	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {
-		return nil, err
+		return nil, gtma.EndWithError(err)
 	}
 
 	kvTheoMetadata, err := kevlar.NewKeyValues(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return nil, err
+		return nil, gtma.EndWithError(err)
 	}
 
-	if has, err := kvTheoMetadata.Has(id); err == nil {
-		if !has || force {
-			if err = GetTheoMetadata([]string{id}, force); err != nil {
-				return nil, fdla.EndWithError(err)
-			}
-		}
-	} else {
-		return nil, fdla.EndWithError(err)
+	if tm, err := readLocalTheoMetadata(id, kvTheoMetadata); err != nil {
+		return nil, gtma.EndWithError(err)
+	} else if tm != nil && !force {
+		gtma.EndWithResult("read local")
+		return tm, nil
 	}
 
-	dmrc, err := kvTheoMetadata.Get(id)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return nil, fdla.EndWithError(err)
-	}
-	defer dmrc.Close()
-
-	var downloadMetadata vangogh_local_data.TheoMetadata
-	if err = json.NewDecoder(dmrc).Decode(&downloadMetadata); err != nil {
-		return nil, fdla.EndWithError(err)
+		return nil, gtma.EndWithError(err)
 	}
 
-	if err := rdx.ReplaceValues(data.TitleProperty, id, downloadMetadata.Title); err != nil {
-		return nil, fdla.EndWithError(err)
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
+	if err != nil {
+		return nil, gtma.EndWithError(err)
 	}
 
-	if err := rdx.ReplaceValues(data.SlugProperty, id, downloadMetadata.Slug); err != nil {
-		return nil, fdla.EndWithError(err)
-	}
+	defer gtma.EndWithResult("fetched remote")
+	return fetchRemoteTheoMetadata(id, rdx, kvTheoMetadata)
+}
 
-	var downloadLinks []vangogh_local_data.DownloadLink
-	for _, link := range downloadMetadata.DownloadLinks {
-		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
-		linkType := vangogh_local_data.ParseDownloadType(link.Type)
-		linkLangCode := link.LanguageCode
+func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh_local_data.TheoMetadata, error) {
 
-		if slices.Contains(operatingSystems, linkOs) &&
-			slices.Contains(langCodes, linkLangCode) &&
-			slices.Contains(downloadTypes, linkType) {
-			downloadLinks = append(downloadLinks, link)
-		}
-	}
-
-	downloadMetadata.DownloadLinks = downloadLinks
-
-	if len(downloadLinks) == 0 {
-		fdla.EndWithResult("no links found (%d total)", len(downloadMetadata.DownloadLinks))
+	if has, err := kvTheoMetadata.Has(id); err != nil {
+		return nil, err
+	} else if !has {
 		return nil, nil
 	}
 
-	return &downloadMetadata, nil
+	tmReadCloser, err := kvTheoMetadata.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	defer tmReadCloser.Close()
+
+	var tm vangogh_local_data.TheoMetadata
+	if err := json.NewDecoder(tmReadCloser).Decode(&tm); err != nil {
+		return nil, err
+	}
+
+	return &tm, nil
+}
+
+func fetchRemoteTheoMetadata(id string, rdx kevlar.ReadableRedux, kvTheoMetadata kevlar.KeyValues) (*vangogh_local_data.TheoMetadata, error) {
+
+	vdmu, err := data.VangoghUrl(rdx,
+		data.VangoghTheoMetadataPath,
+		map[string]string{vangogh_local_data.IdProperty: id})
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Get(vdmu.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return nil, errors.New("error fetching theo metadata: " + resp.Status)
+	}
+
+	var bts []byte
+	buf := bytes.NewBuffer(bts)
+	tr := io.TeeReader(resp.Body, buf)
+
+	if err := kvTheoMetadata.Set(id, tr); err != nil {
+		return nil, err
+	}
+
+	var tm vangogh_local_data.TheoMetadata
+	if err := json.NewDecoder(buf).Decode(&tm); err != nil {
+		return nil, err
+	}
+
+	return &tm, nil
 }

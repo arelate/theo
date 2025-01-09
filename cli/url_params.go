@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const defaultLangCode = "en"
+
 func Ids(u *url.URL) []string {
 
 	q := u.Query()
@@ -37,10 +39,9 @@ func OsLangCodeDownloadType(u *url.URL) ([]vangogh_local_data.OperatingSystem, [
 		langCodes = append(langCodes, defaultLangCode)
 	}
 
-	downloadTypes := []vangogh_local_data.DownloadType{vangogh_local_data.Installer}
-
-	if !q.Has("no-dlc") {
-		downloadTypes = append(downloadTypes, vangogh_local_data.DLC)
+	downloadTypes := vangogh_local_data.DownloadTypesFromUrl(u)
+	if len(downloadTypes) == 0 {
+		downloadTypes = append(downloadTypes, vangogh_local_data.Installer, vangogh_local_data.DLC)
 	}
 
 	return operatingSystems, langCodes, downloadTypes

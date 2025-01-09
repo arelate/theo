@@ -61,7 +61,6 @@ func main() {
 		"cleanup-github-releases":  cli.CleanupGitHubReleasesHandler,
 		"download":                 cli.DownloadHandler,
 		"get-github-releases":      cli.GetGitHubReleasesHandler,
-		"get-theo-metadata":        cli.GetTheoMetadataHandler,
 		"init-prefix":              cli.InitPrefixHandler,
 		"install":                  cli.InstallHandler,
 		"list-installed":           cli.ListInstalledHandler,

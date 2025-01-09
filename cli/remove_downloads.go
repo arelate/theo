@@ -13,21 +13,22 @@ import (
 func RemoveDownloadsHandler(u *url.URL) error {
 
 	ids := Ids(u)
-	operatingSystems, langCodes, _ := OsLangCodeDownloadType(u)
+	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	force := u.Query().Has("force")
 
-	return RemoveDownloads(ids, operatingSystems, langCodes, force)
+	return RemoveDownloads(ids, operatingSystems, langCodes, downloadTypes, force)
 }
 
 func RemoveDownloads(ids []string,
 	operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
+	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
 
 	rda := nod.NewProgress("removing downloads...")
 	defer rda.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	rda.TotalInt(len(ids))
 
@@ -38,11 +39,12 @@ func RemoveDownloads(ids []string,
 
 	for _, id := range ids {
 
-		if metadata, err := LoadOrFetchTheoMetadata(id, operatingSystems, langCodes, nil, force); err == nil {
-			if err = removeProductDownloadLinks(id, metadata, downloadsDir); err != nil {
-				return rda.EndWithError(err)
-			}
-		} else {
+		metadata, err := getTheoMetadata(id, force)
+		if err != nil {
+			return rda.EndWithError(err)
+		}
+
+		if err = removeProductDownloadLinks(id, metadata, operatingSystems, langCodes, downloadTypes, downloadsDir); err != nil {
 			return rda.EndWithError(err)
 		}
 
@@ -54,6 +56,9 @@ func RemoveDownloads(ids []string,
 
 func removeProductDownloadLinks(id string,
 	metadata *vangogh_local_data.TheoMetadata,
+	operatingSystems []vangogh_local_data.OperatingSystem,
+	langCodes []string,
+	downloadTypes []vangogh_local_data.DownloadType,
 	downloadsDir string) error {
 
 	rdla := nod.Begin(" removing downloads for %s...", metadata.Title)
@@ -65,14 +70,12 @@ func removeProductDownloadLinks(id string,
 		return nil
 	}
 
-	for _, dl := range metadata.DownloadLinks {
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(operatingSystems...).
+		FilterLanguageCodes(langCodes...).
+		FilterDownloadTypes(downloadTypes...)
 
-		vr := vangogh_local_data.ParseValidationResult(dl.ValidationResult)
-		if vr != vangogh_local_data.ValidatedSuccessfully &&
-			vr != vangogh_local_data.ValidatedMissingChecksum {
-			continue
-		}
-
+	for _, dl := range dls {
 		// if we don't do this - product downloads dir itself will be removed
 		if dl.LocalFilename == "" {
 			continue

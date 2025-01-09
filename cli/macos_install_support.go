@@ -21,14 +21,10 @@ const (
 )
 
 const (
-	relMacOsCodeSignaturePath = "Contents/_CodeSignature/CodeResources"
-)
-
-const (
 	macOsAppBundleExt = ".app"
 )
 
-func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
+func macOsExtractInstaller(link *vangogh_local_data.TheoDownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
 	defer meia.EndWithResult("done")
@@ -67,7 +63,7 @@ func macOsExtractInstaller(link *vangogh_local_data.DownloadLink, productDownloa
 	return cmd.Run()
 }
 
-func macOsPlaceExtracts(id string, link *vangogh_local_data.DownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx kevlar.WriteableRedux, force bool) error {
+func macOsPlaceExtracts(id string, link *vangogh_local_data.TheoDownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx kevlar.WriteableRedux, force bool) error {
 
 	mpea := nod.Begin(" placing product installation files...")
 	defer mpea.EndWithResult("done")
@@ -191,7 +187,7 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 }
 
 func macOsPostInstallActions(id string,
-	link *vangogh_local_data.DownloadLink,
+	link *vangogh_local_data.TheoDownloadLink,
 	installedAppsDir string) error {
 
 	mpia := nod.Begin(" performing post-install macOS actions for %s...", id)
@@ -371,7 +367,10 @@ func macOsRemoveProductExtracts(id string,
 		return nil
 	}
 
-	for _, dl := range metadata.DownloadLinks {
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(vangogh_local_data.MacOS)
+
+	for _, dl := range dls {
 
 		path := filepath.Join(extractsDir, id, dl.LocalFilename)
 

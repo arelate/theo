@@ -101,7 +101,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 			}
 		}
 
-		metadata, err := LoadOrFetchTheoMetadata(id, nil, []string{langCode}, nil, force)
+		metadata, err := getTheoMetadata(id, force)
 		if err != nil {
 			return asfua.EndWithError(err)
 		}

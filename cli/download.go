@@ -10,8 +10,6 @@ import (
 	"net/url"
 )
 
-const defaultLangCode = "en"
-
 func DownloadHandler(u *url.URL) error {
 
 	ids := Ids(u)
@@ -34,39 +32,14 @@ func Download(ids []string,
 
 	da.TotalInt(len(ids))
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return da.EndWithError(err)
-	}
-
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return da.EndWithError(err)
-	}
-
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
-	if err != nil {
-		return da.EndWithError(err)
-	}
-
 	for _, id := range ids {
 
-		if metadata, err := LoadOrFetchTheoMetadata(id,
-			operatingSystems,
-			langCodes,
-			downloadTypes,
-			force); err == nil && metadata != nil {
-			if err = getProductDownloadLinks(id,
-				metadata,
-				downloadsDir,
-				rdx,
-				force); err != nil {
-				return da.EndWithError(err)
-			}
-		} else if metadata == nil {
-			da.EndWithResult("no metadata found for specified operating parameters")
-			return nil
-		} else {
+		metadata, err := getTheoMetadata(id, force)
+		if err != nil {
+			return da.EndWithError(err)
+		}
+
+		if err = downloadProductFiles(id, metadata, operatingSystems, langCodes, downloadTypes, force); err != nil {
 			return da.EndWithError(err)
 		}
 
@@ -76,16 +49,28 @@ func Download(ids []string,
 	return nil
 }
 
-func getProductDownloadLinks(id string,
+func downloadProductFiles(id string,
 	metadata *vangogh_local_data.TheoMetadata,
-	downloadsDir string,
-	rdx kevlar.ReadableRedux,
+	operatingSystems []vangogh_local_data.OperatingSystem,
+	langCodes []string,
+	downloadTypes []vangogh_local_data.DownloadType,
 	force bool) error {
 
 	gpdla := nod.Begin(" downloading %s...", metadata.Title)
 	defer gpdla.End()
 
-	if err := rdx.MustHave(data.SetupProperties); err != nil {
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return gpdla.EndWithError(err)
+	}
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return gpdla.EndWithError(err)
+	}
+
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
+	if err != nil {
 		return gpdla.EndWithError(err)
 	}
 
@@ -97,7 +82,12 @@ func getProductDownloadLinks(id string,
 		}
 	}
 
-	for _, dl := range metadata.DownloadLinks {
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(operatingSystems...).
+		FilterLanguageCodes(langCodes...).
+		FilterDownloadTypes(downloadTypes...)
+
+	for _, dl := range dls {
 
 		vr := vangogh_local_data.ParseValidationResult(dl.ValidationResult)
 		if vr != vangogh_local_data.ValidatedSuccessfully &&

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 )
 
-func linuxPostDownloadActions(id string, link *vangogh_local_data.DownloadLink) error {
+func linuxPostDownloadActions(id string, link *vangogh_local_data.TheoDownloadLink) error {
 
 	lpda := nod.Begin(" performing Linux post-download actions for %s...", id)
 	defer lpda.EndWithResult("done")

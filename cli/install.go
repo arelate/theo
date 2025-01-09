@@ -77,7 +77,7 @@ func Install(ids []string,
 		return err
 	}
 
-	if err := Validate(ids, currentOs, langCodes); err != nil {
+	if err := Validate(ids, currentOs, langCodes, downloadTypes); err != nil {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func Install(ids []string,
 	}
 
 	if !keepDownloads {
-		if err := RemoveDownloads(ids, currentOs, langCodes, force); err != nil {
+		if err := RemoveDownloads(ids, currentOs, langCodes, downloadTypes, force); err != nil {
 			return err
 		}
 	}
@@ -195,48 +195,47 @@ func currentOsInstall(ids []string,
 
 	for _, id := range ids {
 
-		if metadata, err := LoadOrFetchTheoMetadata(id, currentOs, langCodes, downloadTypes, force); err == nil {
+		metadata, err := getTheoMetadata(id, force)
+		if err != nil {
+			return ia.EndWithError(err)
+		}
 
-			for _, link := range metadata.DownloadLinks {
-				linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
-				linkExt := filepath.Ext(link.LocalFilename)
-				absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		dls := metadata.DownloadLinks.
+			FilterOperatingSystems(data.CurrentOS())
 
-				if linkOs != data.CurrentOS() {
-					continue
+		for _, link := range dls {
+
+			linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
+			linkExt := filepath.Ext(link.LocalFilename)
+			absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+
+			switch linkOs {
+			case vangogh_local_data.MacOS:
+				extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
+				if err != nil {
+					return ia.EndWithError(err)
 				}
 
-				switch linkOs {
-				case vangogh_local_data.MacOS:
-					extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
-					if err != nil {
+				if linkExt == pkgExt {
+					if err := macOsInstall(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, rdx, force); err != nil {
 						return ia.EndWithError(err)
 					}
-
-					if linkExt == pkgExt {
-						if err := macOsInstall(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, rdx, force); err != nil {
-							return ia.EndWithError(err)
-						}
-					}
-				case vangogh_local_data.Linux:
-					if linkExt == shExt {
-						if err := linuxInstall(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
-							return ia.EndWithError(err)
-						}
-					}
-				case vangogh_local_data.Windows:
-					if linkExt == exeExt {
-						if err := windowsInstall(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
-							return ia.EndWithError(err)
-						}
-					}
-				default:
-					return ia.EndWithError(errors.New("unknown os" + linkOs.String()))
 				}
+			case vangogh_local_data.Linux:
+				if linkExt == shExt {
+					if err := linuxInstall(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
+						return ia.EndWithError(err)
+					}
+				}
+			case vangogh_local_data.Windows:
+				if linkExt == exeExt {
+					if err := windowsInstall(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
+						return ia.EndWithError(err)
+					}
+				}
+			default:
+				return ia.EndWithError(errors.New("unknown os" + linkOs.String()))
 			}
-
-		} else {
-			return ia.EndWithError(err)
 		}
 
 		ia.Increment()
@@ -247,7 +246,7 @@ func currentOsInstall(ids []string,
 
 func macOsInstall(id string,
 	metadata *vangogh_local_data.TheoMetadata,
-	link *vangogh_local_data.DownloadLink,
+	link *vangogh_local_data.TheoDownloadLink,
 	downloadsDir, extractsDir, installedAppsDir string,
 	rdx kevlar.WriteableRedux,
 	force bool) error {
@@ -280,7 +279,7 @@ func macOsInstall(id string,
 
 func linuxInstall(id string,
 	metadata *vangogh_local_data.TheoMetadata,
-	link *vangogh_local_data.DownloadLink,
+	link *vangogh_local_data.TheoDownloadLink,
 	absInstallerPath, installedAppsDir string,
 	rdx kevlar.WriteableRedux) error {
 
@@ -314,7 +313,7 @@ func linuxInstall(id string,
 
 func windowsInstall(id string,
 	metadata *vangogh_local_data.TheoMetadata,
-	link *vangogh_local_data.DownloadLink,
+	link *vangogh_local_data.TheoDownloadLink,
 	absInstallerPath, installedAppsDir string) error {
 
 	wia := nod.Begin("installing Windows version of %s...", metadata.Title)

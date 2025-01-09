@@ -42,32 +42,27 @@ var valResMessageTemplates = map[ValidationResult]string{
 }
 
 func ValidateHandler(u *url.URL) error {
-
 	ids := Ids(u)
-	operatingSystems, langCodes, _ := OsLangCodeDownloadType(u)
+	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 
-	return Validate(ids, operatingSystems, langCodes)
+	return Validate(ids, operatingSystems, langCodes, downloadTypes)
 }
 
-func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSystem, langCodes []string) error {
+func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSystem, langCodes []string, downloadTypes []vangogh_local_data.DownloadType) error {
 
 	va := nod.NewProgress("validating downloads...")
 	defer va.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, nil, true)
-
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return va.EndWithError(err)
-	}
+	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	for _, id := range ids {
 
-		if metadata, err := LoadOrFetchTheoMetadata(id, operatingSystems, langCodes, nil, false); err == nil {
-			if err = validateLinks(id, metadata, downloadsDir); err != nil {
-				return va.EndWithError(err)
-			}
-		} else {
+		metadata, err := getTheoMetadata(id, false)
+		if err != nil {
+			return va.EndWithError(err)
+		}
+
+		if err = validateLinks(id, operatingSystems, langCodes, downloadTypes, metadata); err != nil {
 			return va.EndWithError(err)
 		}
 	}
@@ -75,16 +70,30 @@ func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSyste
 	return nil
 }
 
-func validateLinks(id string, metadata *vangogh_local_data.TheoMetadata, downloadsDir string) error {
+func validateLinks(id string,
+	operatingSystems []vangogh_local_data.OperatingSystem,
+	langCodes []string,
+	downloadTypes []vangogh_local_data.DownloadType,
+	metadata *vangogh_local_data.TheoMetadata) error {
 
 	vla := nod.NewProgress("validating %s...", metadata.Title)
 	defer vla.End()
 
-	vla.TotalInt(len(metadata.DownloadLinks))
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return vla.EndWithError(err)
+	}
 
-	results := make([]ValidationResult, 0, len(metadata.DownloadLinks))
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(operatingSystems...).
+		FilterLanguageCodes(langCodes...).
+		FilterDownloadTypes(downloadTypes...)
 
-	for _, dl := range metadata.DownloadLinks {
+	vla.TotalInt(len(dls))
+
+	results := make([]ValidationResult, 0, len(dls))
+
+	for _, dl := range dls {
 		vr, err := validateLink(id, dl, downloadsDir)
 		if err != nil {
 			vla.Error(err)
@@ -97,7 +106,7 @@ func validateLinks(id string, metadata *vangogh_local_data.TheoMetadata, downloa
 	return nil
 }
 
-func validateLink(id string, dl vangogh_local_data.DownloadLink, downloadsDir string) (ValidationResult, error) {
+func validateLink(id string, dl vangogh_local_data.TheoDownloadLink, downloadsDir string) (ValidationResult, error) {
 
 	dla := nod.NewProgress(" - %s...", dl.LocalFilename)
 	defer dla.End()
