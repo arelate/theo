@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func InstalledTheoOrCurrentProcessPath() (string, error) {
+func TheoExecutable() (string, error) {
 
 	binFilename := "theo"
 

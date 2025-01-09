@@ -77,7 +77,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 		return asfua.EndWithError(err)
 	}
 
-	theoBinPath, err := data.InstalledTheoOrCurrentProcessPath()
+	theoExecutable, err := data.TheoExecutable()
 	if err != nil {
 		return asfua.EndWithError(err)
 	}
@@ -91,13 +91,13 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 			return asfua.EndWithError(errors.New("product is missing title"))
 		}
 
-		shortcutId := steam_integration.ShortcutAppId(theoBinPath, title)
+		shortcutId := steam_integration.ShortcutAppId(theoExecutable, title)
 		launchOptions := fmt.Sprintf("run %s", id)
 		if langCode != "" {
 			launchOptions += fmt.Sprintf(" -lang-code=%s", langCode)
 		}
 
-		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoBinPath, launchOptions, kvUserShortcuts, force); err != nil {
+		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoExecutable, launchOptions, kvUserShortcuts, force); err != nil {
 			return asfua.EndWithError(err)
 		} else if changed {
 			if err := writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {

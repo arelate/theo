@@ -238,7 +238,9 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 	}
 
 	dls := metadata.DownloadLinks.
-		FilterOperatingSystems(data.CurrentOS())
+		FilterOperatingSystems(data.CurrentOS()).
+		FilterLanguageCodes(langCode).
+		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
 		coipa.EndWithResult("no links are matching operating params")
