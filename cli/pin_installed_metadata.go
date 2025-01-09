@@ -6,18 +6,9 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"net/url"
 )
 
-func PinInstalledMetadataHandler(u *url.URL) error {
-
-	ids := Ids(u)
-	force := u.Query().Has("force")
-
-	return PinInstalledMetadata(ids, force)
-}
-
-func PinInstalledMetadata(ids []string, force bool) error {
+func pinInstalledMetadata(ids []string, force bool) error {
 
 	pima := nod.NewProgress("pinning theo metadata as installed...")
 	defer pima.EndWithResult("done")

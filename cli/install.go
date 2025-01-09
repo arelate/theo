@@ -29,7 +29,7 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	keepDownloads := q.Has("keep-downloads")
+	removeDownloads := !q.Has("keep-downloads")
 	addSteamShortcut := !q.Has("no-steam-shortcut")
 	force := q.Has("force")
 
@@ -38,13 +38,13 @@ func InstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return Install(ids, langCode, downloadTypes, keepDownloads, addSteamShortcut, force)
+	return Install(ids, langCode, downloadTypes, removeDownloads, addSteamShortcut, force)
 }
 
 func Install(ids []string,
 	langCode string,
 	downloadTypes []vangogh_local_data.DownloadType,
-	keepDownloads bool,
+	removeDownloads bool,
 	addSteamShortcut bool,
 	force bool) error {
 
@@ -58,7 +58,7 @@ func Install(ids []string,
 
 	supported, err := filterNotSupported(langCode, force, ids...)
 	if err != nil {
-		return err
+		return ia.EndWithError(err)
 	}
 
 	if len(supported) > 0 {
@@ -70,7 +70,7 @@ func Install(ids []string,
 
 	notInstalled, err := filterNotInstalled(langCode, ids...)
 	if err != nil {
-		return err
+		return ia.EndWithError(err)
 	}
 
 	if len(notInstalled) > 0 {
@@ -80,20 +80,20 @@ func Install(ids []string,
 		return nil
 	}
 
-	if err := BackupMetadata(); err != nil {
-		return err
+	if err = BackupMetadata(); err != nil {
+		return ia.EndWithError(err)
 	}
 
-	if err := Download(ids, currentOs, langCodes, downloadTypes, force); err != nil {
-		return err
+	if err = Download(ids, currentOs, langCodes, downloadTypes, force); err != nil {
+		return ia.EndWithError(err)
 	}
 
-	if err := Validate(ids, currentOs, langCodes, downloadTypes); err != nil {
-		return err
+	if err = Validate(ids, currentOs, langCodes, downloadTypes); err != nil {
+		return ia.EndWithError(err)
 	}
 
-	if err := PinInstalledMetadata(ids, force); err != nil {
-		return err
+	if err = pinInstalledMetadata(ids, force); err != nil {
+		return ia.EndWithError(err)
 	}
 
 	for _, id := range ids {
@@ -104,18 +104,18 @@ func Install(ids []string,
 
 	if addSteamShortcut {
 		if err := AddSteamShortcut(langCode, force, ids...); err != nil {
-			return err
+			return ia.EndWithError(err)
 		}
 	}
 
-	if !keepDownloads {
-		if err := RemoveDownloads(ids, currentOs, langCodes, downloadTypes, force); err != nil {
-			return err
+	if removeDownloads {
+		if err = RemoveDownloads(ids, currentOs, langCodes, downloadTypes, force); err != nil {
+			return ia.EndWithError(err)
 		}
 	}
 
-	if err := RevealInstalled(ids, langCode); err != nil {
-		return err
+	if err = RevealInstalled(ids, langCode); err != nil {
+		return ia.EndWithError(err)
 	}
 
 	return nil

@@ -67,7 +67,6 @@ func main() {
 		"list-steam-shortcuts":     cli.ListSteamShortcutsHandler,
 		"mod-prefix-dxvk":          cli.ModPrefixDxVkHandler,
 		"mod-prefix-retina":        cli.ModPrefixRetinaHandler,
-		"pin-installed-metadata":   cli.PinInstalledMetadataHandler,
 		"serve":                    cli.ServeHandler,
 		"set-vangogh-connection":   cli.SetVangoghConnectionHandler,
 		"remove-downloads":         cli.RemoveDownloadsHandler,

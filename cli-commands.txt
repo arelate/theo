@@ -49,8 +49,8 @@ init-prefix
 
 install
     id^&*
-    no-dlc
     lang-code
+    download-type&
     keep-downloads
     no-steam-shortcut
     force
@@ -75,10 +75,6 @@ mod-prefix-retina
     repo
     tag
     revert
-    force
-
-pin-installed-metadata
-    id^&*
     force
 
 remove-downloads
