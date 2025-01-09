@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"github.com/arelate/southern_light/steam_integration"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/theo/data"
@@ -91,7 +92,10 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 		}
 
 		shortcutId := steam_integration.ShortcutAppId(theoBinPath, title)
-		launchOptions := "run " + id
+		launchOptions := fmt.Sprintf("run %s", id)
+		if langCode != "" {
+			launchOptions += fmt.Sprintf(" -lang-code=%s", langCode)
+		}
 
 		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoBinPath, launchOptions, kvUserShortcuts, force); err != nil {
 			return asfua.EndWithError(err)
