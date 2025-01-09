@@ -30,7 +30,7 @@ func macOsExtractInstaller(link *vangogh_local_data.TheoDownloadLink, productDow
 	defer meia.EndWithResult("done")
 
 	if data.CurrentOS() != vangogh_local_data.MacOS {
-		return meia.EndWithError(errors.New("extracting .pkg installers is only supported on macOS"))
+		return meia.EndWithError(errors.New("extracting .pkg installers is only supported on " + vangogh_local_data.MacOS.String()))
 	}
 
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
@@ -69,7 +69,7 @@ func macOsPlaceExtracts(id string, link *vangogh_local_data.TheoDownloadLink, pr
 	defer mpea.EndWithResult("done")
 
 	if data.CurrentOS() != vangogh_local_data.MacOS {
-		return mpea.EndWithError(errors.New("placing .pkg extracts is only supported on macOS"))
+		return mpea.EndWithError(errors.New("placing .pkg extracts is only supported on " + vangogh_local_data.MacOS.String()))
 	}
 
 	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
@@ -190,7 +190,7 @@ func macOsPostInstallActions(id string,
 	link *vangogh_local_data.TheoDownloadLink,
 	installedAppsDir string) error {
 
-	mpia := nod.Begin(" performing post-install macOS actions for %s...", id)
+	mpia := nod.Begin(" performing post-install %s actions for %s...", vangogh_local_data.MacOS, id)
 	defer mpia.EndWithResult("done")
 
 	if filepath.Ext(link.LocalFilename) != pkgExt {

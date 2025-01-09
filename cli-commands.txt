@@ -136,6 +136,7 @@ test-vangogh-connection
 
 uninstall
     id^&*
+    lang-code
     force
 
 unpack-github-releases

@@ -290,7 +290,7 @@ func macOsInstallProduct(id string,
 	rdx kevlar.WriteableRedux,
 	force bool) error {
 
-	mia := nod.Begin("installing macOS version of %s...", metadata.Title)
+	mia := nod.Begin("installing %s version of %s...", vangogh_local_data.MacOS, metadata.Title)
 	defer mia.EndWithResult("done")
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)

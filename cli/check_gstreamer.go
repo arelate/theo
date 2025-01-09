@@ -21,7 +21,7 @@ func CheckGstreamer() error {
 	defer cga.EndWithResult("done")
 
 	if data.CurrentOS() != vangogh_local_data.MacOS {
-		cga.EndWithResult("skipping. GStreamer is only required on macOS")
+		cga.EndWithResult("skipping. GStreamer is only required on %s", vangogh_local_data.MacOS)
 		return nil
 	}
 
