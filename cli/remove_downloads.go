@@ -75,7 +75,13 @@ func removeProductDownloadLinks(id string,
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)
 
+	if len(dls) == 0 {
+		rdla.EndWithResult("no links are matching operating params")
+		return nil
+	}
+
 	for _, dl := range dls {
+
 		// if we don't do this - product downloads dir itself will be removed
 		if dl.LocalFilename == "" {
 			continue

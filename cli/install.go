@@ -85,8 +85,10 @@ func Install(ids []string,
 		return err
 	}
 
-	if err := currentOsInstall(ids, langCode, downloadTypes, force); err != nil {
-		return err
+	for _, id := range ids {
+		if err := currentOsInstallProduct(id, langCode, downloadTypes, force); err != nil {
+			return ia.EndWithError(err)
+		}
 	}
 
 	if addSteamShortcut {
@@ -158,93 +160,87 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 	return notInstalled, nil
 }
 
-func currentOsInstall(ids []string,
-	langCode string,
-	downloadTypes []vangogh_local_data.DownloadType,
-	force bool) error {
+func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_local_data.DownloadType, force bool) error {
 
-	ia := nod.NewProgress("installing products...")
-	defer ia.EndWithResult("done")
+	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOS())
+	defer coipa.EndWithResult("done")
 
 	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
-	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
-
-	ia.TotalInt(len(ids))
+	vangogh_local_data.PrintParams([]string{id}, currentOs, langCodes, downloadTypes, true)
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return ia.EndWithError(err)
+		return coipa.EndWithError(err)
 	}
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
-		return ia.EndWithError(err)
+		return coipa.EndWithError(err)
 	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return ia.EndWithError(err)
+		return coipa.EndWithError(err)
 	}
 
 	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
 	if err != nil {
-		return ia.EndWithError(err)
+		return coipa.EndWithError(err)
 	}
 
-	for _, id := range ids {
+	metadata, err := getTheoMetadata(id, force)
+	if err != nil {
+		return coipa.EndWithError(err)
+	}
 
-		metadata, err := getTheoMetadata(id, force)
-		if err != nil {
-			return ia.EndWithError(err)
-		}
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(data.CurrentOS())
 
-		dls := metadata.DownloadLinks.
-			FilterOperatingSystems(data.CurrentOS())
+	if len(dls) == 0 {
+		coipa.EndWithResult("no links are matching operating params")
+		return nil
+	}
 
-		for _, link := range dls {
+	for _, link := range dls {
 
-			linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
-			linkExt := filepath.Ext(link.LocalFilename)
-			absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
+		linkExt := filepath.Ext(link.LocalFilename)
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-			switch linkOs {
-			case vangogh_local_data.MacOS:
-				extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
-				if err != nil {
-					return ia.EndWithError(err)
-				}
-
-				if linkExt == pkgExt {
-					if err := macOsInstall(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, rdx, force); err != nil {
-						return ia.EndWithError(err)
-					}
-				}
-			case vangogh_local_data.Linux:
-				if linkExt == shExt {
-					if err := linuxInstall(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
-						return ia.EndWithError(err)
-					}
-				}
-			case vangogh_local_data.Windows:
-				if linkExt == exeExt {
-					if err := windowsInstall(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
-						return ia.EndWithError(err)
-					}
-				}
-			default:
-				return ia.EndWithError(errors.New("unknown os" + linkOs.String()))
+		switch linkOs {
+		case vangogh_local_data.MacOS:
+			extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
+			if err != nil {
+				return coipa.EndWithError(err)
 			}
+
+			if linkExt == pkgExt {
+				if err := macOsInstallProduct(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, rdx, force); err != nil {
+					return coipa.EndWithError(err)
+				}
+			}
+		case vangogh_local_data.Linux:
+			if linkExt == shExt {
+				if err := linuxInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
+					return coipa.EndWithError(err)
+				}
+			}
+		case vangogh_local_data.Windows:
+			if linkExt == exeExt {
+				if err := windowsInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
+					return coipa.EndWithError(err)
+				}
+			}
+		default:
+			return coipa.EndWithError(errors.New("unknown os" + linkOs.String()))
 		}
-
-		ia.Increment()
 	}
-
 	return nil
 }
 
-func macOsInstall(id string,
+func macOsInstallProduct(id string,
 	metadata *vangogh_local_data.TheoMetadata,
 	link *vangogh_local_data.TheoDownloadLink,
 	downloadsDir, extractsDir, installedAppsDir string,
@@ -277,7 +273,7 @@ func macOsInstall(id string,
 	return nil
 }
 
-func linuxInstall(id string,
+func linuxInstallProduct(id string,
 	metadata *vangogh_local_data.TheoMetadata,
 	link *vangogh_local_data.TheoDownloadLink,
 	absInstallerPath, installedAppsDir string,
@@ -311,7 +307,7 @@ func linuxInstall(id string,
 	return cmd.Run()
 }
 
-func windowsInstall(id string,
+func windowsInstallProduct(id string,
 	metadata *vangogh_local_data.TheoMetadata,
 	link *vangogh_local_data.TheoDownloadLink,
 	absInstallerPath, installedAppsDir string) error {

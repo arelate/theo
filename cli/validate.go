@@ -89,6 +89,11 @@ func validateLinks(id string,
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)
 
+	if len(dls) == 0 {
+		vla.EndWithResult("no links are matching operating params")
+		return nil
+	}
+
 	vla.TotalInt(len(dls))
 
 	results := make([]ValidationResult, 0, len(dls))

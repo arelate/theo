@@ -87,6 +87,11 @@ func downloadProductFiles(id string,
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)
 
+	if len(dls) == 0 {
+		gpdla.EndWithResult("no links are matching operating params")
+		return nil
+	}
+
 	for _, dl := range dls {
 
 		vr := vangogh_local_data.ParseValidationResult(dl.ValidationResult)
