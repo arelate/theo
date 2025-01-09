@@ -58,8 +58,8 @@ const (
 
 const (
 	Redux             pathways.RelDir = "_redux"
-	TheoMetadata      pathways.RelDir = "theo-metadata"
-	InstalledMetadata pathways.RelDir = "installed-metadata"
+	TheoMetadata      pathways.RelDir = "theo"
+	InstalledMetadata pathways.RelDir = "installed"
 	MacOsExtracts     pathways.RelDir = "_macos_extracts"
 	GitHubReleases    pathways.RelDir = "github-releases"
 	Releases          pathways.RelDir = "rel"
