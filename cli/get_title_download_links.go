@@ -40,13 +40,25 @@ func getTheoMetadata(id string, force bool) (*vangogh_local_data.TheoMetadata, e
 		return nil, gtma.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SetupProperties, data.TitleProperty, data.SlugProperty)
 	if err != nil {
 		return nil, gtma.EndWithError(err)
 	}
 
 	defer gtma.EndWithResult("fetched remote")
-	return fetchRemoteTheoMetadata(id, rdx, kvTheoMetadata)
+	if tm, err := fetchRemoteTheoMetadata(id, rdx, kvTheoMetadata); err != nil {
+		return nil, err
+	} else {
+
+		if err := rdx.ReplaceValues(data.TitleProperty, id, tm.Title); err != nil {
+			return nil, err
+		}
+		if err := rdx.ReplaceValues(data.SlugProperty, id, tm.Slug); err != nil {
+			return nil, err
+		}
+
+		return tm, nil
+	}
 }
 
 func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh_local_data.TheoMetadata, error) {
