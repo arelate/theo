@@ -62,6 +62,11 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 		strings.Join(ids, ","))
 	defer asfua.EndWithResult("done")
 
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return asfua.EndWithError(err)
+	}
+
 	kvUserShortcuts, err := readUserShortcuts(loginUser)
 	if err != nil {
 		return asfua.EndWithError(err)
@@ -91,13 +96,23 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 			return asfua.EndWithError(errors.New("product is missing title"))
 		}
 
+		var bundleName string
+		if bn, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bn != "" {
+			bundleName = bn
+		} else {
+			return asfua.EndWithError(errors.New("product is missing bundle name"))
+		}
+
+		osLangCodeDir := data.OsLangCodeDir(data.CurrentOS(), langCode)
+		bundlePath := filepath.Join(installedAppsDir, osLangCodeDir, bundleName)
+
 		shortcutId := steam_integration.ShortcutAppId(theoExecutable, title)
 		launchOptions := fmt.Sprintf("run %s", id)
 		if langCode != "" {
-			launchOptions += fmt.Sprintf(" -lang-code=%s", langCode)
+			launchOptions += fmt.Sprintf(" -lang-code %s", langCode)
 		}
 
-		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoExecutable, launchOptions, kvUserShortcuts, force); err != nil {
+		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoExecutable, bundlePath, launchOptions, kvUserShortcuts, force); err != nil {
 			return asfua.EndWithError(err)
 		} else if changed {
 			if err := writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
@@ -166,7 +181,7 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 
 func addNonSteamAppShortcut(
 	shortcutId uint32,
-	title, binPath, launchOptions string,
+	title, binPath, startDir, launchOptions string,
 	kvUserShortcuts []*steam_vdf.KeyValues,
 	force bool) (bool, error) {
 
@@ -180,7 +195,7 @@ func addNonSteamAppShortcut(
 
 	if existingShortcut := steam_integration.GetShortcutByAppId(kvShortcuts, shortcutId); existingShortcut == nil {
 
-		shortcut := steam_integration.NewShortcut(shortcutId, title, binPath, launchOptions)
+		shortcut := steam_integration.NewShortcut(shortcutId, title, binPath, startDir, launchOptions)
 		if err := steam_integration.AppendShortcut(kvShortcuts, shortcut); err != nil {
 			return false, err
 		}
@@ -189,7 +204,7 @@ func addNonSteamAppShortcut(
 
 	} else if force {
 
-		shortcut := steam_integration.NewShortcut(shortcutId, title, binPath, launchOptions)
+		shortcut := steam_integration.NewShortcut(shortcutId, title, binPath, startDir, launchOptions)
 		if err := steam_integration.UpdateShortcut(existingShortcut.Key, kvShortcuts, shortcut); err != nil {
 			return false, err
 		}
