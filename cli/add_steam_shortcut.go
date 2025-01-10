@@ -204,9 +204,7 @@ func addNonSteamAppShortcut(
 		shortcut.Exe = exe
 		shortcut.StartDir = startDir
 		shortcut.LaunchOptions = launchOptions
-		if _, err := os.Stat(icon); err == nil {
-			shortcut.Icon = icon
-		}
+		shortcut.Icon = icon
 
 		if existingShortcut == nil {
 
