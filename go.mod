@@ -3,7 +3,7 @@ module github.com/arelate/theo
 go 1.23.4
 
 require (
-	github.com/arelate/southern_light v0.1.63
+	github.com/arelate/southern_light v0.1.64
 	github.com/arelate/vangogh_local_data v0.4.50
 	github.com/boggydigital/backups v0.1.5
 	github.com/boggydigital/busan v0.1.0

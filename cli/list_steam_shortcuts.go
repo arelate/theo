@@ -55,6 +55,7 @@ func listUserShortcuts(loginUser string) error {
 var printedKeys = []string{
 	"appid",
 	"appname",
+	"icon",
 	"Exe",
 	"StartDir",
 	"LaunchOptions",
@@ -65,7 +66,7 @@ func printShortcut(shortcut *steam_vdf.KeyValues) {
 	defer psa.End()
 
 	for _, kv := range shortcut.Values {
-		if slices.Contains(printedKeys, kv.Key) {
+		if slices.Contains(printedKeys, kv.Key) && kv.TypedValue != nil {
 			pk := nod.Begin("- %s: %v", kv.Key, kv.TypedValue)
 			pk.End()
 		}

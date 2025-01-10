@@ -107,12 +107,14 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 		bundlePath := filepath.Join(installedAppsDir, osLangCodeDir, bundleName)
 
 		shortcutId := steam_integration.ShortcutAppId(theoExecutable, title)
+		iconPath := getGridIconPath(loginUser, shortcutId)
+
 		launchOptions := fmt.Sprintf("run %s", id)
 		if langCode != "" {
 			launchOptions += fmt.Sprintf(" -lang-code %s", langCode)
 		}
 
-		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoExecutable, bundlePath, launchOptions, kvUserShortcuts, force); err != nil {
+		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoExecutable, iconPath, bundlePath, launchOptions, kvUserShortcuts, force); err != nil {
 			return asfua.EndWithError(err)
 		} else if changed {
 			if err := writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
@@ -180,12 +182,12 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 }
 
 func addNonSteamAppShortcut(
-	shortcutId uint32,
-	title, binPath, startDir, launchOptions string,
+	appId uint32,
+	appName, exe, icon, startDir, launchOptions string,
 	kvUserShortcuts []*steam_vdf.KeyValues,
 	force bool) (bool, error) {
 
-	ansasa := nod.Begin(" adding non-Steam app shortcut for appId %d...", shortcutId)
+	ansasa := nod.Begin(" adding non-Steam app shortcut for appId %d...", appId)
 	defer ansasa.EndWithResult("done")
 
 	kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts")
@@ -193,22 +195,33 @@ func addNonSteamAppShortcut(
 		return false, errors.New("provided shortcuts.vdf is missing shortcuts key")
 	}
 
-	if existingShortcut := steam_integration.GetShortcutByAppId(kvShortcuts, shortcutId); existingShortcut == nil {
+	if existingShortcut := steam_integration.GetShortcutByAppId(kvShortcuts, appId); existingShortcut == nil || force {
 
-		shortcut := steam_integration.NewShortcut(shortcutId, title, binPath, startDir, launchOptions)
-		if err := steam_integration.AppendShortcut(kvShortcuts, shortcut); err != nil {
-			return false, err
+		shortcut := steam_integration.NewShortcut()
+
+		shortcut.AppId = appId
+		shortcut.AppName = appName
+		shortcut.Exe = exe
+		shortcut.StartDir = startDir
+		shortcut.LaunchOptions = launchOptions
+		if _, err := os.Stat(icon); err == nil {
+			shortcut.Icon = icon
 		}
-		ansasa.EndWithResult("appended shortcut")
-		return true, nil
 
-	} else if force {
+		if existingShortcut == nil {
 
-		shortcut := steam_integration.NewShortcut(shortcutId, title, binPath, startDir, launchOptions)
-		if err := steam_integration.UpdateShortcut(existingShortcut.Key, kvShortcuts, shortcut); err != nil {
-			return false, err
+			if err := steam_integration.AppendShortcut(kvShortcuts, shortcut); err != nil {
+				return false, err
+			}
+			ansasa.EndWithResult("appended shortcut")
+
+		} else {
+			if err := steam_integration.UpdateShortcut(existingShortcut.Key, kvShortcuts, shortcut); err != nil {
+				return false, err
+			}
+			ansasa.EndWithResult("updated shortcut")
+
 		}
-		ansasa.EndWithResult("updated shortcut")
 		return true, nil
 
 	} else {
@@ -236,6 +249,15 @@ func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
 	}
 
 	return steam_vdf.ParseBinary(absUserShortcutsPath)
+}
+
+func getGridIconPath(loginUser string, appId uint32) string {
+	udhd, err := data.UserDataHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	return filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid", fmt.Sprintf("%d_icon.png", appId))
 }
 
 func writeUserShortcuts(loginUser string, kvUserShortcuts []*steam_vdf.KeyValues) error {
