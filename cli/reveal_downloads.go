@@ -15,10 +15,10 @@ func RevealDownloadsHandler(u *url.URL) error {
 
 	ids := Ids(u)
 
-	return RevealDownloads(ids)
+	return RevealDownloads(ids...)
 }
 
-func RevealDownloads(ids []string) error {
+func RevealDownloads(ids ...string) error {
 
 	rda := nod.Begin("revealing downloads...")
 	defer rda.EndWithResult("done")

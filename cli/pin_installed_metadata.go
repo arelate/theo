@@ -8,7 +8,7 @@ import (
 	"github.com/boggydigital/pathways"
 )
 
-func pinInstalledMetadata(ids []string, force bool) error {
+func pinInstalledMetadata(force bool, ids ...string) error {
 
 	pima := nod.NewProgress("pinning theo metadata as installed...")
 	defer pima.EndWithResult("done")

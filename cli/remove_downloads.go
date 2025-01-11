@@ -16,14 +16,14 @@ func RemoveDownloadsHandler(u *url.URL) error {
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	force := u.Query().Has("force")
 
-	return RemoveDownloads(ids, operatingSystems, langCodes, downloadTypes, force)
+	return RemoveDownloads(operatingSystems, langCodes, downloadTypes, force, ids...)
 }
 
-func RemoveDownloads(ids []string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
+func RemoveDownloads(operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
-	force bool) error {
+	force bool,
+	ids ...string) error {
 
 	rda := nod.NewProgress("removing downloads...")
 	defer rda.EndWithResult("done")

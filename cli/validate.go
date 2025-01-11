@@ -45,10 +45,13 @@ func ValidateHandler(u *url.URL) error {
 	ids := Ids(u)
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 
-	return Validate(ids, operatingSystems, langCodes, downloadTypes)
+	return Validate(operatingSystems, langCodes, downloadTypes, ids...)
 }
 
-func Validate(ids []string, operatingSystems []vangogh_local_data.OperatingSystem, langCodes []string, downloadTypes []vangogh_local_data.DownloadType) error {
+func Validate(operatingSystems []vangogh_local_data.OperatingSystem,
+	langCodes []string,
+	downloadTypes []vangogh_local_data.DownloadType,
+	ids ...string) error {
 
 	va := nod.NewProgress("validating downloads...")
 	defer va.EndWithResult("done")

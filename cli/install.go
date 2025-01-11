@@ -38,15 +38,15 @@ func InstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return Install(ids, langCode, downloadTypes, removeDownloads, addSteamShortcut, force)
+	return Install(langCode, downloadTypes, removeDownloads, addSteamShortcut, force, ids...)
 }
 
-func Install(ids []string,
-	langCode string,
+func Install(langCode string,
 	downloadTypes []vangogh_local_data.DownloadType,
 	removeDownloads bool,
 	addSteamShortcut bool,
-	force bool) error {
+	force bool,
+	ids ...string) error {
 
 	ia := nod.Begin("installing products...")
 	defer ia.EndWithResult("done")
@@ -84,11 +84,11 @@ func Install(ids []string,
 		return ia.EndWithError(err)
 	}
 
-	if err = Download(ids, currentOs, langCodes, downloadTypes, force); err != nil {
+	if err = Download(currentOs, langCodes, downloadTypes, force, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 
-	if err = Validate(ids, currentOs, langCodes, downloadTypes); err != nil {
+	if err = Validate(currentOs, langCodes, downloadTypes, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 
@@ -105,16 +105,16 @@ func Install(ids []string,
 	}
 
 	if removeDownloads {
-		if err = RemoveDownloads(ids, currentOs, langCodes, downloadTypes, force); err != nil {
+		if err = RemoveDownloads(currentOs, langCodes, downloadTypes, force, ids...); err != nil {
 			return ia.EndWithError(err)
 		}
 	}
 
-	if err = pinInstalledMetadata(ids, force); err != nil {
+	if err = pinInstalledMetadata(force, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 
-	if err = RevealInstalled(ids, langCode); err != nil {
+	if err = RevealInstalled(langCode, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 

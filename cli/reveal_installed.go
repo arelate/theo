@@ -19,10 +19,10 @@ func RevealInstalledHandler(u *url.URL) error {
 		langCode = u.Query().Get(vangogh_local_data.LanguageCodeProperty)
 	}
 
-	return RevealInstalled(ids, langCode)
+	return RevealInstalled(langCode, ids...)
 }
 
-func RevealInstalled(ids []string, langCode string) error {
+func RevealInstalled(langCode string, ids ...string) error {
 
 	fia := nod.NewProgress("revealing installed products...")
 	defer fia.EndWithResult("done")

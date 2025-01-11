@@ -16,14 +16,14 @@ func DownloadHandler(u *url.URL) error {
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	force := u.Query().Has("force")
 
-	return Download(ids, operatingSystems, langCodes, downloadTypes, force)
+	return Download(operatingSystems, langCodes, downloadTypes, force, ids...)
 }
 
-func Download(ids []string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
+func Download(operatingSystems []vangogh_local_data.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_local_data.DownloadType,
-	force bool) error {
+	force bool,
+	ids ...string) error {
 
 	da := nod.NewProgress("downloading game data from vangogh...")
 	defer da.EndWithResult("done")
