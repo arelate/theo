@@ -2,7 +2,6 @@ package cli
 
 import (
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"net/url"
 	"os"
@@ -37,7 +36,7 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 		releaseSelector.Repo = dws.Repo
 	}
 
-	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{data.CurrentOS()}, releaseSelector)
+	PrintReleaseSelector(releaseSelector)
 
 	absPrefixDir, err := data.GetAbsPrefixDir(name)
 	if err != nil {

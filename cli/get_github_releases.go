@@ -4,30 +4,18 @@ import (
 	"errors"
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/http"
-	"net/url"
 	"time"
 )
 
-const (
-	forceUpdateDays = 30
-)
+func getGitHubReleases(force bool) error {
 
-func GetGitHubReleasesHandler(u *url.URL) error {
+	currentOs := data.CurrentOS()
 
-	operatingSystems, _, _ := OsLangCodeDownloadType(u)
-	force := u.Query().Has("force")
-
-	return GetGitHubReleases(operatingSystems, force)
-}
-
-func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, force bool) error {
-
-	gra := nod.Begin("getting GitHub releases...")
+	gra := nod.Begin(" getting GitHub releases for %s...", currentOs)
 	defer gra.EndWithResult("done")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
@@ -55,27 +43,24 @@ func GetGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem, fo
 		return gra.EndWithError(err)
 	}
 
-	for _, os := range operatingSystems {
+	forceRepoUpdate := force
 
-		forceRepoUpdate := force
+	for _, repo := range githubSources {
 
-		for _, repo := range githubSources {
+		if repo.OS != currentOs {
+			continue
+		}
 
-			if repo.OS != os {
-				continue
-			}
-
-			if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.String()); ok && ghsu != "" {
-				if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
-					if ghsut.AddDate(0, 0, forceUpdateDays).Before(time.Now()) {
-						forceRepoUpdate = true
-					}
+		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.String()); ok && ghsu != "" {
+			if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
+				if ghsut.AddDate(0, 0, forceGitHubUpdatesDays).Before(time.Now()) {
+					forceRepoUpdate = true
 				}
 			}
+		}
 
-			if err := getRepoReleases(repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
-				return gra.EndWithError(err)
-			}
+		if err := getRepoReleases(repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
+			return gra.EndWithError(err)
 		}
 	}
 

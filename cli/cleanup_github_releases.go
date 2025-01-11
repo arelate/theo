@@ -4,23 +4,17 @@ import (
 	"encoding/json"
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"golang.org/x/exp/maps"
-	"net/url"
 	"os"
 	"path/filepath"
 )
 
-func CleanupGitHubReleasesHandler(u *url.URL) error {
-	operatingSystems, _, _ := OsLangCodeDownloadType(u)
+func cleanupGitHubReleases() error {
 
-	return CleanupGitHubReleases(operatingSystems)
-}
-
-func CleanupGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem) error {
+	currentOs := data.CurrentOS()
 
 	cra := nod.Begin("cleaning up cached GitHub releases, keeping the latest...")
 	defer cra.EndWithResult("done")
@@ -40,16 +34,14 @@ func CleanupGitHubReleases(operatingSystems []vangogh_local_data.OperatingSystem
 		return cra.EndWithError(err)
 	}
 
-	for _, os := range operatingSystems {
-		for _, repo := range githubSources {
+	for _, repo := range githubSources {
 
-			if repo.OS != os {
-				continue
-			}
+		if repo.OS != currentOs {
+			continue
+		}
 
-			if err := cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
-				return cra.EndWithError(err)
-			}
+		if err := cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
+			return cra.EndWithError(err)
 		}
 	}
 

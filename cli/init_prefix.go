@@ -2,7 +2,6 @@ package cli
 
 import (
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"net/url"
 	"os"
@@ -25,7 +24,7 @@ func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force 
 	cpa := nod.Begin("initializing prefix %s...", name)
 	defer cpa.EndWithResult("done")
 
-	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{data.CurrentOS()}, releaseSelector)
+	PrintReleaseSelector(releaseSelector)
 
 	if releaseSelector == nil {
 		releaseSelector = &data.GitHubReleaseSelector{}

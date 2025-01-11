@@ -2,49 +2,72 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/theo/data"
 	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
-	"golang.org/x/exp/slices"
 	"net/url"
+	"os"
 )
 
+const gstreamerFrameworkPath = "/Library/Frameworks/GStreamer.framework"
+
+const forceGitHubUpdatesDays = 30
+
 func UpdateWineHandler(u *url.URL) error {
-
-	operatingSystems, _, _ := OsLangCodeDownloadType(u)
-	force := u.Query().Has("force")
-
-	return UpdateWine(operatingSystems, force)
+	return UpdateWine(u.Query().Has("force"))
 }
 
-func UpdateWine(operatingSystems []vangogh_local_data.OperatingSystem, force bool) error {
+func UpdateWine(force bool) error {
 
-	uwa := nod.Begin("updating WINE...")
+	currentOs := data.CurrentOS()
+
+	if currentOs == vangogh_local_data.Windows {
+		err := errors.New("WINE is not required on Windows")
+		return err
+	}
+
+	uwa := nod.Begin("updating WINE for %s...", currentOs)
 	defer uwa.EndWithResult("done")
 
-	if slices.Contains(operatingSystems, vangogh_local_data.Windows) {
-		err := errors.New("WINE is not required on Windows")
+	if err := checkGstreamer(); err != nil {
 		return uwa.EndWithError(err)
 	}
 
-	if err := CheckGstreamer(); err != nil {
+	if err := getGitHubReleases(force); err != nil {
 		return uwa.EndWithError(err)
 	}
 
-	if err := GetGitHubReleases(operatingSystems, force); err != nil {
+	if err := cacheGitHubLatestRelease(force); err != nil {
 		return uwa.EndWithError(err)
 	}
 
-	if err := CacheGitHubReleases(operatingSystems, nil, force); err != nil {
+	if err := cleanupGitHubReleases(); err != nil {
 		return uwa.EndWithError(err)
 	}
 
-	if err := CleanupGitHubReleases(operatingSystems); err != nil {
-		return uwa.EndWithError(err)
-	}
-
-	if err := UnpackGitHubReleases(operatingSystems, nil, force); err != nil {
+	if err := unpackGitHubLatestRelease(force); err != nil {
 		return uwa.EndWithError(err)
 	}
 
 	return nil
+}
+
+func checkGstreamer() error {
+
+	if data.CurrentOS() != vangogh_local_data.MacOS {
+		return nil
+	}
+
+	cga := nod.Begin(" checking whether GStreamer.framework is installed...")
+	defer cga.EndWithResult("done")
+
+	if _, err := os.Stat(gstreamerFrameworkPath); err == nil {
+		cga.EndWithResult("found")
+		return nil
+	} else if os.IsNotExist(err) {
+		cga.EndWithResult("not found. Download it at https://gstreamer.freedesktop.org/download")
+		return nil
+	} else {
+		return cga.EndWithError(err)
+	}
 }

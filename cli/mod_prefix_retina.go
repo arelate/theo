@@ -29,7 +29,7 @@ func ModPrefixRetina(name string, releaseSelector *data.GitHubReleaseSelector, r
 	mpa := nod.Begin("modding retina in prefix %s...", name)
 	defer mpa.EndWithResult("done")
 
-	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{data.CurrentOS()}, releaseSelector)
+	PrintReleaseSelector(releaseSelector)
 
 	if data.CurrentOS() != vangogh_local_data.MacOS {
 		mpa.EndWithResult("retina prefix mod is only applicable to %s", vangogh_local_data.MacOS)

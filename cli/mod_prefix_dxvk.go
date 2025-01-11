@@ -29,7 +29,7 @@ func ModPrefixDxVk(name string, releaseSelector *data.GitHubReleaseSelector, rev
 	mpa := nod.Begin("modding DXVK in prefix %s...", name)
 	defer mpa.EndWithResult("done")
 
-	PrintReleaseSelector([]vangogh_local_data.OperatingSystem{data.CurrentOS()}, releaseSelector)
+	PrintReleaseSelector(releaseSelector)
 
 	if data.CurrentOS() != vangogh_local_data.MacOS {
 		mpa.EndWithResult("DXVK prefix mod is only applicable to macOS")

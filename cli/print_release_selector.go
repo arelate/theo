@@ -9,15 +9,13 @@ import (
 	"strings"
 )
 
-func PrintReleaseSelector(operatingSystems []vangogh_local_data.OperatingSystem, releaseSelector *data.GitHubReleaseSelector) {
+func PrintReleaseSelector(releaseSelector *data.GitHubReleaseSelector) {
 	prsa := nod.Begin("GitHub releases selectors:")
 	defer prsa.End()
 
 	params := make(map[string][]string)
 
-	for _, os := range operatingSystems {
-		params[vangogh_local_data.OperatingSystemsProperty] = append(params[vangogh_local_data.OperatingSystemsProperty], os.String())
-	}
+	params[vangogh_local_data.OperatingSystemsProperty] = append(params[vangogh_local_data.OperatingSystemsProperty], data.CurrentOS().String())
 
 	if releaseSelector != nil {
 		if releaseSelector.Owner != "" {
