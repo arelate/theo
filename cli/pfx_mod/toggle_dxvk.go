@@ -32,5 +32,7 @@ func ToggleDxVk(absPrefixDir, absAssetDir string, flag bool, force bool) error {
 
 	fmt.Println(matches)
 
+	panic("DXVK mod not implemented")
+
 	return nil
 }

@@ -9,34 +9,18 @@ import (
 
 func UpdatePrefixHandler(u *url.URL) error {
 
-	releaseSelector := data.ReleaseSelectorFromUrl(u)
-
 	q := u.Query()
 
+	wineRepo := q.Get("wine-repo")
 	name := q.Get("name")
 
-	return UpdatePrefix(name, releaseSelector)
+	return UpdatePrefix(name, wineRepo)
 }
 
-func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) error {
+func UpdatePrefix(name string, wineRepo string) error {
 
 	upa := nod.Begin("updating prefix %s...", name)
 	defer upa.EndWithResult("done")
-
-	if releaseSelector == nil {
-		releaseSelector = &data.GitHubReleaseSelector{}
-	}
-
-	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		dws, err := data.GetDefaultWineSource(data.CurrentOS())
-		if err != nil {
-			return upa.EndWithError(err)
-		}
-		releaseSelector.Owner = dws.Owner
-		releaseSelector.Repo = dws.Repo
-	}
-
-	PrintReleaseSelector(releaseSelector)
 
 	absPrefixDir, err := data.GetAbsPrefixDir(name)
 	if err != nil {
@@ -48,7 +32,7 @@ func UpdatePrefix(name string, releaseSelector *data.GitHubReleaseSelector) erro
 		return nil
 	}
 
-	absWineBin, err := data.GetWineBinary(data.CurrentOS(), releaseSelector)
+	absWineBin, err := data.GetWineBinary(wineRepo)
 	if err != nil {
 		return upa.EndWithError(err)
 	}

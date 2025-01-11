@@ -3,7 +3,6 @@ package data
 import (
 	"errors"
 	"fmt"
-	"github.com/arelate/vangogh_local_data"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,9 +28,9 @@ type WineContext struct {
 	PrefixPath string
 }
 
-func GetWineBinary(os vangogh_local_data.OperatingSystem, releaseSelector *GitHubReleaseSelector) (string, error) {
+func GetWineBinary(wineRepo string) (string, error) {
 
-	wineSource, release, err := GetWineSourceRelease(os, releaseSelector)
+	wineSource, release, err := GetWineSourceLatestRelease(wineRepo)
 	if err != nil {
 		return "", err
 	}

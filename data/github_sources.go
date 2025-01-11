@@ -34,16 +34,26 @@ type GitHubSource struct {
 	Description  string
 	AssetInclude []string
 	AssetExclude []string
+	Default      bool
 }
 
 type WineGitHubSource struct {
 	*GitHubSource
 	BinaryPath string
-	Default    bool
 }
 
 func (ghs *GitHubSource) String() string {
 	return path.Join(ghs.Owner, ghs.Repo)
+}
+
+func (ghs *GitHubSource) CurrentOsMatches(owner, repo string) bool {
+	if ghs.OS == CurrentOS() &&
+		ghs.Repo == repo {
+		if (owner != "" && ghs.Owner == owner) || owner == "" {
+			return true
+		}
+	}
+	return false
 }
 
 func parseGitHubSource(u *url.URL, pkv wits.KeyValue) (*GitHubSource, error) {
@@ -191,7 +201,23 @@ func LoadGitHubSources() ([]*GitHubSource, error) {
 	return githubSources, nil
 }
 
-func GetWineSource(os vangogh_local_data.OperatingSystem, owner, repo string) (*WineGitHubSource, error) {
+func splitOwnerRepo(gitHubRepo string) (string, string) {
+	owner, repo := "", ""
+	if strings.Contains(gitHubRepo, "/") {
+		owner, repo = path.Split(gitHubRepo)
+		owner = strings.TrimSuffix(owner, "/")
+	} else {
+		repo = gitHubRepo
+	}
+	return owner, repo
+}
+
+func GetWineSource(wineRepo string) (*WineGitHubSource, error) {
+
+	owner, repo := splitOwnerRepo(wineRepo)
+	if repo == "" {
+		return getDefaultWineSource()
+	}
 
 	wineSources, err := LoadWineSources()
 	if err != nil {
@@ -199,58 +225,64 @@ func GetWineSource(os vangogh_local_data.OperatingSystem, owner, repo string) (*
 	}
 
 	for _, ws := range wineSources {
-		if ws.OS == os &&
-			ws.Owner == owner &&
-			ws.Repo == repo {
+		if ws.CurrentOsMatches(owner, repo) {
 			return ws, nil
 		}
 	}
 	return nil, errors.New("WINE source not found")
 }
 
-func GetDefaultWineSource(os vangogh_local_data.OperatingSystem) (*WineGitHubSource, error) {
+func getDefaultWineSource() (*WineGitHubSource, error) {
+
 	wineSources, err := LoadWineSources()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, ws := range wineSources {
-		if ws.OS == os &&
+		if ws.OS == CurrentOS() &&
 			ws.Default {
 			return ws, nil
 		}
 	}
 
-	return nil, errors.New("cannot determine default WINE source for " + os.String())
+	return nil, errors.New("cannot determine default WINE source for " + CurrentOS().String())
 }
 
-func GetDxVkSource(os vangogh_local_data.OperatingSystem, owner, repo string) (*GitHubSource, error) {
+func getDefaultDxVkSource() (*GitHubSource, error) {
+	dxVkSources, err := LoadDxVkSources()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ds := range dxVkSources {
+		if ds.OS == CurrentOS() &&
+			ds.Default {
+			return ds, nil
+		}
+	}
+
+	return nil, errors.New("cannot determine default DXVK source for " + CurrentOS().String())
+}
+
+func GetDxVkSource(dxVkRepo string) (*GitHubSource, error) {
+
+	owner, repo := splitOwnerRepo(dxVkRepo)
+	if repo == "" {
+		return getDefaultDxVkSource()
+	}
+
 	githubSources, err := LoadDxVkSources()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, gs := range githubSources {
-		if gs.OS == os &&
-			gs.Owner == owner &&
-			gs.Repo == repo {
+		if gs.CurrentOsMatches(owner, repo) {
 			return gs, nil
 		}
 	}
 	return nil, errors.New("DXVK source not found")
-}
-
-func GetFirstDxVkSource(os vangogh_local_data.OperatingSystem) (*GitHubSource, error) {
-	githubSources, err := LoadDxVkSources()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(githubSources) > 0 {
-		return githubSources[0], nil
-	} else {
-		return nil, errors.New("no DXVK sources set for " + os.String())
-	}
 }
 
 func InitGitHubSources() error {

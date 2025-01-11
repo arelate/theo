@@ -9,35 +9,19 @@ import (
 
 func InitPrefixHandler(u *url.URL) error {
 
-	releaseSelector := data.ReleaseSelectorFromUrl(u)
-
 	q := u.Query()
 
 	name := q.Get("name")
+	wineRepo := q.Get("wine-repo")
 	force := q.Has("force")
 
-	return InitPrefix(name, releaseSelector, force)
+	return InitPrefix(name, wineRepo, force)
 }
 
-func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force bool) error {
+func InitPrefix(name string, wineRepo string, force bool) error {
 
 	cpa := nod.Begin("initializing prefix %s...", name)
 	defer cpa.EndWithResult("done")
-
-	PrintReleaseSelector(releaseSelector)
-
-	if releaseSelector == nil {
-		releaseSelector = &data.GitHubReleaseSelector{}
-	}
-
-	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		dws, err := data.GetDefaultWineSource(data.CurrentOS())
-		if err != nil {
-			return cpa.EndWithError(err)
-		}
-		releaseSelector.Owner = dws.Owner
-		releaseSelector.Repo = dws.Repo
-	}
 
 	absPrefixDir, err := data.GetAbsPrefixDir(name)
 	if err != nil {
@@ -51,7 +35,7 @@ func InitPrefix(name string, releaseSelector *data.GitHubReleaseSelector, force 
 		}
 	}
 
-	absWineBin, err := data.GetWineBinary(data.CurrentOS(), releaseSelector)
+	absWineBin, err := data.GetWineBinary(wineRepo)
 	if err != nil {
 		return cpa.EndWithError(err)
 	}

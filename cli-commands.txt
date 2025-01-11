@@ -25,9 +25,7 @@ download
 
 init-prefix
     name*^
-    owner
-    repo
-    tag
+    wine-repo
     force
 
 install
@@ -46,17 +44,13 @@ list-steam-shortcuts
 
 mod-prefix-dxvk
     name*^
-    owner
-    repo
-    tag
+    dxvk-repo
     revert
     force
 
 mod-prefix-retina
     name*^
-    owner
-    repo
-    tag
+    wine-repo
     revert
     force
 
@@ -112,9 +106,7 @@ uninstall
 
 update-prefix
     name*^
-    owner
-    repo
-    tag
+    wine-repo
 
 update-wine
     force

@@ -16,40 +16,25 @@ func ModPrefixRetinaHandler(u *url.URL) error {
 
 	name := q.Get("name")
 
-	releaseSelector := data.ReleaseSelectorFromUrl(u)
+	wineRepo := q.Get("wine-repo")
 
 	revert := q.Has("revert")
 	force := q.Has("force")
 
-	return ModPrefixRetina(name, releaseSelector, revert, force)
+	return ModPrefixRetina(name, wineRepo, revert, force)
 }
 
-func ModPrefixRetina(name string, releaseSelector *data.GitHubReleaseSelector, revert, force bool) error {
+func ModPrefixRetina(name string, wineRepo string, revert, force bool) error {
 
 	mpa := nod.Begin("modding retina in prefix %s...", name)
 	defer mpa.EndWithResult("done")
-
-	PrintReleaseSelector(releaseSelector)
 
 	if data.CurrentOS() != vangogh_local_data.MacOS {
 		mpa.EndWithResult("retina prefix mod is only applicable to %s", vangogh_local_data.MacOS)
 		return nil
 	}
 
-	if releaseSelector == nil {
-		releaseSelector = &data.GitHubReleaseSelector{}
-	}
-
-	if releaseSelector.Owner == "" && releaseSelector.Repo == "" {
-		dws, err := data.GetDefaultWineSource(data.CurrentOS())
-		if err != nil {
-			return mpa.EndWithError(err)
-		}
-		releaseSelector.Owner = dws.Owner
-		releaseSelector.Repo = dws.Repo
-	}
-
-	absWineBin, err := data.GetWineBinary(data.CurrentOS(), releaseSelector)
+	absWineBin, err := data.GetWineBinary(wineRepo)
 	if err != nil {
 		return mpa.EndWithError(err)
 	}
