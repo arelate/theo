@@ -46,7 +46,6 @@ mod-prefix-dxvk
     name*^
     dxvk-repo
     revert
-    force
 
 mod-prefix-retina
     name*^

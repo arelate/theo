@@ -20,12 +20,11 @@ func ModPrefixDxVkHandler(u *url.URL) error {
 	dxVkRepo := q.Get("dxvk-repo")
 
 	revert := q.Has("revert")
-	force := q.Has("force")
 
-	return ModPrefixDxVk(name, dxVkRepo, revert, force)
+	return ModPrefixDxVk(name, dxVkRepo, revert)
 }
 
-func ModPrefixDxVk(name string, dxVkRepo string, revert, force bool) error {
+func ModPrefixDxVk(name string, dxVkRepo string, revert bool) error {
 	mpa := nod.Begin("modding DXVK in prefix %s...", name)
 	defer mpa.EndWithResult("done")
 
@@ -51,5 +50,5 @@ func ModPrefixDxVk(name string, dxVkRepo string, revert, force bool) error {
 
 	absBinaryDir := filepath.Join(binariesDir, dxVkSource.Owner, dxVkSource.Repo, busan.Sanitize(release.TagName))
 
-	return pfx_mod.ToggleDxVk(absPrefixDir, absBinaryDir, revert, force)
+	return pfx_mod.ToggleDxVk(absPrefixDir, absBinaryDir, revert)
 }

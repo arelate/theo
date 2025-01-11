@@ -80,6 +80,9 @@ func parseGitHubSource(u *url.URL, pkv wits.KeyValue) (*GitHubSource, error) {
 			ghs.AssetInclude = strings.Split(value, ";")
 		case "assets-exclude":
 			ghs.AssetExclude = strings.Split(value, ";")
+		case "default":
+			ghs.Default = value == "true"
+
 		}
 	}
 
@@ -99,8 +102,6 @@ func parseWineSource(u *url.URL, pkv wits.KeyValue) (*WineGitHubSource, error) {
 
 	for key, value := range pkv {
 		switch key {
-		case "default":
-			wineSource.Default = value == "true"
 		case "bin-path":
 			wineSource.BinaryPath = value
 		}
@@ -239,6 +240,10 @@ func getDefaultWineSource() (*WineGitHubSource, error) {
 		return nil, err
 	}
 
+	if len(wineSources) == 1 {
+		return wineSources[0], nil
+	}
+
 	for _, ws := range wineSources {
 		if ws.OS == CurrentOS() &&
 			ws.Default {
@@ -253,6 +258,10 @@ func getDefaultDxVkSource() (*GitHubSource, error) {
 	dxVkSources, err := LoadDxVkSources()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(dxVkSources) == 1 {
+		return dxVkSources[0], nil
 	}
 
 	for _, ds := range dxVkSources {
