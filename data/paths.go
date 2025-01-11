@@ -51,9 +51,10 @@ const (
 	Backups       pathways.AbsDir = "backups"
 	Metadata      pathways.AbsDir = "metadata"
 	Downloads     pathways.AbsDir = "downloads"
-	Cellars       pathways.AbsDir = "cellars"
+	Wine          pathways.AbsDir = "wine"
 	GitHubSources pathways.AbsDir = "github-sources"
 	InstalledApps pathways.AbsDir = "installed-apps"
+	Prefixes      pathways.AbsDir = "prefixes"
 )
 
 const (
@@ -62,10 +63,9 @@ const (
 	InstalledMetadata pathways.RelDir = "installed"
 	MacOsExtracts     pathways.RelDir = "_macos_extracts"
 	GitHubReleases    pathways.RelDir = "github-releases"
-	Releases          pathways.RelDir = "rel"
-	Binaries          pathways.RelDir = "bin"
-	Prefixes          pathways.RelDir = "pfx"
-	PrefixArchive     pathways.RelDir = "pfx-archive"
+	Releases          pathways.RelDir = "releases"
+	Binaries          pathways.RelDir = "binaries"
+	PrefixArchive     pathways.RelDir = "prefix-archive"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
@@ -73,9 +73,8 @@ var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	TheoMetadata:      Metadata,
 	InstalledMetadata: Metadata,
 	GitHubReleases:    Metadata,
-	Releases:          Cellars,
-	Binaries:          Cellars,
-	Prefixes:          Cellars,
+	Releases:          Wine,
+	Binaries:          Wine,
 	PrefixArchive:     Backups,
 	MacOsExtracts:     Downloads,
 }
@@ -84,9 +83,10 @@ var AllAbsDirs = []pathways.AbsDir{
 	Backups,
 	Metadata,
 	Downloads,
-	Cellars,
+	Wine,
 	GitHubSources,
 	InstalledApps,
+	Prefixes,
 }
 
 func GetAbsBinariesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
@@ -121,7 +121,7 @@ func GetAbsReleaseAssetPath(ghs *GitHubSource, release *github_integration.GitHu
 }
 
 func GetAbsPrefixDir(name string) (string, error) {
-	prefixesDir, err := pathways.GetAbsRelDir(Prefixes)
+	prefixesDir, err := pathways.GetAbsDir(Prefixes)
 	if err != nil {
 		return "", err
 	}
