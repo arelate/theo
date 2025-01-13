@@ -2,7 +2,7 @@ package data
 
 import (
 	"errors"
-	"github.com/arelate/vangogh_local_data"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"os"
 	"os/exec"
 )
@@ -12,11 +12,11 @@ func TheoExecutable() (string, error) {
 	binFilename := "theo"
 
 	switch CurrentOS() {
-	case vangogh_local_data.Windows:
+	case vangogh_integration.Windows:
 		binFilename += ".exe"
-	case vangogh_local_data.Linux:
+	case vangogh_integration.Linux:
 		fallthrough
-	case vangogh_local_data.MacOS:
+	case vangogh_integration.MacOS:
 	// do nothing
 	default:
 		return "", errors.New("unsupported operating system")

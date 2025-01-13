@@ -11,11 +11,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const (
-	tarXzExt = ".tar.xz"
-	tarGzExt = ".tar.gz"
+	tarExt   = ".tar"
+	xzExt    = ".xz"
+	gzExt    = ".gz"
+	tarGzExt = tarExt + gzExt
+	tarXzExt = tarExt + xzExt
 )
 
 func unpackGitHubLatestRelease(force bool) error {
@@ -114,7 +118,14 @@ func unpackAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelea
 		return uaa.EndWithError(err)
 	}
 
-	switch filepath.Ext(absPackedAssetPath) {
+	ext := filepath.Ext(absPackedAssetPath)
+	if ext == gzExt || ext == xzExt {
+		if text := filepath.Ext(strings.TrimSuffix(absPackedAssetPath, ext)); text == tarExt {
+			ext = text + ext
+		}
+	}
+
+	switch ext {
 	case tarXzExt:
 		fallthrough
 	case tarGzExt:

@@ -3,8 +3,8 @@ package cli
 import (
 	"crypto/md5"
 	"fmt"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -48,15 +48,15 @@ func ValidateHandler(u *url.URL) error {
 	return Validate(operatingSystems, langCodes, downloadTypes, ids...)
 }
 
-func Validate(operatingSystems []vangogh_local_data.OperatingSystem,
+func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
+	downloadTypes []vangogh_integration.DownloadType,
 	ids ...string) error {
 
 	va := nod.NewProgress("validating downloads...")
 	defer va.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	for _, id := range ids {
 
@@ -74,10 +74,10 @@ func Validate(operatingSystems []vangogh_local_data.OperatingSystem,
 }
 
 func validateLinks(id string,
-	operatingSystems []vangogh_local_data.OperatingSystem,
+	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
-	metadata *vangogh_local_data.TheoMetadata) error {
+	downloadTypes []vangogh_integration.DownloadType,
+	metadata *vangogh_integration.TheoMetadata) error {
 
 	vla := nod.NewProgress("validating %s...", metadata.Title)
 	defer vla.End()
@@ -114,7 +114,7 @@ func validateLinks(id string,
 	return nil
 }
 
-func validateLink(id string, dl vangogh_local_data.TheoDownloadLink, downloadsDir string) (ValidationResult, error) {
+func validateLink(id string, dl vangogh_integration.TheoDownloadLink, downloadsDir string) (ValidationResult, error) {
 
 	dla := nod.NewProgress(" - %s...", dl.LocalFilename)
 	defer dla.End()

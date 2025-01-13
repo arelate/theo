@@ -1,8 +1,8 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -15,8 +15,8 @@ func RevealInstalledHandler(u *url.URL) error {
 	ids := Ids(u)
 
 	langCode := defaultLangCode
-	if u.Query().Has(vangogh_local_data.LanguageCodeProperty) {
-		langCode = u.Query().Get(vangogh_local_data.LanguageCodeProperty)
+	if u.Query().Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = u.Query().Get(vangogh_integration.LanguageCodeProperty)
 	}
 
 	return RevealInstalled(langCode, ids...)
@@ -27,10 +27,10 @@ func RevealInstalled(langCode string, ids ...string) error {
 	fia := nod.NewProgress("revealing installed products...")
 	defer fia.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
+	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
-	vangogh_local_data.PrintParams(ids, currentOs, langCodes, nil, true)
+	vangogh_integration.PrintParams(ids, currentOs, langCodes, nil, true)
 
 	fia.TotalInt(len(ids))
 

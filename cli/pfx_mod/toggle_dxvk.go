@@ -1,8 +1,8 @@
 package pfx_mod
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"io"
 	"os"
@@ -23,7 +23,7 @@ const originalExt = ".original"
 
 func ToggleDxVk(absPrefixDir, absAssetDir string, revert bool) error {
 
-	if data.CurrentOS() != vangogh_local_data.MacOS {
+	if data.CurrentOS() != vangogh_integration.MacOS {
 		return nil
 	}
 

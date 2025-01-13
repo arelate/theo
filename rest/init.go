@@ -1,8 +1,8 @@
 package rest
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 )
 
@@ -11,6 +11,6 @@ var (
 )
 
 func Init() (err error) {
-	rdx, err = vangogh_local_data.NewReduxReader(data.AllProperties()...)
+	rdx, err = vangogh_integration.NewReduxReader(data.AllProperties()...)
 	return err
 }

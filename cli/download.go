@@ -1,8 +1,8 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
@@ -19,16 +19,16 @@ func DownloadHandler(u *url.URL) error {
 	return Download(operatingSystems, langCodes, downloadTypes, force, ids...)
 }
 
-func Download(operatingSystems []vangogh_local_data.OperatingSystem,
+func Download(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
+	downloadTypes []vangogh_integration.DownloadType,
 	force bool,
 	ids ...string) error {
 
 	da := nod.NewProgress("downloading game data from vangogh...")
 	defer da.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	da.TotalInt(len(ids))
 
@@ -50,10 +50,10 @@ func Download(operatingSystems []vangogh_local_data.OperatingSystem,
 }
 
 func downloadProductFiles(id string,
-	metadata *vangogh_local_data.TheoMetadata,
-	operatingSystems []vangogh_local_data.OperatingSystem,
+	metadata *vangogh_integration.TheoMetadata,
+	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
+	downloadTypes []vangogh_integration.DownloadType,
 	force bool) error {
 
 	gpdla := nod.Begin(" downloading %s...", metadata.Title)
@@ -94,9 +94,9 @@ func downloadProductFiles(id string,
 
 	for _, dl := range dls {
 
-		vr := vangogh_local_data.ParseValidationResult(dl.ValidationResult)
-		if vr != vangogh_local_data.ValidatedSuccessfully &&
-			vr != vangogh_local_data.ValidatedMissingChecksum {
+		vr := vangogh_integration.ParseValidationResult(dl.ValidationResult)
+		if vr != vangogh_integration.ValidatedSuccessfully &&
+			vr != vangogh_integration.ValidatedMissingChecksum {
 			continue
 		}
 

@@ -3,7 +3,7 @@ package data
 import (
 	"fmt"
 	"github.com/arelate/southern_light/github_integration"
-	"github.com/arelate/vangogh_local_data"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/pathways"
 	"os"
@@ -129,6 +129,6 @@ func GetAbsPrefixDir(name string) (string, error) {
 	return filepath.Join(prefixesDir, busan.Sanitize(name)), nil
 }
 
-func OsLangCodeDir(os vangogh_local_data.OperatingSystem, langCode string) string {
+func OsLangCodeDir(os vangogh_integration.OperatingSystem, langCode string) string {
 	return fmt.Sprintf("%s-%s", os.String(), langCode)
 }

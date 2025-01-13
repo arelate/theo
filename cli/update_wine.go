@@ -2,8 +2,8 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"net/url"
 	"os"
@@ -21,7 +21,7 @@ func UpdateWine(force bool) error {
 
 	currentOs := data.CurrentOS()
 
-	if currentOs == vangogh_local_data.Windows {
+	if currentOs == vangogh_integration.Windows {
 		err := errors.New("WINE is not required on Windows")
 		return err
 	}
@@ -54,7 +54,7 @@ func UpdateWine(force bool) error {
 
 func checkGstreamer() error {
 
-	if data.CurrentOS() != vangogh_local_data.MacOS {
+	if data.CurrentOS() != vangogh_integration.MacOS {
 		return nil
 	}
 

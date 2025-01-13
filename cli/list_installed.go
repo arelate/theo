@@ -2,8 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -15,8 +15,8 @@ import (
 func ListInstalledHandler(u *url.URL) error {
 	size := u.Query().Has("size")
 	langCode := defaultLangCode
-	if u.Query().Has(vangogh_local_data.LanguageCodeProperty) {
-		langCode = u.Query().Get(vangogh_local_data.LanguageCodeProperty)
+	if u.Query().Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = u.Query().Get(vangogh_integration.LanguageCodeProperty)
 	}
 	return ListInstalled(langCode, size)
 }
@@ -54,7 +54,7 @@ func ListInstalled(langCode string, size bool) error {
 		return lia.EndWithError(err)
 	}
 
-	osLangCodeInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, langCode))
+	osLangCodeInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, langCode))
 
 	ids, err := kvInstalledMetadata.Keys()
 	if err != nil {

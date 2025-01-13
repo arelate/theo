@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/cli/pfx_mod"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -28,7 +28,7 @@ func ModPrefixDxVk(name string, dxVkRepo string, revert bool) error {
 	mpa := nod.Begin("modding DXVK in prefix %s...", name)
 	defer mpa.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_local_data.MacOS {
+	if data.CurrentOS() != vangogh_integration.MacOS {
 		mpa.EndWithResult("DXVK prefix mod is only applicable to macOS")
 		return nil
 	}

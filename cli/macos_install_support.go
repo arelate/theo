@@ -2,8 +2,8 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -24,13 +24,13 @@ const (
 	macOsAppBundleExt = ".app"
 )
 
-func macOsExtractInstaller(link *vangogh_local_data.TheoDownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
+func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
 	defer meia.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_local_data.MacOS {
-		return meia.EndWithError(errors.New("extracting .pkg installers is only supported on " + vangogh_local_data.MacOS.String()))
+	if data.CurrentOS() != vangogh_integration.MacOS {
+		return meia.EndWithError(errors.New("extracting .pkg installers is only supported on " + vangogh_integration.MacOS.String()))
 	}
 
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
@@ -63,13 +63,13 @@ func macOsExtractInstaller(link *vangogh_local_data.TheoDownloadLink, productDow
 	return cmd.Run()
 }
 
-func macOsPlaceExtracts(id string, link *vangogh_local_data.TheoDownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx kevlar.WriteableRedux, force bool) error {
+func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx kevlar.WriteableRedux, force bool) error {
 
 	mpea := nod.Begin(" placing product installation files...")
 	defer mpea.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_local_data.MacOS {
-		return mpea.EndWithError(errors.New("placing .pkg extracts is only supported on " + vangogh_local_data.MacOS.String()))
+	if data.CurrentOS() != vangogh_integration.MacOS {
+		return mpea.EndWithError(errors.New("placing .pkg extracts is only supported on " + vangogh_integration.MacOS.String()))
 	}
 
 	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
@@ -187,10 +187,10 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 }
 
 func macOsPostInstallActions(id string,
-	link *vangogh_local_data.TheoDownloadLink,
+	link *vangogh_integration.TheoDownloadLink,
 	installedAppsDir string) error {
 
-	mpia := nod.Begin(" performing post-install %s actions for %s...", vangogh_local_data.MacOS, id)
+	mpia := nod.Begin(" performing post-install %s actions for %s...", vangogh_integration.MacOS, id)
 	defer mpia.EndWithResult("done")
 
 	if filepath.Ext(link.LocalFilename) != pkgExt {
@@ -221,7 +221,7 @@ func macOsPostInstallActions(id string,
 
 	bundleName := pis.BundleName()
 
-	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode), bundleName)
+	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, link.LanguageCode), bundleName)
 
 	// some macOS bundles point to a directory, not an .app package
 	// try to locate .app package inside the bundle dir
@@ -355,7 +355,7 @@ func macOsExecCatFiles(srcGlob string, dstPath string) error {
 }
 
 func macOsRemoveProductExtracts(id string,
-	metadata *vangogh_local_data.TheoMetadata,
+	metadata *vangogh_integration.TheoMetadata,
 	extractsDir string) error {
 
 	rela := nod.Begin(" removing extracts for %s...", metadata.Title)
@@ -368,7 +368,7 @@ func macOsRemoveProductExtracts(id string,
 	}
 
 	dls := metadata.DownloadLinks.
-		FilterOperatingSystems(vangogh_local_data.MacOS)
+		FilterOperatingSystems(vangogh_integration.MacOS)
 
 	for _, dl := range dls {
 

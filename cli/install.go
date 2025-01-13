@@ -2,8 +2,8 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -42,7 +42,7 @@ func InstallHandler(u *url.URL) error {
 }
 
 func Install(langCode string,
-	downloadTypes []vangogh_local_data.DownloadType,
+	downloadTypes []vangogh_integration.DownloadType,
 	removeDownloads bool,
 	addSteamShortcut bool,
 	force bool,
@@ -51,10 +51,10 @@ func Install(langCode string,
 	ia := nod.Begin("installing products...")
 	defer ia.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
+	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
-	vangogh_local_data.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
+	vangogh_integration.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
 
 	supported, err := filterNotSupported(langCode, force, ids...)
 	if err != nil {
@@ -190,7 +190,7 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 		dls := metadata.DownloadLinks.
 			FilterOperatingSystems(data.CurrentOS()).
 			FilterLanguageCodes(langCode).
-			FilterDownloadTypes(vangogh_local_data.Installer)
+			FilterDownloadTypes(vangogh_integration.Installer)
 
 		if len(dls) > 0 {
 			supported = append(supported, id)
@@ -202,15 +202,15 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 	return supported, nil
 }
 
-func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_local_data.DownloadType, force bool) error {
+func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_integration.DownloadType, force bool) error {
 
 	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOS())
 	defer coipa.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
+	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
-	vangogh_local_data.PrintParams([]string{id}, currentOs, langCodes, downloadTypes, true)
+	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, downloadTypes, true)
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
@@ -249,12 +249,12 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 
 	for _, link := range dls {
 
-		linkOs := vangogh_local_data.ParseOperatingSystem(link.OS)
+		linkOs := vangogh_integration.ParseOperatingSystem(link.OS)
 		linkExt := filepath.Ext(link.LocalFilename)
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
 		switch linkOs {
-		case vangogh_local_data.MacOS:
+		case vangogh_integration.MacOS:
 			extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
 			if err != nil {
 				return coipa.EndWithError(err)
@@ -265,13 +265,13 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 					return coipa.EndWithError(err)
 				}
 			}
-		case vangogh_local_data.Linux:
+		case vangogh_integration.Linux:
 			if linkExt == shExt {
 				if err := linuxInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
 					return coipa.EndWithError(err)
 				}
 			}
-		case vangogh_local_data.Windows:
+		case vangogh_integration.Windows:
 			if linkExt == exeExt {
 				if err := windowsInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
 					return coipa.EndWithError(err)
@@ -285,18 +285,18 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 }
 
 func macOsInstallProduct(id string,
-	metadata *vangogh_local_data.TheoMetadata,
-	link *vangogh_local_data.TheoDownloadLink,
+	metadata *vangogh_integration.TheoMetadata,
+	link *vangogh_integration.TheoDownloadLink,
 	downloadsDir, extractsDir, installedAppsDir string,
 	rdx kevlar.WriteableRedux,
 	force bool) error {
 
-	mia := nod.Begin("installing %s version of %s...", vangogh_local_data.MacOS, metadata.Title)
+	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, metadata.Title)
 	defer mia.EndWithResult("done")
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 	productExtractsDir := filepath.Join(extractsDir, id)
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_local_data.MacOS, link.LanguageCode))
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, link.LanguageCode))
 
 	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
 		return mia.EndWithError(err)
@@ -318,12 +318,12 @@ func macOsInstallProduct(id string,
 }
 
 func linuxInstallProduct(id string,
-	metadata *vangogh_local_data.TheoMetadata,
-	link *vangogh_local_data.TheoDownloadLink,
+	metadata *vangogh_integration.TheoMetadata,
+	link *vangogh_integration.TheoDownloadLink,
 	absInstallerPath, installedAppsDir string,
 	rdx kevlar.WriteableRedux) error {
 
-	lia := nod.Begin("installing %s version of %s...", vangogh_local_data.Linux, metadata.Title)
+	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, metadata.Title)
 	defer lia.EndWithResult("done")
 
 	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
@@ -340,7 +340,7 @@ func linuxInstallProduct(id string,
 		return lia.EndWithError(err)
 	}
 
-	osLangCodeDir := data.OsLangCodeDir(vangogh_local_data.Linux, link.LanguageCode)
+	osLangCodeDir := data.OsLangCodeDir(vangogh_integration.Linux, link.LanguageCode)
 	productInstalledAppDir := filepath.Join(installedAppsDir, osLangCodeDir, productTitle)
 
 	if err := linuxPostDownloadActions(id, link); err != nil {
@@ -355,8 +355,8 @@ func linuxInstallProduct(id string,
 }
 
 func windowsInstallProduct(id string,
-	metadata *vangogh_local_data.TheoMetadata,
-	link *vangogh_local_data.TheoDownloadLink,
+	metadata *vangogh_integration.TheoMetadata,
+	link *vangogh_integration.TheoDownloadLink,
 	absInstallerPath, installedAppsDir string) error {
 
 	wia := nod.Begin("installing Windows version of %s...", metadata.Title)

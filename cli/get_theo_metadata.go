@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -13,7 +13,7 @@ import (
 	"net/http"
 )
 
-func getTheoMetadata(id string, force bool) (*vangogh_local_data.TheoMetadata, error) {
+func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, error) {
 
 	gtma := nod.NewProgress(" getting theo metadata...")
 	defer gtma.End()
@@ -61,7 +61,7 @@ func getTheoMetadata(id string, force bool) (*vangogh_local_data.TheoMetadata, e
 	}
 }
 
-func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh_local_data.TheoMetadata, error) {
+func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh_integration.TheoMetadata, error) {
 
 	if has, err := kvTheoMetadata.Has(id); err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh
 	}
 	defer tmReadCloser.Close()
 
-	var tm vangogh_local_data.TheoMetadata
+	var tm vangogh_integration.TheoMetadata
 	if err := json.NewDecoder(tmReadCloser).Decode(&tm); err != nil {
 		return nil, err
 	}
@@ -83,11 +83,11 @@ func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh
 	return &tm, nil
 }
 
-func fetchRemoteTheoMetadata(id string, rdx kevlar.ReadableRedux, kvTheoMetadata kevlar.KeyValues) (*vangogh_local_data.TheoMetadata, error) {
+func fetchRemoteTheoMetadata(id string, rdx kevlar.ReadableRedux, kvTheoMetadata kevlar.KeyValues) (*vangogh_integration.TheoMetadata, error) {
 
 	vdmu, err := data.VangoghUrl(rdx,
 		data.VangoghTheoMetadataPath,
-		map[string]string{vangogh_local_data.IdProperty: id})
+		map[string]string{vangogh_integration.IdProperty: id})
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func fetchRemoteTheoMetadata(id string, rdx kevlar.ReadableRedux, kvTheoMetadata
 		return nil, err
 	}
 
-	var tm vangogh_local_data.TheoMetadata
+	var tm vangogh_integration.TheoMetadata
 	if err := json.NewDecoder(buf).Decode(&tm); err != nil {
 		return nil, err
 	}

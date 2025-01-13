@@ -2,8 +2,8 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"os"
@@ -26,12 +26,12 @@ func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) erro
 	return cmd.Run()
 }
 
-func linuxPostDownloadActions(id string, link *vangogh_local_data.TheoDownloadLink) error {
+func linuxPostDownloadActions(id string, link *vangogh_integration.TheoDownloadLink) error {
 
-	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_local_data.Linux, id)
+	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_integration.Linux, id)
 	defer lpda.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_local_data.Linux {
+	if data.CurrentOS() != vangogh_integration.Linux {
 		return lpda.EndWithError(errors.New("Linux post-download actions are only supported on Linux"))
 	}
 

@@ -2,8 +2,8 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -97,13 +97,13 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 func currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName string) error {
 	currentOs := data.CurrentOS()
 	switch currentOs {
-	case vangogh_local_data.MacOS:
+	case vangogh_integration.MacOS:
 		fallthrough
-	case vangogh_local_data.Linux:
+	case vangogh_integration.Linux:
 		if err := nixUninstallProduct(title, currentOs, installedAppsDir, langCode, bundleName); err != nil {
 			return err
 		}
-	case vangogh_local_data.Windows:
+	case vangogh_integration.Windows:
 		if err := windowsUninstallProduct(title, installedAppsDir, langCode, bundleName); err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName str
 	return nil
 }
 
-func nixUninstallProduct(title string, operatingSystem vangogh_local_data.OperatingSystem, installationDir, langCode, bundleName string) error {
+func nixUninstallProduct(title string, operatingSystem vangogh_integration.OperatingSystem, installationDir, langCode, bundleName string) error {
 
 	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, title)
 	defer umpa.EndWithResult("done")

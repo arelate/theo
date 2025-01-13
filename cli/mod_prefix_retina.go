@@ -2,9 +2,9 @@ package cli
 
 import (
 	_ "embed"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/cli/pfx_mod"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"net/url"
 	"os"
@@ -29,8 +29,8 @@ func ModPrefixRetina(name string, wineRepo string, revert, force bool) error {
 	mpa := nod.Begin("modding retina in prefix %s...", name)
 	defer mpa.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_local_data.MacOS {
-		mpa.EndWithResult("retina prefix mod is only applicable to %s", vangogh_local_data.MacOS)
+	if data.CurrentOS() != vangogh_integration.MacOS {
+		mpa.EndWithResult("retina prefix mod is only applicable to %s", vangogh_integration.MacOS)
 		return nil
 	}
 

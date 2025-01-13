@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/arelate/southern_light/steam_integration"
 	"github.com/arelate/southern_light/steam_vdf"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -104,12 +104,12 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 	return nil
 }
 
-var steamGridImageTypes = []vangogh_local_data.ImageType{
-	vangogh_local_data.Image,
-	vangogh_local_data.VerticalImage,
-	vangogh_local_data.Hero,
-	vangogh_local_data.Logo,
-	vangogh_local_data.Icon,
+var steamGridImageTypes = []vangogh_integration.ImageType{
+	vangogh_integration.Image,
+	vangogh_integration.VerticalImage,
+	vangogh_integration.Hero,
+	vangogh_integration.Logo,
+	vangogh_integration.Icon,
 }
 
 func removeSteamGridImages(loginUser string, shortcutId uint32) error {
@@ -125,7 +125,7 @@ func removeSteamGridImages(loginUser string, shortcutId uint32) error {
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 
 	for _, it := range steamGridImageTypes {
-		dstFilename := vangogh_local_data.SteamGridImageFilename(shortcutId, it)
+		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, it)
 		absDstPath := filepath.Join(absSteamGridPath, dstFilename)
 		if _, err := os.Stat(absDstPath); os.IsNotExist(err) {
 			continue

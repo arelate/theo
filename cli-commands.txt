@@ -116,3 +116,11 @@ validate
     lang-code&
 
 version
+
+wine-install
+    id^&*
+    lang-code
+    download-type&
+    keep-downloads
+    no-steam-shortcut
+    force

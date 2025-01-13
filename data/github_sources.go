@@ -4,7 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"errors"
-	"github.com/arelate/vangogh_local_data"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/wits"
 	"io"
@@ -28,7 +28,7 @@ var (
 )
 
 type GitHubSource struct {
-	OS           vangogh_local_data.OperatingSystem
+	OS           vangogh_integration.OperatingSystem
 	Owner        string
 	Repo         string
 	Description  string
@@ -69,7 +69,7 @@ func parseGitHubSource(u *url.URL, pkv wits.KeyValue) (*GitHubSource, error) {
 	for key, value := range pkv {
 		switch key {
 		case "os":
-			if os := vangogh_local_data.ParseOperatingSystem(value); os != vangogh_local_data.AnyOperatingSystem {
+			if os := vangogh_integration.ParseOperatingSystem(value); os != vangogh_integration.AnyOperatingSystem {
 				ghs.OS = os
 			} else {
 				return nil, errors.New("WINE source specifies unknown operating system")

@@ -1,8 +1,8 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
@@ -19,16 +19,16 @@ func RemoveDownloadsHandler(u *url.URL) error {
 	return RemoveDownloads(operatingSystems, langCodes, downloadTypes, force, ids...)
 }
 
-func RemoveDownloads(operatingSystems []vangogh_local_data.OperatingSystem,
+func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
+	downloadTypes []vangogh_integration.DownloadType,
 	force bool,
 	ids ...string) error {
 
 	rda := nod.NewProgress("removing downloads...")
 	defer rda.EndWithResult("done")
 
-	vangogh_local_data.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
 	rda.TotalInt(len(ids))
 
@@ -55,10 +55,10 @@ func RemoveDownloads(operatingSystems []vangogh_local_data.OperatingSystem,
 }
 
 func removeProductDownloadLinks(id string,
-	metadata *vangogh_local_data.TheoMetadata,
-	operatingSystems []vangogh_local_data.OperatingSystem,
+	metadata *vangogh_integration.TheoMetadata,
+	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
-	downloadTypes []vangogh_local_data.DownloadType,
+	downloadTypes []vangogh_integration.DownloadType,
 	downloadsDir string) error {
 
 	rdla := nod.Begin(" removing downloads for %s...", metadata.Title)

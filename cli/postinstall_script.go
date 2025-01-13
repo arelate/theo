@@ -3,7 +3,7 @@ package cli
 import (
 	"bufio"
 	_ "embed"
-	"github.com/arelate/vangogh_local_data"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"golang.org/x/exp/slices"
 	"os"
 	"path/filepath"
@@ -82,7 +82,7 @@ func ParsePostInstallScript(path string) (*PostInstallScript, error) {
 	return pis, nil
 }
 
-func PostInstallScriptPath(productExtractsDir string, link *vangogh_local_data.TheoDownloadLink) string {
+func PostInstallScriptPath(productExtractsDir string, link *vangogh_integration.TheoDownloadLink) string {
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
 	return filepath.Join(localFilenameExtractsDir, relPostInstallScriptPath)
 }

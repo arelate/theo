@@ -2,8 +2,8 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -22,10 +22,10 @@ func RunHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_local_data.IdProperty)
+	id := q.Get(vangogh_integration.IdProperty)
 	langCode := defaultLangCode
-	if q.Has(vangogh_local_data.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_local_data.LanguageCodeProperty)
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
 
 	return Run(id, langCode)
@@ -36,10 +36,10 @@ func Run(id string, langCode string) error {
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.EndWithResult("done")
 
-	currentOs := []vangogh_local_data.OperatingSystem{data.CurrentOS()}
+	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOS()}
 	langCodes := []string{langCode}
 
-	vangogh_local_data.PrintParams([]string{id}, currentOs, langCodes, nil, true)
+	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -77,11 +77,11 @@ func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux) error {
 
 func currentOsExecute(path string) error {
 	switch data.CurrentOS() {
-	case vangogh_local_data.MacOS:
+	case vangogh_integration.MacOS:
 		return macOsExecute(path)
-	case vangogh_local_data.Windows:
+	case vangogh_integration.Windows:
 		return windowsExecute(path)
-	case vangogh_local_data.Linux:
+	case vangogh_integration.Linux:
 		return linuxExecute(path)
 	default:
 		return errors.New("cannot reveal on unknown operating system")

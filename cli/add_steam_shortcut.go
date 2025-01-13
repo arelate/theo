@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/arelate/southern_light/steam_integration"
 	"github.com/arelate/southern_light/steam_vdf"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
@@ -29,8 +29,8 @@ func AddSteamShortcutHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	langCode := defaultLangCode
-	if q.Has(vangogh_local_data.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_local_data.LanguageCodeProperty)
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
 	force := q.Has("force")
 
@@ -135,7 +135,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 	return nil
 }
 
-func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata *vangogh_local_data.TheoImages, rdx kevlar.ReadableRedux, force bool) error {
+func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata *vangogh_integration.TheoImages, rdx kevlar.ReadableRedux, force bool) error {
 
 	dsgia := nod.Begin(" downloading Steam Grid images...")
 	defer dsgia.EndWithResult("done")
@@ -148,23 +148,23 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 	dc := dolo.DefaultClient
 
-	imageProperties := make(map[vangogh_local_data.ImageType]string)
+	imageProperties := make(map[vangogh_integration.ImageType]string)
 	if imagesMetadata.Image != "" {
-		imageProperties[vangogh_local_data.Image] = imagesMetadata.Image
+		imageProperties[vangogh_integration.Image] = imagesMetadata.Image
 	}
 	if imagesMetadata.VerticalImage != "" {
-		imageProperties[vangogh_local_data.VerticalImage] = imagesMetadata.VerticalImage
+		imageProperties[vangogh_integration.VerticalImage] = imagesMetadata.VerticalImage
 	}
 	if imagesMetadata.Hero != "" {
-		imageProperties[vangogh_local_data.Hero] = imagesMetadata.Hero
+		imageProperties[vangogh_integration.Hero] = imagesMetadata.Hero
 	}
 	if imagesMetadata.Logo != "" {
-		imageProperties[vangogh_local_data.Logo] = imagesMetadata.Logo
+		imageProperties[vangogh_integration.Logo] = imagesMetadata.Logo
 	}
 	if imagesMetadata.IconSquare != "" {
-		imageProperties[vangogh_local_data.IconSquare] = imagesMetadata.IconSquare
+		imageProperties[vangogh_integration.IconSquare] = imagesMetadata.IconSquare
 	} else if imagesMetadata.Icon != "" {
-		imageProperties[vangogh_local_data.Icon] = imagesMetadata.Icon
+		imageProperties[vangogh_integration.Icon] = imagesMetadata.Icon
 	}
 
 	for ip, imageId := range imageProperties {
@@ -172,7 +172,7 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 		if err != nil {
 			return dsgia.EndWithError(err)
 		}
-		dstFilename := vangogh_local_data.SteamGridImageFilename(shortcutId, ip)
+		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, ip)
 		if err := dc.Download(srcUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
 			return dsgia.EndWithError(err)
 		}

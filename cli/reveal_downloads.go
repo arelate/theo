@@ -2,8 +2,8 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
@@ -49,11 +49,11 @@ func currentOsRevealDownloads(ids ...string) error {
 
 func currentOsReveal(path string) error {
 	switch data.CurrentOS() {
-	case vangogh_local_data.MacOS:
+	case vangogh_integration.MacOS:
 		return macOsReveal(path)
-	case vangogh_local_data.Windows:
+	case vangogh_integration.Windows:
 		return windowsReveal(path)
-	case vangogh_local_data.Linux:
+	case vangogh_integration.Linux:
 		return linuxReveal(path)
 	default:
 		return errors.New("cannot reveal on unknown operating system")

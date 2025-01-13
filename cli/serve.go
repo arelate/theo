@@ -2,8 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/rest"
-	"github.com/arelate/vangogh_local_data"
 	"github.com/boggydigital/nod"
 	"net/http"
 	"net/url"
@@ -18,7 +18,7 @@ const (
 func ServeHandler(u *url.URL) error {
 
 	port := defaultPort
-	if portStr := vangogh_local_data.ValueFromUrl(u, "port"); portStr != "" {
+	if portStr := vangogh_integration.ValueFromUrl(u, "port"); portStr != "" {
 		if portNum, err := strconv.Atoi(portStr); err == nil {
 			port = portNum
 		}
