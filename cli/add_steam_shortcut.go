@@ -157,6 +157,8 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 	}
 	if imagesMetadata.Hero != "" {
 		imageProperties[vangogh_integration.Hero] = imagesMetadata.Hero
+	} else if imagesMetadata.Background != "" {
+		imageProperties[vangogh_integration.Hero] = imagesMetadata.Background
 	}
 	if imagesMetadata.Logo != "" {
 		imageProperties[vangogh_integration.Logo] = imagesMetadata.Logo
