@@ -422,7 +422,7 @@ func macOsRemoveProductExtracts(id string,
 	}
 
 	rdda := nod.Begin(" removing empty product extracts directory...")
-	if err := macOsRemoveDirIfEmpty(idPath); err != nil {
+	if err := removeDirIfEmpty(idPath); err != nil {
 		return rdda.EndWithError(err)
 	}
 	rdda.EndWithResult("done")
@@ -437,7 +437,7 @@ func hasOnlyDSStore(entries []fs.DirEntry) bool {
 	return false
 }
 
-func macOsRemoveDirIfEmpty(dirPath string) error {
+func removeDirIfEmpty(dirPath string) error {
 	if entries, err := os.ReadDir(dirPath); err == nil && len(entries) == 0 {
 		if err := os.Remove(dirPath); err != nil {
 			return err

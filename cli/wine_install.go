@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/boggydigital/kevlar"
 	"net/url"
 )
 
@@ -30,16 +31,31 @@ func WineInstall(langCode string,
 	force bool,
 	ids ...string) error {
 
+	// NOTE: slug is used as a prefix
+
 	// filter not installed (existing prefix)
 	// backup metadata
 	// download Windows versions
 	// validate Windows versions
+	// init prefix
 	// wineInstallProduct
 	//	- run installer with this prefix as a target?
-	// addWineSteamShortcut
+	// addWineSteamShortcut (wine-run?)
 	// removeDownloads
 	// pinInstalledMetadata
-	// reveal?
+	// reveal prefix?
 
 	return nil
+}
+
+func wineFilterNotInstalled(langCode string, rdx kevlar.ReadableRedux, ids ...string) ([]string, error) {
+
+	//notInstalled := make([]string, 0, len(ids))
+	//
+	//for _, id := range ids {
+	//
+	//}
+
+	return nil, nil
+
 }

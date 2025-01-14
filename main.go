@@ -57,7 +57,6 @@ func main() {
 		"archive-prefix":           cli.ArchivePrefixHandler,
 		"backup-metadata":          cli.BackupMetadataHandler,
 		"download":                 cli.DownloadHandler,
-		"init-prefix":              cli.InitPrefixHandler,
 		"install":                  cli.InstallHandler,
 		"list-installed":           cli.ListInstalledHandler,
 		"list-steam-shortcuts":     cli.ListSteamShortcutsHandler,

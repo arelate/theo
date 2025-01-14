@@ -12,7 +12,8 @@ add-steam-shortcut
     force
 
 archive-prefix
-    name*^
+    id^&*
+    lang-code
 
 backup-metadata
 
@@ -21,11 +22,6 @@ download
     os&
     lang-code&
     download-type&
-    force
-
-init-prefix
-    name*^
-    wine-repo
     force
 
 install
@@ -43,12 +39,14 @@ list-installed
 list-steam-shortcuts
 
 mod-prefix-dxvk
-    name*^
+    id^*
+    lang-code
     dxvk-repo
     revert
 
 mod-prefix-retina
-    name*^
+    id^*
+    lang-code
     wine-repo
     revert
     force
@@ -60,7 +58,8 @@ remove-downloads
     download-type&
 
 remove-prefix
-    name*^
+    id^&*
+    lang-code
     no-archive
     force
 
@@ -79,7 +78,8 @@ reveal-installed
     lang-code
 
 reveal-prefix
-    name*^
+    id^*
+    lang-code
 
 run
     id^
@@ -104,8 +104,8 @@ uninstall
     force
 
 update-prefix
-    name*^
-    wine-repo
+    id^&*
+    lang-code
 
 update-wine
     force

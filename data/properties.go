@@ -13,11 +13,6 @@ const (
 	TitleProperty      = "title"
 	SlugProperty       = "slug"
 
-	GitHubOwnerProperty       = "owner"
-	GitHubRepoProperty        = "repo"
-	GitHubTagProperty         = "tag"
-	GitHubAllReleasesProperty = "all"
-
 	GitHubReleasesUpdatedProperty = "github-releases-updated"
 )
 

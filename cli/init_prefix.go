@@ -2,37 +2,26 @@ package cli
 
 import (
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
-	"net/url"
+	"github.com/boggydigital/pathways"
 	"os"
+	"strings"
 )
 
-func InitPrefixHandler(u *url.URL) error {
+func initPrefix(langCode, wineRepo string, force bool, ids ...string) error {
 
-	q := u.Query()
-
-	name := q.Get("name")
-	wineRepo := q.Get("wine-repo")
-	force := q.Has("force")
-
-	return InitPrefix(name, wineRepo, force)
-}
-
-func InitPrefix(name string, wineRepo string, force bool) error {
-
-	cpa := nod.Begin("initializing prefix %s...", name)
+	cpa := nod.NewProgress("initializing prefixes for %s...", strings.Join(ids, ","))
 	defer cpa.EndWithResult("done")
 
-	absPrefixDir, err := data.GetAbsPrefixDir(name)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return cpa.EndWithError(err)
 	}
 
-	if _, err := os.Stat(absPrefixDir); err == nil {
-		if !force {
-			cpa.EndWithResult("already exists")
-			return nil
-		}
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
+	if err != nil {
+		return cpa.EndWithError(err)
 	}
 
 	absWineBin, err := data.GetWineBinary(wineRepo)
@@ -44,15 +33,39 @@ func InitPrefix(name string, wineRepo string, force bool) error {
 		return cpa.EndWithError(err)
 	}
 
-	iwpa := nod.Begin(" executing `wineboot --init`, please wait... ")
-	defer iwpa.EndWithResult("done")
+	cpa.TotalInt(len(ids))
 
-	if err := data.InitWinePrefix(&data.WineContext{
-		BinPath:    absWineBin,
-		PrefixPath: absPrefixDir,
-	}); err != nil {
-		return cpa.EndWithError(err)
+	for _, id := range ids {
+		if err := initProductPrefix(id, langCode, rdx, absWineBin, force); err != nil {
+			return cpa.EndWithError(err)
+		}
+		cpa.Increment()
 	}
 
 	return nil
+}
+
+func initProductPrefix(id, langCode string, rdx kevlar.ReadableRedux, absWineBin string, force bool) error {
+	ippa := nod.Begin(" initializing prefix for %s...", id)
+	defer ippa.EndWithResult("done")
+
+	prefixName, err := data.GetPrefixName(id, langCode, rdx)
+	if err != nil {
+		return ippa.EndWithError(err)
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
+	if err != nil {
+		return ippa.EndWithError(err)
+	}
+
+	if _, err := os.Stat(absPrefixDir); err == nil && !force {
+		ippa.EndWithResult("already exists")
+		return nil
+	}
+
+	return data.InitWinePrefix(&data.WineContext{
+		BinPath:    absWineBin,
+		PrefixPath: absPrefixDir,
+	})
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/arelate/theo/cli/pfx_mod"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
@@ -15,17 +16,19 @@ func ModPrefixDxVkHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	name := q.Get("name")
-
+	id := q.Get(vangogh_integration.IdProperty)
+	langCode := defaultLangCode
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
 	dxVkRepo := q.Get("dxvk-repo")
-
 	revert := q.Has("revert")
 
-	return ModPrefixDxVk(name, dxVkRepo, revert)
+	return ModPrefixDxVk(id, langCode, dxVkRepo, revert)
 }
 
-func ModPrefixDxVk(name string, dxVkRepo string, revert bool) error {
-	mpa := nod.Begin("modding DXVK in prefix %s...", name)
+func ModPrefixDxVk(id, langCode string, dxVkRepo string, revert bool) error {
+	mpa := nod.Begin("modding DXVK in prefix for %s...", id)
 	defer mpa.EndWithResult("done")
 
 	if data.CurrentOS() != vangogh_integration.MacOS {
@@ -33,7 +36,27 @@ func ModPrefixDxVk(name string, dxVkRepo string, revert bool) error {
 		return nil
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(name)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return mpa.EndWithError(err)
+	}
+
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
+	if err != nil {
+		return mpa.EndWithError(err)
+	}
+
+	prefixName, err := data.GetPrefixName(id, langCode, rdx)
+	if err != nil {
+		return mpa.EndWithError(err)
+	}
+
+	if prefixName == "" {
+		mpa.EndWithResult("prefix for %s was not created", id)
+		return nil
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
 	if err != nil {
 		return mpa.EndWithError(err)
 	}
