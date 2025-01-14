@@ -176,7 +176,7 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 		}
 		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, ip)
 		if err := dc.Download(srcUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
-			return dsgia.EndWithError(err)
+			dsgia.Error(err)
 		}
 	}
 
