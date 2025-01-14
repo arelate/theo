@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 )
 
+const desktopGlob = "*.desktop"
+
 func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) error {
 
 	_, fp := filepath.Split(absInstallerPath)
@@ -56,4 +58,36 @@ func chmodExecutable(path string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+func snapshotDesktopFiles() ([]string, error) {
+
+	desktopFiles := make([]string, 0)
+
+	uhd, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	desktopDir := filepath.Join(uhd, "Desktop")
+
+	udhd, err := data.UserDataHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	applicationsDir := filepath.Join(udhd, "applications")
+
+	for _, dir := range []string{desktopDir, applicationsDir} {
+
+		globPath := filepath.Join(dir, desktopGlob)
+		matches, err := filepath.Glob(globPath)
+		if err != nil {
+			return nil, err
+		}
+
+		desktopFiles = append(desktopFiles, matches...)
+	}
+
+	return desktopFiles, nil
 }

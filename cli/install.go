@@ -2,11 +2,13 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"golang.org/x/exp/slices"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -347,9 +349,33 @@ func linuxInstallProduct(id string,
 		return lia.EndWithError(err)
 	}
 
+	preInstallDesktopFiles, err := snapshotDesktopFiles()
+	if err != nil {
+		return lia.EndWithError(err)
+	}
+
+	fmt.Println(preInstallDesktopFiles)
+
 	if err := linuxExecuteInstaller(absInstallerPath, productInstalledAppDir); err != nil {
 		return lia.EndWithError(err)
 	}
+
+	postInstallDesktopFiles, err := snapshotDesktopFiles()
+	if err != nil {
+		return lia.EndWithError(err)
+	}
+
+	for _, pidf := range postInstallDesktopFiles {
+		if slices.Contains(preInstallDesktopFiles, pidf) {
+			continue
+		}
+
+		if err := os.Remove(pidf); err != nil {
+			return lia.EndWithError(err)
+		}
+	}
+
+	fmt.Println(postInstallDesktopFiles)
 
 	return nil
 }
