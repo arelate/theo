@@ -125,7 +125,7 @@ func removeRepoReleaseDirs(absDirs []string) error {
 	rda.TotalInt(len(absDirs))
 
 	for _, absDir := range absDirs {
-		if err := removeDirIfEmpty(absDir); err != nil {
+		if err := macOsRemoveDirIfEmpty(absDir); err != nil {
 			return rda.EndWithError(err)
 		}
 

@@ -1,15 +1,12 @@
 package cli
 
 import (
-	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
-	"os"
-	"path/filepath"
 )
 
 func UninstallHandler(u *url.URL) error {
@@ -111,36 +108,4 @@ func currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName str
 		panic("unsupported operating system")
 	}
 	return nil
-}
-
-func nixUninstallProduct(title string, operatingSystem vangogh_integration.OperatingSystem, installationDir, langCode, bundleName string) error {
-
-	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, title)
-	defer umpa.EndWithResult("done")
-
-	if bundleName == "" {
-		return errors.New("product must have bundle name for uninstall")
-	}
-
-	osLangCodeDir := data.OsLangCodeDir(operatingSystem, langCode)
-	bundlePath := filepath.Join(installationDir, osLangCodeDir, bundleName)
-
-	if _, err := os.Stat(bundlePath); os.IsNotExist(err) {
-		umpa.EndWithResult("not present")
-		return nil
-	}
-
-	if err := os.RemoveAll(bundlePath); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func windowsUninstallProduct(title, installationDir, langCode, bundleName string) error {
-	return errors.New("uninstalling Windows products is not implemented")
-}
-
-func linuxUninstallProduct(title, installationDir, langCode, bundleName string) error {
-	return errors.New("uninstalling Linux products is not implemented")
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -58,18 +57,4 @@ func currentOsReveal(path string) error {
 	default:
 		return errors.New("cannot reveal on unknown operating system")
 	}
-}
-
-func macOsReveal(path string) error {
-	cmd := exec.Command("open", "-R", path)
-	return cmd.Run()
-}
-
-func windowsReveal(path string) error {
-	return errors.New("support for reveal on Windows is not implemented")
-}
-
-func linuxReveal(path string) error {
-	cmd := exec.Command("xdg-open", path)
-	return cmd.Run()
 }

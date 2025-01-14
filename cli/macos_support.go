@@ -24,6 +24,39 @@ const (
 	macOsAppBundleExt = ".app"
 )
 
+func macOsInstallProduct(id string,
+	metadata *vangogh_integration.TheoMetadata,
+	link *vangogh_integration.TheoDownloadLink,
+	downloadsDir, extractsDir, installedAppsDir string,
+	rdx kevlar.WriteableRedux,
+	force bool) error {
+
+	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, metadata.Title)
+	defer mia.EndWithResult("done")
+
+	productDownloadsDir := filepath.Join(downloadsDir, id)
+	productExtractsDir := filepath.Join(extractsDir, id)
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, link.LanguageCode))
+
+	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
+		return mia.EndWithError(err)
+	}
+
+	if err := macOsPlaceExtracts(id, link, productExtractsDir, osLangInstalledAppsDir, rdx, force); err != nil {
+		return mia.EndWithError(err)
+	}
+
+	if err := macOsPostInstallActions(id, link, installedAppsDir); err != nil {
+		return mia.EndWithError(err)
+	}
+
+	if err := macOsRemoveProductExtracts(id, metadata, extractsDir); err != nil {
+		return mia.EndWithError(err)
+	}
+
+	return nil
+}
+
 func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
@@ -389,7 +422,7 @@ func macOsRemoveProductExtracts(id string,
 	}
 
 	rdda := nod.Begin(" removing empty product extracts directory...")
-	if err := removeDirIfEmpty(idPath); err != nil {
+	if err := macOsRemoveDirIfEmpty(idPath); err != nil {
 		return rdda.EndWithError(err)
 	}
 	rdda.EndWithResult("done")
@@ -404,7 +437,7 @@ func hasOnlyDSStore(entries []fs.DirEntry) bool {
 	return false
 }
 
-func removeDirIfEmpty(dirPath string) error {
+func macOsRemoveDirIfEmpty(dirPath string) error {
 	if entries, err := os.ReadDir(dirPath); err == nil && len(entries) == 0 {
 		if err := os.Remove(dirPath); err != nil {
 			return err
@@ -417,4 +450,20 @@ func removeDirIfEmpty(dirPath string) error {
 		return err
 	}
 	return nil
+}
+
+func macOsReveal(path string) error {
+	cmd := exec.Command("open", "-R", path)
+	return cmd.Run()
+}
+
+func macOsExecute(path string) error {
+
+	path = macOsLocateAppBundle(path)
+
+	cmd := exec.Command("open", path)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }

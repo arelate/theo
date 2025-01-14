@@ -2,13 +2,11 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"golang.org/x/exp/slices"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -284,109 +282,4 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		}
 	}
 	return nil
-}
-
-func macOsInstallProduct(id string,
-	metadata *vangogh_integration.TheoMetadata,
-	link *vangogh_integration.TheoDownloadLink,
-	downloadsDir, extractsDir, installedAppsDir string,
-	rdx kevlar.WriteableRedux,
-	force bool) error {
-
-	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, metadata.Title)
-	defer mia.EndWithResult("done")
-
-	productDownloadsDir := filepath.Join(downloadsDir, id)
-	productExtractsDir := filepath.Join(extractsDir, id)
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, link.LanguageCode))
-
-	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
-		return mia.EndWithError(err)
-	}
-
-	if err := macOsPlaceExtracts(id, link, productExtractsDir, osLangInstalledAppsDir, rdx, force); err != nil {
-		return mia.EndWithError(err)
-	}
-
-	if err := macOsPostInstallActions(id, link, installedAppsDir); err != nil {
-		return mia.EndWithError(err)
-	}
-
-	if err := macOsRemoveProductExtracts(id, metadata, extractsDir); err != nil {
-		return mia.EndWithError(err)
-	}
-
-	return nil
-}
-
-func linuxInstallProduct(id string,
-	metadata *vangogh_integration.TheoMetadata,
-	link *vangogh_integration.TheoDownloadLink,
-	absInstallerPath, installedAppsDir string,
-	rdx kevlar.WriteableRedux) error {
-
-	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, metadata.Title)
-	defer lia.EndWithResult("done")
-
-	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
-		return lia.EndWithError(err)
-	}
-
-	if _, err := os.Stat(absInstallerPath); err != nil {
-		return lia.EndWithError(err)
-	}
-
-	productTitle, _ := rdx.GetLastVal(data.SlugProperty, id)
-
-	if err := rdx.ReplaceValues(data.BundleNameProperty, id, productTitle); err != nil {
-		return lia.EndWithError(err)
-	}
-
-	osLangCodeDir := data.OsLangCodeDir(vangogh_integration.Linux, link.LanguageCode)
-	productInstalledAppDir := filepath.Join(installedAppsDir, osLangCodeDir, productTitle)
-
-	if err := linuxPostDownloadActions(id, link); err != nil {
-		return lia.EndWithError(err)
-	}
-
-	preInstallDesktopFiles, err := snapshotDesktopFiles()
-	if err != nil {
-		return lia.EndWithError(err)
-	}
-
-	fmt.Println(preInstallDesktopFiles)
-
-	if err := linuxExecuteInstaller(absInstallerPath, productInstalledAppDir); err != nil {
-		return lia.EndWithError(err)
-	}
-
-	postInstallDesktopFiles, err := snapshotDesktopFiles()
-	if err != nil {
-		return lia.EndWithError(err)
-	}
-
-	for _, pidf := range postInstallDesktopFiles {
-		if slices.Contains(preInstallDesktopFiles, pidf) {
-			continue
-		}
-
-		if err := os.Remove(pidf); err != nil {
-			return lia.EndWithError(err)
-		}
-	}
-
-	fmt.Println(postInstallDesktopFiles)
-
-	return nil
-}
-
-func windowsInstallProduct(id string,
-	metadata *vangogh_integration.TheoMetadata,
-	link *vangogh_integration.TheoDownloadLink,
-	absInstallerPath, installedAppsDir string) error {
-
-	wia := nod.Begin("installing Windows version of %s...", metadata.Title)
-	defer wia.EndWithResult("done")
-
-	return errors.New("Windows installation is not implemented")
 }

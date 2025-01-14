@@ -9,9 +9,7 @@ import (
 	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -86,47 +84,4 @@ func currentOsExecute(path string) error {
 	default:
 		return errors.New("cannot reveal on unknown operating system")
 	}
-}
-
-func macOsExecute(path string) error {
-
-	path = macOsLocateAppBundle(path)
-
-	cmd := exec.Command("open", path)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
-}
-
-func windowsExecute(path string) error {
-	return errors.New("support for running executables on Windows is not implemented")
-}
-
-func linuxExecute(path string) error {
-
-	startShPath := linuxLocateStartSh(path)
-
-	cmd := exec.Command(startShPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
-}
-
-func linuxLocateStartSh(path string) string {
-	if strings.HasSuffix(path, linuxStartShFilename) {
-		return path
-	}
-
-	absStartShPath := filepath.Join(path, linuxStartShFilename)
-	if _, err := os.Stat(absStartShPath); err == nil {
-		return absStartShPath
-	} else if os.IsNotExist(err) {
-		if matches, err := filepath.Glob(filepath.Join(path, "*", linuxStartShFilename)); err == nil && len(matches) > 0 {
-			return matches[0]
-		}
-	}
-
-	return path
 }
