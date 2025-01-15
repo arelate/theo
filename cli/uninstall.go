@@ -7,6 +7,7 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
+	"path/filepath"
 )
 
 func UninstallHandler(u *url.URL) error {
@@ -42,7 +43,9 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		return ua.EndWithError(err)
 	}
 
-	kvInstalledMetadata, err := kevlar.NewKeyValues(installedMetadataDir, kevlar.JsonExt)
+	osInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOS().String())
+
+	kvOsInstalledMetadata, err := kevlar.NewKeyValues(osInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return ua.EndWithError(err)
 	}
@@ -76,7 +79,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 			return ua.EndWithError(err)
 		}
 
-		if _, err := kvInstalledMetadata.Cut(id); err != nil {
+		if _, err := kvOsInstalledMetadata.Cut(id); err != nil {
 			return ua.EndWithError(err)
 		}
 
