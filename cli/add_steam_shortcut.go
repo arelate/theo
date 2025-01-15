@@ -23,6 +23,11 @@ const (
 	shortcutsFilename  = "shortcuts.vdf"
 )
 
+const (
+	runLaunchOptionsTemplate     = "run %s"
+	wineRunLaunchOptionsTemplate = "wine-run %s"
+)
+
 func AddSteamShortcutHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -32,12 +37,13 @@ func AddSteamShortcutHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
+	wine := q.Has("wine")
 	force := q.Has("force")
 
-	return AddSteamShortcut(langCode, force, ids...)
+	return AddSteamShortcut(langCode, wine, force, ids...)
 }
 
-func AddSteamShortcut(langCode string, force bool, ids ...string) error {
+func AddSteamShortcut(langCode string, wine, force bool, ids ...string) error {
 	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer assa.EndWithResult("done")
 
@@ -46,8 +52,13 @@ func AddSteamShortcut(langCode string, force bool, ids ...string) error {
 		return assa.EndWithError(err)
 	}
 
+	launchOptionsTemplate := runLaunchOptionsTemplate
+	if wine {
+		launchOptionsTemplate = wineRunLaunchOptionsTemplate
+	}
+
 	for _, loginUser := range loginUsers {
-		if err := addSteamShortcutsForUser(loginUser, langCode, force, ids...); err != nil {
+		if err := addSteamShortcutsForUser(loginUser, langCode, launchOptionsTemplate, force, ids...); err != nil {
 			return assa.EndWithError(err)
 		}
 	}
@@ -55,7 +66,7 @@ func AddSteamShortcut(langCode string, force bool, ids ...string) error {
 	return nil
 }
 
-func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids ...string) error {
+func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTemplate string, force bool, ids ...string) error {
 
 	asfua := nod.Begin(" adding Steam user %s shortcuts for %s...",
 		loginUser,
@@ -109,7 +120,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, force bool, ids
 		shortcutId := steam_integration.ShortcutAppId(theoExecutable, title)
 		iconPath := getGridIconPath(loginUser, shortcutId)
 
-		launchOptions := fmt.Sprintf("run %s", id)
+		launchOptions := fmt.Sprintf(launchOptionsTemplate, id)
 		if langCode != "" {
 			launchOptions += fmt.Sprintf(" -lang-code %s", langCode)
 		}

@@ -9,6 +9,7 @@
 add-steam-shortcut
     id^&
     lang-code
+    wine
     force
 
 archive-prefix

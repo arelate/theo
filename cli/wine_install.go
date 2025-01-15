@@ -92,13 +92,11 @@ func WineInstall(langCode string,
 
 	// wineInstallProduct
 	//	- run installer with this prefix as a target?
-	// addWineSteamShortcut (wine-run?)
 
 	if addSteamShortcut {
-		// TODO: this needs to be changes to use wine-run
-		//if err := AddSteamShortcut(langCode, force, ids...); err != nil {
-		//	return wia.EndWithError(err)
-		//}
+		if err := AddSteamShortcut(langCode, true, force, ids...); err != nil {
+			return wia.EndWithError(err)
+		}
 	}
 
 	if removeDownloads {
