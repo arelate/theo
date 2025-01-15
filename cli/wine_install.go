@@ -2,8 +2,12 @@ package cli
 
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"net/url"
+	"os"
 )
 
 func WineInstallHandler(u *url.URL) error {
@@ -12,6 +16,7 @@ func WineInstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
+	wineRepo := q.Get("wine-repo")
 	removeDownloads := !q.Has("keep-downloads")
 	addSteamShortcut := !q.Has("no-steam-shortcut")
 	force := q.Has("force")
@@ -21,41 +26,137 @@ func WineInstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return WineInstall(langCode, downloadTypes, removeDownloads, addSteamShortcut, force, ids...)
+	return WineInstall(langCode, wineRepo, downloadTypes, removeDownloads, addSteamShortcut, force, ids...)
 }
 
 func WineInstall(langCode string,
+	wineRepo string,
 	downloadTypes []vangogh_integration.DownloadType,
 	removeDownloads bool,
 	addSteamShortcut bool,
 	force bool,
 	ids ...string) error {
 
-	// NOTE: slug is used as a prefix
+	wia := nod.Begin("installing products with WINE...")
+	defer wia.EndWithResult("done")
 
-	// filter not installed (existing prefix)
-	// backup metadata
-	// download Windows versions
-	// validate Windows versions
-	// init prefix
+	if data.CurrentOS() == vangogh_integration.Windows {
+		wia.EndWithResult("WINE install is not supported on Windows")
+		return nil
+	}
+
+	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
+	langCodes := []string{langCode}
+
+	vangogh_integration.PrintParams(ids, windowsOs, langCodes, downloadTypes, true)
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return wia.EndWithError(err)
+	}
+
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
+	if err != nil {
+		return wia.EndWithError(err)
+	}
+
+	notInstalled, err := wineFilterNotInstalled(langCode, rdx, ids...)
+	if err != nil {
+		return wia.EndWithError(err)
+	}
+
+	if len(notInstalled) > 0 {
+		if !force {
+			ids = notInstalled
+		}
+	} else if !force {
+		wia.EndWithResult("all requested products are already installed")
+		return nil
+	}
+
+	if err := BackupMetadata(); err != nil {
+		return wia.EndWithError(err)
+	}
+
+	if err = Download(windowsOs, langCodes, downloadTypes, force, ids...); err != nil {
+		return wia.EndWithError(err)
+	}
+
+	if err = Validate(windowsOs, langCodes, downloadTypes, ids...); err != nil {
+		return wia.EndWithError(err)
+	}
+
+	if err = initPrefix(langCode, wineRepo, force, ids...); err != nil {
+		return wia.EndWithError(err)
+	}
+
 	// wineInstallProduct
 	//	- run installer with this prefix as a target?
 	// addWineSteamShortcut (wine-run?)
-	// removeDownloads
-	// pinInstalledMetadata
-	// reveal prefix?
+
+	if addSteamShortcut {
+		// TODO: this needs to be changes to use wine-run
+		//if err := AddSteamShortcut(langCode, force, ids...); err != nil {
+		//	return wia.EndWithError(err)
+		//}
+	}
+
+	if removeDownloads {
+		if err = RemoveDownloads(windowsOs, langCodes, downloadTypes, force, ids...); err != nil {
+			return wia.EndWithError(err)
+		}
+	}
+
+	if err = pinInstalledMetadata(windowsOs, force, ids...); err != nil {
+		return wia.EndWithError(err)
+	}
+
+	if err := RevealPrefix(langCode, ids...); err != nil {
+		return wia.EndWithError(err)
+	}
 
 	return nil
 }
 
 func wineFilterNotInstalled(langCode string, rdx kevlar.ReadableRedux, ids ...string) ([]string, error) {
 
-	//notInstalled := make([]string, 0, len(ids))
-	//
-	//for _, id := range ids {
-	//
-	//}
+	notInstalled := make([]string, 0, len(ids))
 
-	return nil, nil
+	for _, id := range ids {
 
+		ok, err := productPrefixExists(id, langCode, rdx)
+		if err != nil {
+			return nil, err
+		}
+
+		if ok {
+			continue
+		}
+
+		notInstalled = append(notInstalled, id)
+	}
+
+	return notInstalled, nil
+
+}
+
+func productPrefixExists(id, langCode string, rdx kevlar.ReadableRedux) (bool, error) {
+
+	prefixName, err := data.GetPrefixName(id, langCode, rdx)
+	if err != nil {
+		return false, err
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
+	if err != nil {
+		return false, err
+	}
+
+	if _, err := os.Stat(absPrefixDir); err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	} else {
+		return false, err
+	}
 }

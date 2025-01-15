@@ -9,24 +9,25 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func RevealPrefixHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	ids := Ids(u)
 	langCode := defaultLangCode
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
 
-	return RevealPrefix(id, langCode)
+	return RevealPrefix(langCode, ids...)
 }
 
-func RevealPrefix(id, langCode string) error {
+func RevealPrefix(langCode string, ids ...string) error {
 
-	rpa := nod.Begin("revealing prefix for %s...", id)
+	rpa := nod.NewProgress("revealing prefix for %s...", strings.Join(ids, ","))
 	defer rpa.EndWithResult("done")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
@@ -39,32 +40,45 @@ func RevealPrefix(id, langCode string) error {
 		return rpa.EndWithError(err)
 	}
 
+	rpa.TotalInt(len(ids))
+
+	for _, id := range ids {
+		if err := revealProductPrefix(id, langCode, rdx); err != nil {
+			return rpa.EndWithError(err)
+		}
+
+		rpa.Increment()
+	}
+
+	return nil
+}
+
+func revealProductPrefix(id, langCode string, rdx kevlar.ReadableRedux) error {
+
+	rppa := nod.Begin(" revealing prefix for %s...", id)
+	defer rppa.EndWithResult("done")
+
 	prefixName, err := data.GetPrefixName(id, langCode, rdx)
 	if err != nil {
-		return rpa.EndWithError(err)
+		return rppa.EndWithError(err)
 	}
 
 	if prefixName == "" {
-		rpa.EndWithResult("prefix for %s was not created", id)
+		rppa.EndWithResult("prefix for %s was not created", id)
 		return nil
 	}
 
 	absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
 	if err != nil {
-		return rpa.EndWithError(err)
+		return rppa.EndWithError(err)
 	}
 
 	if _, err := os.Stat(absPrefixDir); os.IsNotExist(err) {
-		rpa.EndWithResult("not found")
+		rppa.EndWithResult("not found")
 		return nil
 	}
 
 	absPrefixDriveCPath := filepath.Join(absPrefixDir, data.RelPfxDriveCDir)
 
-	if err := currentOsReveal(absPrefixDriveCPath); err != nil {
-		return rpa.EndWithError(err)
-	}
-
-	return nil
-
+	return currentOsReveal(absPrefixDriveCPath)
 }

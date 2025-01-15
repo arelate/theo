@@ -74,9 +74,11 @@ func Install(langCode string,
 	}
 
 	if len(notInstalled) > 0 {
-		ids = notInstalled
+		if !force {
+			ids = notInstalled
+		}
 	} else if !force {
-		ia.EndWithResult("all requested product are already installed")
+		ia.EndWithResult("all requested products are already installed")
 		return nil
 	}
 
@@ -110,7 +112,7 @@ func Install(langCode string,
 		}
 	}
 
-	if err = pinInstalledMetadata(force, ids...); err != nil {
+	if err = pinInstalledMetadata(currentOs, force, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 

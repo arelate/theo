@@ -60,6 +60,7 @@ func main() {
 		"install":                  cli.InstallHandler,
 		"list-installed":           cli.ListInstalledHandler,
 		"list-steam-shortcuts":     cli.ListSteamShortcutsHandler,
+		"list-wine-installed":      cli.ListWineInstalledHandler,
 		"mod-prefix-dxvk":          cli.ModPrefixDxVkHandler,
 		"mod-prefix-retina":        cli.ModPrefixRetinaHandler,
 		"serve":                    cli.ServeHandler,

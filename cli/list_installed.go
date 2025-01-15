@@ -18,12 +18,12 @@ func ListInstalledHandler(u *url.URL) error {
 	if u.Query().Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = u.Query().Get(vangogh_integration.LanguageCodeProperty)
 	}
-	return ListInstalled(langCode, size)
+	return ListInstalled(data.CurrentOS(), langCode, size)
 }
 
-func ListInstalled(langCode string, size bool) error {
+func ListInstalled(os vangogh_integration.OperatingSystem, langCode string, size bool) error {
 
-	lia := nod.Begin("listing installed products...")
+	lia := nod.Begin("listing installed %s products...", os)
 	defer lia.EndWithResult("done")
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
@@ -31,7 +31,9 @@ func ListInstalled(langCode string, size bool) error {
 		return lia.EndWithError(err)
 	}
 
-	kvInstalledMetadata, err := kevlar.NewKeyValues(installedMetadataDir, kevlar.JsonExt)
+	osInstalledMetadataDir := filepath.Join(installedMetadataDir, os.String())
+
+	kvOsInstalledMetadata, err := kevlar.NewKeyValues(osInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return lia.EndWithError(err)
 	}
@@ -56,7 +58,7 @@ func ListInstalled(langCode string, size bool) error {
 
 	osLangCodeInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, langCode))
 
-	ids, err := kvInstalledMetadata.Keys()
+	ids, err := kvOsInstalledMetadata.Keys()
 	if err != nil {
 		return lia.EndWithError(err)
 	}
