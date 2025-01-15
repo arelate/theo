@@ -209,11 +209,6 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOS())
 	defer coipa.EndWithResult("done")
 
-	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOS()}
-	langCodes := []string{langCode}
-
-	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, downloadTypes, true)
-
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
 		return coipa.EndWithError(err)
