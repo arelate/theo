@@ -90,8 +90,11 @@ func WineInstall(langCode string,
 		return wia.EndWithError(err)
 	}
 
-	// wineInstallProduct
-	//	- run installer with this prefix as a target?
+	for _, id := range ids {
+		if err := wineInstallProduct(id, langCode, downloadTypes, force); err != nil {
+			return wia.EndWithError(err)
+		}
+	}
 
 	if addSteamShortcut {
 		if err := AddSteamShortcut(langCode, true, force, ids...); err != nil {
@@ -135,7 +138,6 @@ func wineFilterNotInstalled(langCode string, rdx kevlar.ReadableRedux, ids ...st
 	}
 
 	return notInstalled, nil
-
 }
 
 func productPrefixExists(id, langCode string, rdx kevlar.ReadableRedux) (bool, error) {
@@ -157,4 +159,8 @@ func productPrefixExists(id, langCode string, rdx kevlar.ReadableRedux) (bool, e
 	} else {
 		return false, err
 	}
+}
+
+func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration.DownloadType, force bool) error {
+	return nil
 }

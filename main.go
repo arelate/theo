@@ -81,6 +81,7 @@ func main() {
 		"validate":                 cli.ValidateHandler,
 		"version":                  cli.VersionHandler,
 		"wine-install":             cli.WineInstallHandler,
+		"wine-uninstall":           cli.WineUninstallHandler,
 	})
 
 	if err := defs.AssertCommandsHaveHandlers(); err != nil {

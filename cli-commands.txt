@@ -130,3 +130,9 @@ wine-install
     keep-downloads
     no-steam-shortcut
     force
+
+wine-uninstall
+    id^&*
+    lang-code
+    no-archive
+    force
