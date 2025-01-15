@@ -25,6 +25,16 @@ func RemoveSteamShortcut(ids ...string) error {
 	rssa := nod.Begin("removing Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer rssa.EndWithResult("done")
 
+	ok, err := steamStateDirExist()
+	if err != nil {
+		return rssa.EndWithError(err)
+	}
+
+	if !ok {
+		rssa.EndWithResult("Steam state dir not found")
+		return nil
+	}
+
 	loginUsers, err := getSteamLoginUsers()
 	if err != nil {
 		return rssa.EndWithError(err)

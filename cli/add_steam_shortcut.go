@@ -47,6 +47,16 @@ func AddSteamShortcut(langCode string, wine, force bool, ids ...string) error {
 	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer assa.EndWithResult("done")
 
+	ok, err := steamStateDirExist()
+	if err != nil {
+		return assa.EndWithError(err)
+	}
+
+	if !ok {
+		assa.EndWithResult("Steam state dir not found")
+		return nil
+	}
+
 	loginUsers, err := getSteamLoginUsers()
 	if err != nil {
 		return assa.EndWithError(err)
@@ -358,4 +368,21 @@ func getSteamLoginUsers() ([]string, error) {
 	}
 
 	return nil, gslua.EndWithError(errors.New("failed to successfully process loginusers.vdf"))
+}
+
+func steamStateDirExist() (bool, error) {
+	udhd, err := data.UserDataHomeDir()
+	if err != nil {
+		return false, err
+	}
+
+	absSteamStatePath := filepath.Join(udhd, "Steam")
+
+	if _, err := os.Stat(absSteamStatePath); err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	} else {
+		return false, err
+	}
 }
