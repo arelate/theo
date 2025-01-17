@@ -131,6 +131,12 @@ wine-install
     no-steam-shortcut
     force
 
+wine-run
+    id^*
+    lang-code
+    wine-repo
+    exe-path
+
 wine-uninstall
     id^&*
     lang-code

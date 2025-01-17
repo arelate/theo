@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 )
 
-const (
-	winePfxEnvVar   = "WINEPREFIX"
-	RelPfxDriveCDir = "drive_c"
-)
+const winePrefixEnvVar = "WINEPREFIX"
+
+const RelPrefixDriveCDir = "drive_c"
+
+const gogLnkGlob = "GOG Games/*/*.lnk"
 
 const (
 	winebootBin = "wineboot"
@@ -49,29 +50,75 @@ func GetWineBinary(wineRepo string) (string, error) {
 
 func InitWinePrefix(wcx *WineContext) error {
 	env := map[string]string{
-		winePfxEnvVar: wcx.PrefixPath,
+		winePrefixEnvVar: wcx.PrefixPath,
 	}
 	return wineCmd(wcx.BinPath, env, winebootBin, initFlag)
 }
 
 func UpdateWinePrefix(wcx *WineContext) error {
 	env := map[string]string{
-		winePfxEnvVar: wcx.PrefixPath,
+		winePrefixEnvVar: wcx.PrefixPath,
 	}
 	return wineCmd(wcx.BinPath, env, winebootBin, updateFlag)
 }
 
 func RegeditWinePrefix(wcx *WineContext, absRegPath string) error {
 	env := map[string]string{
-		winePfxEnvVar: wcx.PrefixPath,
+		winePrefixEnvVar: wcx.PrefixPath,
 	}
 	return wineCmd(wcx.BinPath, env, regeditBin, absRegPath)
 }
 
-func wineCmd(absWineBinPath string, env map[string]string, args ...string) error {
-	cmd := exec.Command(absWineBinPath, args...)
-	for p, v := range env {
-		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", p, v))
+func RunWineInnoExtractInstaller(wcx *WineContext, absInstallerPath, slug string) error {
+	env := map[string]string{
+		winePrefixEnvVar: wcx.PrefixPath,
 	}
-	return cmd.Run()
+
+	return wineCmd(wcx.BinPath, env, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS")
+}
+
+func RunWineDefaultGogLnk(wcx *WineContext) error {
+	env := map[string]string{
+		winePrefixEnvVar: wcx.PrefixPath,
+	}
+
+	matches, err := filepath.Glob(filepath.Join(wcx.PrefixPath, RelPrefixDriveCDir, gogLnkGlob))
+	if err != nil {
+		return err
+	}
+
+	if len(matches) == 1 {
+		return wineCmd(wcx.BinPath, env, matches[0])
+	} else {
+		return errors.New("cannot locate suitable .lnk in the default GOG install folder")
+	}
+}
+
+func RunWineExePath(wcx *WineContext, exePath string) error {
+	env := map[string]string{
+		winePrefixEnvVar: wcx.PrefixPath,
+	}
+
+	return wineCmd(wcx.BinPath, env, exePath)
+}
+
+func wineCmd(absWineBinPath string, env map[string]string, args ...string) error {
+
+	cmd := exec.Command(absWineBinPath, args...)
+
+	dir, _ := filepath.Split(absWineBinPath)
+
+	cmd.Dir = dir
+
+	for p, v := range env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", p, v))
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	return cmd.Wait()
 }

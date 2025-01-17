@@ -23,7 +23,7 @@ var (
 
 func ToggleRetina(wineCtx *data.WineContext, revert bool, force bool) error {
 
-	absDriveCroot := filepath.Join(wineCtx.PrefixPath, data.RelPfxDriveCDir)
+	absDriveCroot := filepath.Join(wineCtx.PrefixPath, data.RelPrefixDriveCDir)
 
 	regFilename := retinaOnFilename
 	regContent := retinaOnReg

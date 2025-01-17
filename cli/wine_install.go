@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
@@ -8,6 +9,7 @@ import (
 	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
+	"path/filepath"
 )
 
 func WineInstallHandler(u *url.URL) error {
@@ -91,7 +93,7 @@ func WineInstall(langCode string,
 	}
 
 	for _, id := range ids {
-		if err := wineInstallProduct(id, langCode, downloadTypes, force); err != nil {
+		if err := wineInstallProduct(id, langCode, downloadTypes, wineRepo, force); err != nil {
 			return wia.EndWithError(err)
 		}
 	}
@@ -147,6 +149,10 @@ func productPrefixExists(id, langCode string, rdx kevlar.ReadableRedux) (bool, e
 		return false, err
 	}
 
+	if prefixName == "" {
+		return false, nil
+	}
+
 	absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
 	if err != nil {
 		return false, err
@@ -161,6 +167,69 @@ func productPrefixExists(id, langCode string, rdx kevlar.ReadableRedux) (bool, e
 	}
 }
 
-func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration.DownloadType, force bool) error {
+func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration.DownloadType, wineRepo string, force bool) error {
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
+	if err != nil {
+		return err
+	}
+
+	slug := id
+	if sp, ok := rdx.GetLastVal(data.SlugProperty, id); ok && sp != "" {
+		slug = sp
+	}
+
+	absWineBin, err := data.GetWineBinary(wineRepo)
+	if err != nil {
+		return err
+	}
+
+	prefixName, err := data.GetPrefixName(id, langCode, rdx)
+	if err != nil {
+		return err
+	}
+
+	absPrefixPath, err := data.GetAbsPrefixDir(prefixName)
+	if err != nil {
+		return err
+	}
+
+	wcx := &data.WineContext{
+		BinPath:    absWineBin,
+		PrefixPath: absPrefixPath,
+	}
+
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return err
+	}
+
+	metadata, err := getTheoMetadata(id, force)
+	if err != nil {
+		return err
+	}
+
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(vangogh_integration.Windows).
+		FilterLanguageCodes(langCode).
+		FilterDownloadTypes(downloadTypes...)
+
+	for _, link := range dls {
+		linkExt := filepath.Ext(link.LocalFilename)
+		if linkExt != exeExt {
+			return errors.New("installing with WINE only supports .exe installers")
+		}
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+
+		if err := data.RunWineInnoExtractInstaller(wcx, absInstallerPath, slug); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

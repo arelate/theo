@@ -173,7 +173,7 @@ func getStartDir(id, langCode string, rdx kevlar.ReadableRedux, wine bool) (stri
 			return "", err
 		}
 
-		startDir = filepath.Join(absPrefixDir, data.RelPfxDriveCDir)
+		startDir = filepath.Join(absPrefixDir, data.RelPrefixDriveCDir)
 
 	case false:
 

@@ -78,7 +78,7 @@ func revealProductPrefix(id, langCode string, rdx kevlar.ReadableRedux) error {
 		return nil
 	}
 
-	absPrefixDriveCPath := filepath.Join(absPrefixDir, data.RelPfxDriveCDir)
+	absPrefixDriveCPath := filepath.Join(absPrefixDir, data.RelPrefixDriveCDir)
 
 	return currentOsReveal(absPrefixDriveCPath)
 }
