@@ -85,11 +85,11 @@ func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string
 
 	cmd := exec.Command(absWineBinPath, arg...)
 
-	for _, e := range env {
-		if strings.Contains(e, "=") {
-			cmd.Env = append(cmd.Env, e)
-		}
-	}
+	//for _, e := range env {
+	//	if strings.Contains(e, "=") {
+	//		cmd.Env = append(cmd.Env, e)
+	//	}
+	//}
 
 	if verbose {
 		cmd.Stdout = os.Stdout
