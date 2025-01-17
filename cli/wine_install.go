@@ -133,14 +133,17 @@ func wineFilterNotInstalled(langCode string, ids ...string) ([]string, error) {
 
 func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
 
+	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, data.CurrentOS())
+	defer wipa.EndWithResult("done")
+
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return err
+		return wipa.EndWithError(err)
 	}
 
 	metadata, err := getTheoMetadata(id, force)
 	if err != nil {
-		return err
+		return wipa.EndWithError(err)
 	}
 
 	dls := metadata.DownloadLinks.

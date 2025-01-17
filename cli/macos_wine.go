@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"golang.org/x/exp/maps"
@@ -49,7 +48,7 @@ func applyEnvDefaults(env []string) []string {
 
 func printEnv(env []string) {
 	if len(env) > 0 {
-		pea := nod.Begin("env:")
+		pea := nod.Begin(" env:")
 		defer pea.End()
 		pea.EndWithResult(strings.Join(env, ", "))
 	}
@@ -59,25 +58,13 @@ func macOsInitPrefix(id, langCode string, verbose bool) error {
 	mipa := nod.Begin(" initializing prefix...")
 	defer mipa.EndWithResult("done")
 
-	vangogh_integration.PrintParams([]string{id},
-		[]vangogh_integration.OperatingSystem{vangogh_integration.MacOS},
-		[]string{langCode},
-		nil,
-		false)
-
 	return macOsCreateCxBottle(id, langCode, DefaultCxBottleTemplate, verbose)
 }
 
 func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string) error {
 
-	mwra := nod.Begin(" running app with WINE...")
+	mwra := nod.Begin(" running command with WINE...")
 	defer mwra.EndWithResult("done")
-
-	vangogh_integration.PrintParams([]string{id},
-		[]vangogh_integration.OperatingSystem{vangogh_integration.MacOS},
-		[]string{langCode},
-		nil,
-		false)
 
 	env = applyEnvDefaults(env)
 	printEnv(env)
@@ -180,30 +167,6 @@ func macOsCreateCxBottle(id, langCode string, template string, verbose bool) err
 	}
 
 	cmd := exec.Command(absCxBottlePath, "--bottle", absPrefixDir, "--create", "--template", template)
-
-	if verbose {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	return cmd.Run()
-}
-
-func macOsUpdateCxBottle(id, langCode string, verbose bool) error {
-
-	absCxBinDir, err := macOsGetAbsCxBinDir()
-	if err != nil {
-		return err
-	}
-
-	absCxBottlePath := filepath.Join(absCxBinDir, relCxBottleFilename)
-
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command(absCxBottlePath, "--bottle", absPrefixDir, "--update")
 
 	if verbose {
 		cmd.Stdout = os.Stdout
