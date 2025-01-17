@@ -41,7 +41,12 @@ func ModPrefixDxVkHandler(u *url.URL) error {
 
 func ModPrefixDxVk(id, langCode string, dxVkRepo string, revert bool) error {
 	mpa := nod.Begin("modding DXVK in prefix for %s...", id)
-	defer mpa.EndWithResult("done")
+
+	msg := "enabled, use `-env WINEDLLOVERRIDES=\"d3d10core,d3d11=n,b;\"` when running apps in that prefix"
+	if revert {
+		msg = "disabled"
+	}
+	defer mpa.EndWithResult(msg)
 
 	if data.CurrentOS() != vangogh_integration.MacOS {
 		mpa.EndWithResult("DXVK prefix mod is only applicable to macOS")
