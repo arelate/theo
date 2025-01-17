@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/backups"
@@ -68,19 +69,11 @@ func archiveProductPrefix(id, langCode string, rdx kevlar.ReadableRedux) error {
 		return appa.EndWithError(err)
 	}
 
-	prefixName, err := data.GetPrefixName(id, langCode, rdx)
-	if err != nil {
-		return appa.EndWithError(err)
-	}
-
-	if prefixName == "" {
-		appa.EndWithResult("prefix for %s was not created", id)
-		return nil
-	}
+	prefixName := fmt.Sprintf("%s=%s", id, langCode)
 
 	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, prefixName)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
 	if err != nil {
 		return appa.EndWithError(err)
 	}

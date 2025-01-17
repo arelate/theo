@@ -43,9 +43,9 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		return ua.EndWithError(err)
 	}
 
-	osInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOS().String())
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOS().String(), langCode)
 
-	kvOsInstalledMetadata, err := kevlar.NewKeyValues(osInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return ua.EndWithError(err)
 	}
@@ -79,7 +79,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 			return ua.EndWithError(err)
 		}
 
-		if _, err := kvOsInstalledMetadata.Cut(id); err != nil {
+		if _, err := kvOsLangInstalledMetadata.Cut(id); err != nil {
 			return ua.EndWithError(err)
 		}
 

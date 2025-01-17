@@ -1,15 +1,14 @@
 package cli
 
 import (
-	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func WineInstallHandler(u *url.URL) error {
@@ -18,9 +17,9 @@ func WineInstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	wineRepo := q.Get("wine-repo")
 	removeDownloads := !q.Has("keep-downloads")
 	addSteamShortcut := !q.Has("no-steam-shortcut")
+	verbose := q.Has("verbose")
 	force := q.Has("force")
 
 	langCode := defaultLangCode
@@ -28,41 +27,31 @@ func WineInstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return WineInstall(langCode, wineRepo, downloadTypes, removeDownloads, addSteamShortcut, force, ids...)
+	return WineInstall(langCode, downloadTypes, removeDownloads, addSteamShortcut, verbose, force, ids...)
 }
 
 func WineInstall(langCode string,
-	wineRepo string,
 	downloadTypes []vangogh_integration.DownloadType,
 	removeDownloads bool,
 	addSteamShortcut bool,
+	verbose bool,
 	force bool,
 	ids ...string) error {
 
-	wia := nod.Begin("installing products with WINE...")
+	wia := nod.Begin("installing %s versions on %s...",
+		vangogh_integration.Windows,
+		data.CurrentOS())
 	defer wia.EndWithResult("done")
 
 	if data.CurrentOS() == vangogh_integration.Windows {
-		wia.EndWithResult("WINE install is not supported on Windows")
+		wia.EndWithResult("WINE install is not required on Windows, use install")
 		return nil
 	}
 
 	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
 	langCodes := []string{langCode}
 
-	vangogh_integration.PrintParams(ids, windowsOs, langCodes, downloadTypes, true)
-
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return wia.EndWithError(err)
-	}
-
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
-	if err != nil {
-		return wia.EndWithError(err)
-	}
-
-	notInstalled, err := wineFilterNotInstalled(langCode, rdx, ids...)
+	notInstalled, err := wineFilterNotInstalled(langCode, ids...)
 	if err != nil {
 		return wia.EndWithError(err)
 	}
@@ -88,12 +77,12 @@ func WineInstall(langCode string,
 		return wia.EndWithError(err)
 	}
 
-	if err = initPrefix(langCode, wineRepo, force, ids...); err != nil {
+	if err = initPrefix(langCode, verbose, ids...); err != nil {
 		return wia.EndWithError(err)
 	}
 
 	for _, id := range ids {
-		if err := wineInstallProduct(id, langCode, downloadTypes, wineRepo, force); err != nil {
+		if err := wineInstallProduct(id, langCode, downloadTypes, verbose, force); err != nil {
 			return wia.EndWithError(err)
 		}
 	}
@@ -110,7 +99,7 @@ func WineInstall(langCode string,
 		}
 	}
 
-	if err = pinInstalledMetadata(windowsOs, force, ids...); err != nil {
+	if err = pinInstalledMetadata(windowsOs, langCode, force, ids...); err != nil {
 		return wia.EndWithError(err)
 	}
 
@@ -121,18 +110,18 @@ func WineInstall(langCode string,
 	return nil
 }
 
-func wineFilterNotInstalled(langCode string, rdx kevlar.ReadableRedux, ids ...string) ([]string, error) {
+func wineFilterNotInstalled(langCode string, ids ...string) ([]string, error) {
 
 	notInstalled := make([]string, 0, len(ids))
 
 	for _, id := range ids {
 
-		ok, err := productPrefixExists(id, langCode, rdx)
+		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
 		if err != nil {
 			return nil, err
 		}
 
-		if ok {
+		if _, err := os.Stat(absPrefixDir); err == nil {
 			continue
 		}
 
@@ -142,67 +131,7 @@ func wineFilterNotInstalled(langCode string, rdx kevlar.ReadableRedux, ids ...st
 	return notInstalled, nil
 }
 
-func productPrefixExists(id, langCode string, rdx kevlar.ReadableRedux) (bool, error) {
-
-	prefixName, err := data.GetPrefixName(id, langCode, rdx)
-	if err != nil {
-		return false, err
-	}
-
-	if prefixName == "" {
-		return false, nil
-	}
-
-	absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
-	if err != nil {
-		return false, err
-	}
-
-	if _, err := os.Stat(absPrefixDir); err == nil {
-		return true, nil
-	} else if os.IsNotExist(err) {
-		return false, nil
-	} else {
-		return false, err
-	}
-}
-
-func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration.DownloadType, wineRepo string, force bool) error {
-
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
-	if err != nil {
-		return err
-	}
-
-	slug := id
-	if sp, ok := rdx.GetLastVal(data.SlugProperty, id); ok && sp != "" {
-		slug = sp
-	}
-
-	absWineBin, err := data.GetWineBinary(wineRepo)
-	if err != nil {
-		return err
-	}
-
-	prefixName, err := data.GetPrefixName(id, langCode, rdx)
-	if err != nil {
-		return err
-	}
-
-	absPrefixPath, err := data.GetAbsPrefixDir(prefixName)
-	if err != nil {
-		return err
-	}
-
-	wcx := &data.WineContext{
-		BinPath:    absWineBin,
-		PrefixPath: absPrefixPath,
-	}
+func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
@@ -222,13 +151,44 @@ func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration
 	for _, link := range dls {
 		linkExt := filepath.Ext(link.LocalFilename)
 		if linkExt != exeExt {
-			return errors.New("installing with WINE only supports .exe installers")
+			continue
 		}
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		if err := data.RunWineInnoExtractInstaller(wcx, absInstallerPath, slug); err != nil {
-			return err
+		switch data.CurrentOS() {
+		case vangogh_integration.MacOS:
+			if err := macOsWineRun(id, langCode, nil, verbose, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
+				return nil
+			}
+		default:
+			panic("not implemented")
 		}
+	}
+
+	return nil
+}
+
+func initPrefix(langCode string, verbose bool, ids ...string) error {
+
+	cpa := nod.NewProgress("initializing prefixes for %s...", strings.Join(ids, ","))
+	defer cpa.EndWithResult("done")
+
+	cpa.TotalInt(len(ids))
+
+	for _, id := range ids {
+
+		switch data.CurrentOS() {
+		case vangogh_integration.MacOS:
+			if err := macOsInitPrefix(id, langCode, verbose); err != nil {
+				return cpa.EndWithError(err)
+			}
+		case vangogh_integration.Linux:
+			// do nothing, umu-launch will create prefix during installation
+		default:
+			panic("not implemented")
+		}
+
+		cpa.Increment()
 	}
 
 	return nil

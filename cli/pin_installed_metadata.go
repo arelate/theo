@@ -10,10 +10,12 @@ import (
 	"path/filepath"
 )
 
-func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem, force bool, ids ...string) error {
+func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem, langCode string, force bool, ids ...string) error {
 
 	pima := nod.NewProgress("pinning theo metadata as installed...")
 	defer pima.EndWithResult("done")
+
+	vangogh_integration.PrintParams(ids, operatingSystems, []string{langCode}, nil, false)
 
 	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {
@@ -29,7 +31,7 @@ func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem
 
 	for _, id := range ids {
 
-		if err := pinTheoMetadata(id, operatingSystems, kvTheoMetadata, force); err != nil {
+		if err := pinTheoMetadata(id, operatingSystems, langCode, kvTheoMetadata, force); err != nil {
 			return pima.EndWithError(err)
 		}
 
@@ -42,11 +44,12 @@ func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem
 
 func pinTheoMetadata(id string,
 	operatingSystems []vangogh_integration.OperatingSystem,
+	langCode string,
 	kvTheoMetadata kevlar.KeyValues,
 	force bool) error {
 
 	for _, os := range operatingSystems {
-		if err := pinInstalledMetadataForOs(id, os, kvTheoMetadata, force); err != nil {
+		if err := pinInstalledMetadataForOs(id, os, langCode, kvTheoMetadata, force); err != nil {
 			return err
 		}
 	}
@@ -56,10 +59,11 @@ func pinTheoMetadata(id string,
 
 func pinInstalledMetadataForOs(id string,
 	os vangogh_integration.OperatingSystem,
+	langCode string,
 	kvTheoMetadata kevlar.KeyValues,
 	force bool) error {
 
-	pimoa := nod.Begin(" pinning metadata as installed for %s on %s...", id, os)
+	pimoa := nod.Begin(" pinning metadata as installed...")
 	defer pimoa.EndWithResult("done")
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
@@ -67,9 +71,9 @@ func pinInstalledMetadataForOs(id string,
 		return pimoa.EndWithError(err)
 	}
 
-	osInstalledMetadataDir := filepath.Join(installedMetadataDir, os.String())
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, os.String(), langCode)
 
-	kvOsInstalledMetadata, err := kevlar.NewKeyValues(osInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return pimoa.EndWithError(err)
 	}
@@ -83,7 +87,7 @@ func pinInstalledMetadataForOs(id string,
 		return errors.New("theo metadata not found for: " + id)
 	}
 
-	hasInstalledMetadata, err := kvOsInstalledMetadata.Has(id)
+	hasInstalledMetadata, err := kvOsLangInstalledMetadata.Has(id)
 	if err != nil {
 		return pimoa.EndWithError(err)
 	}
@@ -99,5 +103,5 @@ func pinInstalledMetadataForOs(id string,
 
 	defer src.Close()
 
-	return kvOsInstalledMetadata.Set(id, src)
+	return kvOsLangInstalledMetadata.Set(id, src)
 }

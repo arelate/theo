@@ -12,11 +12,10 @@ const winePrefixEnvVar = "WINEPREFIX"
 
 const RelPrefixDriveCDir = "drive_c"
 
-const gogLnkGlob = "GOG Games/*/*.lnk"
+const GogLnkGlob = "GOG Games/*/*.lnk"
 
 const (
 	winebootBin = "wineboot"
-	regeditBin  = "regedit"
 )
 
 const (
@@ -60,46 +59,6 @@ func UpdateWinePrefix(wcx *WineContext) error {
 		winePrefixEnvVar: wcx.PrefixPath,
 	}
 	return wineCmd(wcx.BinPath, env, winebootBin, updateFlag)
-}
-
-func RegeditWinePrefix(wcx *WineContext, absRegPath string) error {
-	env := map[string]string{
-		winePrefixEnvVar: wcx.PrefixPath,
-	}
-	return wineCmd(wcx.BinPath, env, regeditBin, absRegPath)
-}
-
-func RunWineInnoExtractInstaller(wcx *WineContext, absInstallerPath, slug string) error {
-	env := map[string]string{
-		winePrefixEnvVar: wcx.PrefixPath,
-	}
-
-	return wineCmd(wcx.BinPath, env, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS")
-}
-
-func RunWineDefaultGogLnk(wcx *WineContext) error {
-	env := map[string]string{
-		winePrefixEnvVar: wcx.PrefixPath,
-	}
-
-	matches, err := filepath.Glob(filepath.Join(wcx.PrefixPath, RelPrefixDriveCDir, gogLnkGlob))
-	if err != nil {
-		return err
-	}
-
-	if len(matches) == 1 {
-		return wineCmd(wcx.BinPath, env, matches[0])
-	} else {
-		return errors.New("cannot locate suitable .lnk in the default GOG install folder")
-	}
-}
-
-func RunWineExePath(wcx *WineContext, exePath string) error {
-	env := map[string]string{
-		winePrefixEnvVar: wcx.PrefixPath,
-	}
-
-	return wineCmd(wcx.BinPath, env, exePath)
 }
 
 func wineCmd(absWineBinPath string, env map[string]string, args ...string) error {

@@ -112,7 +112,7 @@ func Install(langCode string,
 		}
 	}
 
-	if err = pinInstalledMetadata(currentOs, force, ids...); err != nil {
+	if err = pinInstalledMetadata(currentOs, langCode, force, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 

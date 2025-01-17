@@ -112,11 +112,6 @@ func addSteamShortcutsForUser(loginUser string, langCode string, wine, force boo
 			return asfua.EndWithError(errors.New("product is missing title"))
 		}
 
-		startDir, err := getStartDir(id, langCode, rdx, wine)
-		if err != nil {
-			return asfua.EndWithError(err)
-		}
-
 		shortcutId := steam_integration.ShortcutAppId(theoExecutable, title)
 		iconPath := getGridIconPath(loginUser, shortcutId)
 
@@ -130,6 +125,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, wine, force boo
 			launchOptions += fmt.Sprintf(" -lang-code %s", langCode)
 		}
 
+		startDir := ""
 		if changed, err := addNonSteamAppShortcut(shortcutId, title, theoExecutable, iconPath, startDir, launchOptions, kvUserShortcuts, force); err != nil {
 			return asfua.EndWithError(err)
 		} else if changed {
@@ -149,46 +145,6 @@ func addSteamShortcutsForUser(loginUser string, langCode string, wine, force boo
 	}
 
 	return nil
-}
-
-func getStartDir(id, langCode string, rdx kevlar.ReadableRedux, wine bool) (string, error) {
-
-	startDir := ""
-
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
-	if err != nil {
-		return "", err
-	}
-
-	switch wine {
-	case true:
-
-		prefixName, err := data.GetPrefixName(id, langCode, rdx)
-		if err != nil {
-			return "", err
-		}
-
-		absPrefixDir, err := data.GetAbsPrefixDir(prefixName)
-		if err != nil {
-			return "", err
-		}
-
-		startDir = filepath.Join(absPrefixDir, data.RelPrefixDriveCDir)
-
-	case false:
-
-		var bundleName string
-		if bn, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bn != "" {
-			bundleName = bn
-		} else {
-			return "", errors.New("product is missing bundle name")
-		}
-
-		osLangCodeDir := data.OsLangCodeDir(data.CurrentOS(), langCode)
-		startDir = filepath.Join(installedAppsDir, osLangCodeDir, bundleName)
-	}
-
-	return startDir, nil
 }
 
 func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata *vangogh_integration.TheoImages, rdx kevlar.ReadableRedux, force bool) error {

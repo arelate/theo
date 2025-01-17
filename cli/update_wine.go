@@ -6,7 +6,6 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"net/url"
-	"os"
 )
 
 const gstreamerFrameworkPath = "/Library/Frameworks/GStreamer.framework"
@@ -29,10 +28,6 @@ func UpdateWine(force bool) error {
 	uwa := nod.Begin("updating WINE for %s...", currentOs)
 	defer uwa.EndWithResult("done")
 
-	if err := checkGstreamer(); err != nil {
-		return uwa.EndWithError(err)
-	}
-
 	if err := getGitHubReleases(force); err != nil {
 		return uwa.EndWithError(err)
 	}
@@ -50,24 +45,4 @@ func UpdateWine(force bool) error {
 	}
 
 	return nil
-}
-
-func checkGstreamer() error {
-
-	if data.CurrentOS() != vangogh_integration.MacOS {
-		return nil
-	}
-
-	cga := nod.Begin(" checking whether GStreamer.framework is installed...")
-	defer cga.EndWithResult("done")
-
-	if _, err := os.Stat(gstreamerFrameworkPath); err == nil {
-		cga.EndWithResult("found")
-		return nil
-	} else if os.IsNotExist(err) {
-		cga.EndWithResult("not found. Download it at https://gstreamer.freedesktop.org/download")
-		return nil
-	} else {
-		return cga.EndWithError(err)
-	}
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
@@ -21,7 +22,7 @@ func WineUninstallHandler(u *url.URL) error {
 	if len(langCodes) > 0 {
 		langCode = langCodes[0]
 	}
-	archive := !q.Has("no-archive")
+	archive := q.Has("archive")
 	force := q.Has("force")
 
 	return WineUninstall(langCode, archive, force, ids...)
@@ -42,9 +43,9 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 		return wua.EndWithError(err)
 	}
 
-	osInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOS().String())
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, vangogh_integration.Windows.String(), langCode)
 
-	kvOsInstalledMetadata, err := kevlar.NewKeyValues(osInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return wua.EndWithError(err)
 	}
@@ -54,7 +55,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 	}
 
 	for _, id := range ids {
-		if _, err := kvOsInstalledMetadata.Cut(id); err != nil {
+		if _, err := kvOsLangInstalledMetadata.Cut(id); err != nil {
 			return wua.EndWithError(err)
 		}
 

@@ -76,7 +76,6 @@ func main() {
 		"run":                      cli.RunHandler,
 		"test-vangogh-connection":  cli.TestVangoghConnectionHandler,
 		"uninstall":                cli.UninstallHandler,
-		"update-prefix":            cli.UpdatePrefixHandler,
 		"update-wine":              cli.UpdateWineHandler,
 		"validate":                 cli.ValidateHandler,
 		"version":                  cli.VersionHandler,

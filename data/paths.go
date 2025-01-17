@@ -5,7 +5,6 @@ import (
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/busan"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/pathways"
 	"os"
 	"path"
@@ -121,25 +120,25 @@ func GetAbsReleaseAssetPath(ghs *GitHubSource, release *github_integration.GitHu
 	return filepath.Join(relDir, fn), nil
 }
 
-func GetPrefixName(id, langCode string, rdx kevlar.ReadableRedux) (string, error) {
-	if err := rdx.MustHave(SlugProperty); err != nil {
-		return "", err
-	}
+//func GetPrefixName(id, langCode string, rdx kevlar.ReadableRedux) (string, error) {
+//	if err := rdx.MustHave(SlugProperty); err != nil {
+//		return "", err
+//	}
+//
+//	if slug, ok := rdx.GetLastVal(SlugProperty, id); ok && slug != "" {
+//		return fmt.Sprintf("%s-%s", slug, langCode), nil
+//	}
+//
+//	return "", nil
+//}
 
-	if slug, ok := rdx.GetLastVal(SlugProperty, id); ok && slug != "" {
-		return fmt.Sprintf("%s-%s", slug, langCode), nil
-	}
-
-	return "", nil
-}
-
-func GetAbsPrefixDir(prefixName string) (string, error) {
+func GetAbsPrefixDir(id, langCode string) (string, error) {
 	prefixesDir, err := pathways.GetAbsDir(Prefixes)
 	if err != nil {
 		return "", err
 	}
 
-	return path.Join(prefixesDir, busan.Sanitize(prefixName)), nil
+	return path.Join(prefixesDir, fmt.Sprintf("%s-%s", id, langCode)), nil
 }
 
 func OsLangCodeDir(os vangogh_integration.OperatingSystem, langCode string) string {

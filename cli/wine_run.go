@@ -3,10 +3,9 @@ package cli
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
-	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/nod"
 	"net/url"
-	"path/filepath"
+	"strings"
 )
 
 func WineRunHandler(u *url.URL) error {
@@ -18,49 +17,39 @@ func WineRunHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
-	wineRepo := q.Get("wine-repo")
 	exePath := q.Get("exe-path")
+	verbose := q.Has("verbose")
+	env := make([]string, 0)
+	if q.Has("env") {
+		env = strings.Split(q.Get("env"), ",")
+	}
 
-	return WineRun(id, langCode, wineRepo, exePath)
+	return WineRun(id, langCode, exePath, env, verbose)
 }
 
-func WineRun(id string, langCode string, wineRepo, exePath string) error {
+func WineRun(id string, langCode string, exePath string, env []string, verbose bool) error {
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
+	wra := nod.Begin("running %s version with WINE...", vangogh_integration.Windows)
+	defer wra.EndWithResult("done")
+
+	vangogh_integration.PrintParams([]string{id},
+		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows},
+		[]string{langCode},
+		nil,
+		false)
+
+	switch data.CurrentOS() {
+	case vangogh_integration.MacOS:
+		if exePath != "" {
+			if err := macOsWineRun(id, langCode, env, verbose, exePath); err != nil {
+				return err
+			}
+		} else if err := macOsStartGogGamesLnk(id, langCode, env, verbose); err != nil {
+			return err
+		}
+	default:
+		panic("not implemented")
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
-	if err != nil {
-		return err
-	}
-
-	prefixName, err := data.GetPrefixName(id, langCode, rdx)
-	if err != nil {
-		return err
-	}
-
-	absPrefixPath, err := data.GetAbsPrefixDir(prefixName)
-	if err != nil {
-		return err
-	}
-
-	absExePath := filepath.Join(absPrefixPath, data.RelPrefixDriveCDir, exePath)
-
-	absWineBin, err := data.GetWineBinary(wineRepo)
-	if err != nil {
-		return err
-	}
-
-	wcx := &data.WineContext{
-		BinPath:    absWineBin,
-		PrefixPath: absPrefixPath,
-	}
-
-	if exePath != "" {
-		return data.RunWineExePath(wcx, absExePath)
-	} else {
-		return data.RunWineDefaultGogLnk(wcx)
-	}
+	return nil
 }
