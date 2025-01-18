@@ -29,7 +29,15 @@ func macOsInitPrefix(id, langCode string, verbose bool) error {
 
 func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string) error {
 
-	mwra := nod.Begin(" running command with WINE, please wait...")
+	var firstArg string
+	if len(arg) > 0 {
+		_, firstArg = filepath.Split(arg[0])
+	}
+	if firstArg == "" {
+		firstArg = "command"
+	}
+
+	mwra := nod.Begin(" running %s with WINE, please wait...", firstArg)
 	defer mwra.EndWithResult("done")
 
 	if verbose && len(env) > 0 {
