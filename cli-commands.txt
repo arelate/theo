@@ -98,6 +98,8 @@ reveal-prefix
 run
     id^
     lang-code
+    env&
+    verbose
 
 serve
     port$

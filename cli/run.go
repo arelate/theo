@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -25,11 +26,16 @@ func RunHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
+	var env []string
+	if q.Has("env") {
+		env = strings.Split(q.Get("env"), ",")
+	}
+	verbose := q.Has("verbose")
 
-	return Run(id, langCode)
+	return Run(id, langCode, env, verbose)
 }
 
-func Run(id string, langCode string) error {
+func Run(id string, langCode string, env []string, verbose bool) error {
 
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.EndWithResult("done")
@@ -49,10 +55,10 @@ func Run(id string, langCode string) error {
 		return ra.EndWithError(err)
 	}
 
-	return currentOsRunApp(id, langCode, rdx)
+	return currentOsRunApp(id, langCode, rdx, env, verbose)
 }
 
-func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux) error {
+func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux, env []string, verbose bool) error {
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
@@ -66,21 +72,21 @@ func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux) error {
 		return err
 	}
 
-	if err := currentOsExecute(absBundlePath); err != nil {
+	if err := currentOsExecute(absBundlePath, env, verbose); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func currentOsExecute(path string) error {
+func currentOsExecute(path string, env []string, verbose bool) error {
 	switch data.CurrentOS() {
 	case vangogh_integration.MacOS:
-		return macOsExecute(path)
+		return macOsExecute(path, env, verbose)
 	case vangogh_integration.Windows:
-		return windowsExecute(path)
+		return windowsExecute(path, env, verbose)
 	case vangogh_integration.Linux:
-		return linuxExecute(path)
+		return linuxExecute(path, env, verbose)
 	default:
 		return errors.New("cannot reveal on unknown operating system")
 	}

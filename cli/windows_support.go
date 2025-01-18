@@ -16,7 +16,7 @@ func windowsReveal(path string) error {
 	return errors.New("support for Windows reveal is not implemented")
 }
 
-func windowsExecute(path string) error {
+func windowsExecute(path string, env []string, verbose bool) error {
 	return errors.New("support for Windows execution is not implemented")
 }
 

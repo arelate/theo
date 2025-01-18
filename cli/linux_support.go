@@ -168,13 +168,20 @@ func linuxReveal(path string) error {
 	return cmd.Run()
 }
 
-func linuxExecute(path string) error {
+func linuxExecute(path string, env []string, verbose bool) error {
 
 	startShPath := linuxLocateStartSh(path)
 
 	cmd := exec.Command(startShPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+
+	if verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	for _, e := range env {
+		cmd.Env = append(cmd.Env, e)
+	}
 
 	return cmd.Run()
 }
