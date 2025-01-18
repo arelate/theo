@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"github.com/arelate/southern_light/steam_integration"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
@@ -24,8 +23,8 @@ const (
 )
 
 const (
-	runLaunchOptionsTemplate     = "run %s"
-	wineRunLaunchOptionsTemplate = "wine-run %s"
+	runLaunchOptionsTemplate     = "run {id}"
+	wineRunLaunchOptionsTemplate = "wine-run {id}"
 )
 
 func AddSteamShortcutHandler(u *url.URL) error {
@@ -120,9 +119,9 @@ func addSteamShortcutsForUser(loginUser string, langCode string, wine, force boo
 			launchOptionsTemplate = wineRunLaunchOptionsTemplate
 		}
 
-		launchOptions := fmt.Sprintf(launchOptionsTemplate, id)
-		if langCode != "" {
-			launchOptions += fmt.Sprintf(" -lang-code %s", langCode)
+		launchOptions := strings.Replace(launchOptionsTemplate, "{id}", id, 1)
+		if langCode != "" && langCode != defaultLangCode {
+			launchOptions += " -lang-code " + langCode
 		}
 
 		startDir := ""
@@ -269,7 +268,8 @@ func getGridIconPath(loginUser string, appId uint32) string {
 		return ""
 	}
 
-	return filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid", fmt.Sprintf("%d_icon.png", appId))
+	iconFilename := strconv.FormatInt(int64(appId), 10) + "_icon.png"
+	return filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid", iconFilename)
 }
 
 func writeUserShortcuts(loginUser string, kvUserShortcuts []*steam_vdf.KeyValues) error {

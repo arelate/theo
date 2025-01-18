@@ -34,7 +34,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 	defer ua.EndWithResult("done")
 
 	if !force {
-		ua.EndWithResult("uninstall requires force flag")
+		ua.EndWithResult("this operation requires force flagujjjjjjji")
 		return nil
 	}
 

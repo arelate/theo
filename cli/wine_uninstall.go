@@ -34,7 +34,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 	defer wua.EndWithResult("done")
 
 	if !force {
-		wua.EndWithResult("uninstall requires force flag")
+		wua.EndWithResult("this operation requires force flag")
 		return nil
 	}
 
@@ -51,6 +51,10 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 	}
 
 	if err := RemovePrefix(langCode, archive, force, ids...); err != nil {
+		return wua.EndWithError(err)
+	}
+
+	if err := DeletePrefixEnv(ids, langCode, force); err != nil {
 		return wua.EndWithError(err)
 	}
 

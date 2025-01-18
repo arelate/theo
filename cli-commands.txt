@@ -18,6 +18,15 @@ archive-prefix
 
 backup-metadata
 
+default-prefix-env
+    id^*
+    lang-code
+
+delete-prefix-env
+    id^*
+    lang-code
+    force
+
 download
     id^&*
     os&
@@ -91,6 +100,11 @@ run
 serve
     port$
     stderr$
+
+set-prefix-env
+    id^*
+    lang-code
+    env&
 
 set-vangogh-connection
     protocol

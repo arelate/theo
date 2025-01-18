@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/backups"
@@ -69,7 +68,7 @@ func archiveProductPrefix(id, langCode string, rdx kevlar.ReadableRedux) error {
 		return appa.EndWithError(err)
 	}
 
-	prefixName := fmt.Sprintf("%s=%s", id, langCode)
+	prefixName := data.GetPrefixName(id, langCode)
 
 	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, prefixName)
 

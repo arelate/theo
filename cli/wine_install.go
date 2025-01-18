@@ -87,6 +87,10 @@ func WineInstall(langCode string,
 		}
 	}
 
+	if err := DefaultPrefixEnv(ids, langCode); err != nil {
+		return wia.EndWithError(err)
+	}
+
 	if addSteamShortcut {
 		if err := AddSteamShortcut(langCode, true, force, ids...); err != nil {
 			return wia.EndWithError(err)
