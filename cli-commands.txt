@@ -128,7 +128,7 @@ wine-install
 wine-run
     id^*
     lang-code
-    env
+    env&
     exe-path
     verbose
 
