@@ -2,6 +2,7 @@ package cli
 
 import (
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -93,8 +94,7 @@ func validateLinks(id string,
 		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
-		vla.EndWithResult("no links are matching operating params")
-		return nil
+		return vla.EndWithError(errors.New("no links are matching operating params"))
 	}
 
 	vla.TotalInt(len(dls))

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
@@ -88,8 +89,7 @@ func downloadProductFiles(id string,
 		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
-		gpdla.EndWithResult("no links are matching operating params")
-		return nil
+		return gpdla.EndWithError(errors.New("no links are matching operating params"))
 	}
 
 	for _, dl := range dls {
