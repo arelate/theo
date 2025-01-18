@@ -114,7 +114,7 @@ func disableDxVk(absAssetSrcDir, srcGlob, absPrefixDir, relDstDir string) error 
 		return err
 	}
 
-	absTargetDir := filepath.Join(absPrefixDir, data.RelPrefixDriveCDir, relDstDir)
+	absTargetDir := filepath.Join(absPrefixDir, relPrefixDriveCDir, relDstDir)
 
 	for _, match := range dxVkSrcMatches {
 
@@ -143,7 +143,7 @@ func enableDxVk(absAssetSrcDir, srcGlob, absPrefixDir, relDstDir string) error {
 		return err
 	}
 
-	absTargetDir := filepath.Join(absPrefixDir, data.RelPrefixDriveCDir, relDstDir)
+	absTargetDir := filepath.Join(absPrefixDir, relPrefixDriveCDir, relDstDir)
 
 	for _, match := range dxVkSrcMatches {
 

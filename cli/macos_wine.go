@@ -18,13 +18,15 @@ const (
 	relWineFilename           = "wine"
 )
 
-const DefaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
+const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
+
+const gogInstallationLnkGlob = "GOG Games/*/*.lnk"
 
 func macOsInitPrefix(id, langCode string, verbose bool) error {
 	mipa := nod.Begin(" initializing prefix...")
 	defer mipa.EndWithResult("done")
 
-	return macOsCreateCxBottle(id, langCode, DefaultCxBottleTemplate, verbose)
+	return macOsCreateCxBottle(id, langCode, defaultCxBottleTemplate, verbose)
 }
 
 func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string) error {
@@ -87,9 +89,9 @@ func macOsStartGogGamesLnk(id, langCode string, env []string, verbose bool, arg 
 		return msggla.EndWithError(err)
 	}
 
-	absPrefixDriveCDir := filepath.Join(absPrefixDir, data.RelPrefixDriveCDir)
+	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
 
-	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, data.GogLnkGlob))
+	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, gogInstallationLnkGlob))
 	if err != nil {
 		return msggla.EndWithError(err)
 	}
@@ -129,7 +131,7 @@ func macOsGetAbsCxBinDir(appDirs ...string) (string, error) {
 func macOsCreateCxBottle(id, langCode string, template string, verbose bool) error {
 
 	if template == "" {
-		template = DefaultCxBottleTemplate
+		template = defaultCxBottleTemplate
 	}
 
 	absCxBinDir, err := macOsGetAbsCxBinDir()

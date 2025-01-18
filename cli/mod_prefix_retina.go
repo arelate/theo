@@ -57,7 +57,7 @@ func ModPrefixRetina(id, langCode string, revert, verbose, force bool) error {
 		return err
 	}
 
-	absDriveCroot := filepath.Join(absPrefixDir, data.RelPrefixDriveCDir)
+	absDriveCroot := filepath.Join(absPrefixDir, relPrefixDriveCDir)
 
 	regFilename := retinaOnFilename
 	regContent := retinaOnReg

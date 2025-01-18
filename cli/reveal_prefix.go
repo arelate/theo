@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+const relPrefixDriveCDir = "drive_c"
+
 func RevealPrefixHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -56,7 +58,7 @@ func revealProductPrefix(id, langCode string) error {
 		return nil
 	}
 
-	absPrefixDriveCPath := filepath.Join(absPrefixDir, data.RelPrefixDriveCDir)
+	absPrefixDriveCPath := filepath.Join(absPrefixDir, relPrefixDriveCDir)
 
 	return currentOsReveal(absPrefixDriveCPath)
 }
