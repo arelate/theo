@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"golang.org/x/exp/maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,39 +20,6 @@ const (
 
 const DefaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
-var envDefaults = map[string]string{
-	"WINED3DMETAL":          "1",
-	"WINEESYNC":             "0",
-	"WINEMSYNC":             "1",
-	"ROSETTA_ADVERTISE_AVX": "1"}
-
-func applyEnvDefaults(env []string) []string {
-
-	newEnv := make(map[string]string)
-	maps.Copy(newEnv, envDefaults)
-
-	for _, e := range env {
-		if k, v, ok := strings.Cut(e, "="); ok {
-			newEnv[k] = v
-		}
-	}
-
-	newEnvStr := make([]string, 0, len(newEnv))
-	for k, v := range newEnv {
-		newEnvStr = append(newEnvStr, strings.Join([]string{k, v}, "="))
-	}
-
-	return newEnvStr
-}
-
-func printEnv(env []string) {
-	if len(env) > 0 {
-		pea := nod.Begin(" env:")
-		defer pea.End()
-		pea.EndWithResult(strings.Join(env, ", "))
-	}
-}
-
 func macOsInitPrefix(id, langCode string, verbose bool) error {
 	mipa := nod.Begin(" initializing prefix...")
 	defer mipa.EndWithResult("done")
@@ -66,8 +32,10 @@ func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string
 	mwra := nod.Begin(" running command with WINE...")
 	defer mwra.EndWithResult("done")
 
-	env = applyEnvDefaults(env)
-	printEnv(env)
+	if verbose && len(env) > 0 {
+		pea := nod.Begin(" env:")
+		pea.EndWithResult(strings.Join(env, " "))
+	}
 
 	absCxBinDir, err := macOsGetAbsCxBinDir()
 	if err != nil {
@@ -85,15 +53,13 @@ func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string
 
 	cmd := exec.Command(absWineBinPath, arg...)
 
-	//for _, e := range env {
-	//	if strings.Contains(e, "=") {
-	//		cmd.Env = append(cmd.Env, e)
-	//	}
-	//}
-
 	if verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+	}
+
+	for _, e := range env {
+		cmd.Env = append(cmd.Env, e)
 	}
 
 	return cmd.Run()
