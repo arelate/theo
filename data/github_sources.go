@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"errors"
+	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/wits"
@@ -54,6 +55,42 @@ func (ghs *GitHubSource) CurrentOsMatches(owner, repo string) bool {
 		}
 	}
 	return false
+}
+
+func (ghs *GitHubSource) SelectAsset(release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
+
+	if len(release.Assets) == 1 {
+		return &release.Assets[0]
+	}
+
+	filteredAssets := make([]github_integration.GitHubAsset, 0, len(release.Assets))
+
+	for _, asset := range release.Assets {
+		skipAsset := false
+		for _, exc := range ghs.AssetExclude {
+			if exc != "" && strings.Contains(asset.Name, exc) {
+				skipAsset = true
+			}
+		}
+		if skipAsset {
+			continue
+		}
+		filteredAssets = append(filteredAssets, asset)
+	}
+
+	if len(filteredAssets) == 1 {
+		return &filteredAssets[0]
+	}
+
+	for _, asset := range filteredAssets {
+		for _, inc := range ghs.AssetInclude {
+			if inc != "" && strings.Contains(asset.Name, inc) {
+				return &asset
+			}
+		}
+	}
+
+	return nil
 }
 
 func parseGitHubSource(u *url.URL, pkv wits.KeyValue) (*GitHubSource, error) {

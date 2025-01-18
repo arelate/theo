@@ -52,12 +52,6 @@ list-steam-shortcuts
 list-wine-installed
     lang-code
 
-mod-prefix-dxvk
-    id^*
-    lang-code
-    dxvk-repo
-    revert
-
 mod-prefix-retina
     id^*
     lang-code

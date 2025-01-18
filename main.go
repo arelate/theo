@@ -64,7 +64,6 @@ func main() {
 		"list-prefix-env":          cli.ListPrefixEnvHandler,
 		"list-steam-shortcuts":     cli.ListSteamShortcutsHandler,
 		"list-wine-installed":      cli.ListWineInstalledHandler,
-		"mod-prefix-dxvk":          cli.ModPrefixDxVkHandler,
 		"mod-prefix-retina":        cli.ModPrefixRetinaHandler,
 		"serve":                    cli.ServeHandler,
 		"set-prefix-env":           cli.SetPrefixEnvHandler,

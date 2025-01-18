@@ -78,7 +78,7 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.EndWithResult("done")
 
-	asset := data.SelectAsset(ghs, release)
+	asset := ghs.SelectAsset(release)
 	if asset == nil {
 		crra.EndWithResult("asset not found")
 		return nil

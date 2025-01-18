@@ -93,7 +93,7 @@ func unpackRepoLatestRelease(ghs *data.GitHubSource, release *github_integration
 		return nil
 	}
 
-	if asset := data.SelectAsset(ghs, release); asset != nil {
+	if asset := ghs.SelectAsset(release); asset != nil {
 
 		if err := unpackAsset(ghs, release, asset); err != nil {
 			return urra.EndWithError(err)
