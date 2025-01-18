@@ -202,7 +202,8 @@ func nixUninstallProduct(title string, operatingSystem vangogh_integration.Opera
 	defer umpa.EndWithResult("done")
 
 	if bundleName == "" {
-		return errors.New("product must have bundle name for uninstall")
+		umpa.EndWithResult("product must have bundle name for uninstall")
+		return nil
 	}
 
 	osLangCodeDir := data.OsLangCodeDir(operatingSystem, langCode)
