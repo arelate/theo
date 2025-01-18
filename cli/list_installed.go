@@ -63,9 +63,14 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 
 	for _, id := range ids {
 
+		var name string
 		if title, ok := rdx.GetLastVal(data.TitleProperty, id); ok {
-			summary[id] = append(summary[id], title)
+			name = title + " (" + id + ")"
+		} else {
+			name = id
 		}
+
+		summary[name] = nil
 	}
 
 	if len(summary) == 0 {

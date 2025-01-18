@@ -7,13 +7,23 @@ import (
 	"net/url"
 )
 
-func ListSteamShortcutsHandler(u *url.URL) error {
+func ListSteamShortcutsHandler(_ *url.URL) error {
 	return ListSteamShortcuts()
 }
 
 func ListSteamShortcuts() error {
 	lssa := nod.Begin("listing Steam shortcuts for all users...")
 	defer lssa.EndWithResult("done")
+
+	ok, err := steamStateDirExist()
+	if err != nil {
+		return lssa.EndWithError(err)
+	}
+
+	if !ok {
+		lssa.EndWithResult("Steam state dir not found")
+		return nil
+	}
 
 	loginUsers, err := getSteamLoginUsers()
 	if err != nil {

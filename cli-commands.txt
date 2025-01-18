@@ -45,6 +45,8 @@ install
 list-installed
     lang-code
 
+list-prefix-env
+
 list-steam-shortcuts
 
 list-wine-installed

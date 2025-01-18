@@ -61,6 +61,7 @@ func main() {
 		"download":                 cli.DownloadHandler,
 		"install":                  cli.InstallHandler,
 		"list-installed":           cli.ListInstalledHandler,
+		"list-prefix-env":          cli.ListPrefixEnvHandler,
 		"list-steam-shortcuts":     cli.ListSteamShortcutsHandler,
 		"list-wine-installed":      cli.ListWineInstalledHandler,
 		"mod-prefix-dxvk":          cli.ModPrefixDxVkHandler,
