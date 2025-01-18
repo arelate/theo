@@ -34,7 +34,7 @@ func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string
 		if strings.HasPrefix(a, "-") {
 			continue
 		}
-		cmdArg = a
+		_, cmdArg = filepath.Split(a)
 		break
 	}
 	if cmdArg == "" {
