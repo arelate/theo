@@ -12,8 +12,9 @@ When Go is properly installed, you can then run `go install github.com/arelate/t
 
 Before using any of the commands below, theo needs to be set up to connect to vangogh:
 
-    - `theo set-vangogh-connection <protocol> <address> <port> <username> <password>` - you need to provide address (e.g. vangogh.example.com), username and password  for users authorized to download from that vangogh instance. Other parameters are optional
-    - `theo test-vangogh-connection` - will perform a series of connectivity and authorization tests to validate your settings
+`theo set-vangogh-connection <protocol> <address> <port> <username> <password>` - you need to provide address (e.g. vangogh.example.com), username and password  for users authorized to download from that vangogh instance. Other parameters are optional
+
+`theo test-vangogh-connection` - will perform a series of connectivity and authorization tests to validate your settings
 
 This is only needed to be done once and theo will use those settings from that moment. If you ever need to reset this configuration, `reset-vangogh-connection` can help with that.
 
@@ -21,22 +22,27 @@ This is only needed to be done once and theo will use those settings from that m
 
 Basic usage of theo comes down to the following commands:
 
-    - `theo install <gog-game-id>` - will install current OS version of a game
-    - `theo run <gog-game-id>` - will run installed version of a game
-    - `theo uninstall <gog-game-id> -force` - will uninstall a game
+`theo install <gog-game-id>` - will install current OS version of a game
+
+`theo run <gog-game-id>` - will run installed version of a game
+
+`theo uninstall <gog-game-id> -force` - will uninstall a game
 
 More helpful commands:
 
-    - `theo list-installed` - will print all currently installed games
-    - `theo reveal-installed` - will open the directory containing game installation
+`theo list-installed` - will print all currently installed games
+
+`theo reveal-installed` - will open the directory containing game installation
 
 ## Installing Windows versions on macOS, Linux with theo
 
 theo provides a set of commands to manage Windows versions on macOS, Linux using [WINE](http://winehq.org):
 
-    - `theo wine-install <gog-game-id>` - will install Windows version of a game
-    - `theo wine-run <gog-game-id>` - will run installed version of a game
-    - `theo wine-uninstall <gog-game-id> -force` - will uninstall a game
+`theo wine-install <gog-game-id>` - will install Windows version of a game
+
+`theo wine-run <gog-game-id>` - will run installed version of a game
+
+`theo wine-uninstall <gog-game-id> -force` - will uninstall a game
 
 On macOS this functionality **requires** a version of [CrossOver](https://www.codeweavers.com/crossover) purchased and licensed for the current user. 
 
@@ -44,7 +50,7 @@ On Linux theo will use [umu-launcher](https://github.com/Open-Wine-Components/um
 
 More helpful commands:
 
-    - `theo list-wine-installed` - will print all currently installed Windows versions
+`theo list-wine-installed` - will print all currently installed Windows versions
 
 ## Advanced usage scenarios
 
@@ -52,8 +58,9 @@ More helpful commands:
 
 theo allows you to specify [language](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) version to use, when available on GOG and setup on vangogh:
 
-    - `theo install <gog-game-id> -lang-code ja` - will install Japanese version of a game (if it's available)
-    - `theo run <gog-game-id> -lang-code ja` - will run Japanese version of a game (if it's installed)
+`theo install <gog-game-id> -lang-code ja` - will install Japanese version of a game (if it's available)
+
+`theo run <gog-game-id> -lang-code ja` - will run Japanese version of a game (if it's installed)
 
 You need to specify language code for every command (e.g. `run`, `uninstall`, `reveal-installed`). With this functionality you can have multiple version of the same game in different languages installed at the same time (applies to native and Windows versions).
 
@@ -61,13 +68,15 @@ You need to specify language code for every command (e.g. `run`, `uninstall`, `r
 
 theo helps you manage Windows versions installations and [WINE](http://winehq.org) options with environmental variables:
     
-    - `theo set-prefix-env <gog-game-id> -env VAR1=VAL1 VAR2=VAL2` - will set VAR1 and VAR2 environmental variables for this game installation and those values (VAL1 and VAL2) will be used for any commands under those installations (e.g. `wine-run`)
+`theo set-prefix-env <gog-game-id> -env VAR1=VAL1 VAR2=VAL2` - will set VAR1 and VAR2 environmental variables for this game installation and those values (VAL1 and VAL2) will be used for any commands under those installations (e.g. `wine-run`)
 
 More helpful commands:
 
-    - `theo default-prefix-env <gog-game-id>` - will reset all environment variables to default values for the current operating system
-    - `theo delete-prefix-env <gog-game-id>` - will completely removed all environment variables (even default ones) for this game installation
-    - `theo list-prefix-env` - will print all environment variables for every game installed with theo
+`theo default-prefix-env <gog-game-id>` - will reset all environment variables to default values for the current operating system
+
+`theo delete-prefix-env <gog-game-id>` - will completely removed all environment variables (even default ones) for this game installation
+
+`theo list-prefix-env` - will print all environment variables for every game installed with theo
 
 NOTE: Default environment variables set for each operating systems are listed here: [cli/default_prefix_env.go](https://github.com/arelate/theo/blob/main/cli/default_prefix_env.go#L12)
 
@@ -81,22 +90,23 @@ NOTE: Steam shortcuts are added for all users currently logged into Steam under 
 
 Additionally you can use the following commands to manage Steam shortcuts:
 
-    - `theo add-steam-shortcut <gog-game-id>` - will add Steam shortcut for a game
-    - `theo remove-steam-shortcut <gog-game-id>` - will remove Steam shortcut for a game
-    - `theo list-steam-shortcuts` - will list all existing Steam shortcuts
+`theo add-steam-shortcut <gog-game-id>` - will add Steam shortcut for a game
+
+`theo remove-steam-shortcut <gog-game-id>` - will remove Steam shortcut for a game
+
+`theo list-steam-shortcuts` - will list all existing Steam shortcuts
 
 ### Retina mode for Windows installations on macOS
 
 theo provides `mod-prefix-retina` command to set Retina (high DPI). See more information [here](https://gitlab.winehq.org/wine/wine/-/wikis/Commands/winecfg#screen-resolution-dpi-setting). To revert this change use the command with a `revert` flag, e.g.:
     
-    - `theo mod-prefix-retina <gog-game-id> -revert`
+`theo mod-prefix-retina <gog-game-id> -revert`
 
 ### Where is theo data stored?
 
 theo stores all state under the current user data directory:
-
-    - on Linux that is ~/.local/share/theo
-    - on macOS that is ~/Library/Application Support/theo
+- on Linux that is ~/.local/share/theo
+- on macOS that is ~/Library/Application Support/theo
 
 ## Why theo?
 
