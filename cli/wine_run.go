@@ -55,13 +55,21 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose b
 	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
 	prefixEnv = mergeEnv(prefixEnv, env)
 
-	switch data.CurrentOS() {
+	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
 		if exePath != "" {
 			if err := macOsWineRun(id, langCode, prefixEnv, verbose, exePath); err != nil {
 				return err
 			}
 		} else if err := macOsStartGogGamesLnk(id, langCode, prefixEnv, verbose); err != nil {
+			return err
+		}
+	case vangogh_integration.Linux:
+		if exePath != "" {
+			if err := linuxWineRun(id, langCode, prefixEnv, verbose, exePath); err != nil {
+				return err
+			}
+		} else if err := linuxStartGogGamesLnk(id, langCode, prefixEnv, verbose); err != nil {
 			return err
 		}
 	default:

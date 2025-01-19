@@ -104,7 +104,7 @@ func linuxPostDownloadActions(id string, link *vangogh_integration.TheoDownloadL
 	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_integration.Linux, id)
 	defer lpda.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_integration.Linux {
+	if data.CurrentOs() != vangogh_integration.Linux {
 		return lpda.EndWithError(errors.New("Linux post-download actions are only supported on Linux"))
 	}
 

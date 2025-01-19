@@ -8,8 +8,6 @@ import (
 	"net/url"
 )
 
-const gstreamerFrameworkPath = "/Library/Frameworks/GStreamer.framework"
-
 const forceGitHubUpdatesDays = 30
 
 func UpdateWineHandler(u *url.URL) error {
@@ -18,7 +16,7 @@ func UpdateWineHandler(u *url.URL) error {
 
 func UpdateWine(force bool) error {
 
-	currentOs := data.CurrentOS()
+	currentOs := data.CurrentOs()
 
 	if currentOs == vangogh_integration.Windows {
 		err := errors.New("WINE is not required on Windows")

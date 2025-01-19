@@ -1,61 +1,33 @@
 package cli
 
 import (
-	"encoding/json"
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"net/url"
 )
 
-func cacheGitHubLatestRelease(os vangogh_integration.OperatingSystem, force bool) error {
+func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
 
-	cra := nod.Begin(" caching GitHub releases for %s...", os)
+	cra := nod.Begin(" caching GitHub releases for %s...", operatingSystem)
 	defer cra.EndWithResult("done")
-
-	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
-	if err != nil {
-		return cra.EndWithError(err)
-	}
-
-	kvGitHubReleases, err := kevlar.NewKeyValues(gitHubReleasesDir, kevlar.JsonExt)
-	if err != nil {
-		return cra.EndWithError(err)
-	}
 
 	dc := dolo.DefaultClient
 
-	for _, repo := range data.OsGitHubSources(os) {
+	for _, ghs := range data.OsGitHubSources(operatingSystem) {
 
-		rcReleases, err := kvGitHubReleases.Get(repo.OwnerRepo)
+		latestRelease, err := ghs.GetLatestRelease()
 		if err != nil {
 			return cra.EndWithError(err)
-		}
-
-		var releases []github_integration.GitHubRelease
-		if err := json.NewDecoder(rcReleases).Decode(&releases); err != nil {
-			rcReleases.Close()
-			return cra.EndWithError(err)
-		}
-
-		if err := rcReleases.Close(); err != nil {
-			return cra.EndWithError(err)
-		}
-
-		var latestRelease *github_integration.GitHubRelease
-		if len(releases) > 0 {
-			latestRelease = &releases[0]
 		}
 
 		if latestRelease == nil {
 			continue
 		}
 
-		if err := cacheRepoRelease(repo, latestRelease, dc, force); err != nil {
+		if err := cacheRepoRelease(ghs, latestRelease, dc, force); err != nil {
 			return cra.EndWithError(err)
 		}
 	}

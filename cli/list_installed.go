@@ -15,7 +15,7 @@ func ListInstalledHandler(u *url.URL) error {
 	if u.Query().Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = u.Query().Get(vangogh_integration.LanguageCodeProperty)
 	}
-	return ListInstalled(data.CurrentOS(), langCode)
+	return ListInstalled(data.CurrentOs(), langCode)
 }
 
 func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) error {

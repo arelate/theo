@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"github.com/arelate/theo/cli"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/clo"
@@ -86,6 +87,13 @@ func main() {
 		_ = ns.EndWithError(err)
 		os.Exit(1)
 	}
+
+	pth, err := data.GeProtonCustomLatestReleasePath()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(pth)
 
 	if err := defs.Serve(os.Args[1:]); err != nil {
 		_ = ns.EndWithError(err)

@@ -18,7 +18,7 @@ var operatingSystemEnvDefaults = map[vangogh_integration.OperatingSystem][]strin
 		"ROSETTA_ADVERTISE_AVX=1",
 	},
 	vangogh_integration.Linux: {
-		// https://github.com/GloriousEggroll/proton-ge-custom#modification
+		// Consider adding from https://github.com/GloriousEggroll/proton-ge-custom#modification
 	},
 }
 
@@ -53,7 +53,7 @@ func DefaultPrefixEnv(ids []string, langCode string) error {
 	defaultEnvs := make(map[string][]string, len(ids))
 	for _, id := range ids {
 		prefixName := data.GetPrefixName(id, langCode)
-		defaultEnvs[prefixName] = operatingSystemEnvDefaults[data.CurrentOS()]
+		defaultEnvs[prefixName] = operatingSystemEnvDefaults[data.CurrentOs()]
 	}
 
 	if err := rdx.BatchReplaceValues(data.PrefixEnvProperty, defaultEnvs); err != nil {

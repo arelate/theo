@@ -40,7 +40,7 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.EndWithResult("done")
 
-	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOS()}
+	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{langCode}
 
 	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
@@ -66,7 +66,7 @@ func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux, env []string
 	}
 
 	bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOS(), langCode), bundleName)
+	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOs(), langCode), bundleName)
 
 	if _, err := os.Stat(absBundlePath); err != nil {
 		return err
@@ -80,7 +80,7 @@ func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux, env []string
 }
 
 func currentOsExecute(path string, env []string, verbose bool) error {
-	switch data.CurrentOS() {
+	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
 		return macOsExecute(path, env, verbose)
 	case vangogh_integration.Windows:

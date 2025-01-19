@@ -7,7 +7,7 @@ import (
 )
 
 func UserDataHomeDir() (string, error) {
-	switch CurrentOS() {
+	switch CurrentOs() {
 	case vangogh_integration.Linux:
 		uhd, err := os.UserHomeDir()
 		if err != nil {

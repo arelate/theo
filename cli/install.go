@@ -51,7 +51,7 @@ func Install(langCode string,
 	ia := nod.Begin("installing products...")
 	defer ia.EndWithResult("done")
 
-	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOS()}
+	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{langCode}
 
 	vangogh_integration.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
@@ -64,7 +64,7 @@ func Install(langCode string,
 	if len(supported) > 0 {
 		ids = supported
 	} else {
-		ia.EndWithResult("requested products are not supported on %s", data.CurrentOS())
+		ia.EndWithResult("requested products are not supported on %s", data.CurrentOs())
 		return nil
 	}
 
@@ -133,7 +133,7 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 		return nil, fia.EndWithError(err)
 	}
 
-	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOS(), langCode))
+	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOs(), langCode))
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -190,7 +190,7 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 		}
 
 		dls := metadata.DownloadLinks.
-			FilterOperatingSystems(data.CurrentOS()).
+			FilterOperatingSystems(data.CurrentOs()).
 			FilterLanguageCodes(langCode).
 			FilterDownloadTypes(vangogh_integration.Installer)
 
@@ -206,7 +206,7 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 
 func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_integration.DownloadType, force bool) error {
 
-	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOS())
+	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOs())
 	defer coipa.EndWithResult("done")
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
@@ -235,7 +235,7 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 	}
 
 	dls := metadata.DownloadLinks.
-		FilterOperatingSystems(data.CurrentOS()).
+		FilterOperatingSystems(data.CurrentOs()).
 		FilterLanguageCodes(langCode).
 		FilterDownloadTypes(downloadTypes...)
 

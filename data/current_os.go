@@ -11,7 +11,7 @@ var goOperatingSystems = map[string]vangogh_integration.OperatingSystem{
 	"linux":   vangogh_integration.Linux,
 }
 
-func CurrentOS() vangogh_integration.OperatingSystem {
+func CurrentOs() vangogh_integration.OperatingSystem {
 	if os, ok := goOperatingSystems[runtime.GOOS]; ok {
 		return os
 	} else {

@@ -27,7 +27,7 @@ func OsLangCodeDownloadType(u *url.URL) ([]vangogh_integration.OperatingSystem, 
 
 	operatingSystems := vangogh_integration.OperatingSystemsFromUrl(u)
 	if len(operatingSystems) == 0 {
-		operatingSystems = append(operatingSystems, data.CurrentOS())
+		operatingSystems = append(operatingSystems, data.CurrentOs())
 	}
 
 	var langCodes []string

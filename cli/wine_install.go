@@ -17,6 +17,10 @@ func WineInstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
+	var env []string
+	if q.Has("env") {
+		env = strings.Split(q.Get("env"), ",")
+	}
 	removeDownloads := !q.Has("keep-downloads")
 	addSteamShortcut := !q.Has("no-steam-shortcut")
 	verbose := q.Has("verbose")
@@ -27,10 +31,11 @@ func WineInstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return WineInstall(langCode, downloadTypes, removeDownloads, addSteamShortcut, verbose, force, ids...)
+	return WineInstall(langCode, env, downloadTypes, removeDownloads, addSteamShortcut, verbose, force, ids...)
 }
 
 func WineInstall(langCode string,
+	env []string,
 	downloadTypes []vangogh_integration.DownloadType,
 	removeDownloads bool,
 	addSteamShortcut bool,
@@ -40,10 +45,10 @@ func WineInstall(langCode string,
 
 	wia := nod.Begin("installing %s versions on %s...",
 		vangogh_integration.Windows,
-		data.CurrentOS())
+		data.CurrentOs())
 	defer wia.EndWithResult("done")
 
-	if data.CurrentOS() == vangogh_integration.Windows {
+	if data.CurrentOs() == vangogh_integration.Windows {
 		wia.EndWithResult("WINE install is not required on Windows, use install")
 		return nil
 	}
@@ -82,7 +87,7 @@ func WineInstall(langCode string,
 	}
 
 	for _, id := range ids {
-		if err := wineInstallProduct(id, langCode, downloadTypes, verbose, force); err != nil {
+		if err := wineInstallProduct(id, langCode, env, downloadTypes, verbose, force); err != nil {
 			return wia.EndWithError(err)
 		}
 	}
@@ -135,9 +140,9 @@ func wineFilterNotInstalled(langCode string, ids ...string) ([]string, error) {
 	return notInstalled, nil
 }
 
-func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
+func wineInstallProduct(id, langCode string, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
 
-	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, data.CurrentOS())
+	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, data.CurrentOs())
 	defer wipa.EndWithResult("done")
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
@@ -162,9 +167,13 @@ func wineInstallProduct(id, langCode string, downloadTypes []vangogh_integration
 		}
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		switch data.CurrentOS() {
+		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
-			if err := macOsWineRun(id, langCode, nil, verbose, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
+			if err := macOsWineRun(id, langCode, env, verbose, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
+				return nil
+			}
+		case vangogh_integration.Linux:
+			if err := linuxWineRun(id, langCode, env, verbose, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
 				return nil
 			}
 		default:
@@ -184,7 +193,7 @@ func initPrefix(langCode string, verbose bool, ids ...string) error {
 
 	for _, id := range ids {
 
-		switch data.CurrentOS() {
+		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
 			if err := macOsInitPrefix(id, langCode, verbose); err != nil {
 				return cpa.EndWithError(err)

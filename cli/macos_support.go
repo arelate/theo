@@ -62,7 +62,7 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
 	defer meia.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_integration.MacOS {
+	if data.CurrentOs() != vangogh_integration.MacOS {
 		return meia.EndWithError(errors.New("extracting .pkg installers is only supported on " + vangogh_integration.MacOS.String()))
 	}
 
@@ -101,7 +101,7 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, p
 	mpea := nod.Begin(" placing product installation files...")
 	defer mpea.EndWithResult("done")
 
-	if data.CurrentOS() != vangogh_integration.MacOS {
+	if data.CurrentOs() != vangogh_integration.MacOS {
 		return mpea.EndWithError(errors.New("placing .pkg extracts is only supported on " + vangogh_integration.MacOS.String()))
 	}
 

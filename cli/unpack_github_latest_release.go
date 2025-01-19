@@ -1,83 +1,46 @@
 package cli
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
-func unpackGitHubLatestRelease(os vangogh_integration.OperatingSystem, force bool) error {
+func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
 
-	ura := nod.Begin("unpacking GitHub releases for %s...", os)
+	ura := nod.Begin("unpacking GitHub releases for %s...", operatingSystem)
 	defer ura.EndWithResult("done")
 
-	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
-	if err != nil {
-		return ura.EndWithError(err)
-	}
+	for _, ghs := range data.OsGitHubSources(operatingSystem) {
 
-	kvGitHubReleases, err := kevlar.NewKeyValues(gitHubReleasesDir, kevlar.JsonExt)
-	if err != nil {
-		return ura.EndWithError(err)
-	}
-
-	for _, repo := range data.OsGitHubSources(os) {
-
-		rcReleases, err := kvGitHubReleases.Get(repo.OwnerRepo)
+		latestRelease, err := ghs.GetLatestRelease()
 		if err != nil {
 			return ura.EndWithError(err)
 		}
 
-		var releases []github_integration.GitHubRelease
-		if err := json.NewDecoder(rcReleases).Decode(&releases); err != nil {
-			rcReleases.Close()
+		if latestRelease == nil {
+			continue
+		}
+
+		binDir, err := data.GetAbsBinariesDir(ghs, latestRelease)
+		if err != nil {
 			return ura.EndWithError(err)
 		}
 
-		if err := rcReleases.Close(); err != nil {
-			return ura.EndWithError(err)
+		if _, err := os.Stat(binDir); err == nil && !force {
+			ura.EndWithResult("already exists")
+			return nil
 		}
 
-		var latestRelease *github_integration.GitHubRelease
-		if len(releases) > 0 {
-			latestRelease = &releases[0]
-		}
-
-		if err := unpackRepoLatestRelease(repo, latestRelease, force); err != nil {
-			return ura.EndWithError(err)
-		}
-	}
-
-	return nil
-}
-
-func unpackRepoLatestRelease(ghs *data.GitHubSource, release *github_integration.GitHubRelease, force bool) error {
-
-	urra := nod.Begin(" %s...", ghs.OwnerRepo)
-	defer urra.EndWithResult("done")
-
-	binDir, err := data.GetAbsBinariesDir(ghs)
-	if err != nil {
-		return urra.EndWithError(err)
-	}
-
-	if _, err := os.Stat(binDir); err == nil && !force {
-		urra.EndWithResult("already exists")
-		return nil
-	}
-
-	if asset := ghs.GetAsset(release); asset != nil {
-
-		if err := unpackAsset(ghs, release, asset); err != nil {
-			return urra.EndWithError(err)
+		if asset := ghs.GetAsset(latestRelease); asset != nil {
+			if err := unpackAsset(ghs, latestRelease, asset); err != nil {
+				return ura.EndWithError(err)
+			}
 		}
 	}
 
@@ -86,7 +49,7 @@ func unpackRepoLatestRelease(ghs *data.GitHubSource, release *github_integration
 
 func unpackAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) error {
 
-	uaa := nod.Begin(" - unpacking %s, please wait...", asset.Name)
+	uaa := nod.Begin(" unpacking %s, please wait...", asset.Name)
 	defer uaa.EndWithResult("done")
 
 	absPackedAssetPath, err := data.GetAbsReleaseAssetPath(ghs, release, asset)
@@ -94,7 +57,7 @@ func unpackAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelea
 		return uaa.EndWithError(err)
 	}
 
-	absBinDir, err := data.GetAbsBinariesDir(ghs)
+	absBinDir, err := data.GetAbsBinariesDir(ghs, release)
 	if err != nil {
 		return uaa.EndWithError(err)
 	}

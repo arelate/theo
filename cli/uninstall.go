@@ -43,7 +43,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		return ua.EndWithError(err)
 	}
 
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOS().String(), langCode)
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOs().String(), langCode)
 
 	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
@@ -95,7 +95,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 }
 
 func currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName string) error {
-	currentOs := data.CurrentOS()
+	currentOs := data.CurrentOs()
 	switch currentOs {
 	case vangogh_integration.MacOS:
 		fallthrough

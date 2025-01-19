@@ -11,7 +11,7 @@ func TheoExecutable() (string, error) {
 
 	binFilename := "theo"
 
-	switch CurrentOS() {
+	switch CurrentOs() {
 	case vangogh_integration.Windows:
 		binFilename += ".exe"
 	case vangogh_integration.Linux:

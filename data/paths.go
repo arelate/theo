@@ -86,18 +86,16 @@ var AllAbsDirs = []pathways.AbsDir{
 	Prefixes,
 }
 
-func GetAbsBinariesDir(ghs *GitHubSource) (string, error) {
-
-	binDir, err := pathways.GetAbsRelDir(Binaries)
+func GetAbsBinariesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
+	binariesDir, err := pathways.GetAbsRelDir(Binaries)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(binDir, ghs.OwnerRepo), nil
+	return filepath.Join(binariesDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
 }
 
 func GetAbsReleasesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
-
 	assetsDir, err := pathways.GetAbsRelDir(Assets)
 	if err != nil {
 		return "", err

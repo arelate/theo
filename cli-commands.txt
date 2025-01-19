@@ -131,6 +131,7 @@ version
 wine-install
     id^&*
     lang-code
+    env&
     download-type&
     keep-downloads
     no-steam-shortcut
