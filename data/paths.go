@@ -51,7 +51,6 @@ const (
 	Metadata      pathways.AbsDir = "metadata"
 	Downloads     pathways.AbsDir = "downloads"
 	Wine          pathways.AbsDir = "wine"
-	GitHubSources pathways.AbsDir = "github-sources"
 	InstalledApps pathways.AbsDir = "installed-apps"
 	Prefixes      pathways.AbsDir = "prefixes"
 )
@@ -83,7 +82,6 @@ var AllAbsDirs = []pathways.AbsDir{
 	Metadata,
 	Downloads,
 	Wine,
-	GitHubSources,
 	InstalledApps,
 	Prefixes,
 }
@@ -95,7 +93,7 @@ func GetAbsBinariesDir(ghs *GitHubSource, release *github_integration.GitHubRele
 		return "", err
 	}
 
-	return filepath.Join(binDir, ghs.String(), busan.Sanitize(release.TagName)), nil
+	return filepath.Join(binDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
 }
 
 func GetAbsReleasesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
@@ -105,7 +103,7 @@ func GetAbsReleasesDir(ghs *GitHubSource, release *github_integration.GitHubRele
 		return "", err
 	}
 
-	return filepath.Join(releasesDir, ghs.String(), busan.Sanitize(release.TagName)), nil
+	return filepath.Join(releasesDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
 }
 
 func GetAbsReleaseAssetPath(ghs *GitHubSource, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) (string, error) {

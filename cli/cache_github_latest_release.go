@@ -30,18 +30,9 @@ func cacheGitHubLatestRelease(force bool) error {
 
 	dc := dolo.DefaultClient
 
-	githubSources, err := data.LoadGitHubSources()
-	if err != nil {
-		return cra.EndWithError(err)
-	}
+	for _, repo := range data.OsGitHubSources(currentOs) {
 
-	for _, repo := range githubSources {
-
-		if repo.OS != data.CurrentOS() {
-			continue
-		}
-
-		rcReleases, err := kvGitHubReleases.Get(repo.String())
+		rcReleases, err := kvGitHubReleases.Get(repo.OwnerRepo)
 		if err != nil {
 			return cra.EndWithError(err)
 		}
@@ -78,7 +69,7 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.EndWithResult("done")
 
-	asset := ghs.SelectAsset(release)
+	asset := ghs.GetAsset(release)
 	if asset == nil {
 		crra.EndWithResult("asset not found")
 		return nil

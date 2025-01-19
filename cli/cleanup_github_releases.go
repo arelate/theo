@@ -29,16 +29,7 @@ func cleanupGitHubReleases() error {
 		return cra.EndWithError(err)
 	}
 
-	githubSources, err := data.LoadGitHubSources()
-	if err != nil {
-		return cra.EndWithError(err)
-	}
-
-	for _, repo := range githubSources {
-
-		if repo.OS != currentOs {
-			continue
-		}
+	for _, repo := range data.OsGitHubSources(currentOs) {
 
 		if err := cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
 			return cra.EndWithError(err)
@@ -49,10 +40,10 @@ func cleanupGitHubReleases() error {
 }
 
 func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues) error {
-	crra := nod.Begin(" %s...", ghs.String())
+	crra := nod.Begin(" %s...", ghs.OwnerRepo)
 	defer crra.EndWithResult("done")
 
-	rcReleases, err := kvGitHubReleases.Get(ghs.String())
+	rcReleases, err := kvGitHubReleases.Get(ghs.OwnerRepo)
 	if err != nil {
 		return crra.EndWithError(err)
 	}
@@ -70,7 +61,7 @@ func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValu
 			continue
 		}
 
-		asset := ghs.SelectAsset(&release)
+		asset := ghs.GetAsset(&release)
 		if asset == nil {
 			continue
 		}

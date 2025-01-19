@@ -1,368 +1,47 @@
 package data
 
 import (
-	"bytes"
 	_ "embed"
-	"errors"
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/wits"
-	"io"
-	"net/url"
-	"os"
-	"path"
-	"path/filepath"
 	"strings"
 )
 
-const (
-	wineSourcesFilename = "wine.txt"
-	dxVkSourcesFilename = "dxvk.txt"
-)
-
-var (
-	//go:embed "default_sources/wine.txt"
-	defaultWineSources []byte
-	//go:embed "default_sources/dxvk.txt"
-	defaultDxVkSources []byte
-)
-
 type GitHubSource struct {
-	OS           vangogh_integration.OperatingSystem
-	Owner        string
-	Repo         string
-	Description  string
-	AssetInclude []string
-	AssetExclude []string
-	Default      bool
+	OwnerRepo string
+	Asset     string
 }
 
-type WineGitHubSource struct {
-	*GitHubSource
-	BinaryPath string
+var geProtonCustom = &GitHubSource{
+	OwnerRepo: "GloriousEggroll/proton-ge-custom",
+	Asset:     ".tar.gz",
 }
 
-func (ghs *GitHubSource) String() string {
-	return path.Join(ghs.Owner, ghs.Repo)
+var umuLauncher = &GitHubSource{
+	OwnerRepo: "Open-Wine-Components/umu-launcher",
+	Asset:     "Zipapp.zip",
 }
 
-func (ghs *GitHubSource) CurrentOsMatches(owner, repo string) bool {
-	if ghs.OS == CurrentOS() &&
-		ghs.Repo == repo {
-		if (owner != "" && ghs.Owner == owner) || owner == "" {
-			return true
-		}
-	}
-	return false
-}
-
-func (ghs *GitHubSource) SelectAsset(release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
+func (ghs *GitHubSource) GetAsset(release *github_integration.GitHubRelease) *github_integration.GitHubAsset {
 
 	if len(release.Assets) == 1 {
 		return &release.Assets[0]
 	}
 
-	filteredAssets := make([]github_integration.GitHubAsset, 0, len(release.Assets))
-
 	for _, asset := range release.Assets {
-		skipAsset := false
-		for _, exc := range ghs.AssetExclude {
-			if exc != "" && strings.Contains(asset.Name, exc) {
-				skipAsset = true
-			}
-		}
-		if skipAsset {
-			continue
-		}
-		filteredAssets = append(filteredAssets, asset)
-	}
-
-	if len(filteredAssets) == 1 {
-		return &filteredAssets[0]
-	}
-
-	for _, asset := range filteredAssets {
-		for _, inc := range ghs.AssetInclude {
-			if inc != "" && strings.Contains(asset.Name, inc) {
-				return &asset
-			}
+		if strings.Contains(asset.Name, ghs.Asset) {
+			return &asset
 		}
 	}
 
 	return nil
 }
 
-func parseGitHubSource(u *url.URL, pkv wits.KeyValue) (*GitHubSource, error) {
-
-	owner, repo := path.Split(u.Path)
-	owner = strings.Trim(owner, "/")
-
-	ghs := &GitHubSource{
-		Owner: owner,
-		Repo:  repo,
+func OsGitHubSources(os vangogh_integration.OperatingSystem) []*GitHubSource {
+	switch os {
+	case vangogh_integration.Linux:
+		return []*GitHubSource{geProtonCustom, umuLauncher}
+	default:
+		return nil
 	}
-
-	for key, value := range pkv {
-		switch key {
-		case "os":
-			if os := vangogh_integration.ParseOperatingSystem(value); os != vangogh_integration.AnyOperatingSystem {
-				ghs.OS = os
-			} else {
-				return nil, errors.New("WINE source specifies unknown operating system")
-			}
-		case "desc":
-			ghs.Description = value
-		case "assets-include":
-			ghs.AssetInclude = strings.Split(value, ";")
-		case "assets-exclude":
-			ghs.AssetExclude = strings.Split(value, ";")
-		case "default":
-			ghs.Default = value == "true"
-
-		}
-	}
-
-	return ghs, nil
-}
-
-func parseWineSource(u *url.URL, pkv wits.KeyValue) (*WineGitHubSource, error) {
-
-	ghs, err := parseGitHubSource(u, pkv)
-	if err != nil {
-		return nil, err
-	}
-
-	wineSource := &WineGitHubSource{
-		GitHubSource: ghs,
-	}
-
-	for key, value := range pkv {
-		switch key {
-		case "bin-path":
-			wineSource.BinaryPath = value
-		}
-	}
-
-	return wineSource, nil
-}
-
-func loadGitHubSectionKeyValue(relSourcePath string) (map[*url.URL]wits.KeyValue, error) {
-
-	githubSourcesDir, err := pathways.GetAbsDir(GitHubSources)
-	if err != nil {
-		return nil, err
-	}
-
-	absSourcesPath := filepath.Join(githubSourcesDir, relSourcePath)
-
-	sourcesFile, err := os.Open(absSourcesPath)
-	if err != nil {
-		return nil, err
-	}
-
-	skvSources, err := wits.ReadSectionKeyValue(sourcesFile)
-	if err != nil {
-		return nil, err
-	}
-
-	urlKv := make(map[*url.URL]wits.KeyValue)
-
-	for urlStr, kv := range skvSources {
-		sourceUrl, err := url.Parse(urlStr)
-		if err != nil {
-			return nil, err
-		}
-
-		urlKv[sourceUrl] = kv
-	}
-
-	return urlKv, nil
-}
-
-func LoadWineSources() ([]*WineGitHubSource, error) {
-
-	urlKv, err := loadGitHubSectionKeyValue(wineSourcesFilename)
-	if err != nil {
-		return nil, err
-	}
-
-	wineSources := make([]*WineGitHubSource, 0)
-
-	for sourceUrl, kv := range urlKv {
-		wineSource, err := parseWineSource(sourceUrl, kv)
-		if err != nil {
-			return nil, err
-		}
-		wineSources = append(wineSources, wineSource)
-	}
-
-	return wineSources, nil
-}
-
-func LoadDxVkSources() ([]*GitHubSource, error) {
-	urlKv, err := loadGitHubSectionKeyValue(dxVkSourcesFilename)
-	if err != nil {
-		return nil, err
-	}
-
-	dxVkSources := make([]*GitHubSource, 0)
-
-	for sourceUrl, kv := range urlKv {
-		dxVkSource, err := parseGitHubSource(sourceUrl, kv)
-		if err != nil {
-			return nil, err
-		}
-		dxVkSources = append(dxVkSources, dxVkSource)
-	}
-
-	return dxVkSources, nil
-}
-
-func LoadGitHubSources() ([]*GitHubSource, error) {
-	githubSources := make([]*GitHubSource, 0)
-
-	wineSources, err := LoadWineSources()
-	if err != nil {
-		return nil, err
-	}
-	for _, ws := range wineSources {
-		githubSources = append(githubSources, ws.GitHubSource)
-	}
-
-	dxVkSources, err := LoadDxVkSources()
-	if err != nil {
-		return nil, err
-	}
-	githubSources = append(githubSources, dxVkSources...)
-
-	return githubSources, nil
-}
-
-func splitOwnerRepo(gitHubRepo string) (string, string) {
-	owner, repo := "", ""
-	if strings.Contains(gitHubRepo, "/") {
-		owner, repo = path.Split(gitHubRepo)
-		owner = strings.TrimSuffix(owner, "/")
-	} else {
-		repo = gitHubRepo
-	}
-	return owner, repo
-}
-
-func GetWineSource(wineRepo string) (*WineGitHubSource, error) {
-
-	owner, repo := splitOwnerRepo(wineRepo)
-	if repo == "" {
-		return getDefaultWineSource()
-	}
-
-	wineSources, err := LoadWineSources()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, ws := range wineSources {
-		if ws.CurrentOsMatches(owner, repo) {
-			return ws, nil
-		}
-	}
-	return nil, errors.New("WINE source not found")
-}
-
-func getDefaultWineSource() (*WineGitHubSource, error) {
-
-	wineSources, err := LoadWineSources()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(wineSources) == 1 {
-		return wineSources[0], nil
-	}
-
-	for _, ws := range wineSources {
-		if ws.OS == CurrentOS() &&
-			ws.Default {
-			return ws, nil
-		}
-	}
-
-	return nil, errors.New("cannot determine default WINE source for " + CurrentOS().String())
-}
-
-func getDefaultDxVkSource() (*GitHubSource, error) {
-	dxVkSources, err := LoadDxVkSources()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(dxVkSources) == 1 {
-		return dxVkSources[0], nil
-	}
-
-	for _, ds := range dxVkSources {
-		if ds.OS == CurrentOS() &&
-			ds.Default {
-			return ds, nil
-		}
-	}
-
-	return nil, errors.New("cannot determine default DXVK source for " + CurrentOS().String())
-}
-
-func GetDxVkSource(dxVkRepo string) (*GitHubSource, error) {
-
-	owner, repo := splitOwnerRepo(dxVkRepo)
-	if repo == "" {
-		return getDefaultDxVkSource()
-	}
-
-	githubSources, err := LoadDxVkSources()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, gs := range githubSources {
-		if gs.CurrentOsMatches(owner, repo) {
-			return gs, nil
-		}
-	}
-	return nil, errors.New("DXVK source not found")
-}
-
-func InitGitHubSources() error {
-
-	githubSourcesDir, err := pathways.GetAbsDir(GitHubSources)
-	if err != nil {
-		return err
-	}
-
-	absWineSourcesPath := filepath.Join(githubSourcesDir, wineSourcesFilename)
-	if err := createIfNotExist(absWineSourcesPath, defaultWineSources); err != nil {
-		return err
-	}
-
-	absDxVkSourcesPath := filepath.Join(githubSourcesDir, dxVkSourcesFilename)
-	if err := createIfNotExist(absDxVkSourcesPath, defaultDxVkSources); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func createIfNotExist(absPath string, defaultContent []byte) error {
-	if _, err := os.Stat(absPath); os.IsNotExist(err) {
-		wsFile, err := os.Create(absPath)
-		if err != nil {
-			return err
-		}
-
-		defer wsFile.Close()
-
-		if _, err := io.Copy(wsFile, bytes.NewReader(defaultContent)); err != nil {
-			return err
-		}
-	}
-	return nil
 }

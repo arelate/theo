@@ -38,11 +38,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := data.InitGitHubSources(); err != nil {
-		_ = ns.EndWithError(err)
-		os.Exit(1)
-	}
-
 	defs, err := clo.Load(
 		bytes.NewBuffer(cliCommands),
 		bytes.NewBuffer(cliHelp),

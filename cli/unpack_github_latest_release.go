@@ -39,18 +39,9 @@ func unpackGitHubLatestRelease(force bool) error {
 		return ura.EndWithError(err)
 	}
 
-	githubSources, err := data.LoadGitHubSources()
-	if err != nil {
-		return ura.EndWithError(err)
-	}
+	for _, repo := range data.OsGitHubSources(currentOs) {
 
-	for _, repo := range githubSources {
-
-		if repo.OS != currentOs {
-			continue
-		}
-
-		rcReleases, err := kvGitHubReleases.Get(repo.String())
+		rcReleases, err := kvGitHubReleases.Get(repo.OwnerRepo)
 		if err != nil {
 			return ura.EndWithError(err)
 		}
@@ -80,7 +71,7 @@ func unpackGitHubLatestRelease(force bool) error {
 
 func unpackRepoLatestRelease(ghs *data.GitHubSource, release *github_integration.GitHubRelease, force bool) error {
 
-	urra := nod.Begin(" %s...", ghs.String())
+	urra := nod.Begin(" %s...", ghs.OwnerRepo)
 	defer urra.EndWithResult("done")
 
 	binDir, err := data.GetAbsBinariesDir(ghs, release)
@@ -93,7 +84,7 @@ func unpackRepoLatestRelease(ghs *data.GitHubSource, release *github_integration
 		return nil
 	}
 
-	if asset := ghs.SelectAsset(release); asset != nil {
+	if asset := ghs.GetAsset(release); asset != nil {
 
 		if err := unpackAsset(ghs, release, asset); err != nil {
 			return urra.EndWithError(err)

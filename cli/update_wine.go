@@ -25,7 +25,7 @@ func UpdateWine(force bool) error {
 		return err
 	}
 
-	uwa := nod.Begin("updating WINE for %s...", currentOs)
+	uwa := nod.Begin("updating WINE dependencies for %s...", currentOs)
 	defer uwa.EndWithResult("done")
 
 	if err := getGitHubReleases(force); err != nil {

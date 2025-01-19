@@ -8,6 +8,7 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/http"
+	"path"
 	"time"
 )
 
@@ -38,20 +39,11 @@ func getGitHubReleases(force bool) error {
 		return gra.EndWithError(err)
 	}
 
-	githubSources, err := data.LoadGitHubSources()
-	if err != nil {
-		return gra.EndWithError(err)
-	}
-
 	forceRepoUpdate := force
 
-	for _, repo := range githubSources {
+	for _, repo := range data.OsGitHubSources(currentOs) {
 
-		if repo.OS != currentOs {
-			continue
-		}
-
-		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.String()); ok && ghsu != "" {
+		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.OwnerRepo); ok && ghsu != "" {
 			if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
 				if ghsut.AddDate(0, 0, forceGitHubUpdatesDays).Before(time.Now()) {
 					forceRepoUpdate = true
@@ -69,10 +61,10 @@ func getGitHubReleases(force bool) error {
 
 func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx kevlar.WriteableRedux, force bool) error {
 
-	grlra := nod.Begin(" %s...", ghs.String())
+	grlra := nod.Begin(" %s...", ghs.OwnerRepo)
 	defer grlra.EndWithResult("done")
 
-	has, err := kvGitHubReleases.Has(ghs.String())
+	has, err := kvGitHubReleases.Has(ghs.OwnerRepo)
 	if err != nil {
 		return grlra.EndWithError(err)
 	}
@@ -82,7 +74,7 @@ func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, 
 		return nil
 	}
 
-	ghsu := github_integration.ReleasesUrl(ghs.Owner, ghs.Repo)
+	ghsu := github_integration.ReleasesUrl(path.Split(ghs.OwnerRepo))
 
 	resp, err := http.DefaultClient.Get(ghsu.String())
 	if err != nil {
@@ -94,11 +86,11 @@ func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, 
 		return grlra.EndWithError(errors.New(resp.Status))
 	}
 
-	if err := kvGitHubReleases.Set(ghs.String(), resp.Body); err != nil {
+	if err := kvGitHubReleases.Set(ghs.OwnerRepo, resp.Body); err != nil {
 		return grlra.EndWithError(err)
 	}
 
 	ft := time.Now().Format(time.RFC3339)
-	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, ghs.String(), ft)
+	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, ghs.OwnerRepo, ft)
 
 }
