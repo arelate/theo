@@ -15,6 +15,7 @@ func UserDataHomeDir() (string, error) {
 		}
 		return filepath.Join(uhd, ".local", "share"), nil
 	case vangogh_integration.Windows:
+		// TODO: verify that Windows user data home is also os.UserConfigDir
 		fallthrough
 	case vangogh_integration.MacOS:
 		return os.UserConfigDir()

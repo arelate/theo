@@ -98,7 +98,7 @@ Additionally you can use the following commands to manage Steam shortcuts:
 
 ### Retina mode for Windows installations on macOS
 
-theo provides `mod-prefix-retina` command to set Retina (high DPI). See more information [here](https://gitlab.winehq.org/wine/wine/-/wikis/Commands/winecfg#screen-resolution-dpi-setting). To revert this change use the command with a `revert` flag, e.g.:
+theo provides `mod-prefix-retina` command to set Retina mode. See more information [here](https://gitlab.winehq.org/wine/wine/-/wikis/Commands/winecfg#screen-resolution-dpi-setting). To revert this change use the command with a `revert` flag, e.g.:
     
 `theo mod-prefix-retina <gog-game-id> -revert`
 
@@ -108,7 +108,7 @@ theo stores all state under the current user data directory:
 - on Linux that is ~/.local/share/theo
 - on macOS that is ~/Library/Application Support/theo
 
-## Why theo?
+## Why is it called theo?
 
 Theodorus van Gogh 1 May 1857 – 25 January 1891) was a Dutch art dealer and the younger brother of Vincent van Gogh. Known as Theo, his support of his older brother's artistic ambitions and well-being allowed Vincent to devote himself entirely to painting. As an art dealer, Theo van Gogh played a crucial role in introducing contemporary French art to the public.
 
