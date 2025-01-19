@@ -4,9 +4,13 @@ theo is a command-line (CLI) client for [vangogh](https://github.com/arelate/van
 
 ## Installing theo
 
-To install theo you'll need a Go installed on your machine. Please follow [official instructions](https://go.dev/doc/install) to do that.
+To install theo you'll need Go installed on your machine. Please follow [official instructions](https://go.dev/doc/install) to do that.
 
 When Go is properly installed, you can then run `go install github.com/arelate/theo@latest` to install the latest available version of theo.
+
+Alternatively theo can be compiled from source. For example to compile for Steam Deck (on another operating system):
+
+`GOOS=linux GOARCH=amd64 go build -o theo`
 
 ## Configure theo to connect to vangogh
 
@@ -32,7 +36,7 @@ More helpful commands:
 
 `theo list-installed` - will print all currently installed games
 
-`theo reveal-installed` - will open the directory containing game installation
+`theo reveal-installed <gog-game-id>` - will open the directory containing game installation
 
 ## Installing Windows versions on macOS, Linux with theo
 
