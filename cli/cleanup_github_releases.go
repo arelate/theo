@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"github.com/arelate/southern_light/github_integration"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
@@ -12,11 +13,9 @@ import (
 	"path/filepath"
 )
 
-func cleanupGitHubReleases() error {
+func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 
-	currentOs := data.CurrentOS()
-
-	cra := nod.Begin("cleaning up cached GitHub releases, keeping the latest...")
+	cra := nod.Begin("cleaning up cached GitHub releases, keeping the latest for %s...", os)
 	defer cra.EndWithResult("done")
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
@@ -29,7 +28,7 @@ func cleanupGitHubReleases() error {
 		return cra.EndWithError(err)
 	}
 
-	for _, repo := range data.OsGitHubSources(currentOs) {
+	for _, repo := range data.OsGitHubSources(os) {
 
 		if err := cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
 			return cra.EndWithError(err)

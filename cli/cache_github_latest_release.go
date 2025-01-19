@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"github.com/arelate/southern_light/github_integration"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/kevlar"
@@ -11,11 +12,9 @@ import (
 	"net/url"
 )
 
-func cacheGitHubLatestRelease(force bool) error {
+func cacheGitHubLatestRelease(os vangogh_integration.OperatingSystem, force bool) error {
 
-	currentOs := data.CurrentOS()
-
-	cra := nod.Begin(" caching GitHub releases for %s...", currentOs)
+	cra := nod.Begin(" caching GitHub releases for %s...", os)
 	defer cra.EndWithResult("done")
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
@@ -30,7 +29,7 @@ func cacheGitHubLatestRelease(force bool) error {
 
 	dc := dolo.DefaultClient
 
-	for _, repo := range data.OsGitHubSources(currentOs) {
+	for _, repo := range data.OsGitHubSources(os) {
 
 		rcReleases, err := kvGitHubReleases.Get(repo.OwnerRepo)
 		if err != nil {

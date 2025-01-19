@@ -3,20 +3,19 @@ package cli
 import (
 	"errors"
 	"github.com/arelate/southern_light/github_integration"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/http"
-	"path"
+	"strings"
 	"time"
 )
 
-func getGitHubReleases(force bool) error {
+func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error {
 
-	currentOs := data.CurrentOS()
-
-	gra := nod.Begin(" getting GitHub releases for %s...", currentOs)
+	gra := nod.Begin(" getting GitHub releases for %s...", os)
 	defer gra.EndWithResult("done")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
@@ -41,7 +40,7 @@ func getGitHubReleases(force bool) error {
 
 	forceRepoUpdate := force
 
-	for _, repo := range data.OsGitHubSources(currentOs) {
+	for _, repo := range data.OsGitHubSources(os) {
 
 		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.OwnerRepo); ok && ghsu != "" {
 			if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
@@ -74,7 +73,8 @@ func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, 
 		return nil
 	}
 
-	ghsu := github_integration.ReleasesUrl(path.Split(ghs.OwnerRepo))
+	owner, repo, _ := strings.Cut(ghs.OwnerRepo, "/")
+	ghsu := github_integration.ReleasesUrl(owner, repo)
 
 	resp, err := http.DefaultClient.Get(ghsu.String())
 	if err != nil {

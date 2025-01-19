@@ -50,7 +50,7 @@ const (
 	Backups       pathways.AbsDir = "backups"
 	Metadata      pathways.AbsDir = "metadata"
 	Downloads     pathways.AbsDir = "downloads"
-	Wine          pathways.AbsDir = "wine"
+	Runtimes      pathways.AbsDir = "runtimes"
 	InstalledApps pathways.AbsDir = "installed-apps"
 	Prefixes      pathways.AbsDir = "prefixes"
 )
@@ -61,7 +61,7 @@ const (
 	InstalledMetadata pathways.RelDir = "installed"
 	MacOsExtracts     pathways.RelDir = "_macos_extracts"
 	GitHubReleases    pathways.RelDir = "github-releases"
-	Releases          pathways.RelDir = "releases"
+	Assets            pathways.RelDir = "assets"
 	Binaries          pathways.RelDir = "binaries"
 	PrefixArchive     pathways.RelDir = "prefix-archive"
 )
@@ -71,8 +71,8 @@ var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	TheoMetadata:      Metadata,
 	InstalledMetadata: Metadata,
 	GitHubReleases:    Metadata,
-	Releases:          Wine,
-	Binaries:          Wine,
+	Assets:            Runtimes,
+	Binaries:          Runtimes,
 	PrefixArchive:     Backups,
 	MacOsExtracts:     Downloads,
 }
@@ -81,29 +81,29 @@ var AllAbsDirs = []pathways.AbsDir{
 	Backups,
 	Metadata,
 	Downloads,
-	Wine,
+	Runtimes,
 	InstalledApps,
 	Prefixes,
 }
 
-func GetAbsBinariesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
+func GetAbsBinariesDir(ghs *GitHubSource) (string, error) {
 
 	binDir, err := pathways.GetAbsRelDir(Binaries)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(binDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
+	return filepath.Join(binDir, ghs.OwnerRepo), nil
 }
 
 func GetAbsReleasesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
 
-	releasesDir, err := pathways.GetAbsRelDir(Releases)
+	assetsDir, err := pathways.GetAbsRelDir(Assets)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(releasesDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
+	return filepath.Join(assetsDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
 }
 
 func GetAbsReleaseAssetPath(ghs *GitHubSource, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) (string, error) {

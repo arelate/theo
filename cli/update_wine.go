@@ -28,19 +28,19 @@ func UpdateWine(force bool) error {
 	uwa := nod.Begin("updating WINE dependencies for %s...", currentOs)
 	defer uwa.EndWithResult("done")
 
-	if err := getGitHubReleases(force); err != nil {
+	if err := getGitHubReleases(currentOs, force); err != nil {
 		return uwa.EndWithError(err)
 	}
 
-	if err := cacheGitHubLatestRelease(force); err != nil {
+	if err := cacheGitHubLatestRelease(currentOs, force); err != nil {
 		return uwa.EndWithError(err)
 	}
 
-	if err := cleanupGitHubReleases(); err != nil {
+	if err := cleanupGitHubReleases(currentOs); err != nil {
 		return uwa.EndWithError(err)
 	}
 
-	if err := unpackGitHubLatestRelease(force); err != nil {
+	if err := unpackGitHubLatestRelease(currentOs, force); err != nil {
 		return uwa.EndWithError(err)
 	}
 

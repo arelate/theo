@@ -10,14 +10,15 @@ import (
 type GitHubSource struct {
 	OwnerRepo string
 	Asset     string
+	Unpack    []string
 }
 
-var geProtonCustom = &GitHubSource{
+var GeProtonCustom = &GitHubSource{
 	OwnerRepo: "GloriousEggroll/proton-ge-custom",
 	Asset:     ".tar.gz",
 }
 
-var umuLauncher = &GitHubSource{
+var UmuLauncher = &GitHubSource{
 	OwnerRepo: "Open-Wine-Components/umu-launcher",
 	Asset:     "Zipapp.zip",
 }
@@ -40,7 +41,7 @@ func (ghs *GitHubSource) GetAsset(release *github_integration.GitHubRelease) *gi
 func OsGitHubSources(os vangogh_integration.OperatingSystem) []*GitHubSource {
 	switch os {
 	case vangogh_integration.Linux:
-		return []*GitHubSource{geProtonCustom, umuLauncher}
+		return []*GitHubSource{GeProtonCustom, UmuLauncher}
 	default:
 		return nil
 	}
