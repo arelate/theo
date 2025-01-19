@@ -6,16 +6,16 @@ theo is a command-line (CLI) client for [vangogh](https://github.com/arelate/van
 
 To install theo you'll need a Go installed on your machine. Please follow [official instructions](https://go.dev/doc/install) to do that.
 
-Assuming Go is properly installed, you can then run `go install github.com/arelate/theo@latest` to install the latest available version of theo.
+When Go is properly installed, you can then run `go install github.com/arelate/theo@latest` to install the latest available version of theo.
 
 ## Configure theo to connect to vangogh
 
 Before using any of the commands below, theo needs to be set up to connect to vangogh:
 
-    - `theo set-vangogh-connection <protocol> <address> <port> <username> <password>` - you need to provide at the very least address (e.g. vangogh.example.com), username and password for users authorized to download from that vangogh instance
+    - `theo set-vangogh-connection <protocol> <address> <port> <username> <password>` - you need to provide address (e.g. vangogh.example.com), username and password  for users authorized to download from that vangogh instance. Other parameters are optional
     - `theo test-vangogh-connection` - will perform a series of connectivity and authorization tests to validate your settings
 
-This is only need to be done once and theo will use those settings from that moment. If you ever need to reset this configuration, `reset-vangogh-connection` can help with that.
+This is only needed to be done once and theo will use those settings from that moment. If you ever need to reset this configuration, `reset-vangogh-connection` can help with that.
 
 ## Installing native versions with theo
 
@@ -38,10 +38,9 @@ theo provides a set of commands to manage Windows versions on macOS, Linux using
     - `theo wine-run <gog-game-id>` - will run installed version of a game
     - `theo wine-uninstall <gog-game-id> -force` - will uninstall a game
 
-This functionality depends on:
+On macOS this functionality **requires** a version of [CrossOver](https://www.codeweavers.com/crossover) purchased and licensed for the current user. 
 
-    - macOS: A version of [CrossOver](https://www.codeweavers.com/crossover) purchased and licensed for the current user is required to use WINE-related functionality
-    - Linux: theo will use [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) and [GE-Proton](https://github.com/GloriousEggroll/proton-ge-custom). You don't need to do anything, theo will get the latest versions for you automatically as needed
+On Linux theo will use [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) and [GE-Proton](https://github.com/GloriousEggroll/proton-ge-custom). You don't need to do anything, theo will get the latest versions for you automatically as needed.
 
 More helpful commands:
 
@@ -54,8 +53,9 @@ More helpful commands:
 theo allows you to specify [language](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) version to use, when available on GOG and setup on vangogh:
 
     - `theo install <gog-game-id> -lang-code ja` - will install Japanese version of a game (if it's available)
+    - `theo run <gog-game-id> -lang-code ja` - will run Japanese version of a game (if it's installed)
 
-You need to specify language code for every command (e.g. `run`, `uninstall`, `reveal-installed`).
+You need to specify language code for every command (e.g. `run`, `uninstall`, `reveal-installed`). With this functionality you can have multiple version of the same game in different languages installed at the same time (applies to native and Windows versions).
 
 ### Environment variables for Windows version
 
@@ -102,6 +102,6 @@ theo stores all state under the current user data directory:
 
 Theodorus van Gogh 1 May 1857 – 25 January 1891) was a Dutch art dealer and the younger brother of Vincent van Gogh. Known as Theo, his support of his older brother's artistic ambitions and well-being allowed Vincent to devote himself entirely to painting. As an art dealer, Theo van Gogh played a crucial role in introducing contemporary French art to the public.
 
-## Windows support in theo
+## Windows client?
 
-NOTE: Implementing (native installations) Windows support in the future should be relatively straightforward - a good starting point would be adding actual implementations for stub functions in [cli/windows_support.go](https://github.com/arelate/theo/blob/main/cli/windows_support.go) and then testing assumptions - e.g. [data/user_dirs.go](https://github.com/arelate/theo/blob/main/data/user_dirs.go).
+Implementing (native installations) Windows support in the future should be relatively straightforward - a good starting point would be adding actual implementations for stub functions in [cli/windows_support.go](https://github.com/arelate/theo/blob/main/cli/windows_support.go) and then testing assumptions - e.g. [data/user_dirs.go](https://github.com/arelate/theo/blob/main/data/user_dirs.go). At the moment this is not a priority, but might happen in the future.
