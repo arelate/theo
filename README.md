@@ -1,6 +1,6 @@
 # theo
 
-theo is a command-line (CLI) client for [vangogh](https://github.com/arelate/vangogh) that allows downloading, installing, etc games from your local DRM-free collection. At the moment theo implements support for macOS and Linux (tested on Steam Deck).
+theo is a command-line (CLI) client for [vangogh](https://github.com/arelate/vangogh) that allows downloading, installing and running games from your local DRM-free collection. At the moment theo implements support for macOS and Linux, tested on Steam Deck.
 
 ## Installing theo
 
@@ -100,7 +100,7 @@ theo stores all state under the current user data directory:
 
 ## Why theo?
 
-`Theodorus van Gogh 1 May 1857 – 25 January 1891) was a Dutch art dealer and the younger brother of Vincent van Gogh. Known as Theo, his support of his older brother's artistic ambitions and well-being allowed Vincent to devote himself entirely to painting. As an art dealer, Theo van Gogh played a crucial role in introducing contemporary French art to the public.`
+Theodorus van Gogh 1 May 1857 – 25 January 1891) was a Dutch art dealer and the younger brother of Vincent van Gogh. Known as Theo, his support of his older brother's artistic ambitions and well-being allowed Vincent to devote himself entirely to painting. As an art dealer, Theo van Gogh played a crucial role in introducing contemporary French art to the public.
 
 ## Windows support in theo
 
