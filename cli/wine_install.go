@@ -173,11 +173,13 @@ func wineInstallProduct(id, langCode string, env []string, downloadTypes []vango
 
 		switch currentOs {
 		case vangogh_integration.MacOS:
-			if err := macOsWineRun(id, langCode, env, verbose, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
+			if err := macOsWineRun(id, langCode, env, verbose, absInstallerPath,
+				"/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
 				return nil
 			}
 		case vangogh_integration.Linux:
-			if err := linuxWineRun(id, langCode, env, verbose, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
+			if err := linuxWineRun(id, langCode, env, verbose, force, absInstallerPath,
+				"/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
 				return nil
 			}
 		default:

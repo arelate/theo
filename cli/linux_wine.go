@@ -13,20 +13,11 @@ import (
 	"strings"
 )
 
-func linuxWineRun(id, langCode string, env []string, verbose bool, exePath string, arg ...string) error {
-	var cmdArg string
-	for _, a := range arg {
-		if strings.HasPrefix(a, "-") {
-			continue
-		}
-		_, cmdArg = filepath.Split(a)
-		break
-	}
-	if cmdArg == "" {
-		cmdArg = "command"
-	}
+func linuxWineRun(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error {
 
-	lwra := nod.Begin(" running %s with WINE, please wait...", cmdArg)
+	_, exeFilename := filepath.Split(exePath)
+
+	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer lwra.EndWithResult("done")
 
 	if verbose && len(env) > 0 {
@@ -49,7 +40,7 @@ func linuxWineRun(id, langCode string, env []string, verbose bool, exePath strin
 		return err
 	}
 
-	absUmuConfigPath, err := createUmuConfig(id, absPrefixDir, absProtonPath, exePath, "gog", arg...)
+	absUmuConfigPath, err := createUmuConfig(id, absPrefixDir, absProtonPath, exePath, "gog", force, arg...)
 	if err != nil {
 		return err
 	}
@@ -64,7 +55,7 @@ func linuxWineRun(id, langCode string, env []string, verbose bool, exePath strin
 	return cmd.Run()
 }
 
-func createUmuConfig(id, prefix, proton, exePath, store string, arg ...string) (string, error) {
+func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 
 	umuConfigsDir, err := pathways.GetAbsRelDir(data.UmuConfigs)
 	if err != nil {
@@ -74,6 +65,20 @@ func createUmuConfig(id, prefix, proton, exePath, store string, arg ...string) (
 	_, exeFilename := filepath.Split(exePath)
 
 	umuConfigPath := filepath.Join(umuConfigsDir, id+"-"+busan.Sanitize(exeFilename)+".toml")
+
+	return umuConfigPath, nil
+}
+
+func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg ...string) (string, error) {
+
+	umuConfigPath, err := getAbsUmuConfigFilename(id, exePath)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err = os.Stat(umuConfigPath); err == nil && !force {
+		return umuConfigPath, nil
+	}
 
 	umuConfigFile, err := os.Create(umuConfigPath)
 	if err != nil {
@@ -118,7 +123,7 @@ func createUmuConfig(id, prefix, proton, exePath, store string, arg ...string) (
 	return umuConfigPath, nil
 }
 
-func linuxStartGogGamesLnk(id, langCode string, env []string, verbose bool, arg ...string) error {
+func linuxStartGogGamesLnk(id, langCode string, env []string, verbose, force bool, arg ...string) error {
 	lsggla := nod.Begin(" starting default .lnk in the install folder for %s...", id)
 	defer lsggla.EndWithResult("done")
 
@@ -145,7 +150,7 @@ func linuxStartGogGamesLnk(id, langCode string, env []string, verbose bool, arg 
 
 		lsggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
-		return linuxWineRun(id, langCode, env, verbose, firstMatch, arg...)
+		return linuxWineRun(id, langCode, env, verbose, force, firstMatch, arg...)
 	} else {
 		return lsggla.EndWithError(errors.New("cannot locate suitable .lnk in the GOG Games folder"))
 	}

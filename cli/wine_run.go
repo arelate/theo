@@ -19,17 +19,18 @@ func WineRunHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
-	exePath := q.Get("exe-path")
-	verbose := q.Has("verbose")
 	env := make([]string, 0)
 	if q.Has("env") {
 		env = strings.Split(q.Get("env"), ",")
 	}
+	exePath := q.Get("exe-path")
+	verbose := q.Has("verbose")
+	force := q.Has("force")
 
-	return WineRun(id, langCode, exePath, env, verbose)
+	return WineRun(id, langCode, exePath, env, verbose, force)
 }
 
-func WineRun(id string, langCode string, exePath string, env []string, verbose bool) error {
+func WineRun(id string, langCode string, exePath string, env []string, verbose, force bool) error {
 
 	wra := nod.Begin("running %s version with WINE...", vangogh_integration.Windows)
 	defer wra.EndWithResult("done")
@@ -66,10 +67,10 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose b
 		}
 	case vangogh_integration.Linux:
 		if exePath != "" {
-			if err := linuxWineRun(id, langCode, prefixEnv, verbose, exePath); err != nil {
+			if err := linuxWineRun(id, langCode, prefixEnv, verbose, force, exePath); err != nil {
 				return err
 			}
-		} else if err := linuxStartGogGamesLnk(id, langCode, prefixEnv, verbose); err != nil {
+		} else if err := linuxStartGogGamesLnk(id, langCode, prefixEnv, verbose, force); err != nil {
 			return err
 		}
 	default:

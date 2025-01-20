@@ -144,6 +144,7 @@ wine-run
     env&
     exe-path
     verbose
+    force
 
 wine-uninstall
     id^&*
