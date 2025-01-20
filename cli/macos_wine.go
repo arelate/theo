@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"os"
@@ -23,7 +24,7 @@ const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSuppo
 const gogInstallationLnkGlob = "GOG Games/*/*.lnk"
 
 func macOsInitPrefix(id, langCode string, verbose bool) error {
-	mipa := nod.Begin(" initializing prefix...")
+	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
 	defer mipa.EndWithResult("done")
 
 	return macOsCreateCxBottle(id, langCode, defaultCxBottleTemplate, verbose)

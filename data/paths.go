@@ -64,6 +64,7 @@ const (
 	Assets            pathways.RelDir = "assets"
 	Binaries          pathways.RelDir = "binaries"
 	PrefixArchive     pathways.RelDir = "prefix-archive"
+	UmuConfigs        pathways.RelDir = "umu-configs"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
@@ -75,6 +76,7 @@ var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	Binaries:          Runtimes,
 	PrefixArchive:     Backups,
 	MacOsExtracts:     Downloads,
+	UmuConfigs:        Runtimes,
 }
 
 var AllAbsDirs = []pathways.AbsDir{

@@ -130,7 +130,9 @@ func wineFilterNotInstalled(langCode string, ids ...string) ([]string, error) {
 			return nil, err
 		}
 
-		if _, err := os.Stat(absPrefixDir); err == nil {
+		absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
+
+		if _, err := os.Stat(absPrefixDriveCDir); err == nil {
 			continue
 		}
 
@@ -142,7 +144,9 @@ func wineFilterNotInstalled(langCode string, ids ...string) ([]string, error) {
 
 func wineInstallProduct(id, langCode string, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
 
-	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, data.CurrentOs())
+	currentOs := data.CurrentOs()
+
+	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, currentOs)
 	defer wipa.EndWithResult("done")
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
@@ -167,7 +171,7 @@ func wineInstallProduct(id, langCode string, env []string, downloadTypes []vango
 		}
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		switch data.CurrentOs() {
+		switch currentOs {
 		case vangogh_integration.MacOS:
 			if err := macOsWineRun(id, langCode, env, verbose, absInstallerPath, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
 				return nil
@@ -199,7 +203,9 @@ func initPrefix(langCode string, verbose bool, ids ...string) error {
 				return cpa.EndWithError(err)
 			}
 		case vangogh_integration.Linux:
-			// do nothing, umu-launch will create prefix during installation
+			if err := linuxInitPrefix(id, langCode, verbose); err != nil {
+				return cpa.EndWithError(err)
+			}
 		default:
 			panic("not implemented")
 		}

@@ -3,14 +3,17 @@ package cli
 import (
 	"errors"
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-func linuxWineRun(id, langCode string, env []string, verbose bool, arg ...string) error {
+func linuxWineRun(id, langCode string, env []string, verbose bool, exePath string, arg ...string) error {
 	var cmdArg string
 	for _, a := range arg {
 		if strings.HasPrefix(a, "-") {
@@ -46,23 +49,73 @@ func linuxWineRun(id, langCode string, env []string, verbose bool, arg ...string
 		return err
 	}
 
-	umuEnv := []string{
-		"WINEPREFIX=" + absPrefixDir,
-		"STORE=gog",
-		"GAMEID=" + id,
-		"PROTONPATH=" + absProtonPath,
+	absUmuConfigPath, err := createUmuConfig(id, absPrefixDir, absProtonPath, exePath, "gog", arg...)
+	if err != nil {
+		return err
 	}
 
-	cmd := exec.Command(absUmuRunPath, arg...)
+	cmd := exec.Command(absUmuRunPath, "--config", absUmuConfigPath)
 
 	if verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
 
-	cmd.Env = mergeEnv(umuEnv, env)
-
 	return cmd.Run()
+}
+
+func createUmuConfig(id, prefix, proton, exePath, store string, arg ...string) (string, error) {
+
+	umuConfigsDir, err := pathways.GetAbsRelDir(data.UmuConfigs)
+	if err != nil {
+		return "", err
+	}
+
+	_, exeFilename := filepath.Split(exePath)
+
+	umuConfigPath := filepath.Join(umuConfigsDir, id+"-"+busan.Sanitize(exeFilename)+".toml")
+
+	umuConfigFile, err := os.Create(umuConfigPath)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err = io.WriteString(umuConfigFile, "[umu]\n"); err != nil {
+		return "", err
+	}
+	if _, err = io.WriteString(umuConfigFile, "prefix = \""+prefix+"\"\n"); err != nil {
+		return "", err
+	}
+	if _, err = io.WriteString(umuConfigFile, "proton = \""+proton+"\"\n"); err != nil {
+		return "", err
+	}
+	if _, err = io.WriteString(umuConfigFile, "game_id = \""+id+"\"\n"); err != nil {
+		return "", err
+	}
+	if _, err = io.WriteString(umuConfigFile, "exe = \""+exePath+"\"\n"); err != nil {
+		return "", err
+	}
+	if len(arg) > 0 {
+		if _, err = io.WriteString(umuConfigFile, "launch_args = ["); err != nil {
+			return "", err
+		}
+		quotedArgs := make([]string, 0, len(arg))
+		for _, a := range arg {
+			quotedArgs = append(quotedArgs, "\""+a+"\"")
+		}
+		if _, err = io.WriteString(umuConfigFile, strings.Join(quotedArgs, ", ")); err != nil {
+			return "", err
+		}
+		if _, err = io.WriteString(umuConfigFile, "]\n"); err != nil {
+			return "", err
+		}
+
+	}
+	if _, err = io.WriteString(umuConfigFile, "store = \""+store+"\"\n"); err != nil {
+		return "", err
+	}
+
+	return umuConfigPath, nil
 }
 
 func linuxStartGogGamesLnk(id, langCode string, env []string, verbose bool, arg ...string) error {
@@ -83,17 +136,29 @@ func linuxStartGogGamesLnk(id, langCode string, env []string, verbose bool, arg 
 
 	if len(matches) == 1 {
 
-		arg = append([]string{matches[0]}, arg...)
+		firstMatch := matches[0]
 
-		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
+		relMatch, err := filepath.Rel(absPrefixDriveCDir, firstMatch)
 		if err != nil {
 			return lsggla.EndWithError(err)
 		}
 
 		lsggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
-		return macOsWineRun(id, langCode, env, verbose, arg...)
+		return linuxWineRun(id, langCode, env, verbose, firstMatch, arg...)
 	} else {
 		return lsggla.EndWithError(errors.New("cannot locate suitable .lnk in the GOG Games folder"))
 	}
+}
+
+func linuxInitPrefix(id, langCode string, _ bool) error {
+	lipa := nod.Begin(" initializing prefix...")
+	defer lipa.EndWithResult("done")
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	if err != nil {
+		return lipa.EndWithError(err)
+	}
+
+	return os.MkdirAll(absPrefixDir, 0755)
 }
