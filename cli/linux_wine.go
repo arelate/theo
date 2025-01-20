@@ -35,7 +35,7 @@ func linuxWineRun(id, langCode string, env []string, verbose, force bool, exePat
 		return err
 	}
 
-	absProtonPath, err := data.GeProtonCustomLatestReleasePath()
+	absProtonPath, err := data.UmuProtonLatestReleasePath()
 	if err != nil {
 		return err
 	}
@@ -46,6 +46,8 @@ func linuxWineRun(id, langCode string, env []string, verbose, force bool, exePat
 	}
 
 	cmd := exec.Command(absUmuRunPath, "--config", absUmuConfigPath)
+
+	cmd.Env = append(os.Environ(), env...)
 
 	if verbose {
 		cmd.Stdout = os.Stdout

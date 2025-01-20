@@ -29,6 +29,11 @@ var UmuLauncher = &GitHubSource{
 	Asset:     "Zipapp.zip",
 }
 
+var UmuProton = &GitHubSource{
+	OwnerRepo: "Open-Wine-Components/umu-proton",
+	Asset:     ".tar.gz",
+}
+
 func (ghs *GitHubSource) GetLatestRelease() (*github_integration.GitHubRelease, error) {
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(GitHubReleases)
@@ -82,7 +87,7 @@ func (ghs *GitHubSource) GetAsset(release *github_integration.GitHubRelease) *gi
 func OsGitHubSources(os vangogh_integration.OperatingSystem) []*GitHubSource {
 	switch os {
 	case vangogh_integration.Linux:
-		return []*GitHubSource{GeProtonCustom, UmuLauncher}
+		return []*GitHubSource{GeProtonCustom, UmuLauncher, UmuProton}
 	default:
 		return nil
 	}
@@ -100,10 +105,7 @@ func GeProtonCustomLatestReleasePath() (string, error) {
 		return "", err
 	}
 
-	// GE-Proton-custom archive is a packaged dir named after the latest release tag
-	_, lastDir := filepath.Split(geProtonCustomDir)
-
-	return filepath.Join(geProtonCustomDir, lastDir), nil
+	return filepath.Join(geProtonCustomDir, latestRelease.TagName), nil
 }
 
 func UmuRunLatestReleasePath() (string, error) {
@@ -119,4 +121,18 @@ func UmuRunLatestReleasePath() (string, error) {
 	}
 
 	return filepath.Join(absUmuBinDir, umuRunFilename), nil
+}
+
+func UmuProtonLatestReleasePath() (string, error) {
+	latestRelease, err := UmuProton.GetLatestRelease()
+	if err != nil {
+		return "", err
+	}
+
+	umuProtonDir, err := GetAbsBinariesDir(UmuProton, latestRelease)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(umuProtonDir, latestRelease.TagName), nil
 }

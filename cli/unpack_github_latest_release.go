@@ -13,10 +13,14 @@ import (
 
 func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
 
-	ura := nod.Begin("unpacking GitHub releases for %s...", operatingSystem)
+	ura := nod.NewProgress("unpacking GitHub releases for %s...", operatingSystem)
 	defer ura.EndWithResult("done")
 
-	for _, ghs := range data.OsGitHubSources(operatingSystem) {
+	gitHubSources := data.OsGitHubSources(operatingSystem)
+
+	ura.TotalInt(len(gitHubSources))
+
+	for _, ghs := range gitHubSources {
 
 		latestRelease, err := ghs.GetLatestRelease()
 		if err != nil {
@@ -24,6 +28,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 		}
 
 		if latestRelease == nil {
+			ura.Increment()
 			continue
 		}
 
@@ -33,8 +38,8 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 		}
 
 		if _, err := os.Stat(binDir); err == nil && !force {
-			ura.EndWithResult("already exists")
-			return nil
+			ura.Increment()
+			continue
 		}
 
 		if asset := ghs.GetAsset(latestRelease); asset != nil {
@@ -42,6 +47,8 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 				return ura.EndWithError(err)
 			}
 		}
+
+		ura.Increment()
 	}
 
 	return nil
@@ -90,6 +97,8 @@ func unzip(srcPath, dstPath string) error {
 
 func unpackGitHubSource(ghs *data.GitHubSource, absSrcAssetPath, absDstPath string) error {
 	switch ghs.OwnerRepo {
+	case data.UmuProton.OwnerRepo:
+		fallthrough
 	case data.GeProtonCustom.OwnerRepo:
 		return untar(absSrcAssetPath, absDstPath)
 	case data.UmuLauncher.OwnerRepo:
@@ -103,5 +112,4 @@ func unpackGitHubSource(ghs *data.GitHubSource, absSrcAssetPath, absDstPath stri
 	default:
 		return errors.New("unknown GitHub source: " + ghs.OwnerRepo)
 	}
-	return nil
 }
