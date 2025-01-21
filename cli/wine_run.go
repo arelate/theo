@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -56,26 +58,27 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
 	prefixEnv = mergeEnv(prefixEnv, env)
 
-	switch data.CurrentOs() {
-	case vangogh_integration.MacOS:
-		if exePath != "" {
-			if err := macOsWineRun(id, langCode, prefixEnv, verbose, exePath); err != nil {
-				return err
-			}
-		} else if err := macOsStartGogGamesLnk(id, langCode, prefixEnv, verbose); err != nil {
-			return err
+	if exePath == "" {
+		exePath, err = getPrefixGogGamesLnk(id, langCode)
+		if err != nil {
+			return wra.EndWithError(err)
 		}
-	case vangogh_integration.Linux:
-		if exePath != "" {
-			if err := linuxWineRun(id, langCode, prefixEnv, verbose, force, exePath); err != nil {
-				return err
-			}
-		} else if err := linuxStartGogGamesLnk(id, langCode, prefixEnv, verbose, force); err != nil {
-			return err
-		}
-	default:
-		panic("not implemented")
 	}
 
-	return nil
+	if _, err := os.Stat(exePath); err != nil {
+		return wra.EndWithError(err)
+	}
+
+	var currentOsWineRun wineRunFunc
+
+	switch data.CurrentOs() {
+	case vangogh_integration.MacOS:
+		currentOsWineRun = macOsWineRun
+	case vangogh_integration.Linux:
+		currentOsWineRun = linuxProtonRun
+	default:
+		return wra.EndWithError(errors.New("wine-run: unsupported operating system"))
+	}
+
+	return currentOsWineRun(id, langCode, prefixEnv, verbose, force, exePath)
 }

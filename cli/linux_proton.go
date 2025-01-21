@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
@@ -13,7 +12,7 @@ import (
 	"strings"
 )
 
-func linuxWineRun(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error {
+func linuxProtonRun(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error {
 
 	_, exeFilename := filepath.Split(exePath)
 
@@ -123,39 +122,6 @@ func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg 
 	}
 
 	return umuConfigPath, nil
-}
-
-func linuxStartGogGamesLnk(id, langCode string, env []string, verbose, force bool, arg ...string) error {
-	lsggla := nod.Begin(" starting default .lnk in the install folder for %s...", id)
-	defer lsggla.EndWithResult("done")
-
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
-	if err != nil {
-		return lsggla.EndWithError(err)
-	}
-
-	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
-
-	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, gogInstallationLnkGlob))
-	if err != nil {
-		return lsggla.EndWithError(err)
-	}
-
-	if len(matches) == 1 {
-
-		firstMatch := matches[0]
-
-		relMatch, err := filepath.Rel(absPrefixDriveCDir, firstMatch)
-		if err != nil {
-			return lsggla.EndWithError(err)
-		}
-
-		lsggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
-
-		return linuxWineRun(id, langCode, env, verbose, force, firstMatch, arg...)
-	} else {
-		return lsggla.EndWithError(errors.New("cannot locate suitable .lnk in the GOG Games folder"))
-	}
 }
 
 func linuxInitPrefix(id, langCode string, _ bool) error {

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -164,26 +165,27 @@ func wineInstallProduct(id, langCode string, env []string, downloadTypes []vango
 		FilterLanguageCodes(langCode).
 		FilterDownloadTypes(downloadTypes...)
 
+	var currentOsWineRun wineRunFunc
+	switch currentOs {
+	case vangogh_integration.MacOS:
+		currentOsWineRun = macOsWineRun
+	case vangogh_integration.Linux:
+		currentOsWineRun = linuxProtonRun
+	default:
+		return wipa.EndWithError(errors.New("wine-install: unsupported operating system"))
+	}
+
 	for _, link := range dls {
-		linkExt := filepath.Ext(link.LocalFilename)
-		if linkExt != exeExt {
+
+		if linkExt := filepath.Ext(link.LocalFilename); linkExt != exeExt {
 			continue
 		}
+
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		switch currentOs {
-		case vangogh_integration.MacOS:
-			if err := macOsWineRun(id, langCode, env, verbose, absInstallerPath,
-				"/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
-				return nil
-			}
-		case vangogh_integration.Linux:
-			if err := linuxWineRun(id, langCode, env, verbose, force, absInstallerPath,
-				"/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
-				return nil
-			}
-		default:
-			panic("not implemented")
+		if err := currentOsWineRun(id, langCode, env, verbose, force, absInstallerPath,
+			"/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
+			return wipa.EndWithError(err)
 		}
 	}
 
@@ -197,19 +199,20 @@ func initPrefix(langCode string, verbose bool, ids ...string) error {
 
 	cpa.TotalInt(len(ids))
 
+	var currentOsWineInitPrefix wineInitPrefixFunc
+	switch data.CurrentOs() {
+	case vangogh_integration.MacOS:
+		currentOsWineInitPrefix = macOsInitPrefix
+	case vangogh_integration.Linux:
+		currentOsWineInitPrefix = linuxInitPrefix
+	default:
+		return cpa.EndWithError(errors.New("init-prefix: unsupported operating system"))
+	}
+
 	for _, id := range ids {
 
-		switch data.CurrentOs() {
-		case vangogh_integration.MacOS:
-			if err := macOsInitPrefix(id, langCode, verbose); err != nil {
-				return cpa.EndWithError(err)
-			}
-		case vangogh_integration.Linux:
-			if err := linuxInitPrefix(id, langCode, verbose); err != nil {
-				return cpa.EndWithError(err)
-			}
-		default:
-			panic("not implemented")
+		if err := currentOsWineInitPrefix(id, langCode, verbose); err != nil {
+			return cpa.EndWithError(err)
 		}
 
 		cpa.Increment()

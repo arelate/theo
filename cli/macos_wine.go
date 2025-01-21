@@ -23,6 +23,11 @@ const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSuppo
 
 const gogInstallationLnkGlob = "GOG Games/*/*.lnk"
 
+type (
+	wineRunFunc        func(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error
+	wineInitPrefixFunc func(id, langCode string, verbose bool) error
+)
+
 func macOsInitPrefix(id, langCode string, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
 	defer mipa.EndWithResult("done")
@@ -30,21 +35,11 @@ func macOsInitPrefix(id, langCode string, verbose bool) error {
 	return macOsCreateCxBottle(id, langCode, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string) error {
+func macOsWineRun(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error {
 
-	var cmdArg string
-	for _, a := range arg {
-		if strings.HasPrefix(a, "-") {
-			continue
-		}
-		_, cmdArg = filepath.Split(a)
-		break
-	}
-	if cmdArg == "" {
-		cmdArg = "command"
-	}
+	_, exeFilename := filepath.Split(exePath)
 
-	mwra := nod.Begin(" running %s with WINE, please wait...", cmdArg)
+	mwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer mwra.EndWithResult("done")
 
 	if verbose && len(env) > 0 {
@@ -64,6 +59,12 @@ func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string
 		return err
 	}
 
+	if strings.HasSuffix(exePath, ".lnk") {
+		arg = append([]string{"--start", exePath}, arg...)
+	} else {
+		arg = append([]string{exePath}, arg...)
+	}
+
 	arg = append([]string{"--bottle", absPrefixDir}, arg...)
 
 	cmd := exec.Command(absWineBinPath, arg...)
@@ -80,37 +81,34 @@ func macOsWineRun(id, langCode string, env []string, verbose bool, arg ...string
 	return cmd.Run()
 }
 
-func macOsStartGogGamesLnk(id, langCode string, env []string, verbose bool, arg ...string) error {
+func getPrefixGogGamesLnk(id, langCode string) (string, error) {
 
-	msggla := nod.Begin(" starting default .lnk in the install folder for %s...", id)
+	msggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
 	defer msggla.EndWithResult("done")
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
 	if err != nil {
-		return msggla.EndWithError(err)
+		return "", msggla.EndWithError(err)
 	}
 
 	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
 
 	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, gogInstallationLnkGlob))
 	if err != nil {
-		return msggla.EndWithError(err)
+		return "", msggla.EndWithError(err)
 	}
 
 	if len(matches) == 1 {
 
-		arg = append([]string{"--start", matches[0]}, arg...)
-
 		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
 		if err != nil {
-			return msggla.EndWithError(err)
+			return "", msggla.EndWithError(err)
 		}
-
 		msggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
-		return macOsWineRun(id, langCode, env, verbose, arg...)
+		return matches[0], nil
 	} else {
-		return msggla.EndWithError(errors.New("cannot locate suitable .lnk in the GOG Games folder"))
+		return "", msggla.EndWithError(errors.New("cannot locate suitable .lnk in the GOG Games folder"))
 	}
 }
 

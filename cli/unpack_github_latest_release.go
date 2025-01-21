@@ -98,8 +98,6 @@ func unzip(srcPath, dstPath string) error {
 func unpackGitHubSource(ghs *data.GitHubSource, absSrcAssetPath, absDstPath string) error {
 	switch ghs.OwnerRepo {
 	case data.UmuProton.OwnerRepo:
-		fallthrough
-	case data.GeProtonCustom.OwnerRepo:
 		return untar(absSrcAssetPath, absDstPath)
 	case data.UmuLauncher.OwnerRepo:
 		// first - unzip Zipapp.zip
