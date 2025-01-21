@@ -13,7 +13,8 @@ const (
 	TitleProperty      = "title"
 	SlugProperty       = "slug"
 
-	PrefixEnvProperty = "prefix-env"
+	PrefixEnvProperty     = "prefix-env"
+	PrefixExePathProperty = "prefix-exe-path"
 
 	GitHubReleasesUpdatedProperty = "github-releases-updated"
 )

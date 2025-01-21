@@ -27,6 +27,11 @@ delete-prefix-env
     lang-code
     force
 
+delete-prefix-exe-path
+    id^*
+    lang-code
+    force
+
 download
     id^&*
     os&
@@ -46,6 +51,8 @@ list-installed
     lang-code
 
 list-prefix-env
+
+list-prefix-exe-path
 
 list-steam-shortcuts
 
@@ -103,6 +110,11 @@ set-prefix-env
     id^*
     lang-code
     env&
+
+set-prefix-exe-path
+    id^*
+    lang-code
+    exe-path
 
 set-vangogh-connection
     protocol

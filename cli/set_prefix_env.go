@@ -29,7 +29,7 @@ func SetPrefixEnvHandler(u *url.URL) error {
 
 func SetPrefixEnv(ids []string, langCode string, env []string) error {
 
-	spea := nod.NewProgress("setting prefix environment variables that will be used with wine-run...")
+	spea := nod.NewProgress("setting prefix environment variables for wine-run...")
 	defer spea.EndWithResult("done")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)

@@ -9,6 +9,7 @@ import (
 	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -48,7 +49,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return wra.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.PrefixEnvProperty)
+	rdx, err := kevlar.NewReduxWriter(reduxDir, data.PrefixEnvProperty, data.PrefixExePathProperty)
 	if err != nil {
 		return wra.EndWithError(err)
 	}
@@ -57,6 +58,15 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 
 	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
 	prefixEnv = mergeEnv(prefixEnv, env)
+
+	if ep, ok := rdx.GetLastVal(data.PrefixExePathProperty, prefixName); ok && ep != "" {
+		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+		if err != nil {
+			return wra.EndWithError(err)
+		}
+
+		exePath = filepath.Join(absPrefixDir, relPrefixDriveCDir, ep)
+	}
 
 	if exePath == "" {
 		exePath, err = getPrefixGogGamesLnk(id, langCode)
