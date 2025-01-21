@@ -98,7 +98,7 @@ func WineInstall(langCode string,
 	}
 
 	if addSteamShortcut {
-		if err := AddSteamShortcut(langCode, true, force, ids...); err != nil {
+		if err := AddSteamShortcut(langCode, wineRunLaunchOptionsTemplate, force, ids...); err != nil {
 			return wia.EndWithError(err)
 		}
 	}

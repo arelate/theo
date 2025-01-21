@@ -78,11 +78,6 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 		return rsfua.EndWithError(err)
 	}
 
-	theoExecutable, err := data.TheoExecutable()
-	if err != nil {
-		return rsfua.EndWithError(err)
-	}
-
 	removeShortcutAppIds := make([]uint32, 0, len(ids))
 
 	for _, id := range ids {
@@ -94,7 +89,7 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 			return rsfua.EndWithError(errors.New("product is missing title"))
 		}
 
-		shortcutId := steam_integration.ShortcutAppId(theoExecutable, title)
+		shortcutId := steam_integration.ShortcutAppId(title)
 
 		removeShortcutAppIds = append(removeShortcutAppIds, shortcutId)
 

@@ -101,7 +101,7 @@ func Install(langCode string,
 	}
 
 	if addSteamShortcut {
-		if err := AddSteamShortcut(langCode, false, force, ids...); err != nil {
+		if err := AddSteamShortcut(langCode, runLaunchOptionsTemplate, force, ids...); err != nil {
 			return ia.EndWithError(err)
 		}
 	}
