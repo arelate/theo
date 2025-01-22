@@ -125,6 +125,13 @@ set-vangogh-connection
 
 test-vangogh-connection
 
+umu-run
+    id^
+    lang-code
+    env&
+    verbose
+    force
+
 uninstall
     id^&*
     lang-code

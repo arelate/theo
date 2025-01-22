@@ -56,6 +56,30 @@ func linuxProtonRun(id, langCode string, env []string, verbose, force bool, exeP
 	return cmd.Run()
 }
 
+func linuxUmuRun(id, shPath string, env []string, verbose, force bool, arg ...string) error {
+
+	absUmuRunPath, err := data.UmuRunLatestReleasePath()
+	if err != nil {
+		return err
+	}
+
+	absUmuConfigPath, err := createUmuConfig(id, "", "", shPath, "gog", force, arg...)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(absUmuRunPath, "--config", absUmuConfigPath)
+
+	cmd.Env = append(os.Environ(), env...)
+
+	if verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	return cmd.Run()
+}
+
 func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 
 	umuConfigsDir, err := pathways.GetAbsRelDir(data.UmuConfigs)
@@ -89,11 +113,15 @@ func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg 
 	if _, err = io.WriteString(umuConfigFile, "[umu]\n"); err != nil {
 		return "", err
 	}
-	if _, err = io.WriteString(umuConfigFile, "prefix = \""+prefix+"\"\n"); err != nil {
-		return "", err
+	if prefix != "" {
+		if _, err = io.WriteString(umuConfigFile, "prefix = \""+prefix+"\"\n"); err != nil {
+			return "", err
+		}
 	}
-	if _, err = io.WriteString(umuConfigFile, "proton = \""+proton+"\"\n"); err != nil {
-		return "", err
+	if proton != "" {
+		if _, err = io.WriteString(umuConfigFile, "proton = \""+proton+"\"\n"); err != nil {
+			return "", err
+		}
 	}
 	if _, err = io.WriteString(umuConfigFile, "game_id = \""+id+"\"\n"); err != nil {
 		return "", err
