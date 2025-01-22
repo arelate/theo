@@ -32,18 +32,13 @@ func currentOsRevealDownloads(ids ...string) error {
 		return err
 	}
 
-	if len(ids) == 0 {
+	// only reveal a single product downloads directory, otherwise, reveal all downloads dir
+	if len(ids) == 1 {
+		productDownloadsDir := filepath.Join(downloadsDir, ids[0])
+		return currentOsReveal(productDownloadsDir)
+	} else {
 		return currentOsReveal(downloadsDir)
 	}
-
-	for _, id := range ids {
-		productDownloadsDir := filepath.Join(downloadsDir, id)
-		if err := currentOsReveal(productDownloadsDir); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func currentOsReveal(path string) error {

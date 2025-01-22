@@ -4,13 +4,17 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-const relPrefixDriveCDir = "drive_c"
+const (
+	relPrefixDriveCDir = "drive_c"
+	gogGamesDir        = "GOG Games"
+)
 
 func RevealPrefixHandler(u *url.URL) error {
 
@@ -27,20 +31,18 @@ func RevealPrefixHandler(u *url.URL) error {
 
 func RevealPrefix(langCode string, ids ...string) error {
 
-	rpa := nod.NewProgress("revealing prefix for %s...", strings.Join(ids, ","))
+	rpa := nod.Begin("revealing prefix for %s...", strings.Join(ids, ","))
 	defer rpa.EndWithResult("done")
 
-	rpa.TotalInt(len(ids))
-
-	for _, id := range ids {
-		if err := revealProductPrefix(id, langCode); err != nil {
+	if len(ids) == 1 {
+		return revealProductPrefix(ids[0], langCode)
+	} else {
+		if absPrefixesDir, err := pathways.GetAbsDir(data.Prefixes); err != nil {
 			return rpa.EndWithError(err)
+		} else {
+			return currentOsReveal(absPrefixesDir)
 		}
-
-		rpa.Increment()
 	}
-
-	return nil
 }
 
 func revealProductPrefix(id, langCode string) error {
@@ -58,7 +60,7 @@ func revealProductPrefix(id, langCode string) error {
 		return nil
 	}
 
-	absPrefixDriveCPath := filepath.Join(absPrefixDir, relPrefixDriveCDir)
+	absPrefixDriveCPath := filepath.Join(absPrefixDir, relPrefixDriveCDir, gogGamesDir)
 
 	return currentOsReveal(absPrefixDriveCPath)
 }

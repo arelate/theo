@@ -54,17 +54,11 @@ func currentOsRevealInstalledApps(langCode string, rdx kevlar.ReadableRedux, ids
 		return err
 	}
 
-	if len(ids) == 0 {
+	if len(ids) == 1 {
+		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, ids[0])
+		productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOs(), langCode), bundleName)
+		return currentOsReveal(productInstalledAppDir)
+	} else {
 		return currentOsReveal(installedAppsDir)
 	}
-
-	for _, id := range ids {
-		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-		productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOs(), langCode), bundleName)
-		if err := currentOsReveal(productInstalledAppDir); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
