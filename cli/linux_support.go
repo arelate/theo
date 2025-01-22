@@ -17,6 +17,8 @@ import (
 
 const desktopGlob = "*.desktop"
 
+const mojosetupDir = ".mojosetup"
+
 func linuxInstallProduct(id string,
 	metadata *vangogh_integration.TheoMetadata,
 	link *vangogh_integration.TheoDownloadLink,
@@ -69,6 +71,13 @@ func linuxInstallProduct(id string,
 		}
 
 		if err := os.Remove(pidf); err != nil {
+			return lia.EndWithError(err)
+		}
+	}
+
+	mojosetupProductDir := filepath.Join(productInstalledAppDir, mojosetupDir)
+	if _, err = os.Stat(mojosetupProductDir); err == nil {
+		if err := os.RemoveAll(mojosetupProductDir); err != nil {
 			return lia.EndWithError(err)
 		}
 	}
