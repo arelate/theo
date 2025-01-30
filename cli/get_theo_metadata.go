@@ -63,9 +63,7 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 
 func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh_integration.TheoMetadata, error) {
 
-	if has, err := kvTheoMetadata.Has(id); err != nil {
-		return nil, err
-	} else if !has {
+	if has := kvTheoMetadata.Has(id); !has {
 		return nil, nil
 	}
 

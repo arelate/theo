@@ -54,14 +54,9 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		return lia.EndWithError(err)
 	}
 
-	ids, err := kvOsLangInstalledMetadata.Keys()
-	if err != nil {
-		return lia.EndWithError(err)
-	}
-
 	summary := make(map[string][]string)
 
-	for _, id := range ids {
+	for id := range kvOsLangInstalledMetadata.Keys() {
 
 		var name string
 		if title, ok := rdx.GetLastVal(data.TitleProperty, id); ok {

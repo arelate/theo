@@ -63,12 +63,7 @@ func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, 
 	grlra := nod.Begin(" %s...", ghs.OwnerRepo)
 	defer grlra.EndWithResult("done")
 
-	has, err := kvGitHubReleases.Has(ghs.OwnerRepo)
-	if err != nil {
-		return grlra.EndWithError(err)
-	}
-
-	if has && !force {
+	if kvGitHubReleases.Has(ghs.OwnerRepo) && !force {
 		grlra.EndWithResult("skip recently updated")
 		return nil
 	}

@@ -78,21 +78,11 @@ func pinInstalledMetadataForOs(id string,
 		return pimoa.EndWithError(err)
 	}
 
-	hasTheoMetadata, err := kvTheoMetadata.Has(id)
-	if err != nil {
-		return pimoa.EndWithError(err)
-	}
-
-	if !hasTheoMetadata {
+	if hasTheoMetadata := kvTheoMetadata.Has(id); !hasTheoMetadata {
 		return errors.New("theo metadata not found for: " + id)
 	}
 
-	hasInstalledMetadata, err := kvOsLangInstalledMetadata.Has(id)
-	if err != nil {
-		return pimoa.EndWithError(err)
-	}
-
-	if hasInstalledMetadata && !force {
+	if kvOsLangInstalledMetadata.Has(id) && !force {
 		return nil
 	}
 
