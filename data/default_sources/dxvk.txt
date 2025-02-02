@@ -1,4 +1,0 @@
-https://github.com/Gcenx/DXVK-macOS
-    os=macOS
-    desc=Vulkan-based implementation of D3D10 and D3D11 for macOS / Wine
-    assets-exclude=CrossOver;crossover;async
