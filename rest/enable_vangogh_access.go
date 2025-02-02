@@ -10,7 +10,7 @@ func AccessControlAllowOrigin(w http.ResponseWriter) (err error) {
 		return err
 	}
 
-	if vangoghUrl, err := data.VangoghUrl(rdx, "", nil); err == nil {
+	if vangoghUrl, err := data.ServerUrl(rdx, "", nil); err == nil {
 		w.Header().Add("Access-Control-Allow-Origin", vangoghUrl.String())
 		w.Header().Add("Access-Control-Allow-Private-Network", "true")
 		return nil

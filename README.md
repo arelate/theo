@@ -16,11 +16,11 @@ Alternatively theo can be compiled from source. For example to compile for Steam
 
 Before using any of the commands below, theo needs to be set up to connect to vangogh:
 
-`theo set-vangogh-connection <protocol> <address> <port> <username> <password>` - you need to provide address (e.g. vangogh.example.com), username and password  for users authorized to download from that vangogh instance. Other parameters are optional
+`theo set-server-connection <protocol> <address> <port> <username> <password>` - you need to provide address (e.g. vangogh.example.com), username and password  for users authorized to download from that vangogh instance. Other parameters are optional
 
-`theo test-vangogh-connection` - will perform a series of connectivity and authorization tests to validate your settings
+`theo test-server-connection` - will perform a series of connectivity and authorization tests to validate your settings
 
-This is only needed to be done once and theo will use those settings from that moment. If you ever need to reset this configuration, `reset-vangogh-connection` can help with that.
+This is only needed to be done once and theo will use those settings from that moment. If you ever need to reset this configuration, `reset-server-connection` can help with that.
 
 ## Installing native versions with theo
 

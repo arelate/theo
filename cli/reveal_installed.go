@@ -39,7 +39,7 @@ func RevealInstalled(langCode string, ids ...string) error {
 		return fia.EndWithError(err)
 	}
 
-	rdx, err := redux.NewReader(reduxDir, data.SetupProperties, data.BundleNameProperty)
+	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties, data.BundleNameProperty)
 	if err != nil {
 		return fia.EndWithError(err)
 	}

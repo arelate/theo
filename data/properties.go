@@ -1,13 +1,13 @@
 package data
 
 const (
-	SetupProperties = "setup"
+	ServerConnectionProperties = "server-connection"
 
-	VangoghProtocolProperty = "vangogh-protocol"
-	VangoghAddressProperty  = "vangogh-address"
-	VangoghPortProperty     = "vangogh-port"
-	VangoghUsernameProperty = "vangogh-username"
-	VangoghPasswordProperty = "vangogh-password"
+	ServerProtocolProperty = "server-protocol"
+	ServerAddressProperty  = "server-address"
+	ServerPortProperty     = "server-port"
+	ServerUsernameProperty = "server-username"
+	ServerPasswordProperty = "server-password"
 
 	BundleNameProperty = "bundle-name"
 	TitleProperty      = "title"
@@ -21,7 +21,7 @@ const (
 
 func AllProperties() []string {
 	return []string{
-		SetupProperties,
+		ServerConnectionProperties,
 		BundleNameProperty,
 		TitleProperty,
 		SlugProperty,

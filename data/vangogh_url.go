@@ -6,25 +6,25 @@ import (
 	"net/url"
 )
 
-func VangoghUrl(rdx redux.Readable, path string, params map[string]string) (*url.URL, error) {
+func ServerUrl(rdx redux.Readable, path string, params map[string]string) (*url.URL, error) {
 	protocol := "https"
 	address := ""
 
-	if err := rdx.MustHave(SetupProperties); err != nil {
+	if err := rdx.MustHave(ServerConnectionProperties); err != nil {
 		return nil, err
 	}
 
-	if protoVal, ok := rdx.GetLastVal(SetupProperties, VangoghProtocolProperty); ok && protoVal != "" {
+	if protoVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerProtocolProperty); ok && protoVal != "" {
 		protocol = protoVal
 	}
 
-	if addrVal, ok := rdx.GetLastVal(SetupProperties, VangoghAddressProperty); ok && addrVal != "" {
+	if addrVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerAddressProperty); ok && addrVal != "" {
 		address = addrVal
 	} else {
 		return nil, errors.New("address cannot be empty")
 	}
 
-	if portVal, ok := rdx.GetLastVal(SetupProperties, VangoghPortProperty); ok && portVal != "" {
+	if portVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerPortProperty); ok && portVal != "" {
 		address += ":" + portVal
 	}
 

@@ -97,7 +97,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 	rdx, err := redux.NewWriter(reduxDir,
 		data.TitleProperty,
 		data.BundleNameProperty,
-		data.SetupProperties,
+		data.ServerConnectionProperties,
 		data.SlugProperty)
 	if err != nil {
 		return asfua.EndWithError(err)
@@ -198,7 +198,7 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 	}
 
 	for ip, imageId := range imageProperties {
-		srcUrl, err := data.VangoghUrl(rdx, data.VangoghImagePath, map[string]string{"id": imageId})
+		srcUrl, err := data.ServerUrl(rdx, data.ServerImagePath, map[string]string{"id": imageId})
 		if err != nil {
 			return dsgia.EndWithError(err)
 		}

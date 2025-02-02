@@ -48,7 +48,7 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
-		data.SetupProperties,
+		data.ServerConnectionProperties,
 		data.TitleProperty,
 		data.BundleNameProperty)
 	if err != nil {

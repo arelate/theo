@@ -57,7 +57,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
-		data.SetupProperties,
+		data.ServerConnectionProperties,
 		data.TitleProperty,
 		data.BundleNameProperty)
 	if err != nil {

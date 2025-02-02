@@ -1,9 +1,9 @@
 package data
 
 const (
-	VangoghHealthPath       = "/api/health"
-	VangoghHealthAuthPath   = "/api/health-auth"
-	VangoghTheoMetadataPath = "/api/metadata"
-	VangoghFilesPath        = "/files"
-	VangoghImagePath        = "/image"
+	ServerHealthPath       = "/api/health"
+	ServerHealthAuthPath   = "/api/health-auth"
+	ServerTheoMetadataPath = "/api/metadata"
+	ServerFilesPath        = "/files"
+	ServerImagePath        = "/image"
 )

@@ -11,39 +11,39 @@ import (
 	"net/url"
 )
 
-func TestVangoghConnectionHandler(_ *url.URL) error {
-	return TestVangoghConnection()
+func TestServerConnectionHandler(_ *url.URL) error {
+	return TestServerConnection()
 }
 
-func TestVangoghConnection() error {
+func TestServerConnection() error {
 
-	tsa := nod.Begin("testing vangogh connection...")
-	defer tsa.EndWithResult("success - theo setup is valid")
+	tsa := nod.Begin("testing server connection...")
+	defer tsa.EndWithResult("success - server setup is valid")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}
 
-	rdx, err := redux.NewReader(reduxDir, data.SetupProperties)
+	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}
 
-	if err := testVangoghConnectivity(rdx); err != nil {
+	if err := testServerConnectivity(rdx); err != nil {
 		return tsa.EndWithError(err)
 	}
 
-	if err := testVangoghAuth(rdx); err != nil {
+	if err := testServerAuth(rdx); err != nil {
 		return tsa.EndWithError(err)
 	}
 
 	return nil
 }
 
-func testVangoghConnectivity(rdx redux.Readable) error {
+func testServerConnectivity(rdx redux.Readable) error {
 
-	testUrl, err := data.VangoghUrl(rdx, data.VangoghHealthPath, nil)
+	testUrl, err := data.ServerUrl(rdx, data.ServerHealthPath, nil)
 	if err != nil {
 		return err
 	}
@@ -75,9 +75,9 @@ func testVangoghConnectivity(rdx redux.Readable) error {
 	return nil
 }
 
-func testVangoghAuth(rdx redux.Readable) error {
+func testServerAuth(rdx redux.Readable) error {
 
-	testUrl, err := data.VangoghUrl(rdx, data.VangoghHealthAuthPath, nil)
+	testUrl, err := data.ServerUrl(rdx, data.ServerHealthAuthPath, nil)
 	if err != nil {
 		return err
 	}
@@ -90,8 +90,8 @@ func testVangoghAuth(rdx redux.Readable) error {
 		return tvaa.EndWithError(err)
 	}
 
-	if username, ok := rdx.GetLastVal(data.SetupProperties, data.VangoghUsernameProperty); ok && username != "" {
-		if password, sure := rdx.GetLastVal(data.SetupProperties, data.VangoghPasswordProperty); sure && password != "" {
+	if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
+		if password, sure := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerPasswordProperty); sure && password != "" {
 			req.SetBasicAuth(username, password)
 		} else {
 			return tvaa.EndWithError(errors.New("password cannot be empty"))

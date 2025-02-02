@@ -83,7 +83,7 @@ remove-prefix
 remove-steam-shortcut
     id^&
 
-reset-vangogh-connection
+reset-server-connection
 
 reveal-backups
 
@@ -118,14 +118,14 @@ set-prefix-exe-path
     lang-code
     exe-path
 
-set-vangogh-connection
+set-server-connection
     protocol
     address*
     port
     username*
     password*
 
-test-vangogh-connection
+test-server-connection
 
 uninstall
     id^&*

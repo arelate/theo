@@ -41,7 +41,7 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 		return nil, gtma.EndWithError(err)
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SetupProperties, data.TitleProperty, data.SlugProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, data.TitleProperty, data.SlugProperty)
 	if err != nil {
 		return nil, gtma.EndWithError(err)
 	}
@@ -84,8 +84,8 @@ func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh
 
 func fetchRemoteTheoMetadata(id string, rdx redux.Readable, kvTheoMetadata kevlar.KeyValues) (*vangogh_integration.TheoMetadata, error) {
 
-	vdmu, err := data.VangoghUrl(rdx,
-		data.VangoghTheoMetadataPath,
+	vdmu, err := data.ServerUrl(rdx,
+		data.ServerTheoMetadataPath,
 		map[string]string{vangogh_integration.IdProperty: id})
 	if err != nil {
 		return nil, err

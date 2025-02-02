@@ -73,7 +73,7 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 		return rsfua.EndWithError(err)
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.TitleProperty, data.BundleNameProperty, data.SetupProperties)
+	rdx, err := redux.NewWriter(reduxDir, data.TitleProperty, data.BundleNameProperty, data.ServerConnectionProperties)
 	if err != nil {
 		return rsfua.EndWithError(err)
 	}

@@ -26,7 +26,7 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 	force bool,
 	ids ...string) error {
 
-	da := nod.NewProgress("downloading game data from vangogh...")
+	da := nod.NewProgress("downloading game data from the server...")
 	defer da.EndWithResult("done")
 
 	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
@@ -70,15 +70,15 @@ func downloadProductFiles(id string,
 		return gpdla.EndWithError(err)
 	}
 
-	rdx, err := redux.NewReader(reduxDir, data.SetupProperties)
+	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties)
 	if err != nil {
 		return gpdla.EndWithError(err)
 	}
 
 	dc := dolo.DefaultClient
 
-	if username, ok := rdx.GetLastVal(data.SetupProperties, data.VangoghUsernameProperty); ok && username != "" {
-		if password, sure := rdx.GetLastVal(data.SetupProperties, data.VangoghPasswordProperty); sure && password != "" {
+	if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
+		if password, sure := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerPasswordProperty); sure && password != "" {
 			dc.SetBasicAuth(username, password)
 		}
 	}
@@ -102,8 +102,8 @@ func downloadProductFiles(id string,
 
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 
-		fileUrl, err := data.VangoghUrl(rdx,
-			data.VangoghFilesPath, map[string]string{
+		fileUrl, err := data.ServerUrl(rdx,
+			data.ServerFilesPath, map[string]string{
 				"manual-url": dl.ManualUrl,
 			})
 		if err != nil {
