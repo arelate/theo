@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -50,7 +50,7 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 		return ra.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties, data.BundleNameProperty)
+	rdx, err := redux.NewReader(reduxDir, data.SetupProperties, data.BundleNameProperty)
 	if err != nil {
 		return ra.EndWithError(err)
 	}
@@ -58,7 +58,7 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 	return currentOsRunApp(id, langCode, rdx, env, verbose)
 }
 
-func currentOsRunApp(id, langCode string, rdx kevlar.ReadableRedux, env []string, verbose bool) error {
+func currentOsRunApp(id, langCode string, rdx redux.Readable, env []string, verbose bool) error {
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -140,7 +140,7 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 		return nil, fia.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
 	if err != nil {
 		return nil, fia.EndWithError(err)
 	}
@@ -224,7 +224,7 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		return coipa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
 	if err != nil {
 		return coipa.EndWithError(err)
 	}

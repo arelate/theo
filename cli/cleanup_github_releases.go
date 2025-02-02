@@ -23,7 +23,7 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 		return cra.EndWithError(err)
 	}
 
-	kvGitHubReleases, err := kevlar.NewKeyValues(gitHubReleasesDir, kevlar.JsonExt)
+	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
 	if err != nil {
 		return cra.EndWithError(err)
 	}

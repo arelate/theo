@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -49,7 +49,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return wra.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.PrefixEnvProperty, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.PrefixEnvProperty, data.PrefixExePathProperty)
 	if err != nil {
 		return wra.EndWithError(err)
 	}

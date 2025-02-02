@@ -3,9 +3,9 @@ package cli
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 )
 
@@ -38,7 +38,7 @@ func DeletePrefixExePath(ids []string, langCode string, force bool) error {
 		return dpepa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.PrefixExePathProperty)
 	if err != nil {
 		return dpepa.EndWithError(err)
 	}

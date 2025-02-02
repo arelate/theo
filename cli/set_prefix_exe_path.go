@@ -3,9 +3,9 @@ package cli
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -42,7 +42,7 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 		return spepa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.PrefixExePathProperty)
 	if err != nil {
 		return spepa.EndWithError(err)
 	}

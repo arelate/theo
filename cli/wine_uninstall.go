@@ -45,7 +45,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, vangogh_integration.Windows.String(), langCode)
 
-	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return wua.EndWithError(err)
 	}
@@ -59,7 +59,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 	}
 
 	for _, id := range ids {
-		if _, err := kvOsLangInstalledMetadata.Cut(id); err != nil {
+		if err = kvOsLangInstalledMetadata.Cut(id); err != nil {
 			return wua.EndWithError(err)
 		}
 

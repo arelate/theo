@@ -36,7 +36,7 @@ func (ghs *GitHubSource) GetLatestRelease() (*github_integration.GitHubRelease, 
 		return nil, err
 	}
 
-	kvGitHubReleases, err := kevlar.NewKeyValues(gitHubReleasesDir, kevlar.JsonExt)
+	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
 	if err != nil {
 		return nil, err
 	}

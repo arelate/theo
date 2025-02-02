@@ -4,9 +4,9 @@ import (
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"
@@ -28,7 +28,7 @@ func macOsInstallProduct(id string,
 	metadata *vangogh_integration.TheoMetadata,
 	link *vangogh_integration.TheoDownloadLink,
 	downloadsDir, extractsDir, installedAppsDir string,
-	rdx kevlar.WriteableRedux,
+	rdx redux.Writeable,
 	force bool) error {
 
 	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, metadata.Title)
@@ -96,7 +96,7 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 	return cmd.Run()
 }
 
-func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx kevlar.WriteableRedux, force bool) error {
+func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx redux.Writeable, force bool) error {
 
 	mpea := nod.Begin(" placing product installation files...")
 	defer mpea.EndWithResult("done")

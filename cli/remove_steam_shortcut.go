@@ -6,9 +6,9 @@ import (
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -73,7 +73,7 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 		return rsfua.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.TitleProperty, data.BundleNameProperty, data.SetupProperties)
+	rdx, err := redux.NewWriter(reduxDir, data.TitleProperty, data.BundleNameProperty, data.SetupProperties)
 	if err != nil {
 		return rsfua.EndWithError(err)
 	}

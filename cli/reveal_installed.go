@@ -3,9 +3,9 @@ package cli
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"path/filepath"
 )
@@ -39,7 +39,7 @@ func RevealInstalled(langCode string, ids ...string) error {
 		return fia.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties, data.BundleNameProperty)
+	rdx, err := redux.NewReader(reduxDir, data.SetupProperties, data.BundleNameProperty)
 	if err != nil {
 		return fia.EndWithError(err)
 	}
@@ -47,7 +47,7 @@ func RevealInstalled(langCode string, ids ...string) error {
 	return currentOsRevealInstalledApps(langCode, rdx, ids...)
 }
 
-func currentOsRevealInstalledApps(langCode string, rdx kevlar.ReadableRedux, ids ...string) error {
+func currentOsRevealInstalledApps(langCode string, rdx redux.Readable, ids ...string) error {
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {

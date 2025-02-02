@@ -7,9 +7,9 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -94,7 +94,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 		return asfua.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir,
+	rdx, err := redux.NewWriter(reduxDir,
 		data.TitleProperty,
 		data.BundleNameProperty,
 		data.SetupProperties,
@@ -131,7 +131,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 	return nil
 }
 
-func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate string, rdx kevlar.ReadableRedux) (*steam_integration.Shortcut, error) {
+func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate string, rdx redux.Readable) (*steam_integration.Shortcut, error) {
 
 	var title string
 	if tp, ok := rdx.GetLastVal(data.TitleProperty, id); ok && tp != "" {
@@ -163,7 +163,7 @@ func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate s
 	return shortcut, nil
 }
 
-func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata *vangogh_integration.TheoImages, rdx kevlar.ReadableRedux, force bool) error {
+func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata *vangogh_integration.TheoImages, rdx redux.Readable, force bool) error {
 
 	dsgia := nod.Begin(" downloading Steam Grid images...")
 	defer dsgia.EndWithResult("done")

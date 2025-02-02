@@ -22,7 +22,7 @@ func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem
 		return pima.EndWithError(err)
 	}
 
-	kvTheoMetadata, err := kevlar.NewKeyValues(theoMetadataDir, kevlar.JsonExt)
+	kvTheoMetadata, err := kevlar.New(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return pima.EndWithError(err)
 	}
@@ -73,7 +73,7 @@ func pinInstalledMetadataForOs(id string,
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, os.String(), langCode)
 
-	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return pimoa.EndWithError(err)
 	}

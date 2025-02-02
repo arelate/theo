@@ -4,9 +4,9 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/backups"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -38,7 +38,7 @@ func ArchivePrefix(langCode string, ids ...string) error {
 		return apa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SlugProperty)
+	rdx, err := redux.NewReader(reduxDir, data.SlugProperty)
 	if err != nil {
 		return apa.EndWithError(err)
 	}
@@ -58,7 +58,7 @@ func ArchivePrefix(langCode string, ids ...string) error {
 
 }
 
-func archiveProductPrefix(id, langCode string, rdx kevlar.ReadableRedux) error {
+func archiveProductPrefix(id, langCode string, rdx redux.Readable) error {
 
 	appa := nod.Begin(" archiving prefix for %s...", id)
 	defer appa.EndWithResult("done")

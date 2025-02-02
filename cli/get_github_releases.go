@@ -8,6 +8,7 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/http"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 		return gra.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.GitHubReleasesUpdatedProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.GitHubReleasesUpdatedProperty)
 	if err != nil {
 		return gra.EndWithError(err)
 	}
@@ -33,7 +34,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 		return gra.EndWithError(err)
 	}
 
-	kvGitHubReleases, err := kevlar.NewKeyValues(gitHubReleasesDir, kevlar.JsonExt)
+	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
 	if err != nil {
 		return gra.EndWithError(err)
 	}
@@ -58,7 +59,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 	return nil
 }
 
-func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx kevlar.WriteableRedux, force bool) error {
+func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx redux.Writeable, force bool) error {
 
 	grlra := nod.Begin(" %s...", ghs.OwnerRepo)
 	defer grlra.EndWithResult("done")

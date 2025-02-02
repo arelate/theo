@@ -2,9 +2,9 @@ package cli
 
 import (
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 )
 
@@ -21,7 +21,7 @@ func ResetVangoghConnection() error {
 		return rsa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SetupProperties)
+	rdx, err := redux.NewWriter(reduxDir, data.SetupProperties)
 	if err != nil {
 		return rsa.EndWithError(err)
 	}

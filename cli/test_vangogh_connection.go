@@ -3,9 +3,9 @@ package cli
 import (
 	"errors"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"io"
 	"net/http"
 	"net/url"
@@ -25,7 +25,7 @@ func TestVangoghConnection() error {
 		return tsa.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
+	rdx, err := redux.NewReader(reduxDir, data.SetupProperties)
 	if err != nil {
 		return tsa.EndWithError(err)
 	}
@@ -41,7 +41,7 @@ func TestVangoghConnection() error {
 	return nil
 }
 
-func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
+func testVangoghConnectivity(rdx redux.Readable) error {
 
 	testUrl, err := data.VangoghUrl(rdx, data.VangoghHealthPath, nil)
 	if err != nil {
@@ -75,7 +75,7 @@ func testVangoghConnectivity(rdx kevlar.ReadableRedux) error {
 	return nil
 }
 
-func testVangoghAuth(rdx kevlar.ReadableRedux) error {
+func testVangoghAuth(rdx redux.Readable) error {
 
 	testUrl, err := data.VangoghUrl(rdx, data.VangoghHealthAuthPath, nil)
 	if err != nil {

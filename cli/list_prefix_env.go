@@ -2,9 +2,9 @@ package cli
 
 import (
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"strings"
 )
@@ -23,7 +23,7 @@ func ListPrefixEnv() error {
 		return lpea.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir,
+	rdx, err := redux.NewReader(reduxDir,
 		data.PrefixEnvProperty,
 		data.TitleProperty)
 	if err != nil {

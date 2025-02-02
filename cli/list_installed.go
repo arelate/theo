@@ -6,6 +6,7 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"path/filepath"
 )
@@ -36,7 +37,7 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, os.String(), langCode)
 
-	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return lia.EndWithError(err)
 	}
@@ -46,7 +47,7 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		return lia.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir,
+	rdx, err := redux.NewReader(reduxDir,
 		data.SetupProperties,
 		data.TitleProperty,
 		data.BundleNameProperty)

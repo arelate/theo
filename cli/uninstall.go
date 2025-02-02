@@ -6,6 +6,7 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"path/filepath"
 )
@@ -45,7 +46,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOs().String(), langCode)
 
-	kvOsLangInstalledMetadata, err := kevlar.NewKeyValues(osLangInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return ua.EndWithError(err)
 	}
@@ -55,7 +56,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		return ua.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir,
+	rdx, err := redux.NewReader(reduxDir,
 		data.SetupProperties,
 		data.TitleProperty,
 		data.BundleNameProperty)
@@ -79,7 +80,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 			return ua.EndWithError(err)
 		}
 
-		if _, err := kvOsLangInstalledMetadata.Cut(id); err != nil {
+		if err = kvOsLangInstalledMetadata.Cut(id); err != nil {
 			return ua.EndWithError(err)
 		}
 

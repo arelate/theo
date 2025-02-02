@@ -9,6 +9,7 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"io"
 	"net/http"
 )
@@ -23,7 +24,7 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 		return nil, gtma.EndWithError(err)
 	}
 
-	kvTheoMetadata, err := kevlar.NewKeyValues(theoMetadataDir, kevlar.JsonExt)
+	kvTheoMetadata, err := kevlar.New(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return nil, gtma.EndWithError(err)
 	}
@@ -40,7 +41,7 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 		return nil, gtma.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxWriter(reduxDir, data.SetupProperties, data.TitleProperty, data.SlugProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SetupProperties, data.TitleProperty, data.SlugProperty)
 	if err != nil {
 		return nil, gtma.EndWithError(err)
 	}
@@ -81,7 +82,7 @@ func readLocalTheoMetadata(id string, kvTheoMetadata kevlar.KeyValues) (*vangogh
 	return &tm, nil
 }
 
-func fetchRemoteTheoMetadata(id string, rdx kevlar.ReadableRedux, kvTheoMetadata kevlar.KeyValues) (*vangogh_integration.TheoMetadata, error) {
+func fetchRemoteTheoMetadata(id string, rdx redux.Readable, kvTheoMetadata kevlar.KeyValues) (*vangogh_integration.TheoMetadata, error) {
 
 	vdmu, err := data.VangoghUrl(rdx,
 		data.VangoghTheoMetadataPath,

@@ -3,11 +3,11 @@ package rest
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
+	"github.com/boggydigital/redux"
 )
 
 var (
-	rdx kevlar.ReadableRedux
+	rdx redux.Readable
 )
 
 func Init() (err error) {

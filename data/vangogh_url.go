@@ -2,11 +2,11 @@ package data
 
 import (
 	"errors"
-	"github.com/boggydigital/kevlar"
+	"github.com/boggydigital/redux"
 	"net/url"
 )
 
-func VangoghUrl(rdx kevlar.ReadableRedux, path string, params map[string]string) (*url.URL, error) {
+func VangoghUrl(rdx redux.Readable, path string, params map[string]string) (*url.URL, error) {
 	protocol := "https"
 	address := ""
 

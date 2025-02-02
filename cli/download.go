@@ -5,9 +5,9 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 )
 
@@ -70,7 +70,7 @@ func downloadProductFiles(id string,
 		return gpdla.EndWithError(err)
 	}
 
-	rdx, err := kevlar.NewReduxReader(reduxDir, data.SetupProperties)
+	rdx, err := redux.NewReader(reduxDir, data.SetupProperties)
 	if err != nil {
 		return gpdla.EndWithError(err)
 	}

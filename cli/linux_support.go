@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,7 +23,7 @@ func linuxInstallProduct(id string,
 	metadata *vangogh_integration.TheoMetadata,
 	link *vangogh_integration.TheoDownloadLink,
 	absInstallerPath, installedAppsDir string,
-	rdx kevlar.WriteableRedux) error {
+	rdx redux.Writeable) error {
 
 	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, metadata.Title)
 	defer lia.EndWithResult("done")
