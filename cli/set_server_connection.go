@@ -36,7 +36,7 @@ func SetServerConnection(
 	}
 
 	sa := nod.Begin("setting up server connection...")
-	defer sa.EndWithResult("done, run test-setup to validate")
+	defer sa.EndWithResult("done, run test-server-connection to validate")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
