@@ -61,8 +61,10 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 
 		var version string
 		var size int
-		for _, dl := range dls {
-			version = dl.Version
+		for ii, dl := range dls {
+			if ii == 0 {
+				version = dl.Version
+			}
 			size += dl.EstimatedBytes
 		}
 
