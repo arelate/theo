@@ -22,8 +22,8 @@ func WineInstallHandler(u *url.URL) error {
 	if q.Has("env") {
 		env = strings.Split(q.Get("env"), ",")
 	}
-	keepDownloads := !q.Has("keep-downloads")
-	noSteamShortcut := !q.Has("no-steam-shortcut")
+	keepDownloads := q.Has("keep-downloads")
+	noSteamShortcut := q.Has("no-steam-shortcut")
 	verbose := q.Has("verbose")
 	force := q.Has("force")
 

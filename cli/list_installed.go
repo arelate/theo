@@ -8,6 +8,7 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"path/filepath"
 )
@@ -43,6 +44,16 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		return lia.EndWithError(err)
 	}
 
+	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewReader(reduxDir, data.InstallParametersProperty)
+	if err != nil {
+		return err
+	}
+
 	summary := make(map[string][]string)
 
 	for id := range kvOsLangInstalledMetadata.Keys() {
@@ -68,7 +79,13 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 			size += dl.EstimatedBytes
 		}
 
-		summary[name] = []string{"ver.: " + version, "size: " + fmtBytes(size)}
+		summary[name] = append(summary[name], "size: "+fmtBytes(size), "ver.: "+version)
+
+		if installParams, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
+			for _, ips := range installParams {
+				summary[name] = append(summary[name], "par.:"+ips)
+			}
+		}
 	}
 
 	if len(summary) == 0 {

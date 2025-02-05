@@ -29,8 +29,8 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	keepDownloads := !q.Has("keep-downloads")
-	noSteamShortcut := !q.Has("no-steam-shortcut")
+	keepDownloads := q.Has("keep-downloads")
+	noSteamShortcut := q.Has("no-steam-shortcut")
 	force := q.Has("force")
 
 	langCode := defaultLangCode
