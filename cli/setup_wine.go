@@ -10,11 +10,11 @@ import (
 
 const forceGitHubUpdatesDays = 30
 
-func UpdateWineHandler(u *url.URL) error {
-	return UpdateWine(u.Query().Has("force"))
+func SetupWineHandler(u *url.URL) error {
+	return SetupWine(u.Query().Has("force"))
 }
 
-func UpdateWine(force bool) error {
+func SetupWine(force bool) error {
 
 	currentOs := data.CurrentOs()
 
@@ -23,7 +23,7 @@ func UpdateWine(force bool) error {
 		return err
 	}
 
-	uwa := nod.Begin("updating WINE dependencies for %s...", currentOs)
+	uwa := nod.Begin("setting up WINE for %s...", currentOs)
 	defer uwa.EndWithResult("done")
 
 	if err := getGitHubReleases(currentOs, force); err != nil {

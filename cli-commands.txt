@@ -125,14 +125,14 @@ set-server-connection
     username*
     password*
 
+setup-wine
+    force
+
 test-server-connection
 
 uninstall
     id^&*
     lang-code
-    force
-
-update-wine
     force
 
 validate
