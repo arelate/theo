@@ -27,29 +27,31 @@ func UpdateHandler(u *url.URL) error {
 
 func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string, all bool, ids ...string) error {
 
-	ua := nod.NewProgress("updating products on %s...", operatingSystem.String())
+	ua := nod.NewProgress("updating installed products on %s...", operatingSystem.String())
 	defer ua.EndWithResult("done")
 
-	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
+	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
 		return ua.EndWithError(err)
 	}
 
-	rdx, err := redux.NewReader(reduxDir,
-		data.ServerConnectionProperties,
-		data.InstallParametersProperty)
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, operatingSystem.String(), langCode)
+
+	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
 		return ua.EndWithError(err)
 	}
 
 	if all {
-		ids = rdx.Keys(data.InstallParametersProperty)
+		for id := range kvOsLangInstalledMetadata.Keys() {
+			ids = append(ids, id)
+		}
 	}
 
 	ua.TotalInt(len(ids))
 
 	for _, id := range ids {
-		if err = checkProductUpdates(id, operatingSystem, langCode, rdx); err != nil {
+		if err = checkProductUpdates(id, operatingSystem, langCode, kvOsLangInstalledMetadata); err != nil {
 			return ua.EndWithError(err)
 		}
 		ua.Increment()
@@ -58,25 +60,15 @@ func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string
 	return nil
 }
 
-func checkProductUpdates(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) error {
+func checkProductUpdates(id string,
+	operatingSystem vangogh_integration.OperatingSystem,
+	langCode string,
+	kvOsLangInstalledMetadata kevlar.KeyValues) error {
 
 	cpua := nod.Begin(" checking product updates for %s...", id)
 	defer cpua.EndWithResult("done")
 
-	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
-	if err != nil {
-		return cpua.EndWithError(err)
-	}
-
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, operatingSystem.String(), langCode)
-
-	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
-	if err != nil {
-		return cpua.EndWithError(err)
-	}
-
 	if !kvOsLangInstalledMetadata.Has(id) {
-		// not installed
 		cpua.EndWithResult("not installed on %s", operatingSystem)
 		return nil
 	}
@@ -103,6 +95,16 @@ func checkProductUpdates(id string, operatingSystem vangogh_integration.Operatin
 	if installedVersion == latestVersion {
 		cpua.EndWithResult("current version is the latest: %s", installedVersion)
 		return nil
+	}
+
+	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
+	if err != nil {
+		return cpua.EndWithError(err)
+	}
+
+	rdx, err := redux.NewReader(reduxDir, data.InstallParametersProperty)
+	if err != nil {
+		return cpua.EndWithError(err)
 	}
 
 	var ip *installParameters
