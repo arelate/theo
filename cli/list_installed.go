@@ -1,12 +1,13 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"net/url"
 	"path/filepath"
 )
@@ -42,31 +43,30 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		return lia.EndWithError(err)
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return lia.EndWithError(err)
-	}
-
-	rdx, err := redux.NewReader(reduxDir,
-		data.ServerConnectionProperties,
-		data.TitleProperty,
-		data.BundleNameProperty)
-	if err != nil {
-		return lia.EndWithError(err)
-	}
-
 	summary := make(map[string][]string)
 
 	for id := range kvOsLangInstalledMetadata.Keys() {
 
-		var name string
-		if title, ok := rdx.GetLastVal(data.TitleProperty, id); ok {
-			name = title + " (" + id + ")"
-		} else {
-			name = id
+		installedMetadata, err := getInstalledMetadata(id, kvOsLangInstalledMetadata)
+		if err != nil {
+			return lia.EndWithError(err)
 		}
 
-		summary[name] = nil
+		name := fmt.Sprintf("%s (%s)", installedMetadata.Title, id)
+
+		dls := installedMetadata.DownloadLinks.
+			FilterOperatingSystems(os).
+			FilterDownloadTypes(vangogh_integration.Installer).
+			FilterLanguageCodes(langCode)
+
+		var version string
+		var size int
+		for _, dl := range dls {
+			version = dl.Version
+			size += dl.EstimatedBytes
+		}
+
+		summary[name] = []string{"ver.: " + version, "size: " + fmtBytes(size)}
 	}
 
 	if len(summary) == 0 {
@@ -76,4 +76,34 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 	}
 
 	return nil
+}
+
+func getInstalledMetadata(id string, kvInstalled kevlar.KeyValues) (*vangogh_integration.TheoMetadata, error) {
+	rcInstalled, err := kvInstalled.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	defer rcInstalled.Close()
+
+	var installedMetadata vangogh_integration.TheoMetadata
+
+	if err = json.NewDecoder(rcInstalled).Decode(&installedMetadata); err != nil {
+		return nil, err
+	}
+
+	return &installedMetadata, nil
+}
+
+func fmtBytes(b int) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
 }
