@@ -57,14 +57,14 @@ func parseInstallParameters(line string) *installParameters {
 	return ip
 }
 
-func filterInstallParameters(operatingSystem vangogh_integration.OperatingSystem, langCode string, lines ...string) string {
+func filterInstallParameters(operatingSystem vangogh_integration.OperatingSystem, langCode string, lines ...string) *installParameters {
 	for _, line := range lines {
 		ip := parseInstallParameters(line)
 		if ip.operatingSystem == operatingSystem && ip.langCode == langCode {
-			return ip.String()
+			return ip
 		}
 	}
-	return ""
+	return nil
 }
 
 func defaultInstallParameters(os vangogh_integration.OperatingSystem) *installParameters {
@@ -129,8 +129,8 @@ func unpinInstallParameters(
 
 	for _, id := range ids {
 		if installParams, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
-			if olcip := filterInstallParameters(operatingSystem, langCode, installParams...); olcip != "" {
-				if err = rdx.CutValues(data.InstallParametersProperty, id, olcip); err != nil {
+			if olcip := filterInstallParameters(operatingSystem, langCode, installParams...); olcip != nil {
+				if err = rdx.CutValues(data.InstallParametersProperty, id, olcip.String()); err != nil {
 					return err
 				}
 			}

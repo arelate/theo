@@ -64,22 +64,10 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		}
 
 		name := fmt.Sprintf("%s (%s)", installedMetadata.Title, id)
+		version := metadataVersion(installedMetadata, os, langCode)
+		estimatedBytes := metadataEstimatedBytes(installedMetadata, os, langCode)
 
-		dls := installedMetadata.DownloadLinks.
-			FilterOperatingSystems(os).
-			FilterDownloadTypes(vangogh_integration.Installer).
-			FilterLanguageCodes(langCode)
-
-		var version string
-		var size int
-		for ii, dl := range dls {
-			if ii == 0 {
-				version = dl.Version
-			}
-			size += dl.EstimatedBytes
-		}
-
-		summary[name] = append(summary[name], "size: "+fmtBytes(size), "ver.: "+version)
+		summary[name] = append(summary[name], "size: "+fmtBytes(estimatedBytes), "ver.: "+version)
 
 		if installParams, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
 			for _, ips := range installParams {
@@ -127,4 +115,34 @@ func fmtBytes(b int) string {
 	}
 	return fmt.Sprintf("%.1f %cB",
 		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
+func metadataVersion(metadata *vangogh_integration.TheoMetadata, operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(operatingSystem).
+		FilterDownloadTypes(vangogh_integration.Installer).
+		FilterLanguageCodes(langCode)
+
+	var version string
+	for ii, dl := range dls {
+		if ii == 0 {
+			version = dl.Version
+		}
+	}
+
+	return version
+}
+
+func metadataEstimatedBytes(metadata *vangogh_integration.TheoMetadata, operatingSystem vangogh_integration.OperatingSystem, langCode string) int {
+	dls := metadata.DownloadLinks.
+		FilterOperatingSystems(operatingSystem).
+		FilterDownloadTypes(vangogh_integration.Installer).
+		FilterLanguageCodes(langCode)
+
+	var size int
+	for _, dl := range dls {
+		size += dl.EstimatedBytes
+	}
+
+	return size
 }

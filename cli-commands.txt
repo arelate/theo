@@ -135,6 +135,11 @@ uninstall
     lang-code
     force
 
+update
+    id^&
+    lang-code
+    all
+
 validate
     id^&*
     os&
@@ -165,3 +170,8 @@ wine-uninstall
     lang-code
     archive
     force
+
+wine-update
+    id^&
+    lang-code
+    all

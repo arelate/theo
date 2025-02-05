@@ -58,7 +58,7 @@ func pinTheoMetadata(id string,
 }
 
 func pinInstalledMetadataForOs(id string,
-	os vangogh_integration.OperatingSystem,
+	operatingSystem vangogh_integration.OperatingSystem,
 	langCode string,
 	kvTheoMetadata kevlar.KeyValues,
 	force bool) error {
@@ -71,7 +71,7 @@ func pinInstalledMetadataForOs(id string,
 		return pimoa.EndWithError(err)
 	}
 
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, os.String(), langCode)
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, operatingSystem.String(), langCode)
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {

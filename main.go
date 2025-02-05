@@ -79,11 +79,13 @@ func main() {
 		"run":                     cli.RunHandler,
 		"test-server-connection":  cli.TestServerConnectionHandler,
 		"uninstall":               cli.UninstallHandler,
+		"update":                  cli.UpdateHandler,
 		"validate":                cli.ValidateHandler,
 		"version":                 cli.VersionHandler,
 		"wine-install":            cli.WineInstallHandler,
 		"wine-run":                cli.WineRunHandler,
 		"wine-uninstall":          cli.WineUninstallHandler,
+		"wine-update":             cli.WineUpdateHandler,
 	})
 
 	if err := defs.AssertCommandsHaveHandlers(); err != nil {

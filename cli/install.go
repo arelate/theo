@@ -29,8 +29,6 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	keepDownloads := q.Has("keep-downloads")
-	noSteamShortcut := q.Has("no-steam-shortcut")
 	force := q.Has("force")
 
 	langCode := defaultLangCode
@@ -38,25 +36,28 @@ func InstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return Install(langCode, downloadTypes, keepDownloads, noSteamShortcut, force, ids...)
+	ip := &installParameters{
+		operatingSystem: data.CurrentOs(),
+		langCode:        langCode,
+		downloadTypes:   downloadTypes,
+		keepDownloads:   q.Has("keep-downloads"),
+		noSteamShortcut: q.Has("no-steam-shortcut"),
+	}
+
+	return Install(ip, force, ids...)
 }
 
-func Install(langCode string,
-	downloadTypes []vangogh_integration.DownloadType,
-	keepDownloads bool,
-	noSteamShortcut bool,
-	force bool,
-	ids ...string) error {
+func Install(ip *installParameters, force bool, ids ...string) error {
 
 	ia := nod.Begin("installing products...")
 	defer ia.EndWithResult("done")
 
 	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
-	langCodes := []string{langCode}
+	langCodes := []string{ip.langCode}
 
-	vangogh_integration.PrintParams(ids, currentOs, langCodes, downloadTypes, true)
+	vangogh_integration.PrintParams(ids, currentOs, langCodes, ip.downloadTypes, true)
 
-	supported, err := filterNotSupported(langCode, force, ids...)
+	supported, err := filterNotSupported(ip.langCode, force, ids...)
 	if err != nil {
 		return ia.EndWithError(err)
 	}
@@ -68,7 +69,7 @@ func Install(langCode string,
 		return nil
 	}
 
-	notInstalled, err := filterNotInstalled(langCode, ids...)
+	notInstalled, err := filterNotInstalled(ip.langCode, ids...)
 	if err != nil {
 		return ia.EndWithError(err)
 	}
@@ -86,49 +87,41 @@ func Install(langCode string,
 		return ia.EndWithError(err)
 	}
 
-	if err = Download(currentOs, langCodes, downloadTypes, force, ids...); err != nil {
+	if err = Download(currentOs, langCodes, ip.downloadTypes, force, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 
-	if err = Validate(currentOs, langCodes, downloadTypes, ids...); err != nil {
+	if err = Validate(currentOs, langCodes, ip.downloadTypes, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 
 	for _, id := range ids {
-		if err := currentOsInstallProduct(id, langCode, downloadTypes, force); err != nil {
+		if err := currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, force); err != nil {
 			return ia.EndWithError(err)
 		}
 	}
 
-	if !noSteamShortcut {
-		if err := AddSteamShortcut(langCode, runLaunchOptionsTemplate, force, ids...); err != nil {
+	if !ip.noSteamShortcut {
+		if err := AddSteamShortcut(ip.langCode, runLaunchOptionsTemplate, force, ids...); err != nil {
 			return ia.EndWithError(err)
 		}
 	}
 
-	if !keepDownloads {
-		if err = RemoveDownloads(currentOs, langCodes, downloadTypes, force, ids...); err != nil {
+	if !ip.keepDownloads {
+		if err = RemoveDownloads(currentOs, langCodes, ip.downloadTypes, force, ids...); err != nil {
 			return ia.EndWithError(err)
 		}
 	}
 
-	if err = pinInstalledMetadata(currentOs, langCode, force, ids...); err != nil {
+	if err = pinInstalledMetadata(currentOs, ip.langCode, force, ids...); err != nil {
 		return ia.EndWithError(err)
-	}
-
-	ip := &installParameters{
-		operatingSystem: data.CurrentOs(),
-		langCode:        langCode,
-		downloadTypes:   downloadTypes,
-		keepDownloads:   keepDownloads,
-		noSteamShortcut: noSteamShortcut,
 	}
 
 	if err = pinInstallParameters(ip, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 
-	if err = RevealInstalled(langCode, ids...); err != nil {
+	if err = RevealInstalled(ip.langCode, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 
