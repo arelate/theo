@@ -83,8 +83,10 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 
 		if installParams, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
 			for _, ips := range installParams {
-				summary[name] = append(summary[name], "par.:"+ips)
+				summary[name] = append(summary[name], "par.: "+ips)
 			}
+		} else {
+			summary[name] = append(summary[name], "par.: (default) "+defaultInstallParameters(os).String())
 		}
 	}
 

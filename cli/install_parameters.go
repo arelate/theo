@@ -67,6 +67,16 @@ func filterInstallParameters(operatingSystem vangogh_integration.OperatingSystem
 	return ""
 }
 
+func defaultInstallParameters(os vangogh_integration.OperatingSystem) *installParameters {
+	return &installParameters{
+		operatingSystem: os,
+		langCode:        defaultLangCode,
+		downloadTypes:   []vangogh_integration.DownloadType{vangogh_integration.Installer, vangogh_integration.DLC},
+		keepDownloads:   false,
+		noSteamShortcut: false,
+	}
+}
+
 func pinInstallParameters(ip *installParameters, ids ...string) error {
 
 	pipa := nod.Begin(" pinning install parameters...")
