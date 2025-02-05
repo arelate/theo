@@ -29,8 +29,8 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	removeDownloads := !q.Has("keep-downloads")
-	addSteamShortcut := !q.Has("no-steam-shortcut")
+	keepDownloads := !q.Has("keep-downloads")
+	noSteamShortcut := !q.Has("no-steam-shortcut")
 	force := q.Has("force")
 
 	langCode := defaultLangCode
@@ -38,13 +38,13 @@ func InstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return Install(langCode, downloadTypes, removeDownloads, addSteamShortcut, force, ids...)
+	return Install(langCode, downloadTypes, keepDownloads, noSteamShortcut, force, ids...)
 }
 
 func Install(langCode string,
 	downloadTypes []vangogh_integration.DownloadType,
-	removeDownloads bool,
-	addSteamShortcut bool,
+	keepDownloads bool,
+	noSteamShortcut bool,
 	force bool,
 	ids ...string) error {
 
@@ -100,19 +100,31 @@ func Install(langCode string,
 		}
 	}
 
-	if addSteamShortcut {
+	if !noSteamShortcut {
 		if err := AddSteamShortcut(langCode, runLaunchOptionsTemplate, force, ids...); err != nil {
 			return ia.EndWithError(err)
 		}
 	}
 
-	if removeDownloads {
+	if !keepDownloads {
 		if err = RemoveDownloads(currentOs, langCodes, downloadTypes, force, ids...); err != nil {
 			return ia.EndWithError(err)
 		}
 	}
 
 	if err = pinInstalledMetadata(currentOs, langCode, force, ids...); err != nil {
+		return ia.EndWithError(err)
+	}
+
+	ip := &installParameters{
+		operatingSystem: data.CurrentOs(),
+		langCode:        langCode,
+		downloadTypes:   downloadTypes,
+		keepDownloads:   keepDownloads,
+		noSteamShortcut: noSteamShortcut,
+	}
+
+	if err = pinInstallParameters(ip, ids...); err != nil {
 		return ia.EndWithError(err)
 	}
 

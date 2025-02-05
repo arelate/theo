@@ -22,8 +22,8 @@ func WineInstallHandler(u *url.URL) error {
 	if q.Has("env") {
 		env = strings.Split(q.Get("env"), ",")
 	}
-	removeDownloads := !q.Has("keep-downloads")
-	addSteamShortcut := !q.Has("no-steam-shortcut")
+	keepDownloads := !q.Has("keep-downloads")
+	noSteamShortcut := !q.Has("no-steam-shortcut")
 	verbose := q.Has("verbose")
 	force := q.Has("force")
 
@@ -32,14 +32,14 @@ func WineInstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return WineInstall(langCode, env, downloadTypes, removeDownloads, addSteamShortcut, verbose, force, ids...)
+	return WineInstall(langCode, env, downloadTypes, keepDownloads, noSteamShortcut, verbose, force, ids...)
 }
 
 func WineInstall(langCode string,
 	env []string,
 	downloadTypes []vangogh_integration.DownloadType,
-	removeDownloads bool,
-	addSteamShortcut bool,
+	keepDownloads bool,
+	noSteamShortcut bool,
 	verbose bool,
 	force bool,
 	ids ...string) error {
@@ -97,19 +97,31 @@ func WineInstall(langCode string,
 		return wia.EndWithError(err)
 	}
 
-	if addSteamShortcut {
+	if !noSteamShortcut {
 		if err := AddSteamShortcut(langCode, wineRunLaunchOptionsTemplate, force, ids...); err != nil {
 			return wia.EndWithError(err)
 		}
 	}
 
-	if removeDownloads {
+	if !keepDownloads {
 		if err = RemoveDownloads(windowsOs, langCodes, downloadTypes, force, ids...); err != nil {
 			return wia.EndWithError(err)
 		}
 	}
 
 	if err = pinInstalledMetadata(windowsOs, langCode, force, ids...); err != nil {
+		return wia.EndWithError(err)
+	}
+
+	ip := &installParameters{
+		operatingSystem: vangogh_integration.Windows,
+		langCode:        langCode,
+		downloadTypes:   downloadTypes,
+		keepDownloads:   keepDownloads,
+		noSteamShortcut: noSteamShortcut,
+	}
+
+	if err = pinInstallParameters(ip, ids...); err != nil {
 		return wia.EndWithError(err)
 	}
 

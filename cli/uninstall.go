@@ -87,7 +87,11 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		ua.Increment()
 	}
 
-	if err := RemoveSteamShortcut(ids...); err != nil {
+	if err = unpinInstallParameters(data.CurrentOs(), langCode, ids...); err != nil {
+		return ua.EndWithError(err)
+	}
+
+	if err = RemoveSteamShortcut(ids...); err != nil {
 		return ua.EndWithError(err)
 	}
 

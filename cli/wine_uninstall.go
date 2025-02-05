@@ -66,6 +66,10 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 		wua.Increment()
 	}
 
+	if err = unpinInstallParameters(vangogh_integration.Windows, langCode, ids...); err != nil {
+		return wua.EndWithError(err)
+	}
+
 	if err := RemoveSteamShortcut(ids...); err != nil {
 		return wua.EndWithError(err)
 	}

@@ -17,6 +17,10 @@ const (
 	PrefixExePathProperty = "prefix-exe-path"
 
 	GitHubReleasesUpdatedProperty = "github-releases-updated"
+
+	InstallParametersProperty = "install-parameters"
+	KeepDownloadsProperty     = "keep-downloads"
+	NoSteamShortcutProperty   = "no-steam-shortcut"
 )
 
 func AllProperties() []string {
