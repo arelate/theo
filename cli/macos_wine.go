@@ -146,7 +146,7 @@ func macOsCreateCxBottle(id, langCode string, template string, verbose bool) err
 	}
 
 	if _, err = os.Stat(absPrefixDir); err == nil {
-		// cxbottle returns error when bottle already exists
+		// cxbottle --create returns error when bottle already exists
 		return nil
 	}
 

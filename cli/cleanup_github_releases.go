@@ -8,7 +8,8 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"golang.org/x/exp/maps"
+	"iter"
+	"maps"
 	"os"
 	"path/filepath"
 )
@@ -108,18 +109,14 @@ func removeRepoReleasesFiles(absFilePaths []string) error {
 	return removeRepoReleaseDirs(maps.Keys(absDirs))
 }
 
-func removeRepoReleaseDirs(absDirs []string) error {
-	rda := nod.NewProgress("cleaning up older releases directories...")
+func removeRepoReleaseDirs(absDirs iter.Seq[string]) error {
+	rda := nod.Begin("cleaning up older releases directories...")
 	defer rda.EndWithResult("done")
 
-	rda.TotalInt(len(absDirs))
-
-	for _, absDir := range absDirs {
+	for absDir := range absDirs {
 		if err := removeDirIfEmpty(absDir); err != nil {
 			return rda.EndWithError(err)
 		}
-
-		rda.Increment()
 	}
 	return nil
 }

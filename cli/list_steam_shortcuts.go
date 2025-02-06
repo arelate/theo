@@ -3,8 +3,8 @@ package cli
 import (
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/boggydigital/nod"
-	"golang.org/x/exp/slices"
 	"net/url"
+	"slices"
 )
 
 func ListSteamShortcutsHandler(_ *url.URL) error {

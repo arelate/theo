@@ -9,10 +9,10 @@ import (
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"golang.org/x/exp/slices"
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 

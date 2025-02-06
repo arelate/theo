@@ -4,9 +4,9 @@ import (
 	"bufio"
 	_ "embed"
 	"github.com/arelate/southern_light/vangogh_integration"
-	"golang.org/x/exp/slices"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
