@@ -93,7 +93,7 @@ func checkProductUpdates(id string,
 	latestVersion := metadataVersion(latestMetadata, operatingSystem, langCode)
 
 	if installedVersion == latestVersion {
-		cpua.EndWithResult("current version is the latest: %s", installedVersion)
+		cpua.EndWithResult("already at the latest version: %s", installedVersion)
 		return nil
 	}
 
