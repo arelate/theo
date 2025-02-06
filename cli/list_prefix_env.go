@@ -32,7 +32,7 @@ func ListPrefixEnv() error {
 
 	summary := make(map[string][]string)
 
-	for _, prefixName := range rdx.Keys(data.PrefixEnvProperty) {
+	for prefixName := range rdx.Keys(data.PrefixEnvProperty) {
 
 		title := ""
 		if id, _, ok := strings.Cut(prefixName, "-"); ok {

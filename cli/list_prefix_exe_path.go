@@ -32,7 +32,7 @@ func ListPrefixExePath() error {
 
 	summary := make(map[string][]string)
 
-	for _, prefixName := range rdx.Keys(data.PrefixExePathProperty) {
+	for prefixName := range rdx.Keys(data.PrefixExePathProperty) {
 
 		title := ""
 		if id, _, ok := strings.Cut(prefixName, "-"); ok {
