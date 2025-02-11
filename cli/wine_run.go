@@ -49,18 +49,18 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return wra.EndWithError(err)
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.PrefixEnvProperty, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty)
 	if err != nil {
 		return wra.EndWithError(err)
 	}
 
-	prefixName := data.GetPrefixName(id, langCode)
+	prefixName := data.GetPrefixName(id, rdx)
 
 	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
 	prefixEnv = mergeEnv(prefixEnv, env)
 
 	if ep, ok := rdx.GetLastVal(data.PrefixExePathProperty, prefixName); ok && ep != "" {
-		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 		if err != nil {
 			return wra.EndWithError(err)
 		}
@@ -69,7 +69,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	}
 
 	if exePath == "" {
-		exePath, err = getPrefixGogGamesLnk(id, langCode)
+		exePath, err = getPrefixGogGamesLnk(id, langCode, rdx)
 		if err != nil {
 			return wra.EndWithError(err)
 		}
@@ -90,5 +90,5 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return wra.EndWithError(errors.New("wine-run: unsupported operating system"))
 	}
 
-	return currentOsWineRun(id, langCode, prefixEnv, verbose, force, exePath)
+	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath)
 }

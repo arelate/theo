@@ -30,7 +30,7 @@ func Migrate() error {
 
 	if installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata); err == nil {
 		for _, operatingSystem := range vangogh_integration.AllOperatingSystems() {
-			osInstalledMetadataDir := filepath.Join(installedMetadataDir, operatingSystem.String(), defaultLangCode)
+			osInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(operatingSystem, defaultLangCode))
 			if _, err = os.Stat(osInstalledMetadataDir); err == nil {
 				dirs = append(dirs, osInstalledMetadataDir)
 			}

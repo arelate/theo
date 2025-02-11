@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -15,19 +14,16 @@ func SetPrefixEnvHandler(u *url.URL) error {
 	q := u.Query()
 
 	ids := Ids(u)
-	langCode := defaultLangCode
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
-	}
+
 	var env []string
 	if q.Has("env") {
 		env = strings.Split(q.Get("env"), ",")
 	}
 
-	return SetPrefixEnv(ids, langCode, env)
+	return SetPrefixEnv(ids, env)
 }
 
-func SetPrefixEnv(ids []string, langCode string, env []string) error {
+func SetPrefixEnv(ids []string, env []string) error {
 
 	spea := nod.NewProgress("setting prefix environment variables for wine-run...")
 	defer spea.EndWithResult("done")
@@ -37,7 +33,7 @@ func SetPrefixEnv(ids []string, langCode string, env []string) error {
 		return spea.EndWithError(err)
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.PrefixEnvProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty)
 	if err != nil {
 		return spea.EndWithError(err)
 	}
@@ -47,7 +43,8 @@ func SetPrefixEnv(ids []string, langCode string, env []string) error {
 	spea.TotalInt(len(ids))
 
 	for _, id := range ids {
-		prefixName := data.GetPrefixName(id, langCode)
+
+		prefixName := data.GetPrefixName(id, rdx)
 		curEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
 		newEnvs[prefixName] = mergeEnv(curEnv, env)
 

@@ -42,7 +42,7 @@ func linuxInstallProduct(id string,
 		return lia.EndWithError(err)
 	}
 
-	osLangCodeDir := data.OsLangCodeDir(vangogh_integration.Linux, link.LanguageCode)
+	osLangCodeDir := data.OsLangCode(vangogh_integration.Linux, link.LanguageCode)
 	productInstalledAppDir := filepath.Join(installedAppsDir, osLangCodeDir, productTitle)
 
 	if err := linuxPostDownloadActions(id, link); err != nil {
@@ -222,7 +222,7 @@ func nixUninstallProduct(title string, operatingSystem vangogh_integration.Opera
 		return nil
 	}
 
-	osLangCodeDir := data.OsLangCodeDir(operatingSystem, langCode)
+	osLangCodeDir := data.OsLangCode(operatingSystem, langCode)
 	bundlePath := filepath.Join(installationDir, osLangCodeDir, bundleName)
 
 	if _, err := os.Stat(bundlePath); os.IsNotExist(err) {

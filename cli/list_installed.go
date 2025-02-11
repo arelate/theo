@@ -37,7 +37,7 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		return lia.EndWithError(err)
 	}
 
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, os.String(), langCode)
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(os, langCode))
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {

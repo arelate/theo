@@ -5,6 +5,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/redux"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,23 +25,31 @@ const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSuppo
 const gogInstallationLnkGlob = "GOG Games/*/*.lnk"
 
 type (
-	wineRunFunc        func(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error
-	wineInitPrefixFunc func(id, langCode string, verbose bool) error
+	wineRunFunc        func(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath string, arg ...string) error
+	wineInitPrefixFunc func(id, langCode string, rdx redux.Readable, verbose bool) error
 )
 
-func macOsInitPrefix(id, langCode string, verbose bool) error {
+func macOsInitPrefix(id, langCode string, rdx redux.Readable, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
 	defer mipa.EndWithResult("done")
 
-	return macOsCreateCxBottle(id, langCode, defaultCxBottleTemplate, verbose)
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return err
+	}
+
+	return macOsCreateCxBottle(id, langCode, rdx, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error {
+func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath string, arg ...string) error {
 
 	_, exeFilename := filepath.Split(exePath)
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer mwra.EndWithResult("done")
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return err
+	}
 
 	if verbose && len(env) > 0 {
 		pea := nod.Begin(" env:")
@@ -54,7 +63,7 @@ func macOsWineRun(id, langCode string, env []string, verbose, force bool, exePat
 
 	absWineBinPath := filepath.Join(absCxBinDir, relWineFilename)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
 		return err
 	}
@@ -81,12 +90,16 @@ func macOsWineRun(id, langCode string, env []string, verbose, force bool, exePat
 	return cmd.Run()
 }
 
-func getPrefixGogGamesLnk(id, langCode string) (string, error) {
+func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
 
 	msggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
 	defer msggla.EndWithResult("done")
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return "", nil
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
 		return "", msggla.EndWithError(err)
 	}
@@ -127,7 +140,11 @@ func macOsGetAbsCxBinDir(appDirs ...string) (string, error) {
 	return "", os.ErrNotExist
 }
 
-func macOsCreateCxBottle(id, langCode string, template string, verbose bool) error {
+func macOsCreateCxBottle(id, langCode string, rdx redux.Readable, template string, verbose bool) error {
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return err
+	}
 
 	if template == "" {
 		template = defaultCxBottleTemplate
@@ -140,7 +157,7 @@ func macOsCreateCxBottle(id, langCode string, template string, verbose bool) err
 
 	absCxBottlePath := filepath.Join(absCxBinDir, relCxBottleFilename)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
 		return err
 	}

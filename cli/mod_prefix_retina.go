@@ -6,6 +6,8 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"io"
 	"net/url"
 	"os"
@@ -52,7 +54,17 @@ func ModPrefixRetina(id, langCode string, revert, verbose, force bool) error {
 		return nil
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return mpa.EndWithError(err)
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty)
+	if err != nil {
+		return mpa.EndWithError(err)
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
 		return err
 	}
@@ -77,7 +89,7 @@ func ModPrefixRetina(id, langCode string, revert, verbose, force bool) error {
 
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		if err := macOsWineRun(id, langCode, nil, verbose, force, regeditBin, absRegPath); err != nil {
+		if err := macOsWineRun(id, langCode, rdx, nil, verbose, force, regeditBin, absRegPath); err != nil {
 			return err
 		}
 	default:

@@ -44,7 +44,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		return ua.EndWithError(err)
 	}
 
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.CurrentOs().String(), langCode)
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(data.CurrentOs(), langCode))
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {

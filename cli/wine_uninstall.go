@@ -43,7 +43,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 		return wua.EndWithError(err)
 	}
 
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, vangogh_integration.Windows.String(), langCode)
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(vangogh_integration.Windows, langCode))
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
@@ -54,7 +54,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 		return wua.EndWithError(err)
 	}
 
-	if err := DeletePrefixEnv(ids, langCode, force); err != nil {
+	if err := DeletePrefixEnv(ids, force); err != nil {
 		return wua.EndWithError(err)
 	}
 

@@ -42,7 +42,7 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 		return spepa.EndWithError(err)
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixExePathProperty)
 	if err != nil {
 		return spepa.EndWithError(err)
 	}
@@ -54,7 +54,7 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 	for _, id := range ids {
 
 		var absPrefixDir string
-		absPrefixDir, err = data.GetAbsPrefixDir(id, langCode)
+		absPrefixDir, err = data.GetAbsPrefixDir(id, langCode, rdx)
 		if err != nil {
 			return spepa.EndWithError(err)
 		}
@@ -66,7 +66,7 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 			continue
 		}
 
-		prefixName := data.GetPrefixName(id, langCode)
+		prefixName := data.GetPrefixName(id, rdx)
 		exePaths[prefixName] = []string{exePath}
 
 		spepa.Increment()

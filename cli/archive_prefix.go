@@ -68,11 +68,11 @@ func archiveProductPrefix(id, langCode string, rdx redux.Readable) error {
 		return appa.EndWithError(err)
 	}
 
-	prefixName := data.GetPrefixName(id, langCode)
+	prefixName := data.GetPrefixName(id, rdx)
 
 	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, prefixName)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
 		return appa.EndWithError(err)
 	}

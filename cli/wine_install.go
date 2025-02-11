@@ -6,6 +6,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -57,7 +58,17 @@ func WineInstall(langCode string,
 	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
 	langCodes := []string{langCode}
 
-	notInstalled, err := wineFilterNotInstalled(langCode, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return wia.EndWithError(err)
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty)
+	if err != nil {
+		return wia.EndWithError(err)
+	}
+
+	notInstalled, err := wineFilterNotInstalled(langCode, rdx, ids...)
 	if err != nil {
 		return wia.EndWithError(err)
 	}
@@ -83,17 +94,17 @@ func WineInstall(langCode string,
 		return wia.EndWithError(err)
 	}
 
-	if err = initPrefix(langCode, verbose, ids...); err != nil {
+	if err = initPrefix(langCode, verbose, rdx, ids...); err != nil {
 		return wia.EndWithError(err)
 	}
 
 	for _, id := range ids {
-		if err := wineInstallProduct(id, langCode, env, downloadTypes, verbose, force); err != nil {
+		if err := wineInstallProduct(id, langCode, rdx, env, downloadTypes, verbose, force); err != nil {
 			return wia.EndWithError(err)
 		}
 	}
 
-	if err := DefaultPrefixEnv(ids, langCode); err != nil {
+	if err := DefaultPrefixEnv(ids); err != nil {
 		return wia.EndWithError(err)
 	}
 
@@ -132,13 +143,17 @@ func WineInstall(langCode string,
 	return nil
 }
 
-func wineFilterNotInstalled(langCode string, ids ...string) ([]string, error) {
+func wineFilterNotInstalled(langCode string, rdx redux.Readable, ids ...string) ([]string, error) {
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return nil, err
+	}
 
 	notInstalled := make([]string, 0, len(ids))
 
 	for _, id := range ids {
 
-		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +170,7 @@ func wineFilterNotInstalled(langCode string, ids ...string) ([]string, error) {
 	return notInstalled, nil
 }
 
-func wineInstallProduct(id, langCode string, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
+func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
 
 	currentOs := data.CurrentOs()
 
@@ -195,7 +210,7 @@ func wineInstallProduct(id, langCode string, env []string, downloadTypes []vango
 
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		if err := currentOsWineRun(id, langCode, env, verbose, force, absInstallerPath,
+		if err := currentOsWineRun(id, langCode, rdx, env, verbose, force, absInstallerPath,
 			"/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
 			return wipa.EndWithError(err)
 		}
@@ -204,7 +219,7 @@ func wineInstallProduct(id, langCode string, env []string, downloadTypes []vango
 	return nil
 }
 
-func initPrefix(langCode string, verbose bool, ids ...string) error {
+func initPrefix(langCode string, verbose bool, rdx redux.Readable, ids ...string) error {
 
 	cpa := nod.NewProgress("initializing prefixes for %s...", strings.Join(ids, ","))
 	defer cpa.EndWithResult("done")
@@ -223,7 +238,7 @@ func initPrefix(langCode string, verbose bool, ids ...string) error {
 
 	for _, id := range ids {
 
-		if err := currentOsWineInitPrefix(id, langCode, verbose); err != nil {
+		if err := currentOsWineInitPrefix(id, langCode, rdx, verbose); err != nil {
 			return cpa.EndWithError(err)
 		}
 

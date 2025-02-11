@@ -1,10 +1,12 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"io"
 	"os"
 	"os/exec"
@@ -12,12 +14,16 @@ import (
 	"strings"
 )
 
-func linuxProtonRun(id, langCode string, env []string, verbose, force bool, exePath string, arg ...string) error {
+func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath string, arg ...string) error {
 
 	_, exeFilename := filepath.Split(exePath)
 
 	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer lwra.EndWithResult("done")
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return err
+	}
 
 	if verbose && len(env) > 0 {
 		pea := nod.Begin(" env:")
@@ -29,7 +35,7 @@ func linuxProtonRun(id, langCode string, env []string, verbose, force bool, exeP
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
 		return err
 	}
@@ -124,11 +130,15 @@ func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg 
 	return umuConfigPath, nil
 }
 
-func linuxInitPrefix(id, langCode string, _ bool) error {
+func linuxInitPrefix(id, langCode string, rdx redux.Readable, _ bool) error {
 	lipa := nod.Begin(" initializing prefix...")
 	defer lipa.EndWithResult("done")
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode)
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return err
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
 		return lipa.EndWithError(err)
 	}

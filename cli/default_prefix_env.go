@@ -17,25 +17,16 @@ var operatingSystemEnvDefaults = map[vangogh_integration.OperatingSystem][]strin
 		"WINEESYNC=0",
 		"ROSETTA_ADVERTISE_AVX=1",
 	},
-	vangogh_integration.Linux: {
-		// Consider adding from https://github.com/GloriousEggroll/proton-ge-custom#modification
-	},
 }
 
 func DefaultPrefixEnvHandler(u *url.URL) error {
 
-	q := u.Query()
-
 	ids := Ids(u)
-	langCode := defaultLangCode
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
-	}
 
-	return DefaultPrefixEnv(ids, langCode)
+	return DefaultPrefixEnv(ids)
 }
 
-func DefaultPrefixEnv(ids []string, langCode string) error {
+func DefaultPrefixEnv(ids []string) error {
 
 	dpea := nod.Begin("setting prefix environment variables to defaults...")
 	defer dpea.EndWithResult("done")
@@ -45,14 +36,14 @@ func DefaultPrefixEnv(ids []string, langCode string) error {
 		return dpea.EndWithError(err)
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.PrefixEnvProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty)
 	if err != nil {
 		return dpea.EndWithError(err)
 	}
 
 	defaultEnvs := make(map[string][]string, len(ids))
 	for _, id := range ids {
-		prefixName := data.GetPrefixName(id, langCode)
+		prefixName := data.GetPrefixName(id, rdx)
 		defaultEnvs[prefixName] = operatingSystemEnvDefaults[data.CurrentOs()]
 	}
 

@@ -138,7 +138,7 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 		return nil, fia.EndWithError(err)
 	}
 
-	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOs(), langCode))
+	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCode(data.CurrentOs(), langCode))
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {

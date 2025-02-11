@@ -36,7 +36,7 @@ func macOsInstallProduct(id string,
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 	productExtractsDir := filepath.Join(extractsDir, id)
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, link.LanguageCode))
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(vangogh_integration.MacOS, link.LanguageCode))
 
 	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
 		return mia.EndWithError(err)
@@ -254,7 +254,7 @@ func macOsPostInstallActions(id string,
 
 	bundleName := pis.BundleName()
 
-	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(vangogh_integration.MacOS, link.LanguageCode), bundleName)
+	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCode(vangogh_integration.MacOS, link.LanguageCode), bundleName)
 
 	// some macOS bundles point to a directory, not an .app package
 	// try to locate .app package inside the bundle dir

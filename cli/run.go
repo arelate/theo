@@ -66,7 +66,7 @@ func currentOsRunApp(id, langCode string, rdx redux.Readable, env []string, verb
 	}
 
 	bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCodeDir(data.CurrentOs(), langCode), bundleName)
+	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCode(data.CurrentOs(), langCode), bundleName)
 
 	if _, err := os.Stat(absBundlePath); err != nil {
 		return err

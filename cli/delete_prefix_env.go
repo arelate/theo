@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -14,16 +13,12 @@ func DeletePrefixEnvHandler(u *url.URL) error {
 	q := u.Query()
 
 	ids := Ids(u)
-	langCode := defaultLangCode
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
-	}
 	force := q.Has("force")
 
-	return DeletePrefixEnv(ids, langCode, force)
+	return DeletePrefixEnv(ids, force)
 }
 
-func DeletePrefixEnv(ids []string, langCode string, force bool) error {
+func DeletePrefixEnv(ids []string, force bool) error {
 
 	dpea := nod.Begin("deleting prefix environment variables...")
 	defer dpea.EndWithResult("done")
@@ -38,14 +33,14 @@ func DeletePrefixEnv(ids []string, langCode string, force bool) error {
 		return dpea.EndWithError(err)
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.PrefixEnvProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty)
 	if err != nil {
 		return dpea.EndWithError(err)
 	}
 
 	prefixes := make([]string, 0, len(ids))
 	for _, id := range ids {
-		prefixes = append(prefixes, data.GetPrefixName(id, langCode))
+		prefixes = append(prefixes, data.GetPrefixName(id, rdx))
 	}
 
 	if err := rdx.CutKeys(data.PrefixEnvProperty, prefixes...); err != nil {

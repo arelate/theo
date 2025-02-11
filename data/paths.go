@@ -5,9 +5,11 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 const theoDirname = "theo"
@@ -52,7 +54,7 @@ const (
 	Downloads     pathways.AbsDir = "downloads"
 	Runtimes      pathways.AbsDir = "runtimes"
 	InstalledApps pathways.AbsDir = "installed-apps"
-	Prefixes      pathways.AbsDir = "prefixes"
+	//Prefixes      pathways.AbsDir = "prefixes"
 )
 
 const (
@@ -85,7 +87,7 @@ var AllAbsDirs = []pathways.AbsDir{
 	Downloads,
 	Runtimes,
 	InstalledApps,
-	Prefixes,
+	//Prefixes,
 }
 
 func GetAbsBinariesDir(ghs *GitHubSource, release *github_integration.GitHubRelease) (string, error) {
@@ -117,19 +119,29 @@ func GetAbsReleaseAssetPath(ghs *GitHubSource, release *github_integration.GitHu
 	return filepath.Join(relDir, fn), nil
 }
 
-func GetPrefixName(id, langCode string) string {
-	return id + "-" + langCode
+func GetPrefixName(id string, rdx redux.Readable) string {
+	if slug, ok := rdx.GetLastVal(SlugProperty, id); ok && slug != "" {
+		return slug
+	} else {
+		return id
+	}
 }
 
-func GetAbsPrefixDir(id, langCode string) (string, error) {
-	prefixesDir, err := pathways.GetAbsDir(Prefixes)
+func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
+	return strings.Join([]string{operatingSystem.String(), langCode}, "-")
+}
+
+func GetAbsPrefixDir(id, langCode string, rdx redux.Readable) (string, error) {
+	if err := rdx.MustHave(SlugProperty); err != nil {
+		return "", err
+	}
+
+	installedAppsDir, err := pathways.GetAbsDir(InstalledApps)
 	if err != nil {
 		return "", err
 	}
 
-	return path.Join(prefixesDir, GetPrefixName(id, langCode)), nil
-}
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, OsLangCode(vangogh_integration.Windows, langCode))
 
-func OsLangCodeDir(os vangogh_integration.OperatingSystem, langCode string) string {
-	return os.String() + "-" + langCode
+	return filepath.Join(osLangInstalledAppsDir, GetPrefixName(id, rdx)), nil
 }
