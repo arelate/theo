@@ -45,7 +45,12 @@ func DeletePrefixExePath(ids []string, langCode string, force bool) error {
 
 	prefixes := make([]string, 0, len(ids))
 	for _, id := range ids {
-		prefixes = append(prefixes, data.GetPrefixName(id, rdx))
+		prefixName, err := data.GetPrefixName(id, rdx)
+		if err != nil {
+			return err
+		}
+
+		prefixes = append(prefixes, prefixName)
 	}
 
 	if err = rdx.CutKeys(data.PrefixExePathProperty, prefixes...); err != nil {

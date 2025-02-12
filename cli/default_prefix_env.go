@@ -43,7 +43,11 @@ func DefaultPrefixEnv(ids []string) error {
 
 	defaultEnvs := make(map[string][]string, len(ids))
 	for _, id := range ids {
-		prefixName := data.GetPrefixName(id, rdx)
+		prefixName, err := data.GetPrefixName(id, rdx)
+		if err != nil {
+			return err
+		}
+
 		defaultEnvs[prefixName] = operatingSystemEnvDefaults[data.CurrentOs()]
 	}
 

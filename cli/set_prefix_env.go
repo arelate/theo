@@ -44,7 +44,11 @@ func SetPrefixEnv(ids []string, env []string) error {
 
 	for _, id := range ids {
 
-		prefixName := data.GetPrefixName(id, rdx)
+		prefixName, err := data.GetPrefixName(id, rdx)
+		if err != nil {
+			return err
+		}
+
 		curEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
 		newEnvs[prefixName] = mergeEnv(curEnv, env)
 

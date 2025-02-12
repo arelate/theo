@@ -54,7 +54,10 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return err
 	}
 
-	prefixName := data.GetPrefixName(id, rdx)
+	prefixName, err := data.GetPrefixName(id, rdx)
+	if err != nil {
+		return err
+	}
 
 	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
 	prefixEnv = mergeEnv(prefixEnv, env)

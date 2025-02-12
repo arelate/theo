@@ -66,7 +66,11 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 			continue
 		}
 
-		prefixName := data.GetPrefixName(id, rdx)
+		prefixName, err := data.GetPrefixName(id, rdx)
+		if err != nil {
+			return err
+		}
+
 		exePaths[prefixName] = []string{exePath}
 
 		spepa.Increment()

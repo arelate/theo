@@ -8,6 +8,8 @@ import (
 	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -55,7 +57,7 @@ func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 }
 
 func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force bool) error {
-	rppa := nod.Begin(" removing prefix for %s...", id)
+	rppa := nod.Begin(" removing installed files from prefix for %s...", id)
 	defer rppa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
@@ -83,8 +85,67 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force
 		return nil
 	}
 
-	// TODO: Currently, this removes all files in the prefix, including configuration and save games,
-	// that would be typically stored in some app data directory outside of the main game installation.
-	// Sooner rather than later this should be replaced by something more nuanced that preserves those files
-	return os.RemoveAll(absPrefixDir)
+	relManifestFiles, err := readManifest(id, langCode, vangogh_integration.Windows, rdx)
+	if os.IsNotExist(err) {
+		rppa.EndWithResult("installed files manifest not found")
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	if err = removePrefixInstalledFiles(absPrefixDir, relManifestFiles...); err != nil {
+		return err
+	}
+
+	if err = removePrefixDirs(absPrefixDir, relManifestFiles...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func removePrefixInstalledFiles(absPrefixDir string, relFiles ...string) error {
+	rpifa := nod.NewProgress(" removing installed files listed in manifest...")
+	defer rpifa.Done()
+
+	rpifa.TotalInt(len(relFiles))
+
+	for _, relFile := range relFiles {
+
+		absManifestFile := filepath.Join(absPrefixDir, relFile)
+		if stat, err := os.Stat(absManifestFile); err == nil && !stat.IsDir() {
+			if err = os.Remove(absManifestFile); err != nil {
+				return err
+			}
+		}
+
+		rpifa.Increment()
+	}
+
+	return nil
+}
+
+func removePrefixDirs(absPrefixDir string, relFiles ...string) error {
+	rpda := nod.NewProgress(" removing prefix empty directories...")
+	defer rpda.Done()
+
+	rpda.TotalInt(len(relFiles))
+
+	// filepath.Walk adds files in lexical order and for removal we want to reverse that to attempt to remove
+	// leafs first, roots last
+	slices.Reverse(relFiles)
+
+	for _, relFile := range relFiles {
+
+		absDir := filepath.Join(absPrefixDir, relFile)
+		if stat, err := os.Stat(absDir); err == nil && stat.IsDir() {
+			if err = removeDirIfEmpty(absDir); err != nil {
+				return err
+			}
+		}
+
+		rpda.Increment()
+	}
+
+	return nil
 }

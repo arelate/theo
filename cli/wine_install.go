@@ -1,16 +1,20 @@
 package cli
 
 import (
+	"bufio"
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"time"
 )
 
 const (
@@ -50,6 +54,8 @@ func WineInstall(langCode string,
 	verbose bool,
 	force bool,
 	ids ...string) error {
+
+	start := time.Now().UTC().Unix()
 
 	wia := nod.Begin("installing %s versions on %s...",
 		vangogh_integration.Windows,
@@ -105,7 +111,11 @@ func WineInstall(langCode string,
 	}
 
 	for _, id := range ids {
-		if err := wineInstallProduct(id, langCode, rdx, env, downloadTypes, verbose, force); err != nil {
+		if err = wineInstallProduct(id, langCode, rdx, env, downloadTypes, verbose, force); err != nil {
+			return err
+		}
+
+		if err = createInstalledFilesManifest(id, langCode, rdx, start); err != nil {
 			return err
 		}
 	}
@@ -161,7 +171,8 @@ func wineFilterNotInstalled(langCode string, rdx redux.Readable, ids ...string) 
 
 		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 		if err != nil {
-			return nil, err
+			notInstalled = append(notInstalled, id)
+			continue
 		}
 
 		absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
@@ -249,6 +260,95 @@ func initPrefix(langCode string, verbose bool, rdx redux.Readable, ids ...string
 		}
 
 		cpa.Increment()
+	}
+
+	return nil
+}
+
+func createInstalledFilesManifest(id, langCode string, rdx redux.Readable, utcTime int64) error {
+
+	eifa := nod.Begin(" creating installed files manifest...")
+	defer eifa.Done()
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	if err != nil {
+		return err
+	}
+
+	relFiles, err := data.GetRelFilesModifiedAfter(absPrefixDir, utcTime)
+	if err != nil {
+		return err
+	}
+
+	return appendManifest(id, langCode, vangogh_integration.Windows, rdx, relFiles...)
+}
+
+func readManifest(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) ([]string, error) {
+	absManifestFilename, err := data.GetAbsManifestFilename(id, langCode, operatingSystem, rdx)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err = os.Stat(absManifestFilename); os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	manifestFile, err := os.Open(absManifestFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	relFiles := make([]string, 0)
+	manifestScanner := bufio.NewScanner(manifestFile)
+	for manifestScanner.Scan() {
+		relFiles = append(relFiles, manifestScanner.Text())
+	}
+
+	if err = manifestScanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return relFiles, nil
+}
+
+func appendManifest(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable, newRelFiles ...string) error {
+
+	absManifestFilename, err := data.GetAbsManifestFilename(id, langCode, operatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	relFiles, err := readManifest(id, langCode, operatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	for _, nrf := range newRelFiles {
+		if slices.Contains(relFiles, nrf) {
+			continue
+		}
+		relFiles = append(relFiles, nrf)
+	}
+
+	absManifestDir, _ := filepath.Split(absManifestFilename)
+	if _, err = os.Stat(absManifestDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(absManifestDir, 0755); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+
+	manifestFile, err := os.Create(absManifestFilename)
+	if err != nil {
+		return err
+	}
+	defer manifestFile.Close()
+
+	for _, relFile := range relFiles {
+		if _, err = io.WriteString(manifestFile, relFile+"\n"); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -17,6 +17,7 @@ const (
 	relCxAppDir               = "CrossOver.app"
 	relCxBinDir               = "Contents/SharedSupport/CrossOver/bin"
 	relCxBottleFilename       = "cxbottle"
+	relCxBottleConfFilename   = "cxbottle.conf"
 	relWineFilename           = "wine"
 )
 
@@ -162,8 +163,17 @@ func macOsCreateCxBottle(id, langCode string, rdx redux.Readable, template strin
 		return err
 	}
 
+	// cxbottle --create returns error when bottle already exists
 	if _, err = os.Stat(absPrefixDir); err == nil {
-		// cxbottle --create returns error when bottle already exists
+
+		// if a prefix exists, but is missing cxbottle.conf - there will be an error
+		absCxBottleConfPath := filepath.Join(absPrefixDir, relCxBottleConfFilename)
+		if _, err = os.Stat(absCxBottleConfPath); os.IsNotExist(err) {
+			if _, err = os.Create(absCxBottleConfPath); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
 
