@@ -26,7 +26,7 @@ func DeletePrefixExePathHandler(u *url.URL) error {
 func DeletePrefixExePath(ids []string, langCode string, force bool) error {
 
 	dpepa := nod.Begin("deleting prefix exe paths...")
-	defer dpepa.EndWithResult("done")
+	defer dpepa.Done()
 
 	if !force {
 		dpepa.EndWithResult("this operation requires force flag")

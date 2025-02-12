@@ -25,7 +25,7 @@ func RevealInstalledHandler(u *url.URL) error {
 func RevealInstalled(langCode string, ids ...string) error {
 
 	fia := nod.NewProgress("revealing installed products...")
-	defer fia.EndWithResult("done")
+	defer fia.Done()
 
 	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{langCode}

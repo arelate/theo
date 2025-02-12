@@ -29,7 +29,7 @@ func SetPrefixExePathHandler(u *url.URL) error {
 func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 
 	spepa := nod.NewProgress("setting prefix exe path for wine-run...")
-	defer spepa.EndWithResult("done")
+	defer spepa.Done()
 
 	if strings.HasPrefix(exePath, ".") ||
 		strings.HasPrefix(exePath, "/") {

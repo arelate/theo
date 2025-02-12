@@ -16,7 +16,7 @@ func ListPrefixExePathHandler(_ *url.URL) error {
 func ListPrefixExePath() error {
 
 	lpepa := nod.Begin("listing exe paths for prefixes...")
-	defer lpepa.EndWithResult("done")
+	defer lpepa.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {

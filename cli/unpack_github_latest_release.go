@@ -14,7 +14,7 @@ import (
 func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
 
 	ura := nod.NewProgress("unpacking GitHub releases for %s...", operatingSystem)
-	defer ura.EndWithResult("done")
+	defer ura.Done()
 
 	gitHubSources := data.OsGitHubSources(operatingSystem)
 
@@ -57,7 +57,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 func unpackAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) error {
 
 	uaa := nod.Begin(" unpacking %s, please wait...", asset.Name)
-	defer uaa.EndWithResult("done")
+	defer uaa.Done()
 
 	absPackedAssetPath, err := data.GetAbsReleaseAssetPath(ghs, release, asset)
 	if err != nil {

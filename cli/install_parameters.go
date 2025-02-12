@@ -80,7 +80,7 @@ func defaultInstallParameters(os vangogh_integration.OperatingSystem) *installPa
 func pinInstallParameters(ip *installParameters, ids ...string) error {
 
 	pipa := nod.Begin(" pinning install parameters...")
-	defer pipa.EndWithResult("done")
+	defer pipa.Done()
 
 	printInstallParameters(ip)
 
@@ -115,7 +115,7 @@ func unpinInstallParameters(
 	ids ...string) error {
 
 	uipa := nod.Begin(" unpinning install parameters...")
-	defer uipa.EndWithResult("done")
+	defer uipa.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
 	if err != nil {

@@ -55,7 +55,7 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 	ids ...string) error {
 
 	va := nod.NewProgress("validating downloads...")
-	defer va.EndWithResult("done")
+	defer va.Done()
 
 	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
@@ -81,7 +81,7 @@ func validateLinks(id string,
 	metadata *vangogh_integration.TheoMetadata) error {
 
 	vla := nod.NewProgress("validating %s...", metadata.Title)
-	defer vla.End()
+	defer vla.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
@@ -117,7 +117,7 @@ func validateLinks(id string,
 func validateLink(id string, dl vangogh_integration.TheoDownloadLink, downloadsDir string) (ValidationResult, error) {
 
 	dla := nod.NewProgress(" - %s...", dl.LocalFilename)
-	defer dla.End()
+	defer dla.Done()
 
 	absDownloadPath := filepath.Join(downloadsDir, id, dl.LocalFilename)
 

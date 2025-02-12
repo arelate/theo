@@ -17,7 +17,7 @@ import (
 func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 
 	cra := nod.Begin("cleaning up cached GitHub releases, keeping the latest for %s...", os)
-	defer cra.EndWithResult("done")
+	defer cra.Done()
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
@@ -41,7 +41,7 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 
 func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues) error {
 	crra := nod.Begin(" %s...", ghs.OwnerRepo)
-	defer crra.EndWithResult("done")
+	defer crra.Done()
 
 	rcReleases, err := kvGitHubReleases.Get(ghs.OwnerRepo)
 	if err != nil {
@@ -90,7 +90,7 @@ func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValu
 
 func removeRepoReleasesFiles(absFilePaths []string) error {
 	rfa := nod.NewProgress("cleaning up older releases files...")
-	defer rfa.EndWithResult("done")
+	defer rfa.Done()
 
 	rfa.TotalInt(len(absFilePaths))
 
@@ -111,7 +111,7 @@ func removeRepoReleasesFiles(absFilePaths []string) error {
 
 func removeRepoReleaseDirs(absDirs iter.Seq[string]) error {
 	rda := nod.Begin("cleaning up older releases directories...")
-	defer rda.EndWithResult("done")
+	defer rda.Done()
 
 	for absDir := range absDirs {
 		if err := removeDirIfEmpty(absDir); err != nil {

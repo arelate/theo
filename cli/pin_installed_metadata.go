@@ -13,7 +13,7 @@ import (
 func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem, langCode string, force bool, ids ...string) error {
 
 	pima := nod.NewProgress("pinning theo metadata as installed...")
-	defer pima.EndWithResult("done")
+	defer pima.Done()
 
 	vangogh_integration.PrintParams(ids, operatingSystems, []string{langCode}, nil, false)
 
@@ -64,7 +64,7 @@ func pinInstalledMetadataForOs(id string,
 	force bool) error {
 
 	pimoa := nod.Begin(" pinning metadata as installed...")
-	defer pimoa.EndWithResult("done")
+	defer pimoa.Done()
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {

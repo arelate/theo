@@ -31,7 +31,7 @@ type (
 
 func macOsInitPrefix(id, langCode string, rdx redux.Readable, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
-	defer mipa.EndWithResult("done")
+	defer mipa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
@@ -45,7 +45,7 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose
 	_, exeFilename := filepath.Split(exePath)
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
-	defer mwra.EndWithResult("done")
+	defer mwra.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
@@ -93,7 +93,7 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose
 func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
 
 	msggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
-	defer msggla.EndWithResult("done")
+	defer msggla.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil

@@ -31,7 +31,7 @@ func WineUninstallHandler(u *url.URL) error {
 func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 
 	wua := nod.NewProgress("uninstalling WINE installed products...")
-	defer wua.EndWithResult("done")
+	defer wua.Done()
 
 	if !force {
 		wua.EndWithResult("this operation requires force flag")

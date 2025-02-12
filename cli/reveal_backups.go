@@ -14,7 +14,7 @@ func RevealBackupsHandler(_ *url.URL) error {
 func RevealBackups() error {
 
 	rda := nod.Begin("revealing backups...")
-	defer rda.EndWithResult("done")
+	defer rda.Done()
 
 	backupsDir, err := pathways.GetAbsDir(data.Backups)
 	if err != nil {

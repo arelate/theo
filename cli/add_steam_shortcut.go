@@ -51,7 +51,7 @@ func AddSteamShortcutHandler(u *url.URL) error {
 
 func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool, ids ...string) error {
 	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
-	defer assa.EndWithResult("done")
+	defer assa.Done()
 
 	ok, err := steamStateDirExist()
 	if err != nil {
@@ -82,7 +82,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 	asfua := nod.Begin(" adding Steam user %s shortcuts for %s...",
 		loginUser,
 		strings.Join(ids, ","))
-	defer asfua.EndWithResult("done")
+	defer asfua.Done()
 
 	kvUserShortcuts, err := readUserShortcuts(loginUser)
 	if err != nil {
@@ -166,7 +166,7 @@ func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate s
 func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata *vangogh_integration.TheoImages, rdx redux.Readable, force bool) error {
 
 	dsgia := nod.Begin(" downloading Steam Grid images...")
-	defer dsgia.EndWithResult("done")
+	defer dsgia.Done()
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
@@ -214,7 +214,7 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcuts []*steam_vdf.KeyValues, force bool) (bool, error) {
 
 	ansasa := nod.Begin(" adding non-Steam app shortcut for appId %d...", shortcut.AppId)
-	defer ansasa.EndWithResult("done")
+	defer ansasa.Done()
 
 	kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts")
 	if kvShortcuts == nil {
@@ -248,7 +248,7 @@ func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcut
 func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
 
 	rusa := nod.Begin(" loading Steam user %s shortcuts.vdf...", loginUser)
-	defer rusa.EndWithResult("done")
+	defer rusa.Done()
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
@@ -276,7 +276,7 @@ func getGridIconPath(loginUser string, appId uint32) string {
 
 func writeUserShortcuts(loginUser string, kvUserShortcuts []*steam_vdf.KeyValues) error {
 	wusa := nod.Begin(" writing Steam user %s shortcuts.vdf...", loginUser)
-	defer wusa.EndWithResult("done")
+	defer wusa.Done()
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
@@ -290,7 +290,7 @@ func writeUserShortcuts(loginUser string, kvUserShortcuts []*steam_vdf.KeyValues
 
 func getSteamLoginUsers() ([]string, error) {
 	gslua := nod.Begin(" getting Steam loginusers.vdf users...")
-	defer gslua.EndWithResult("done")
+	defer gslua.Done()
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {

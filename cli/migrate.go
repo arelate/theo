@@ -18,7 +18,7 @@ func MigrateHandler(u *url.URL) error {
 func Migrate() error {
 
 	ma := nod.NewProgress("migrating kevlar data...")
-	defer ma.EndWithResult("done")
+	defer ma.Done()
 
 	dirs := make([]string, 0)
 

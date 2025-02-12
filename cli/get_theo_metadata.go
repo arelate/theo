@@ -17,7 +17,7 @@ import (
 func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, error) {
 
 	gtma := nod.NewProgress(" getting theo metadata...")
-	defer gtma.End()
+	defer gtma.Done()
 
 	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {

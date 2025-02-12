@@ -20,7 +20,7 @@ func RevealDownloadsHandler(u *url.URL) error {
 func RevealDownloads(ids ...string) error {
 
 	rda := nod.Begin("revealing downloads...")
-	defer rda.EndWithResult("done")
+	defer rda.Done()
 
 	return currentOsRevealDownloads(ids...)
 }

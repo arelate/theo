@@ -26,7 +26,7 @@ func linuxInstallProduct(id string,
 	rdx redux.Writeable) error {
 
 	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, metadata.Title)
-	defer lia.EndWithResult("done")
+	defer lia.Done()
 
 	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
 		return err
@@ -92,7 +92,7 @@ func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) erro
 	_, fp := filepath.Split(absInstallerPath)
 
 	leia := nod.Begin(" executing %s, please wait...", fp)
-	defer leia.EndWithResult("done")
+	defer leia.Done()
 
 	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
 	// tl;dr; those flags are required, but not sufficient. Installing installer and then DLC will
@@ -111,7 +111,7 @@ func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) erro
 func linuxPostDownloadActions(id string, link *vangogh_integration.TheoDownloadLink) error {
 
 	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_integration.Linux, id)
-	defer lpda.EndWithResult("done")
+	defer lpda.Done()
 
 	if data.CurrentOs() != vangogh_integration.Linux {
 		return errors.New("Linux post-download actions are only supported on Linux")
@@ -130,7 +130,7 @@ func linuxPostDownloadActions(id string, link *vangogh_integration.TheoDownloadL
 func chmodExecutable(path string) error {
 
 	cea := nod.Begin(" setting executable attribute...")
-	defer cea.EndWithResult("done")
+	defer cea.Done()
 
 	// chmod +x path/to/file
 	cmd := exec.Command("chmod", "+x", path)
@@ -215,7 +215,7 @@ func linuxLocateStartSh(path string) string {
 func nixUninstallProduct(title string, operatingSystem vangogh_integration.OperatingSystem, installationDir, langCode, bundleName string) error {
 
 	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, title)
-	defer umpa.EndWithResult("done")
+	defer umpa.Done()
 
 	if bundleName == "" {
 		umpa.EndWithResult("product must have bundle name for uninstall")

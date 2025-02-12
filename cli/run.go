@@ -38,7 +38,7 @@ func RunHandler(u *url.URL) error {
 func Run(id string, langCode string, env []string, verbose bool) error {
 
 	ra := nod.NewProgress("running product %s...", id)
-	defer ra.EndWithResult("done")
+	defer ra.Done()
 
 	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{langCode}

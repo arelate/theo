@@ -54,7 +54,7 @@ func WineInstall(langCode string,
 	wia := nod.Begin("installing %s versions on %s...",
 		vangogh_integration.Windows,
 		data.CurrentOs())
-	defer wia.EndWithResult("done")
+	defer wia.Done()
 
 	if data.CurrentOs() == vangogh_integration.Windows {
 		wia.EndWithResult("WINE install is not required on Windows, use install")
@@ -181,7 +181,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, d
 	currentOs := data.CurrentOs()
 
 	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, currentOs)
-	defer wipa.EndWithResult("done")
+	defer wipa.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
@@ -228,7 +228,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, d
 func initPrefix(langCode string, verbose bool, rdx redux.Readable, ids ...string) error {
 
 	cpa := nod.NewProgress("initializing prefixes for %s...", strings.Join(ids, ","))
-	defer cpa.EndWithResult("done")
+	defer cpa.Done()
 
 	cpa.TotalInt(len(ids))
 

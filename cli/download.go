@@ -27,7 +27,7 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 	ids ...string) error {
 
 	da := nod.NewProgress("downloading game data from the server...")
-	defer da.EndWithResult("done")
+	defer da.Done()
 
 	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
 
@@ -58,7 +58,7 @@ func downloadProductFiles(id string,
 	force bool) error {
 
 	gpdla := nod.Begin(" downloading %s...", metadata.Title)
-	defer gpdla.End()
+	defer gpdla.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
@@ -111,12 +111,12 @@ func downloadProductFiles(id string,
 			continue
 		}
 
-		if err := dc.Download(fileUrl, force, fa, downloadsDir, id, dl.LocalFilename); err != nil {
+		if err = dc.Download(fileUrl, force, fa, downloadsDir, id, dl.LocalFilename); err != nil {
 			fa.EndWithResult(err.Error())
 			continue
 		}
 
-		fa.EndWithResult("done")
+		fa.Done()
 	}
 
 	return nil

@@ -36,7 +36,7 @@ func WineRunHandler(u *url.URL) error {
 func WineRun(id string, langCode string, exePath string, env []string, verbose, force bool) error {
 
 	wra := nod.Begin("running %s version with WINE...", vangogh_integration.Windows)
-	defer wra.EndWithResult("done")
+	defer wra.Done()
 
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows},

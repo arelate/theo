@@ -29,7 +29,7 @@ func RemovePrefixHandler(u *url.URL) error {
 func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 
 	rpa := nod.NewProgress("removing prefixes for %s...", strings.Join(ids, ","))
-	defer rpa.EndWithResult("done")
+	defer rpa.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -56,7 +56,7 @@ func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 
 func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force bool) error {
 	rppa := nod.Begin(" removing prefix for %s...", id)
-	defer rppa.EndWithResult("done")
+	defer rppa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err

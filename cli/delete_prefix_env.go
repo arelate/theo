@@ -21,7 +21,7 @@ func DeletePrefixEnvHandler(u *url.URL) error {
 func DeletePrefixEnv(ids []string, force bool) error {
 
 	dpea := nod.Begin("deleting prefix environment variables...")
-	defer dpea.EndWithResult("done")
+	defer dpea.Done()
 
 	if !force {
 		dpea.EndWithResult("this operation requires force flag")

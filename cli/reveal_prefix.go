@@ -33,7 +33,7 @@ func RevealPrefixHandler(u *url.URL) error {
 func RevealPrefix(langCode string, ids ...string) error {
 
 	rpa := nod.Begin("revealing prefix for %s...", strings.Join(ids, ","))
-	defer rpa.EndWithResult("done")
+	defer rpa.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -61,7 +61,7 @@ func RevealPrefix(langCode string, ids ...string) error {
 func revealProductPrefix(id, langCode string, rdx redux.Readable) error {
 
 	rppa := nod.Begin(" revealing prefix for %s...", id)
-	defer rppa.EndWithResult("done")
+	defer rppa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err

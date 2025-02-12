@@ -13,7 +13,7 @@ func ListSteamShortcutsHandler(_ *url.URL) error {
 
 func ListSteamShortcuts() error {
 	lssa := nod.Begin("listing Steam shortcuts for all users...")
-	defer lssa.EndWithResult("done")
+	defer lssa.Done()
 
 	ok, err := steamStateDirExist()
 	if err != nil {
@@ -42,7 +42,7 @@ func ListSteamShortcuts() error {
 func listUserShortcuts(loginUser string) error {
 
 	lusa := nod.Begin("listing shortcuts for %s...", loginUser)
-	defer lusa.EndWithResult("done")
+	defer lusa.Done()
 
 	kvUserShortcuts, err := readUserShortcuts(loginUser)
 	if err != nil {
@@ -73,12 +73,12 @@ var printedKeys = []string{
 
 func printShortcut(shortcut *steam_vdf.KeyValues) {
 	psa := nod.Begin("shortcut: %s", shortcut.Key)
-	defer psa.End()
+	defer psa.Done()
 
 	for _, kv := range shortcut.Values {
 		if slices.Contains(printedKeys, kv.Key) && kv.TypedValue != nil {
 			pk := nod.Begin("- %s: %v", kv.Key, kv.TypedValue)
-			pk.End()
+			pk.EndWithResult("")
 		}
 	}
 }

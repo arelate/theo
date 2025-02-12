@@ -29,7 +29,7 @@ func ArchivePrefixHandler(u *url.URL) error {
 func ArchivePrefix(langCode string, ids ...string) error {
 
 	apa := nod.NewProgress("archiving prefixes for %s...", strings.Join(ids, ","))
-	defer apa.EndWithResult("done")
+	defer apa.Done()
 
 	vangogh_integration.PrintParams(ids, nil, []string{langCode}, nil, true)
 
@@ -61,7 +61,7 @@ func ArchivePrefix(langCode string, ids ...string) error {
 func archiveProductPrefix(id, langCode string, rdx redux.Readable) error {
 
 	appa := nod.Begin(" archiving prefix for %s...", id)
-	defer appa.EndWithResult("done")
+	defer appa.Done()
 
 	prefixArchiveDir, err := pathways.GetAbsRelDir(data.PrefixArchive)
 	if err != nil {
@@ -92,7 +92,7 @@ func archiveProductPrefix(id, langCode string, rdx redux.Readable) error {
 
 func cleanupProductPrefixArchive(absPrefixNameArchiveDir string) error {
 	cppa := nod.NewProgress(" cleaning up old prefix archives...")
-	defer cppa.EndWithResult("done")
+	defer cppa.Done()
 
 	return backups.Cleanup(absPrefixNameArchiveDir, true, cppa)
 }

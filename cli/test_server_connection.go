@@ -49,7 +49,7 @@ func testServerConnectivity(rdx redux.Readable) error {
 	}
 
 	tvca := nod.Begin(" testing connectivity to %s...", testUrl.String())
-	defer tvca.End()
+	defer tvca.Done()
 
 	resp, err := http.DefaultClient.Get(testUrl.String())
 	if err != nil {
@@ -83,7 +83,7 @@ func testServerAuth(rdx redux.Readable) error {
 	}
 
 	tvaa := nod.Begin(" testing auth for %s...", testUrl.String())
-	defer tvaa.End()
+	defer tvaa.Done()
 
 	req, err := http.NewRequest(http.MethodGet, testUrl.String(), nil)
 	if err != nil {

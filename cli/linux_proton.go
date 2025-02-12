@@ -19,7 +19,7 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 	_, exeFilename := filepath.Split(exePath)
 
 	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
-	defer lwra.EndWithResult("done")
+	defer lwra.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
@@ -132,7 +132,7 @@ func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg 
 
 func linuxInitPrefix(id, langCode string, rdx redux.Readable, _ bool) error {
 	lipa := nod.Begin(" initializing prefix...")
-	defer lipa.EndWithResult("done")
+	defer lipa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err

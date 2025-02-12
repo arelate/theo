@@ -29,7 +29,7 @@ func DefaultPrefixEnvHandler(u *url.URL) error {
 func DefaultPrefixEnv(ids []string) error {
 
 	dpea := nod.Begin("setting prefix environment variables to defaults...")
-	defer dpea.EndWithResult("done")
+	defer dpea.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {

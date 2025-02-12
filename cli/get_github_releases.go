@@ -17,7 +17,7 @@ import (
 func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error {
 
 	gra := nod.Begin(" getting GitHub releases for %s...", os)
-	defer gra.EndWithResult("done")
+	defer gra.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -62,7 +62,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx redux.Writeable, force bool) error {
 
 	grlra := nod.Begin(" %s...", ghs.OwnerRepo)
-	defer grlra.EndWithResult("done")
+	defer grlra.Done()
 
 	if kvGitHubReleases.Has(ghs.OwnerRepo) && !force {
 		grlra.EndWithResult("skip recently updated")

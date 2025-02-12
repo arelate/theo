@@ -16,7 +16,7 @@ func ListPrefixEnvHandler(_ *url.URL) error {
 func ListPrefixEnv() error {
 
 	lpea := nod.Begin("listing environment variables for prefixes...")
-	defer lpea.EndWithResult("done")
+	defer lpea.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {

@@ -50,7 +50,7 @@ func InstallHandler(u *url.URL) error {
 func Install(ip *installParameters, force bool, ids ...string) error {
 
 	ia := nod.Begin("installing products...")
-	defer ia.EndWithResult("done")
+	defer ia.Done()
 
 	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{ip.langCode}
@@ -131,7 +131,7 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 
 	fia := nod.Begin(" checking existing installations...")
-	defer fia.EndWithResult("done")
+	defer fia.Done()
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
@@ -181,7 +181,7 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 func filterNotSupported(langCode string, force bool, ids ...string) ([]string, error) {
 
 	fnsa := nod.NewProgress(" checking operating systems support...")
-	defer fnsa.EndWithResult("done")
+	defer fnsa.Done()
 
 	fnsa.TotalInt(len(ids))
 
@@ -212,7 +212,7 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_integration.DownloadType, force bool) error {
 
 	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOs())
-	defer coipa.EndWithResult("done")
+	defer coipa.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {

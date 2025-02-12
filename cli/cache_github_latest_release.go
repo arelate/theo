@@ -12,7 +12,7 @@ import (
 func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
 
 	cra := nod.Begin(" caching GitHub releases for %s...", operatingSystem)
-	defer cra.EndWithResult("done")
+	defer cra.Done()
 
 	dc := dolo.DefaultClient
 
@@ -38,7 +38,7 @@ func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyste
 func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
 
 	crra := nod.Begin(" - tag: %s...", release.TagName)
-	defer crra.EndWithResult("done")
+	defer crra.Done()
 
 	asset := ghs.GetAsset(release)
 	if asset == nil {
@@ -57,7 +57,7 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 	}
 
 	dra := nod.NewProgress(" - asset: %s", asset.Name)
-	defer dra.EndWithResult("done")
+	defer dra.Done()
 
 	if err = dc.Download(ru, force, dra, relDir); err != nil {
 		return err

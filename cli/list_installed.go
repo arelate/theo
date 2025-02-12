@@ -24,7 +24,7 @@ func ListInstalledHandler(u *url.URL) error {
 func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) error {
 
 	lia := nod.Begin("listing installed %s products...", os)
-	defer lia.EndWithResult("done")
+	defer lia.Done()
 
 	vangogh_integration.PrintParams(nil,
 		[]vangogh_integration.OperatingSystem{os},

@@ -24,7 +24,7 @@ func SetupWine(force bool) error {
 	}
 
 	uwa := nod.Begin("setting up WINE for %s...", currentOs)
-	defer uwa.EndWithResult("done")
+	defer uwa.Done()
 
 	if err := getGitHubReleases(currentOs, force); err != nil {
 		return err

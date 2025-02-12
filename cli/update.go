@@ -28,7 +28,7 @@ func UpdateHandler(u *url.URL) error {
 func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string, all bool, ids ...string) error {
 
 	ua := nod.NewProgress("updating installed products on %s...", operatingSystem.String())
-	defer ua.EndWithResult("done")
+	defer ua.Done()
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
@@ -66,7 +66,7 @@ func checkProductUpdates(id string,
 	kvOsLangInstalledMetadata kevlar.KeyValues) error {
 
 	cpua := nod.Begin(" checking product updates for %s...", id)
-	defer cpua.EndWithResult("done")
+	defer cpua.Done()
 
 	if !kvOsLangInstalledMetadata.Has(id) {
 		cpua.EndWithResult("not installed on %s", operatingSystem)

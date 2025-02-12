@@ -32,7 +32,7 @@ func macOsInstallProduct(id string,
 	force bool) error {
 
 	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, metadata.Title)
-	defer mia.EndWithResult("done")
+	defer mia.Done()
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 	productExtractsDir := filepath.Join(extractsDir, id)
@@ -60,7 +60,7 @@ func macOsInstallProduct(id string,
 func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
-	defer meia.EndWithResult("done")
+	defer meia.Done()
 
 	if data.CurrentOs() != vangogh_integration.MacOS {
 		return errors.New("extracting .pkg installers is only supported on " + vangogh_integration.MacOS.String())
@@ -99,7 +99,7 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx redux.Writeable, force bool) error {
 
 	mpea := nod.Begin(" placing product installation files...")
-	defer mpea.EndWithResult("done")
+	defer mpea.Done()
 
 	if data.CurrentOs() != vangogh_integration.MacOS {
 		return errors.New("placing .pkg extracts is only supported on " + vangogh_integration.MacOS.String())
@@ -147,7 +147,7 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, p
 func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bool) error {
 
 	mpga := nod.Begin(" placing game installation files...")
-	defer mpga.EndWithResult("done")
+	defer mpga.Done()
 
 	// when installing a game
 	if _, err := os.Stat(absInstallationPath); err == nil {
@@ -174,7 +174,7 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force bool) error {
 
 	mpda := nod.Begin(" placing downloadable content files...")
-	defer mpda.EndWithResult("done")
+	defer mpda.Done()
 
 	if _, err := os.Stat(absInstallationPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(absInstallationPath, 0755); err != nil {
@@ -224,7 +224,7 @@ func macOsPostInstallActions(id string,
 	installedAppsDir string) error {
 
 	mpia := nod.Begin(" performing post-install %s actions for %s...", vangogh_integration.MacOS, id)
-	defer mpia.EndWithResult("done")
+	defer mpia.Done()
 
 	if filepath.Ext(link.LocalFilename) != pkgExt {
 		// for macOS - there's nothing to be done for additional files (that are not .pkg installers)
@@ -293,7 +293,7 @@ func macOsLocateAppBundle(path string) string {
 func macOsRemoveXattrs(path string) error {
 
 	mrxa := nod.Begin(" removing xattrs...")
-	defer mrxa.EndWithResult("done")
+	defer mrxa.Done()
 
 	// xattr -cr /Applications/Bundle Name.app
 	cmd := exec.Command("xattr", "-cr", path)
@@ -306,7 +306,7 @@ func macOsRemoveXattrs(path string) error {
 func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundleInstallPath string) error {
 
 	pcca := nod.NewProgress(" processing post-install commands...")
-	defer pcca.EndWithResult("done")
+	defer pcca.Done()
 
 	pcca.TotalInt(len(commands))
 
@@ -340,7 +340,7 @@ func macOsExecCatFiles(srcGlob string, dstPath string) error {
 	_, srcFileGlob := filepath.Split(srcGlob)
 
 	ecfa := nod.NewProgress(" cat %s into %s...", srcFileGlob, dstPath)
-	defer ecfa.EndWithResult("done")
+	defer ecfa.Done()
 
 	dstDir, _ := filepath.Split(dstPath)
 	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
@@ -392,7 +392,7 @@ func macOsRemoveProductExtracts(id string,
 	extractsDir string) error {
 
 	rela := nod.Begin(" removing extracts for %s...", metadata.Title)
-	defer rela.EndWithResult("done")
+	defer rela.Done()
 
 	idPath := filepath.Join(extractsDir, id)
 	if _, err := os.Stat(idPath); os.IsNotExist(err) {
@@ -418,14 +418,14 @@ func macOsRemoveProductExtracts(id string,
 			return err
 		}
 
-		fa.EndWithResult("done")
+		fa.Done()
 	}
 
 	rdda := nod.Begin(" removing empty product extracts directory...")
 	if err := removeDirIfEmpty(idPath); err != nil {
 		return err
 	}
-	rdda.EndWithResult("done")
+	rdda.Done()
 
 	return nil
 }

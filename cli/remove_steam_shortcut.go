@@ -23,7 +23,7 @@ func RemoveSteamShortcutHandler(u *url.URL) error {
 
 func RemoveSteamShortcut(ids ...string) error {
 	rssa := nod.Begin("removing Steam shortcuts for %s...", strings.Join(ids, ","))
-	defer rssa.EndWithResult("done")
+	defer rssa.Done()
 
 	ok, err := steamStateDirExist()
 	if err != nil {
@@ -54,7 +54,7 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 	rsfua := nod.Begin(" removing Steam user %s shortcuts for %s...",
 		loginUser,
 		strings.Join(ids, ","))
-	defer rsfua.EndWithResult("done")
+	defer rsfua.Done()
 
 	kvUserShortcuts, err := readUserShortcuts(loginUser)
 	if err != nil {
@@ -120,7 +120,7 @@ var steamGridImageTypes = []vangogh_integration.ImageType{
 func removeSteamGridImages(loginUser string, shortcutId uint32) error {
 
 	rsgia := nod.Begin(" removing Steam Grid images...")
-	defer rsgia.EndWithResult("done")
+	defer rsgia.Done()
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
@@ -154,7 +154,7 @@ func removeNonSteamAppShortcut(
 
 	rnsasa := nod.Begin(" removing non-Steam app shortcut for appIds: %s...",
 		strings.Join(shortcutsStrs, ","))
-	defer rnsasa.EndWithResult("done")
+	defer rnsasa.Done()
 
 	kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts")
 	if kvShortcuts == nil {

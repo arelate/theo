@@ -24,7 +24,7 @@ func main() {
 	nod.EnableStdOutPresenter()
 
 	ns := nod.Begin("theo is complementing vangogh experience")
-	defer ns.End()
+	defer ns.Done()
 
 	theoRootDir, err := data.InitRootDir()
 	if err != nil {
