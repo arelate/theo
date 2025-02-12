@@ -55,7 +55,7 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool,
 
 	ok, err := steamStateDirExist()
 	if err != nil {
-		return assa.EndWithError(err)
+		return err
 	}
 
 	if !ok {
@@ -65,12 +65,12 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool,
 
 	loginUsers, err := getSteamLoginUsers()
 	if err != nil {
-		return assa.EndWithError(err)
+		return err
 	}
 
 	for _, loginUser := range loginUsers {
-		if err := addSteamShortcutsForUser(loginUser, langCode, launchOptionsTemplate, force, ids...); err != nil {
-			return assa.EndWithError(err)
+		if err = addSteamShortcutsForUser(loginUser, langCode, launchOptionsTemplate, force, ids...); err != nil {
+			return err
 		}
 	}
 
@@ -86,12 +86,12 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 
 	kvUserShortcuts, err := readUserShortcuts(loginUser)
 	if err != nil {
-		return asfua.EndWithError(err)
+		return err
 	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return asfua.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir,
@@ -100,18 +100,18 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 		data.ServerConnectionProperties,
 		data.SlugProperty)
 	if err != nil {
-		return asfua.EndWithError(err)
+		return err
 	}
 
 	for _, id := range ids {
 
 		shortcut, err := createSteamShortcut(loginUser, id, langCode, launchOptionsTemplate, rdx)
 		if err != nil {
-			return asfua.EndWithError(err)
+			return err
 		}
 
 		if changed, err := addNonSteamAppShortcut(shortcut, kvUserShortcuts, force); err != nil {
-			return asfua.EndWithError(err)
+			return err
 		} else if changed {
 			if err := writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
 				return err
@@ -120,11 +120,11 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 
 		metadata, err := getTheoMetadata(id, force)
 		if err != nil {
-			return asfua.EndWithError(err)
+			return err
 		}
 
 		if err := downloadSteamGridImages(loginUser, shortcut.AppId, &metadata.Images, rdx, force); err != nil {
-			return asfua.EndWithError(err)
+			return err
 		}
 	}
 
@@ -170,7 +170,7 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
-		return dsgia.EndWithError(err)
+		return err
 	}
 
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
@@ -200,7 +200,7 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 	for ip, imageId := range imageProperties {
 		srcUrl, err := data.ServerUrl(rdx, data.ServerImagePath, map[string]string{"id": imageId})
 		if err != nil {
-			return dsgia.EndWithError(err)
+			return err
 		}
 		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, ip)
 		if err := dc.Download(srcUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
@@ -252,13 +252,13 @@ func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
-		return nil, rusa.EndWithError(err)
+		return nil, err
 	}
 
 	absUserShortcutsPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", shortcutsFilename)
 
 	if _, err := os.Stat(absUserShortcutsPath); err != nil {
-		return nil, rusa.EndWithError(err)
+		return nil, err
 	}
 
 	return steam_vdf.ParseBinary(absUserShortcutsPath)
@@ -280,7 +280,7 @@ func writeUserShortcuts(loginUser string, kvUserShortcuts []*steam_vdf.KeyValues
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
-		return wusa.EndWithError(err)
+		return err
 	}
 
 	absUserShortcutsPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", shortcutsFilename)
@@ -294,18 +294,18 @@ func getSteamLoginUsers() ([]string, error) {
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
-		return nil, gslua.EndWithError(err)
+		return nil, err
 	}
 
 	absLoginUsersPath := filepath.Join(udhd, "Steam", "config", loginUsersFilename)
 
-	if _, err := os.Stat(absLoginUsersPath); err != nil {
-		return nil, gslua.EndWithError(err)
+	if _, err = os.Stat(absLoginUsersPath); err != nil {
+		return nil, err
 	}
 
 	kvLoginUsers, err := steam_vdf.ParseText(absLoginUsersPath)
 	if err != nil {
-		return nil, gslua.EndWithError(err)
+		return nil, err
 	}
 
 	if users := steam_vdf.GetKevValuesByKey(kvLoginUsers, "users"); users != nil {
@@ -316,7 +316,7 @@ func getSteamLoginUsers() ([]string, error) {
 
 			steamId, err := steam_integration.SteamIdFromUserId(userId.Key)
 			if err != nil {
-				return nil, gslua.EndWithError(err)
+				return nil, err
 			}
 			steamIds = append(steamIds, strconv.FormatInt(steamId, 10))
 		}
@@ -325,7 +325,7 @@ func getSteamLoginUsers() ([]string, error) {
 
 	}
 
-	return nil, gslua.EndWithError(errors.New("failed to successfully process loginusers.vdf"))
+	return nil, errors.New("failed to successfully process loginusers.vdf")
 }
 
 func steamStateDirExist() (bool, error) {

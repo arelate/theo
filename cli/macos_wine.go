@@ -101,27 +101,27 @@ func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, erro
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
-		return "", msggla.EndWithError(err)
+		return "", err
 	}
 
 	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
 
 	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, gogInstallationLnkGlob))
 	if err != nil {
-		return "", msggla.EndWithError(err)
+		return "", err
 	}
 
 	if len(matches) == 1 {
 
 		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
 		if err != nil {
-			return "", msggla.EndWithError(err)
+			return "", err
 		}
 		msggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
 		return matches[0], nil
 	} else {
-		return "", msggla.EndWithError(errors.New("cannot locate suitable .lnk in the GOG Games folder"))
+		return "", errors.New("cannot locate suitable .lnk in the GOG Games folder")
 	}
 }
 

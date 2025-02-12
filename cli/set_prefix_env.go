@@ -30,12 +30,12 @@ func SetPrefixEnv(ids []string, env []string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return spea.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty)
 	if err != nil {
-		return spea.EndWithError(err)
+		return err
 	}
 
 	newEnvs := make(map[string][]string)
@@ -52,7 +52,7 @@ func SetPrefixEnv(ids []string, env []string) error {
 	}
 
 	if err := rdx.BatchReplaceValues(data.PrefixEnvProperty, newEnvs); err != nil {
-		return spea.EndWithError(err)
+		return err
 	}
 
 	return nil

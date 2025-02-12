@@ -34,14 +34,14 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(os, langCode))
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
@@ -60,7 +60,7 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 
 		installedMetadata, err := getInstalledMetadata(id, kvOsLangInstalledMetadata)
 		if err != nil {
-			return lia.EndWithError(err)
+			return err
 		}
 
 		name := fmt.Sprintf("%s (%s)", installedMetadata.Title, id)

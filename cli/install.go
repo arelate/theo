@@ -59,7 +59,7 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 
 	supported, err := filterNotSupported(ip.langCode, force, ids...)
 	if err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	if len(supported) > 0 {
@@ -71,7 +71,7 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 
 	notInstalled, err := filterNotInstalled(ip.langCode, ids...)
 	if err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	if len(notInstalled) > 0 {
@@ -84,45 +84,45 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 	}
 
 	if err = BackupMetadata(); err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	if err = Download(currentOs, langCodes, ip.downloadTypes, force, ids...); err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	if err = Validate(currentOs, langCodes, ip.downloadTypes, ids...); err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	for _, id := range ids {
 		if err := currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, force); err != nil {
-			return ia.EndWithError(err)
+			return err
 		}
 	}
 
 	if !ip.noSteamShortcut {
 		if err := AddSteamShortcut(ip.langCode, runLaunchOptionsTemplate, force, ids...); err != nil {
-			return ia.EndWithError(err)
+			return err
 		}
 	}
 
 	if !ip.keepDownloads {
 		if err = RemoveDownloads(currentOs, langCodes, ip.downloadTypes, force, ids...); err != nil {
-			return ia.EndWithError(err)
+			return err
 		}
 	}
 
 	if err = pinInstalledMetadata(currentOs, ip.langCode, force, ids...); err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	if err = pinInstallParameters(ip, ids...); err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	if err = RevealInstalled(ip.langCode, ids...); err != nil {
-		return ia.EndWithError(err)
+		return err
 	}
 
 	return nil
@@ -135,19 +135,19 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
-		return nil, fia.EndWithError(err)
+		return nil, err
 	}
 
 	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCode(data.CurrentOs(), langCode))
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return nil, fia.EndWithError(err)
+		return nil, err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
 	if err != nil {
-		return nil, fia.EndWithError(err)
+		return nil, err
 	}
 
 	notInstalled := make([]string, 0, len(ids))
@@ -191,7 +191,7 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 
 		metadata, err := getTheoMetadata(id, force)
 		if err != nil {
-			return nil, fnsa.EndWithError(err)
+			return nil, err
 		}
 
 		dls := metadata.DownloadLinks.
@@ -216,27 +216,27 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return coipa.EndWithError(err)
+		return err
 	}
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
-		return coipa.EndWithError(err)
+		return err
 	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return coipa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
 	if err != nil {
-		return coipa.EndWithError(err)
+		return err
 	}
 
 	metadata, err := getTheoMetadata(id, force)
 	if err != nil {
-		return coipa.EndWithError(err)
+		return err
 	}
 
 	dls := metadata.DownloadLinks.
@@ -259,28 +259,28 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		case vangogh_integration.MacOS:
 			extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
 			if err != nil {
-				return coipa.EndWithError(err)
+				return err
 			}
 
 			if linkExt == pkgExt {
 				if err := macOsInstallProduct(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, rdx, force); err != nil {
-					return coipa.EndWithError(err)
+					return err
 				}
 			}
 		case vangogh_integration.Linux:
 			if linkExt == shExt {
 				if err := linuxInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
-					return coipa.EndWithError(err)
+					return err
 				}
 			}
 		case vangogh_integration.Windows:
 			if linkExt == exeExt {
 				if err := windowsInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
-					return coipa.EndWithError(err)
+					return err
 				}
 			}
 		default:
-			return coipa.EndWithError(errors.New("unknown os" + linkOs.String()))
+			return errors.New("unknown os" + linkOs.String())
 		}
 	}
 	return nil

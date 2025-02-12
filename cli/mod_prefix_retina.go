@@ -56,12 +56,12 @@ func ModPrefixRetina(id, langCode string, revert, verbose, force bool) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return mpa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty)
 	if err != nil {
-		return mpa.EndWithError(err)
+		return err
 	}
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)

@@ -27,19 +27,19 @@ func SetupWine(force bool) error {
 	defer uwa.EndWithResult("done")
 
 	if err := getGitHubReleases(currentOs, force); err != nil {
-		return uwa.EndWithError(err)
+		return err
 	}
 
 	if err := cacheGitHubLatestRelease(currentOs, force); err != nil {
-		return uwa.EndWithError(err)
+		return err
 	}
 
 	if err := cleanupGitHubReleases(currentOs); err != nil {
-		return uwa.EndWithError(err)
+		return err
 	}
 
 	if err := unpackGitHubLatestRelease(currentOs, force); err != nil {
-		return uwa.EndWithError(err)
+		return err
 	}
 
 	return nil

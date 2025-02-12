@@ -33,19 +33,19 @@ func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return rpa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty)
 	if err != nil {
-		return rpa.EndWithError(err)
+		return err
 	}
 
 	rpa.TotalInt(len(ids))
 
 	for _, id := range ids {
 		if err := removeProductPrefix(id, langCode, rdx, archive, force); err != nil {
-			return rpa.EndWithError(err)
+			return err
 		}
 
 		rpa.Increment()
@@ -64,7 +64,7 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
-		return rppa.EndWithError(err)
+		return err
 	}
 
 	if _, err = os.Stat(absPrefixDir); os.IsNotExist(err) {
@@ -74,7 +74,7 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force
 
 	if archive {
 		if err = ArchivePrefix(langCode, id); err != nil {
-			return rppa.EndWithError(err)
+			return err
 		}
 	}
 

@@ -34,18 +34,18 @@ func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return rda.EndWithError(err)
+		return err
 	}
 
 	for _, id := range ids {
 
 		metadata, err := getTheoMetadata(id, force)
 		if err != nil {
-			return rda.EndWithError(err)
+			return err
 		}
 
 		if err = removeProductDownloadLinks(id, metadata, operatingSystems, langCodes, downloadTypes, downloadsDir); err != nil {
-			return rda.EndWithError(err)
+			return err
 		}
 
 		rda.Increment()
@@ -97,7 +97,7 @@ func removeProductDownloadLinks(id string,
 		}
 
 		if err := os.Remove(path); err != nil {
-			return fa.EndWithError(err)
+			return err
 		}
 
 		fa.EndWithResult("done")
@@ -107,11 +107,11 @@ func removeProductDownloadLinks(id string,
 	if entries, err := os.ReadDir(productDownloadsDir); err == nil && len(entries) == 0 {
 		rdda := nod.Begin(" removing empty product downloads directory...")
 		if err := os.Remove(productDownloadsDir); err != nil {
-			return rdda.EndWithError(err)
+			return err
 		}
 		rdda.EndWithResult("done")
 	} else {
-		return rdla.EndWithError(err)
+		return err
 	}
 
 	return nil

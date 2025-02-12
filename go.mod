@@ -9,7 +9,7 @@ require (
 	github.com/boggydigital/clo v1.0.7
 	github.com/boggydigital/dolo v0.2.21
 	github.com/boggydigital/kevlar v0.6.6
-	github.com/boggydigital/nod v0.1.22
+	github.com/boggydigital/nod v0.1.23
 	github.com/boggydigital/pathways v0.1.15
 	github.com/boggydigital/redux v0.1.3
 )

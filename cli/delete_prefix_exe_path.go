@@ -35,12 +35,12 @@ func DeletePrefixExePath(ids []string, langCode string, force bool) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return dpepa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixExePathProperty)
 	if err != nil {
-		return dpepa.EndWithError(err)
+		return err
 	}
 
 	prefixes := make([]string, 0, len(ids))
@@ -49,7 +49,7 @@ func DeletePrefixExePath(ids []string, langCode string, force bool) error {
 	}
 
 	if err = rdx.CutKeys(data.PrefixExePathProperty, prefixes...); err != nil {
-		return dpepa.EndWithError(err)
+		return err
 	}
 
 	return nil

@@ -35,20 +35,20 @@ func ArchivePrefix(langCode string, ids ...string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return apa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir, data.SlugProperty)
 	if err != nil {
-		return apa.EndWithError(err)
+		return err
 	}
 
 	apa.TotalInt(len(ids))
 
 	for _, id := range ids {
 
-		if err := archiveProductPrefix(id, langCode, rdx); err != nil {
-			return apa.EndWithError(err)
+		if err = archiveProductPrefix(id, langCode, rdx); err != nil {
+			return err
 		}
 
 		apa.Increment()
@@ -65,7 +65,7 @@ func archiveProductPrefix(id, langCode string, rdx redux.Readable) error {
 
 	prefixArchiveDir, err := pathways.GetAbsRelDir(data.PrefixArchive)
 	if err != nil {
-		return appa.EndWithError(err)
+		return err
 	}
 
 	prefixName := data.GetPrefixName(id, rdx)
@@ -74,17 +74,17 @@ func archiveProductPrefix(id, langCode string, rdx redux.Readable) error {
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
-		return appa.EndWithError(err)
+		return err
 	}
 
-	if _, err := os.Stat(absPrefixNameArchiveDir); err != nil {
-		if err := os.MkdirAll(absPrefixNameArchiveDir, 0755); err != nil {
-			return appa.EndWithError(err)
+	if _, err = os.Stat(absPrefixNameArchiveDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(absPrefixNameArchiveDir, 0755); err != nil {
+			return err
 		}
 	}
 
-	if err := backups.Compress(absPrefixDir, absPrefixNameArchiveDir); err != nil {
-		return appa.EndWithError(err)
+	if err = backups.Compress(absPrefixDir, absPrefixNameArchiveDir); err != nil {
+		return err
 	}
 
 	return cleanupProductPrefixArchive(absPrefixNameArchiveDir)

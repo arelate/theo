@@ -18,12 +18,12 @@ func ResetServerConnection() error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return rsa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties)
 	if err != nil {
-		return rsa.EndWithError(err)
+		return err
 	}
 
 	setupProperties := []string{
@@ -35,7 +35,7 @@ func ResetServerConnection() error {
 	}
 
 	if err := rdx.CutKeys(data.ServerConnectionProperties, setupProperties...); err != nil {
-		return rsa.EndWithError(err)
+		return err
 	}
 
 	return nil

@@ -140,7 +140,7 @@ func linuxInitPrefix(id, langCode string, rdx redux.Readable, _ bool) error {
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
-		return lipa.EndWithError(err)
+		return err
 	}
 
 	return os.MkdirAll(absPrefixDir, 0755)

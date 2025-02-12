@@ -19,12 +19,12 @@ func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem
 
 	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {
-		return pima.EndWithError(err)
+		return err
 	}
 
 	kvTheoMetadata, err := kevlar.New(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return pima.EndWithError(err)
+		return err
 	}
 
 	pima.TotalInt(len(ids))
@@ -32,7 +32,7 @@ func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem
 	for _, id := range ids {
 
 		if err := pinTheoMetadata(id, operatingSystems, langCode, kvTheoMetadata, force); err != nil {
-			return pima.EndWithError(err)
+			return err
 		}
 
 		pima.Increment()
@@ -68,14 +68,14 @@ func pinInstalledMetadataForOs(id string,
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
-		return pimoa.EndWithError(err)
+		return err
 	}
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(operatingSystem, langCode))
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return pimoa.EndWithError(err)
+		return err
 	}
 
 	if hasTheoMetadata := kvTheoMetadata.Has(id); !hasTheoMetadata {
@@ -88,7 +88,7 @@ func pinInstalledMetadataForOs(id string,
 
 	src, err := kvTheoMetadata.Get(id)
 	if err != nil {
-		return pimoa.EndWithError(err)
+		return err
 	}
 
 	defer src.Close()

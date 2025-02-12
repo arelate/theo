@@ -21,22 +21,22 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return gra.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.GitHubReleasesUpdatedProperty)
 	if err != nil {
-		return gra.EndWithError(err)
+		return err
 	}
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
-		return gra.EndWithError(err)
+		return err
 	}
 
 	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
 	if err != nil {
-		return gra.EndWithError(err)
+		return err
 	}
 
 	forceRepoUpdate := force
@@ -52,7 +52,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 		}
 
 		if err := getRepoReleases(repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
-			return gra.EndWithError(err)
+			return err
 		}
 	}
 
@@ -74,16 +74,16 @@ func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, 
 
 	resp, err := http.DefaultClient.Get(ghsu.String())
 	if err != nil {
-		return grlra.EndWithError(err)
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return grlra.EndWithError(errors.New(resp.Status))
+		return errors.New(resp.Status)
 	}
 
 	if err := kvGitHubReleases.Set(ghs.OwnerRepo, resp.Body); err != nil {
-		return grlra.EndWithError(err)
+		return err
 	}
 
 	ft := time.Now().Format(time.RFC3339)

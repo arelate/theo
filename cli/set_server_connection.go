@@ -40,12 +40,12 @@ func SetServerConnection(
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return sa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties)
 	if err != nil {
-		return sa.EndWithError(err)
+		return err
 	}
 
 	setupProperties := make(map[string][]string)
@@ -64,7 +64,7 @@ func SetServerConnection(
 	setupProperties[data.ServerPasswordProperty] = []string{password}
 
 	if err := rdx.BatchReplaceValues(data.ServerConnectionProperties, setupProperties); err != nil {
-		return sa.EndWithError(err)
+		return err
 	}
 
 	return nil

@@ -19,23 +19,23 @@ func BackupMetadata() error {
 
 	backupsDir, err := pathways.GetAbsDir(data.Backups)
 	if err != nil {
-		return ba.EndWithError(err)
+		return err
 	}
 
 	metadataDir, err := pathways.GetAbsDir(data.Metadata)
 	if err != nil {
-		return ba.EndWithError(err)
+		return err
 	}
 
 	if err := backups.Compress(metadataDir, backupsDir); err != nil {
-		return ba.EndWithError(err)
+		return err
 	}
 
 	ca := nod.NewProgress("cleaning up old backups...")
 	defer ca.EndWithResult("done")
 
 	if err := backups.Cleanup(backupsDir, true, ca); err != nil {
-		return ca.EndWithError(err)
+		return err
 	}
 
 	return nil

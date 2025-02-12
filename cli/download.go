@@ -37,11 +37,11 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 
 		metadata, err := getTheoMetadata(id, force)
 		if err != nil {
-			return da.EndWithError(err)
+			return err
 		}
 
 		if err = downloadProductFiles(id, metadata, operatingSystems, langCodes, downloadTypes, force); err != nil {
-			return da.EndWithError(err)
+			return err
 		}
 
 		da.Increment()
@@ -62,17 +62,17 @@ func downloadProductFiles(id string,
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return gpdla.EndWithError(err)
+		return err
 	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return gpdla.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties)
 	if err != nil {
-		return gpdla.EndWithError(err)
+		return err
 	}
 
 	dc := dolo.DefaultClient
@@ -89,7 +89,7 @@ func downloadProductFiles(id string,
 		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
-		return gpdla.EndWithError(errors.New("no links are matching operating params"))
+		return errors.New("no links are matching operating params")
 	}
 
 	for _, dl := range dls {
@@ -107,12 +107,12 @@ func downloadProductFiles(id string,
 				"manual-url": dl.ManualUrl,
 			})
 		if err != nil {
-			_ = fa.EndWithError(err)
+			fa.EndWithResult(err.Error())
 			continue
 		}
 
 		if err := dc.Download(fileUrl, force, fa, downloadsDir, id, dl.LocalFilename); err != nil {
-			_ = fa.EndWithError(err)
+			fa.EndWithResult(err.Error())
 			continue
 		}
 

@@ -41,19 +41,19 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
-		return ua.EndWithError(err)
+		return err
 	}
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(data.CurrentOs(), langCode))
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return ua.EndWithError(err)
+		return err
 	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return ua.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
@@ -61,12 +61,12 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		data.TitleProperty,
 		data.BundleNameProperty)
 	if err != nil {
-		return ua.EndWithError(err)
+		return err
 	}
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
-		return ua.EndWithError(err)
+		return err
 	}
 
 	ua.TotalInt(len(ids))
@@ -77,22 +77,22 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
 
 		if err := currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName); err != nil {
-			return ua.EndWithError(err)
+			return err
 		}
 
 		if err = kvOsLangInstalledMetadata.Cut(id); err != nil {
-			return ua.EndWithError(err)
+			return err
 		}
 
 		ua.Increment()
 	}
 
 	if err = unpinInstallParameters(data.CurrentOs(), langCode, ids...); err != nil {
-		return ua.EndWithError(err)
+		return err
 	}
 
 	if err = RemoveSteamShortcut(ids...); err != nil {
-		return ua.EndWithError(err)
+		return err
 	}
 
 	return nil

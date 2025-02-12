@@ -36,12 +36,12 @@ func RevealInstalled(langCode string, ids ...string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return fia.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties, data.BundleNameProperty)
 	if err != nil {
-		return fia.EndWithError(err)
+		return err
 	}
 
 	return currentOsRevealInstalledApps(langCode, rdx, ids...)

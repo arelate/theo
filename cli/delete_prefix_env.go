@@ -30,12 +30,12 @@ func DeletePrefixEnv(ids []string, force bool) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return dpea.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty)
 	if err != nil {
-		return dpea.EndWithError(err)
+		return err
 	}
 
 	prefixes := make([]string, 0, len(ids))
@@ -43,8 +43,8 @@ func DeletePrefixEnv(ids []string, force bool) error {
 		prefixes = append(prefixes, data.GetPrefixName(id, rdx))
 	}
 
-	if err := rdx.CutKeys(data.PrefixEnvProperty, prefixes...); err != nil {
-		return dpea.EndWithError(err)
+	if err = rdx.CutKeys(data.PrefixEnvProperty, prefixes...); err != nil {
+		return err
 	}
 
 	return nil

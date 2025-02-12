@@ -27,7 +27,7 @@ func RemoveSteamShortcut(ids ...string) error {
 
 	ok, err := steamStateDirExist()
 	if err != nil {
-		return rssa.EndWithError(err)
+		return err
 	}
 
 	if !ok {
@@ -37,12 +37,12 @@ func RemoveSteamShortcut(ids ...string) error {
 
 	loginUsers, err := getSteamLoginUsers()
 	if err != nil {
-		return rssa.EndWithError(err)
+		return err
 	}
 
 	for _, loginUser := range loginUsers {
 		if err := removeSteamShortcutsForUser(loginUser, ids...); err != nil {
-			return rssa.EndWithError(err)
+			return err
 		}
 	}
 
@@ -58,7 +58,7 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 
 	kvUserShortcuts, err := readUserShortcuts(loginUser)
 	if err != nil {
-		return rsfua.EndWithError(err)
+		return err
 	}
 
 	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
@@ -70,12 +70,12 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return rsfua.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.TitleProperty, data.BundleNameProperty, data.ServerConnectionProperties)
 	if err != nil {
-		return rsfua.EndWithError(err)
+		return err
 	}
 
 	removeShortcutAppIds := make([]uint32, 0, len(ids))
@@ -86,7 +86,7 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 		if tp, ok := rdx.GetLastVal(data.TitleProperty, id); ok && tp != "" {
 			title = tp
 		} else {
-			return rsfua.EndWithError(errors.New("product is missing title"))
+			return errors.New("product is missing title")
 		}
 
 		shortcutId := steam_integration.ShortcutAppId(title)
@@ -94,12 +94,12 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 		removeShortcutAppIds = append(removeShortcutAppIds, shortcutId)
 
 		if err := removeSteamGridImages(loginUser, shortcutId); err != nil {
-			return rsfua.EndWithError(err)
+			return err
 		}
 	}
 
 	if changed, err := removeNonSteamAppShortcut(kvUserShortcuts, removeShortcutAppIds...); err != nil {
-		return rsfua.EndWithError(err)
+		return err
 	} else if changed {
 		if err := writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
 			return err
@@ -124,7 +124,7 @@ func removeSteamGridImages(loginUser string, shortcutId uint32) error {
 
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
-		return rsgia.EndWithError(err)
+		return err
 	}
 
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
@@ -136,7 +136,7 @@ func removeSteamGridImages(loginUser string, shortcutId uint32) error {
 			continue
 		}
 		if err := os.Remove(absDstPath); err != nil {
-			return rsgia.EndWithError(err)
+			return err
 		}
 	}
 

@@ -40,38 +40,38 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
-		return wua.EndWithError(err)
+		return err
 	}
 
 	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(vangogh_integration.Windows, langCode))
 
 	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return wua.EndWithError(err)
+		return err
 	}
 
 	if err := RemovePrefix(langCode, archive, force, ids...); err != nil {
-		return wua.EndWithError(err)
+		return err
 	}
 
 	if err := DeletePrefixEnv(ids, force); err != nil {
-		return wua.EndWithError(err)
+		return err
 	}
 
 	for _, id := range ids {
 		if err = kvOsLangInstalledMetadata.Cut(id); err != nil {
-			return wua.EndWithError(err)
+			return err
 		}
 
 		wua.Increment()
 	}
 
 	if err = unpinInstallParameters(vangogh_integration.Windows, langCode, ids...); err != nil {
-		return wua.EndWithError(err)
+		return err
 	}
 
 	if err := RemoveSteamShortcut(ids...); err != nil {
-		return wua.EndWithError(err)
+		return err
 	}
 
 	return nil

@@ -21,18 +21,18 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
-		return cra.EndWithError(err)
+		return err
 	}
 
 	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
 	if err != nil {
-		return cra.EndWithError(err)
+		return err
 	}
 
 	for _, repo := range data.OsGitHubSources(os) {
 
-		if err := cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
-			return cra.EndWithError(err)
+		if err = cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
+			return err
 		}
 	}
 
@@ -45,13 +45,13 @@ func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValu
 
 	rcReleases, err := kvGitHubReleases.Get(ghs.OwnerRepo)
 	if err != nil {
-		return crra.EndWithError(err)
+		return err
 	}
 	defer rcReleases.Close()
 
 	var releases []github_integration.GitHubRelease
-	if err := json.NewDecoder(rcReleases).Decode(&releases); err != nil {
-		return crra.EndWithError(err)
+	if err = json.NewDecoder(rcReleases).Decode(&releases); err != nil {
+		return err
 	}
 
 	cleanupFiles := make([]string, 0)
@@ -68,7 +68,7 @@ func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValu
 
 		absReleaseAssetPath, err := data.GetAbsReleaseAssetPath(ghs, &release, asset)
 		if err != nil {
-			return crra.EndWithError(err)
+			return err
 		}
 
 		if _, err := os.Stat(absReleaseAssetPath); err == nil {
@@ -81,7 +81,7 @@ func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValu
 		return nil
 	} else {
 		if err := removeRepoReleasesFiles(cleanupFiles); err != nil {
-			return crra.EndWithError(err)
+			return err
 		}
 	}
 
@@ -100,7 +100,7 @@ func removeRepoReleasesFiles(absFilePaths []string) error {
 		dir, _ := filepath.Split(absFilePath)
 		absDirs[dir] = nil
 		if err := os.Remove(absFilePath); err != nil {
-			return rfa.EndWithError(err)
+			return err
 		}
 
 		rfa.Increment()
@@ -115,7 +115,7 @@ func removeRepoReleaseDirs(absDirs iter.Seq[string]) error {
 
 	for absDir := range absDirs {
 		if err := removeDirIfEmpty(absDir); err != nil {
-			return rda.EndWithError(err)
+			return err
 		}
 	}
 	return nil

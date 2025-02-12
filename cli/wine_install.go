@@ -13,6 +13,12 @@ import (
 	"strings"
 )
 
+const (
+	innoSetupVerySilentArg        = "/VERYSILENT"
+	innoSetupNoRestartArg         = "/NORESTART"
+	innoSetupCloseApplicationsArg = "/CLOSEAPPLICATIONS"
+)
+
 func WineInstallHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -60,17 +66,17 @@ func WineInstall(langCode string,
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty)
 	if err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	notInstalled, err := wineFilterNotInstalled(langCode, rdx, ids...)
 	if err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	if len(notInstalled) > 0 {
@@ -83,45 +89,45 @@ func WineInstall(langCode string,
 	}
 
 	if err := BackupMetadata(); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	if err = Download(windowsOs, langCodes, downloadTypes, force, ids...); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	if err = Validate(windowsOs, langCodes, downloadTypes, ids...); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	if err = initPrefix(langCode, verbose, rdx, ids...); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	for _, id := range ids {
 		if err := wineInstallProduct(id, langCode, rdx, env, downloadTypes, verbose, force); err != nil {
-			return wia.EndWithError(err)
+			return err
 		}
 	}
 
 	if err := DefaultPrefixEnv(ids); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	if !noSteamShortcut {
 		if err := AddSteamShortcut(langCode, wineRunLaunchOptionsTemplate, force, ids...); err != nil {
-			return wia.EndWithError(err)
+			return err
 		}
 	}
 
 	if !keepDownloads {
 		if err = RemoveDownloads(windowsOs, langCodes, downloadTypes, force, ids...); err != nil {
-			return wia.EndWithError(err)
+			return err
 		}
 	}
 
 	if err = pinInstalledMetadata(windowsOs, langCode, force, ids...); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	ip := &installParameters{
@@ -133,11 +139,11 @@ func WineInstall(langCode string,
 	}
 
 	if err = pinInstallParameters(ip, ids...); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	if err := RevealPrefix(langCode, ids...); err != nil {
-		return wia.EndWithError(err)
+		return err
 	}
 
 	return nil
@@ -179,12 +185,12 @@ func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, d
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return wipa.EndWithError(err)
+		return err
 	}
 
 	metadata, err := getTheoMetadata(id, force)
 	if err != nil {
-		return wipa.EndWithError(err)
+		return err
 	}
 
 	dls := metadata.DownloadLinks.
@@ -199,7 +205,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, d
 	case vangogh_integration.Linux:
 		currentOsWineRun = linuxProtonRun
 	default:
-		return wipa.EndWithError(errors.New("wine-install: unsupported operating system"))
+		return errors.New("wine-install: unsupported operating system")
 	}
 
 	for _, link := range dls {
@@ -211,8 +217,8 @@ func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, d
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
 		if err := currentOsWineRun(id, langCode, rdx, env, verbose, force, absInstallerPath,
-			"/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS"); err != nil {
-			return wipa.EndWithError(err)
+			innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg); err != nil {
+			return err
 		}
 	}
 
@@ -233,13 +239,13 @@ func initPrefix(langCode string, verbose bool, rdx redux.Readable, ids ...string
 	case vangogh_integration.Linux:
 		currentOsWineInitPrefix = linuxInitPrefix
 	default:
-		return cpa.EndWithError(errors.New("init-prefix: unsupported operating system"))
+		return errors.New("init-prefix: unsupported operating system")
 	}
 
 	for _, id := range ids {
 
 		if err := currentOsWineInitPrefix(id, langCode, rdx, verbose); err != nil {
-			return cpa.EndWithError(err)
+			return err
 		}
 
 		cpa.Increment()

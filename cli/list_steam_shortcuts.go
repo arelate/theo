@@ -17,7 +17,7 @@ func ListSteamShortcuts() error {
 
 	ok, err := steamStateDirExist()
 	if err != nil {
-		return lssa.EndWithError(err)
+		return err
 	}
 
 	if !ok {
@@ -27,12 +27,12 @@ func ListSteamShortcuts() error {
 
 	loginUsers, err := getSteamLoginUsers()
 	if err != nil {
-		return lssa.EndWithError(err)
+		return err
 	}
 
 	for _, loginUser := range loginUsers {
 		if err := listUserShortcuts(loginUser); err != nil {
-			return lssa.EndWithError(err)
+			return err
 		}
 	}
 

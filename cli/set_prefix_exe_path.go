@@ -39,12 +39,12 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return spepa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixExePathProperty)
 	if err != nil {
-		return spepa.EndWithError(err)
+		return err
 	}
 
 	exePaths := make(map[string][]string)
@@ -56,7 +56,7 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 		var absPrefixDir string
 		absPrefixDir, err = data.GetAbsPrefixDir(id, langCode, rdx)
 		if err != nil {
-			return spepa.EndWithError(err)
+			return err
 		}
 
 		absExePath := filepath.Join(absPrefixDir, relPrefixDriveCDir, exePath)
@@ -73,7 +73,7 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 	}
 
 	if err := rdx.BatchReplaceValues(data.PrefixExePathProperty, exePaths); err != nil {
-		return spepa.EndWithError(err)
+		return err
 	}
 
 	return nil

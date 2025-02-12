@@ -24,7 +24,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 
 		latestRelease, err := ghs.GetLatestRelease()
 		if err != nil {
-			return ura.EndWithError(err)
+			return err
 		}
 
 		if latestRelease == nil {
@@ -34,7 +34,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 
 		binDir, err := data.GetAbsBinariesDir(ghs, latestRelease)
 		if err != nil {
-			return ura.EndWithError(err)
+			return err
 		}
 
 		if _, err := os.Stat(binDir); err == nil && !force {
@@ -44,7 +44,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 
 		if asset := ghs.GetAsset(latestRelease); asset != nil {
 			if err := unpackAsset(ghs, latestRelease, asset); err != nil {
-				return ura.EndWithError(err)
+				return err
 			}
 		}
 
@@ -61,12 +61,12 @@ func unpackAsset(ghs *data.GitHubSource, release *github_integration.GitHubRelea
 
 	absPackedAssetPath, err := data.GetAbsReleaseAssetPath(ghs, release, asset)
 	if err != nil {
-		return uaa.EndWithError(err)
+		return err
 	}
 
 	absBinDir, err := data.GetAbsBinariesDir(ghs, release)
 	if err != nil {
-		return uaa.EndWithError(err)
+		return err
 	}
 
 	return unpackGitHubSource(ghs, absPackedAssetPath, absBinDir)

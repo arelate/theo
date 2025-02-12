@@ -47,12 +47,12 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return ra.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties, data.BundleNameProperty)
 	if err != nil {
-		return ra.EndWithError(err)
+		return err
 	}
 
 	return currentOsRunApp(id, langCode, rdx, env, verbose)

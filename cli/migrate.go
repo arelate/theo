@@ -25,7 +25,7 @@ func Migrate() error {
 	if theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata); err == nil {
 		dirs = append(dirs, theoMetadataDir)
 	} else {
-		return ma.EndWithError(err)
+		return err
 	}
 
 	if installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata); err == nil {
@@ -36,19 +36,19 @@ func Migrate() error {
 			}
 		}
 	} else {
-		return ma.EndWithError(err)
+		return err
 	}
 
 	if githubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases); err == nil {
 		dirs = append(dirs, githubReleasesDir)
 	} else {
-		return ma.EndWithError(err)
+		return err
 	}
 
 	if reduxDir, err := pathways.GetAbsRelDir(data.Redux); err == nil {
 		dirs = append(dirs, reduxDir)
 	} else {
-		return ma.EndWithError(err)
+		return err
 	}
 
 	ma.TotalInt(len(dirs))
@@ -56,7 +56,7 @@ func Migrate() error {
 	for _, dir := range dirs {
 
 		if err := kevlar.Migrate(dir); err != nil {
-			return ma.EndWithError(err)
+			return err
 		}
 		ma.Increment()
 	}

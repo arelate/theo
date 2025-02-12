@@ -33,12 +33,12 @@ func DefaultPrefixEnv(ids []string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return dpea.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty)
 	if err != nil {
-		return dpea.EndWithError(err)
+		return err
 	}
 
 	defaultEnvs := make(map[string][]string, len(ids))
@@ -47,8 +47,9 @@ func DefaultPrefixEnv(ids []string) error {
 		defaultEnvs[prefixName] = operatingSystemEnvDefaults[data.CurrentOs()]
 	}
 
-	if err := rdx.BatchReplaceValues(data.PrefixEnvProperty, defaultEnvs); err != nil {
-		return dpea.EndWithError(err)
+	if err = rdx.BatchReplaceValues(data.PrefixEnvProperty, defaultEnvs); err != nil {
+		return err
+
 	}
 
 	return nil

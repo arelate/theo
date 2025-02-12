@@ -29,40 +29,40 @@ func linuxInstallProduct(id string,
 	defer lia.EndWithResult("done")
 
 	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	if _, err := os.Stat(absInstallerPath); err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	productTitle, _ := rdx.GetLastVal(data.SlugProperty, id)
 
 	if err := rdx.ReplaceValues(data.BundleNameProperty, id, productTitle); err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	osLangCodeDir := data.OsLangCode(vangogh_integration.Linux, link.LanguageCode)
 	productInstalledAppDir := filepath.Join(installedAppsDir, osLangCodeDir, productTitle)
 
 	if err := linuxPostDownloadActions(id, link); err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	preInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
 	if err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	fmt.Println(preInstallDesktopFiles)
 
 	if err := linuxExecuteInstaller(absInstallerPath, productInstalledAppDir); err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	postInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
 	if err != nil {
-		return lia.EndWithError(err)
+		return err
 	}
 
 	for _, pidf := range postInstallDesktopFiles {
@@ -71,14 +71,14 @@ func linuxInstallProduct(id string,
 		}
 
 		if err := os.Remove(pidf); err != nil {
-			return lia.EndWithError(err)
+			return err
 		}
 	}
 
 	mojosetupProductDir := filepath.Join(productInstalledAppDir, mojosetupDir)
 	if _, err = os.Stat(mojosetupProductDir); err == nil {
 		if err := os.RemoveAll(mojosetupProductDir); err != nil {
-			return lia.EndWithError(err)
+			return err
 		}
 	}
 
@@ -114,12 +114,12 @@ func linuxPostDownloadActions(id string, link *vangogh_integration.TheoDownloadL
 	defer lpda.EndWithResult("done")
 
 	if data.CurrentOs() != vangogh_integration.Linux {
-		return lpda.EndWithError(errors.New("Linux post-download actions are only supported on Linux"))
+		return errors.New("Linux post-download actions are only supported on Linux")
 	}
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return lpda.EndWithError(err)
+		return err
 	}
 
 	productInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)

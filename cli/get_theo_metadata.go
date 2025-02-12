@@ -21,16 +21,16 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 
 	theoMetadataDir, err := pathways.GetAbsRelDir(data.TheoMetadata)
 	if err != nil {
-		return nil, gtma.EndWithError(err)
+		return nil, err
 	}
 
 	kvTheoMetadata, err := kevlar.New(theoMetadataDir, kevlar.JsonExt)
 	if err != nil {
-		return nil, gtma.EndWithError(err)
+		return nil, err
 	}
 
 	if tm, err := readLocalTheoMetadata(id, kvTheoMetadata); err != nil {
-		return nil, gtma.EndWithError(err)
+		return nil, err
 	} else if tm != nil && !force {
 		gtma.EndWithResult("read local")
 		return tm, nil
@@ -38,12 +38,12 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return nil, gtma.EndWithError(err)
+		return nil, err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, data.TitleProperty, data.SlugProperty)
 	if err != nil {
-		return nil, gtma.EndWithError(err)
+		return nil, err
 	}
 
 	defer gtma.EndWithResult("fetched remote")

@@ -63,11 +63,11 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 
 		metadata, err := getTheoMetadata(id, false)
 		if err != nil {
-			return va.EndWithError(err)
+			return err
 		}
 
 		if err = validateLinks(id, operatingSystems, langCodes, downloadTypes, metadata); err != nil {
-			return va.EndWithError(err)
+			return err
 		}
 	}
 
@@ -85,7 +85,7 @@ func validateLinks(id string,
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return vla.EndWithError(err)
+		return err
 	}
 
 	dls := metadata.DownloadLinks.
@@ -94,7 +94,7 @@ func validateLinks(id string,
 		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
-		return vla.EndWithError(errors.New("no links are matching operating params"))
+		return errors.New("no links are matching operating params")
 	}
 
 	vla.TotalInt(len(dls))
@@ -138,12 +138,12 @@ func validateLink(id string, dl vangogh_integration.TheoDownloadLink, downloadsD
 
 	localFile, err := os.Open(absDownloadPath)
 	if err != nil {
-		return ValResError, dla.EndWithError(err)
+		return ValResError, err
 	}
 
 	h := md5.New()
 	if err = dolo.CopyWithProgress(h, localFile, dla); err != nil {
-		return ValResError, dla.EndWithError(err)
+		return ValResError, err
 	}
 
 	computedMd5 := fmt.Sprintf("%x", h.Sum(nil))

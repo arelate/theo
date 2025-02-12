@@ -8,6 +8,7 @@ import (
 	"github.com/boggydigital/clo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"log"
 	"os"
 )
 
@@ -27,15 +28,16 @@ func main() {
 
 	theoRootDir, err := data.InitRootDir()
 	if err != nil {
-		_ = ns.EndWithError(err)
+		log.Println(err.Error())
+		os.Exit(1)
 	}
 
-	if err := pathways.Setup("",
+	if err = pathways.Setup("",
 		theoRootDir,
 		data.RelToAbsDirs,
 		data.AllAbsDirs...); err != nil {
-		_ = ns.EndWithError(err)
-		os.Exit(1)
+		log.Println(err.Error())
+		os.Exit(2)
 	}
 
 	defs, err := clo.Load(
@@ -43,8 +45,8 @@ func main() {
 		bytes.NewBuffer(cliHelp),
 		nil)
 	if err != nil {
-		_ = ns.EndWithError(err)
-		os.Exit(1)
+		log.Println(err.Error())
+		os.Exit(3)
 	}
 
 	clo.HandleFuncs(map[string]clo.Handler{
@@ -88,13 +90,13 @@ func main() {
 		"wine-update":             cli.WineUpdateHandler,
 	})
 
-	if err := defs.AssertCommandsHaveHandlers(); err != nil {
-		_ = ns.EndWithError(err)
-		os.Exit(1)
+	if err = defs.AssertCommandsHaveHandlers(); err != nil {
+		log.Println(err.Error())
+		os.Exit(4)
 	}
 
-	if err := defs.Serve(os.Args[1:]); err != nil {
-		_ = ns.EndWithError(err)
-		os.Exit(1)
+	if err = defs.Serve(os.Args[1:]); err != nil {
+		log.Println(err.Error())
+		os.Exit(5)
 	}
 }

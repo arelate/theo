@@ -20,14 +20,14 @@ func ListPrefixEnv() error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return lpea.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
 		data.PrefixEnvProperty,
 		data.TitleProperty)
 	if err != nil {
-		return lpea.EndWithError(err)
+		return err
 	}
 
 	summary := make(map[string][]string)

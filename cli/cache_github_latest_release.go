@@ -20,15 +20,15 @@ func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyste
 
 		latestRelease, err := ghs.GetLatestRelease()
 		if err != nil {
-			return cra.EndWithError(err)
+			return err
 		}
 
 		if latestRelease == nil {
 			continue
 		}
 
-		if err := cacheRepoRelease(ghs, latestRelease, dc, force); err != nil {
-			return cra.EndWithError(err)
+		if err = cacheRepoRelease(ghs, latestRelease, dc, force); err != nil {
+			return err
 		}
 	}
 
@@ -48,19 +48,19 @@ func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHub
 
 	ru, err := url.Parse(asset.BrowserDownloadUrl)
 	if err != nil {
-		return crra.EndWithError(err)
+		return err
 	}
 
 	relDir, err := data.GetAbsReleasesDir(ghs, release)
 	if err != nil {
-		return crra.EndWithError(err)
+		return err
 	}
 
 	dra := nod.NewProgress(" - asset: %s", asset.Name)
 	defer dra.EndWithResult("done")
 
-	if err := dc.Download(ru, force, dra, relDir); err != nil {
-		return crra.EndWithError(err)
+	if err = dc.Download(ru, force, dra, relDir); err != nil {
+		return err
 	}
 
 	return nil

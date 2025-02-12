@@ -39,19 +39,19 @@ func macOsInstallProduct(id string,
 	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(vangogh_integration.MacOS, link.LanguageCode))
 
 	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
-		return mia.EndWithError(err)
+		return err
 	}
 
 	if err := macOsPlaceExtracts(id, link, productExtractsDir, osLangInstalledAppsDir, rdx, force); err != nil {
-		return mia.EndWithError(err)
+		return err
 	}
 
 	if err := macOsPostInstallActions(id, link, installedAppsDir); err != nil {
-		return mia.EndWithError(err)
+		return err
 	}
 
 	if err := macOsRemoveProductExtracts(id, metadata, extractsDir); err != nil {
-		return mia.EndWithError(err)
+		return err
 	}
 
 	return nil
@@ -63,7 +63,7 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 	defer meia.EndWithResult("done")
 
 	if data.CurrentOs() != vangogh_integration.MacOS {
-		return meia.EndWithError(errors.New("extracting .pkg installers is only supported on " + vangogh_integration.MacOS.String()))
+		return errors.New("extracting .pkg installers is only supported on " + vangogh_integration.MacOS.String())
 	}
 
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
@@ -73,7 +73,7 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 	if _, err := os.Stat(localFilenameExtractsDir); err == nil {
 		if force {
 			if err := os.RemoveAll(localFilenameExtractsDir); err != nil {
-				return meia.EndWithError(err)
+				return err
 			}
 		} else {
 			return nil
@@ -83,7 +83,7 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 	productExtractDir, _ := filepath.Split(localFilenameExtractsDir)
 	if _, err := os.Stat(productExtractDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(productExtractDir, 0755); err != nil {
-			return meia.EndWithError(err)
+			return err
 		}
 	}
 
@@ -102,33 +102,33 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, p
 	defer mpea.EndWithResult("done")
 
 	if data.CurrentOs() != vangogh_integration.MacOS {
-		return mpea.EndWithError(errors.New("placing .pkg extracts is only supported on " + vangogh_integration.MacOS.String()))
+		return errors.New("placing .pkg extracts is only supported on " + vangogh_integration.MacOS.String())
 	}
 
 	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
-		return mpea.EndWithError(err)
+		return err
 	}
 
 	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
 	postInstallScript, err := ParsePostInstallScript(absPostInstallScriptPath)
 	if err != nil {
-		return mpea.EndWithError(err)
+		return err
 	}
 
 	absExtractPayloadPath := filepath.Join(productExtractsDir, link.LocalFilename, relPayloadPath)
 
 	if _, err := os.Stat(absExtractPayloadPath); os.IsNotExist(err) {
-		return mpea.EndWithError(errors.New("cannot locate extracts payload"))
+		return errors.New("cannot locate extracts payload")
 	}
 
 	bundleName := postInstallScript.BundleName()
 
 	if bundleName == "" {
-		return mpea.EndWithError(errors.New("cannot determine bundle name from postinstall file"))
+		return errors.New("cannot determine bundle name from postinstall file")
 	}
 
 	if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
-		return mpea.EndWithError(err)
+		return err
 	}
 
 	installerType := postInstallScript.InstallerType()
@@ -153,7 +153,7 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 	if _, err := os.Stat(absInstallationPath); err == nil {
 		if force {
 			if err := os.RemoveAll(absInstallationPath); err != nil {
-				return mpga.EndWithError(err)
+				return err
 			}
 		} else {
 			// already installed, overwrite won't be forced
@@ -164,7 +164,7 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 	installationDir, _ := filepath.Split(absInstallationPath)
 	if _, err := os.Stat(installationDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(installationDir, 0755); err != nil {
-			return mpga.EndWithError(err)
+			return err
 		}
 	}
 
@@ -178,7 +178,7 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 
 	if _, err := os.Stat(absInstallationPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(absInstallationPath, 0755); err != nil {
-			return mpda.EndWithError(err)
+			return err
 		}
 	}
 
@@ -190,12 +190,12 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 			if relPath, err := filepath.Rel(absExtractsPayloadPath, path); err == nil {
 				dlcFiles = append(dlcFiles, relPath)
 			} else {
-				return mpda.EndWithError(err)
+				return err
 			}
 		}
 		return nil
 	}); err != nil {
-		return mpda.EndWithError(err)
+		return err
 	}
 
 	for _, dlcFile := range dlcFiles {
@@ -205,14 +205,14 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 
 		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(absDstDir, 0755); err != nil {
-				return mpda.EndWithError(err)
+				return err
 			}
 		}
 
 		absSrcPath := filepath.Join(absExtractsPayloadPath, dlcFile)
 
 		if err := os.Rename(absSrcPath, absDstPath); err != nil {
-			return mpda.EndWithError(err)
+			return err
 		}
 	}
 
@@ -233,14 +233,14 @@ func macOsPostInstallActions(id string,
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return mpia.EndWithError(err)
+		return err
 	}
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
 	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
 	if err != nil {
-		return mpia.EndWithError(err)
+		return err
 	}
 
 	productExtractsDir := filepath.Join(extractsDir, id)
@@ -249,7 +249,7 @@ func macOsPostInstallActions(id string,
 
 	pis, err := ParsePostInstallScript(absPostInstallScriptPath)
 	if err != nil {
-		return mpia.EndWithError(err)
+		return err
 	}
 
 	bundleName := pis.BundleName()
@@ -264,12 +264,12 @@ func macOsPostInstallActions(id string,
 
 	if customCommands := pis.CustomCommands(); len(customCommands) > 0 {
 		if err := macOsProcessPostInstallScript(customCommands, productDownloadsDir, absBundlePath); err != nil {
-			return mpia.EndWithError(err)
+			return err
 		}
 	}
 
 	if err := macOsRemoveXattrs(absBundlePath); err != nil {
-		return mpia.EndWithError(err)
+		return err
 	}
 
 	return nil
@@ -316,14 +316,14 @@ func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundl
 				srcGlob := strings.Trim(strings.Replace(catCmdParts[0], "\"${pkgpath}\"", productDownloadsDir, 1), "\"")
 				dstPath := strings.Trim(strings.Replace(catCmdParts[2], "${gog_full_path}", bundleInstallPath, 1), "\"")
 				if err := macOsExecCatFiles(srcGlob, dstPath); err != nil {
-					return pcca.EndWithError(err)
+					return err
 				}
 			}
 			pcca.Increment()
 			continue
 		}
 		// at this point we've handled all known commands, so anything here would be unknown
-		return pcca.EndWithError(errors.New("cannot process unknown custom command: " + cmd))
+		return errors.New("cannot process unknown custom command: " + cmd)
 	}
 	return nil
 }
@@ -345,19 +345,19 @@ func macOsExecCatFiles(srcGlob string, dstPath string) error {
 	dstDir, _ := filepath.Split(dstPath)
 	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dstDir, 0755); err != nil {
-			return ecfa.EndWithError(err)
+			return err
 		}
 	}
 
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
-		return ecfa.EndWithError(err)
+		return err
 	}
 	defer dstFile.Close()
 
 	matches, err := filepath.Glob(srcGlob)
 	if err != nil {
-		return ecfa.EndWithError(err)
+		return err
 	}
 
 	slices.Sort(matches)
@@ -368,19 +368,19 @@ func macOsExecCatFiles(srcGlob string, dstPath string) error {
 
 		srcFile, err := os.Open(match)
 		if err != nil {
-			return ecfa.EndWithError(err)
+			return err
 		}
 
 		if _, err := io.Copy(dstFile, srcFile); err != nil {
 			_ = srcFile.Close()
-			return ecfa.EndWithError(err)
+			return err
 		}
 
 		ecfa.Increment()
 		_ = srcFile.Close()
 
 		if err := os.Remove(match); err != nil {
-			return ecfa.EndWithError(err)
+			return err
 		}
 	}
 
@@ -415,7 +415,7 @@ func macOsRemoveProductExtracts(id string,
 		}
 
 		if err := os.RemoveAll(path); err != nil {
-			return fa.EndWithError(err)
+			return err
 		}
 
 		fa.EndWithResult("done")
@@ -423,7 +423,7 @@ func macOsRemoveProductExtracts(id string,
 
 	rdda := nod.Begin(" removing empty product extracts directory...")
 	if err := removeDirIfEmpty(idPath); err != nil {
-		return rdda.EndWithError(err)
+		return err
 	}
 	rdda.EndWithResult("done")
 

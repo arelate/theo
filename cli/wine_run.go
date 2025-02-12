@@ -46,12 +46,12 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return wra.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty)
 	if err != nil {
-		return wra.EndWithError(err)
+		return err
 	}
 
 	prefixName := data.GetPrefixName(id, rdx)
@@ -62,7 +62,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	if ep, ok := rdx.GetLastVal(data.PrefixExePathProperty, prefixName); ok && ep != "" {
 		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 		if err != nil {
-			return wra.EndWithError(err)
+			return err
 		}
 
 		exePath = filepath.Join(absPrefixDir, relPrefixDriveCDir, ep)
@@ -71,12 +71,12 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	if exePath == "" {
 		exePath, err = getPrefixGogGamesLnk(id, langCode, rdx)
 		if err != nil {
-			return wra.EndWithError(err)
+			return err
 		}
 	}
 
 	if _, err := os.Stat(exePath); err != nil {
-		return wra.EndWithError(err)
+		return err
 	}
 
 	var currentOsWineRun wineRunFunc
@@ -87,7 +87,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	case vangogh_integration.Linux:
 		currentOsWineRun = linuxProtonRun
 	default:
-		return wra.EndWithError(errors.New("wine-run: unsupported operating system"))
+		return errors.New("wine-run: unsupported operating system")
 	}
 
 	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath)

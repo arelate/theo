@@ -37,12 +37,12 @@ func RevealPrefix(langCode string, ids ...string) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return rpa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty)
 	if err != nil {
-		return rpa.EndWithError(err)
+		return err
 	}
 
 	if len(ids) == 1 {
@@ -69,7 +69,7 @@ func revealProductPrefix(id, langCode string, rdx redux.Readable) error {
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
-		return rppa.EndWithError(err)
+		return err
 	}
 
 	if _, err = os.Stat(absPrefixDir); os.IsNotExist(err) {

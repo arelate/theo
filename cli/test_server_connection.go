@@ -22,20 +22,20 @@ func TestServerConnection() error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
-		return tsa.EndWithError(err)
+		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties)
 	if err != nil {
-		return tsa.EndWithError(err)
+		return err
 	}
 
 	if err := testServerConnectivity(rdx); err != nil {
-		return tsa.EndWithError(err)
+		return err
 	}
 
 	if err := testServerAuth(rdx); err != nil {
-		return tsa.EndWithError(err)
+		return err
 	}
 
 	return nil
@@ -53,21 +53,21 @@ func testServerConnectivity(rdx redux.Readable) error {
 
 	resp, err := http.DefaultClient.Get(testUrl.String())
 	if err != nil {
-		return tvca.EndWithError(err)
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return tvca.EndWithError(errors.New(resp.Status))
+		return errors.New(resp.Status)
 	}
 
 	bts, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return tvca.EndWithError(err)
+		return err
 	}
 
 	if string(bts) != "ok" {
-		return tvca.EndWithError(errors.New("unexpected health response"))
+		return errors.New("unexpected health response")
 	}
 
 	tvca.EndWithResult("done, healthy")
@@ -87,36 +87,36 @@ func testServerAuth(rdx redux.Readable) error {
 
 	req, err := http.NewRequest(http.MethodGet, testUrl.String(), nil)
 	if err != nil {
-		return tvaa.EndWithError(err)
+		return err
 	}
 
 	if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
 		if password, sure := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerPasswordProperty); sure && password != "" {
 			req.SetBasicAuth(username, password)
 		} else {
-			return tvaa.EndWithError(errors.New("password cannot be empty"))
+			return errors.New("password cannot be empty")
 		}
 	} else {
-		return tvaa.EndWithError(errors.New("username cannot be empty"))
+		return errors.New("username cannot be empty")
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return tvaa.EndWithError(err)
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return tvaa.EndWithError(errors.New(resp.Status))
+		return errors.New(resp.Status)
 	}
 
 	bts, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return tvaa.EndWithError(err)
+		return err
 	}
 
 	if string(bts) != "ok" {
-		return tvaa.EndWithError(errors.New("unexpected health-auth response"))
+		return errors.New("unexpected health-auth response")
 	}
 
 	tvaa.EndWithResult("done, healthy")
