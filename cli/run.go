@@ -109,13 +109,11 @@ func resolveProductTitles(ids ...string) error {
 	titles := make([]string, 0)
 
 	for _, id := range ids {
-		var title string
 		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
-			title = tp
+			titles = append(titles, fmt.Sprintf("%s (%s)", tp, id))
 		} else {
-			title = "(undefined)"
+			titles = append(titles, fmt.Sprintf("%s [%s]", id, "undefined"))
 		}
-		titles = append(titles, fmt.Sprintf("%s:%s", id, title))
 	}
 
 	rta.EndWithResult(strings.Join(titles, "; "))
