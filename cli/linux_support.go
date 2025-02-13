@@ -22,7 +22,7 @@ const mojosetupDir = ".mojosetup"
 func linuxInstallProduct(id string,
 	metadata *vangogh_integration.TheoMetadata,
 	link *vangogh_integration.TheoDownloadLink,
-	absInstallerPath, installedAppsDir string,
+	//absInstallerPath, installedAppsDir string,
 	rdx redux.Writeable) error {
 
 	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, metadata.Title)
@@ -32,18 +32,21 @@ func linuxInstallProduct(id string,
 		return err
 	}
 
-	if _, err := os.Stat(absInstallerPath); err != nil {
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
 		return err
 	}
 
-	productTitle, _ := rdx.GetLastVal(data.SlugProperty, id)
+	absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-	if err := rdx.ReplaceValues(data.BundleNameProperty, id, productTitle); err != nil {
+	if _, err = os.Stat(absInstallerPath); err != nil {
 		return err
 	}
 
-	osLangCodeDir := data.OsLangCode(vangogh_integration.Linux, link.LanguageCode)
-	productInstalledAppDir := filepath.Join(installedAppsDir, osLangCodeDir, productTitle)
+	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.Linux, rdx)
+	if err != nil {
+		return err
+	}
 
 	if err := linuxPostDownloadActions(id, link); err != nil {
 		return err
@@ -56,7 +59,7 @@ func linuxInstallProduct(id string,
 
 	fmt.Println(preInstallDesktopFiles)
 
-	if err := linuxExecuteInstaller(absInstallerPath, productInstalledAppDir); err != nil {
+	if err := linuxExecuteInstaller(absInstallerPath, absBundlePath); err != nil {
 		return err
 	}
 
@@ -75,7 +78,7 @@ func linuxInstallProduct(id string,
 		}
 	}
 
-	mojosetupProductDir := filepath.Join(productInstalledAppDir, mojosetupDir)
+	mojosetupProductDir := filepath.Join(absBundlePath, mojosetupDir)
 	if _, err = os.Stat(mojosetupProductDir); err == nil {
 		if err := os.RemoveAll(mojosetupProductDir); err != nil {
 			return err
@@ -212,25 +215,23 @@ func linuxLocateStartSh(path string) string {
 	return path
 }
 
-func nixUninstallProduct(title string, operatingSystem vangogh_integration.OperatingSystem, installationDir, langCode, bundleName string) error {
+func nixUninstallProduct(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
 
-	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, title)
+	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, id)
 	defer umpa.Done()
 
-	if bundleName == "" {
-		umpa.EndWithResult("product must have bundle name for uninstall")
-		return nil
+	absBundlePath, err := data.GetAbsBundlePath(id, langCode, operatingSystem, rdx)
+	if err != nil {
+		return err
 	}
 
-	osLangCodeDir := data.OsLangCode(operatingSystem, langCode)
-	bundlePath := filepath.Join(installationDir, osLangCodeDir, bundleName)
-
-	if _, err := os.Stat(bundlePath); os.IsNotExist(err) {
+	if _, err := os.Stat(absBundlePath); os.IsNotExist(err) {
 		umpa.EndWithResult("not present")
 		return nil
 	}
 
-	if err := os.RemoveAll(bundlePath); err != nil {
+	// TODO: similarly to wine-uninstall - use manifests to remove individual files
+	if err := os.RemoveAll(absBundlePath); err != nil {
 		return err
 	}
 

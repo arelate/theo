@@ -35,7 +35,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 	defer ua.Done()
 
 	if !force {
-		ua.EndWithResult("this operation requires force flagujjjjjjji")
+		ua.EndWithResult("this operation requires force flag")
 		return nil
 	}
 
@@ -59,12 +59,8 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 	rdx, err := redux.NewReader(reduxDir,
 		data.ServerConnectionProperties,
 		data.TitleProperty,
+		data.SlugProperty,
 		data.BundleNameProperty)
-	if err != nil {
-		return err
-	}
-
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
 		return err
 	}
@@ -72,11 +68,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 	ua.TotalInt(len(ids))
 
 	for _, id := range ids {
-
-		title, _ := rdx.GetLastVal(data.TitleProperty, id)
-		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-
-		if err := currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName); err != nil {
+		if err := currentOsUninstallProduct(id, langCode, rdx); err != nil {
 			return err
 		}
 
@@ -99,17 +91,17 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 
 }
 
-func currentOsUninstallProduct(title, installedAppsDir, langCode, bundleName string) error {
+func currentOsUninstallProduct(id, langCode string, rdx redux.Readable) error {
 	currentOs := data.CurrentOs()
 	switch currentOs {
 	case vangogh_integration.MacOS:
 		fallthrough
 	case vangogh_integration.Linux:
-		if err := nixUninstallProduct(title, currentOs, installedAppsDir, langCode, bundleName); err != nil {
+		if err := nixUninstallProduct(id, langCode, currentOs, rdx); err != nil {
 			return err
 		}
 	case vangogh_integration.Windows:
-		if err := windowsUninstallProduct(title, installedAppsDir, langCode, bundleName); err != nil {
+		if err := windowsUninstallProduct(id, langCode, rdx); err != nil {
 			return err
 		}
 	default:

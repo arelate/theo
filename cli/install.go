@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -99,6 +100,7 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 		if err := currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, force); err != nil {
 			return err
 		}
+
 	}
 
 	if !ip.noSteamShortcut {
@@ -133,13 +135,6 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 	fia := nod.Begin(" checking existing installations...")
 	defer fia.Done()
 
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
-	if err != nil {
-		return nil, err
-	}
-
-	osLangCodeDir := filepath.Join(installedAppsDir, data.OsLangCode(data.CurrentOs(), langCode))
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return nil, err
@@ -154,15 +149,13 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 
 	for _, id := range ids {
 
-		if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" {
-
-			bundlePath := filepath.Join(osLangCodeDir, bundleName)
-			if _, err := os.Stat(bundlePath); os.IsNotExist(err) {
+		if absBundlePath, err := data.GetAbsBundlePath(id, langCode, data.CurrentOs(), rdx); err == nil {
+			if _, err := os.Stat(absBundlePath); os.IsNotExist(err) {
 				notInstalled = append(notInstalled, id)
 			}
-
 		} else {
 			notInstalled = append(notInstalled, id)
+			continue
 		}
 	}
 
@@ -214,16 +207,6 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOs())
 	defer coipa.Done()
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
-
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
-	if err != nil {
-		return err
-	}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
@@ -249,38 +232,29 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		return nil
 	}
 
+	installerExts := []string{pkgExt, shExt, exeExt}
+
 	for _, link := range dls {
 
-		linkOs := vangogh_integration.ParseOperatingSystem(link.OS)
-		linkExt := filepath.Ext(link.LocalFilename)
-		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		if !slices.Contains(installerExts, filepath.Ext(link.LocalFilename)) {
+			continue
+		}
 
-		switch linkOs {
+		switch vangogh_integration.ParseOperatingSystem(link.OS) {
 		case vangogh_integration.MacOS:
-			extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
-			if err != nil {
+			if err = macOsInstallProduct(id, metadata, &link, rdx, force); err != nil {
 				return err
 			}
-
-			if linkExt == pkgExt {
-				if err := macOsInstallProduct(id, metadata, &link, downloadsDir, extractsDir, installedAppsDir, rdx, force); err != nil {
-					return err
-				}
-			}
 		case vangogh_integration.Linux:
-			if linkExt == shExt {
-				if err := linuxInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir, rdx); err != nil {
-					return err
-				}
+			if err = linuxInstallProduct(id, metadata, &link, rdx); err != nil {
+				return err
 			}
 		case vangogh_integration.Windows:
-			if linkExt == exeExt {
-				if err := windowsInstallProduct(id, metadata, &link, absInstallerPath, installedAppsDir); err != nil {
-					return err
-				}
+			if err = windowsInstallProduct(id, metadata, &link, rdx); err != nil {
+				return err
 			}
 		default:
-			return errors.New("unknown os" + linkOs.String())
+			return errors.New("unknown os" + link.OS)
 		}
 	}
 	return nil

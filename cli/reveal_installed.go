@@ -7,7 +7,6 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"path/filepath"
 )
 
 func RevealInstalledHandler(u *url.URL) error {
@@ -48,17 +47,20 @@ func RevealInstalled(langCode string, ids ...string) error {
 }
 
 func currentOsRevealInstalledApps(langCode string, rdx redux.Readable, ids ...string) error {
+	var revealPath string
+	var err error
 
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	switch len(ids) {
+	case 1:
+		revealPath, err = data.GetAbsBundlePath(ids[0], langCode, data.CurrentOs(), rdx)
+	default:
+		revealPath, err = pathways.GetAbsDir(data.InstalledApps)
+	}
+
 	if err != nil {
 		return err
 	}
 
-	if len(ids) == 1 {
-		bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, ids[0])
-		productInstalledAppDir := filepath.Join(installedAppsDir, data.OsLangCode(data.CurrentOs(), langCode), bundleName)
-		return currentOsReveal(productInstalledAppDir)
-	} else {
-		return currentOsReveal(installedAppsDir)
-	}
+	return currentOsReveal(revealPath)
+
 }

@@ -27,37 +27,32 @@ const (
 func macOsInstallProduct(id string,
 	metadata *vangogh_integration.TheoMetadata,
 	link *vangogh_integration.TheoDownloadLink,
-	downloadsDir, extractsDir, installedAppsDir string,
 	rdx redux.Writeable,
 	force bool) error {
 
 	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, metadata.Title)
 	defer mia.Done()
 
-	productDownloadsDir := filepath.Join(downloadsDir, id)
-	productExtractsDir := filepath.Join(extractsDir, id)
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(vangogh_integration.MacOS, link.LanguageCode))
-
-	if err := macOsExtractInstaller(link, productDownloadsDir, productExtractsDir, force); err != nil {
+	if err := macOsExtractInstaller(id, link, force); err != nil {
 		return err
 	}
 
-	if err := macOsPlaceExtracts(id, link, productExtractsDir, osLangInstalledAppsDir, rdx, force); err != nil {
+	if err := macOsPlaceExtracts(id, link, rdx, force); err != nil {
 		return err
 	}
 
-	if err := macOsPostInstallActions(id, link, installedAppsDir); err != nil {
+	if err := macOsPostInstallActions(id, link, rdx); err != nil {
 		return err
 	}
 
-	if err := macOsRemoveProductExtracts(id, metadata, extractsDir); err != nil {
+	if err := macOsRemoveProductExtracts(id, metadata); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDownloadsDir, productExtractsDir string, force bool) error {
+func macOsExtractInstaller(id string, link *vangogh_integration.TheoDownloadLink, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
 	defer meia.Done()
@@ -65,6 +60,19 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 	if data.CurrentOs() != vangogh_integration.MacOS {
 		return errors.New("extracting .pkg installers is only supported on " + vangogh_integration.MacOS.String())
 	}
+
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return err
+	}
+
+	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
+	if err != nil {
+		return err
+	}
+
+	productDownloadsDir := filepath.Join(downloadsDir, id)
+	productExtractsDir := filepath.Join(extractsDir, id)
 
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
 	// if the product extracts dir already exists - that would imply that the product
@@ -96,7 +104,7 @@ func macOsExtractInstaller(link *vangogh_integration.TheoDownloadLink, productDo
 	return cmd.Run()
 }
 
-func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, productExtractsDir, osLangInstalledAppsDir string, rdx redux.Writeable, force bool) error {
+func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, rdx redux.Writeable, force bool) error {
 
 	mpea := nod.Begin(" placing product installation files...")
 	defer mpea.Done()
@@ -108,6 +116,13 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, p
 	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
 		return err
 	}
+
+	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
+	if err != nil {
+		return err
+	}
+
+	productExtractsDir := filepath.Join(extractsDir, id)
 
 	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
 	postInstallScript, err := ParsePostInstallScript(absPostInstallScriptPath)
@@ -132,7 +147,8 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.TheoDownloadLink, p
 	}
 
 	installerType := postInstallScript.InstallerType()
-	absBundlePath := filepath.Join(osLangInstalledAppsDir, bundleName)
+
+	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
 
 	switch installerType {
 	case "game":
@@ -221,7 +237,7 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 
 func macOsPostInstallActions(id string,
 	link *vangogh_integration.TheoDownloadLink,
-	installedAppsDir string) error {
+	rdx redux.Readable) error {
 
 	mpia := nod.Begin(" performing post-install %s actions for %s...", vangogh_integration.MacOS, id)
 	defer mpia.Done()
@@ -252,9 +268,7 @@ func macOsPostInstallActions(id string,
 		return err
 	}
 
-	bundleName := pis.BundleName()
-
-	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCode(vangogh_integration.MacOS, link.LanguageCode), bundleName)
+	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
 
 	// some macOS bundles point to a directory, not an .app package
 	// try to locate .app package inside the bundle dir
@@ -387,12 +401,15 @@ func macOsExecCatFiles(srcGlob string, dstPath string) error {
 	return nil
 }
 
-func macOsRemoveProductExtracts(id string,
-	metadata *vangogh_integration.TheoMetadata,
-	extractsDir string) error {
+func macOsRemoveProductExtracts(id string, metadata *vangogh_integration.TheoMetadata) error {
 
 	rela := nod.Begin(" removing extracts for %s...", metadata.Title)
 	defer rela.Done()
+
+	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
+	if err != nil {
+		return err
+	}
 
 	idPath := filepath.Join(extractsDir, id)
 	if _, err := os.Stat(idPath); os.IsNotExist(err) {

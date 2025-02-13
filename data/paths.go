@@ -204,3 +204,36 @@ func GetRelFilesModifiedAfter(absDir string, utcTime int64) ([]string, error) {
 
 	return files, nil
 }
+
+func GetAbsBundlePath(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+
+	installedAppsDir, err := pathways.GetAbsDir(InstalledApps)
+	if err != nil {
+		return "", err
+	}
+
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, OsLangCode(operatingSystem, langCode))
+
+	var bundleProperty string
+
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		bundleProperty = BundleNameProperty
+	case vangogh_integration.Linux:
+		bundleProperty = SlugProperty
+	case vangogh_integration.Windows:
+		return "", errors.New("support for Windows bundle path is not implemented")
+	default:
+		return "", errors.New("unsupported operating system: " + operatingSystem.String())
+	}
+
+	if err = rdx.MustHave(bundleProperty); err != nil {
+		return "", err
+	}
+
+	if appBundle, ok := rdx.GetLastVal(bundleProperty, id); ok && appBundle != "" {
+		return filepath.Join(osLangInstalledAppsDir, appBundle), nil
+	}
+
+	return "", errors.New(bundleProperty + " is not defined for product " + id)
+}

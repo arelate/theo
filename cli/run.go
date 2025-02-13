@@ -9,7 +9,6 @@ import (
 	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -60,13 +59,10 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 
 func currentOsRunApp(id, langCode string, rdx redux.Readable, env []string, verbose bool) error {
 
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	absBundlePath, err := data.GetAbsBundlePath(id, langCode, data.CurrentOs(), rdx)
 	if err != nil {
 		return err
 	}
-
-	bundleName, _ := rdx.GetLastVal(data.BundleNameProperty, id)
-	absBundlePath := filepath.Join(installedAppsDir, data.OsLangCode(data.CurrentOs(), langCode), bundleName)
 
 	if _, err := os.Stat(absBundlePath); err != nil {
 		return err
