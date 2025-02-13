@@ -97,10 +97,9 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 	}
 
 	for _, id := range ids {
-		if err := currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, force); err != nil {
+		if err = currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, force); err != nil {
 			return err
 		}
-
 	}
 
 	if !ip.noSteamShortcut {

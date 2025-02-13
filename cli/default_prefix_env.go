@@ -7,6 +7,7 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
+	"path"
 )
 
 var operatingSystemEnvDefaults = map[vangogh_integration.OperatingSystem][]string{
@@ -21,12 +22,19 @@ var operatingSystemEnvDefaults = map[vangogh_integration.OperatingSystem][]strin
 
 func DefaultPrefixEnvHandler(u *url.URL) error {
 
+	q := u.Query()
+
 	ids := Ids(u)
 
-	return DefaultPrefixEnv(ids)
+	langCode := defaultLangCode
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	return DefaultPrefixEnv(langCode, ids...)
 }
 
-func DefaultPrefixEnv(ids []string) error {
+func DefaultPrefixEnv(langCode string, ids ...string) error {
 
 	dpea := nod.Begin("setting prefix environment variables to defaults...")
 	defer dpea.Done()
@@ -48,7 +56,7 @@ func DefaultPrefixEnv(ids []string) error {
 			return err
 		}
 
-		defaultEnvs[prefixName] = operatingSystemEnvDefaults[data.CurrentOs()]
+		defaultEnvs[path.Join(prefixName, langCode)] = operatingSystemEnvDefaults[data.CurrentOs()]
 	}
 
 	if err = rdx.BatchReplaceValues(data.PrefixEnvProperty, defaultEnvs); err != nil {

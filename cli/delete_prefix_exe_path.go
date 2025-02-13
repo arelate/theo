@@ -7,6 +7,7 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
+	"path"
 )
 
 func DeletePrefixExePathHandler(u *url.URL) error {
@@ -50,7 +51,7 @@ func DeletePrefixExePath(ids []string, langCode string, force bool) error {
 			return err
 		}
 
-		prefixes = append(prefixes, prefixName)
+		prefixes = append(prefixes, path.Join(prefixName, langCode))
 	}
 
 	if err = rdx.CutKeys(data.PrefixExePathProperty, prefixes...); err != nil {

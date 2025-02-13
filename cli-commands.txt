@@ -20,9 +20,11 @@ backup-metadata
 
 default-prefix-env
     id^*
+    lang-code
 
 delete-prefix-env
     id^*
+    lang-code
     force
 
 delete-prefix-exe-path
@@ -57,8 +59,6 @@ list-steam-shortcuts
 list-wine-installed
     lang-code
 
-migrate
-
 mod-prefix-retina
     id^*
     lang-code
@@ -80,6 +80,7 @@ remove-prefix
 
 remove-steam-shortcut
     id^&
+    lang-code
 
 reset-server-connection
 
@@ -108,6 +109,7 @@ serve
 
 set-prefix-env
     id^*
+    lang-code
     env&
 
 set-prefix-exe-path

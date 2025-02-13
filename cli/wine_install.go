@@ -117,7 +117,7 @@ func WineInstall(langCode string,
 		}
 	}
 
-	if err := DefaultPrefixEnv(ids); err != nil {
+	if err := DefaultPrefixEnv(langCode, ids...); err != nil {
 		return err
 	}
 

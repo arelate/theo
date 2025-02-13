@@ -6,7 +6,6 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"strings"
 )
 
 func ListPrefixEnvHandler(_ *url.URL) error {
@@ -34,23 +33,9 @@ func ListPrefixEnv() error {
 
 	for prefixName := range rdx.Keys(data.PrefixEnvProperty) {
 
-		title := ""
-		if id, _, ok := strings.Cut(prefixName, "-"); ok {
-			if tp, sure := rdx.GetLastVal(data.TitleProperty, id); sure {
-				title = tp
-			}
-		}
-
-		var name string
-		if title != "" {
-			name = title + " (" + prefixName + ")"
-		} else {
-			name = prefixName
-		}
-
 		if env, ok := rdx.GetAllValues(data.PrefixEnvProperty, prefixName); ok {
 			for _, e := range env {
-				summary[name] = append(summary[name], e)
+				summary[prefixName] = append(summary[prefixName], e)
 			}
 		}
 	}

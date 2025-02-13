@@ -6,7 +6,6 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"strings"
 )
 
 func ListPrefixExePathHandler(_ *url.URL) error {
@@ -33,24 +32,9 @@ func ListPrefixExePath() error {
 	summary := make(map[string][]string)
 
 	for prefixName := range rdx.Keys(data.PrefixExePathProperty) {
-
-		title := ""
-		if id, _, ok := strings.Cut(prefixName, "-"); ok {
-			if tp, sure := rdx.GetLastVal(data.TitleProperty, id); sure {
-				title = tp
-			}
-		}
-
-		var name string
-		if title != "" {
-			name = title + " (" + prefixName + ")"
-		} else {
-			name = prefixName
-		}
-
 		if exePaths, ok := rdx.GetAllValues(data.PrefixExePathProperty, prefixName); ok {
 			for _, ep := range exePaths {
-				summary[name] = append(summary[name], ep)
+				summary[prefixName] = append(summary[prefixName], ep)
 			}
 		}
 	}

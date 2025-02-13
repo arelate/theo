@@ -8,6 +8,7 @@ import (
 	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -23,10 +24,10 @@ func SetPrefixExePathHandler(u *url.URL) error {
 	}
 	exePath := q.Get("exe-path")
 
-	return SetPrefixExePath(ids, langCode, exePath)
+	return SetPrefixExePath(langCode, exePath, ids...)
 }
 
-func SetPrefixExePath(ids []string, langCode string, exePath string) error {
+func SetPrefixExePath(langCode string, exePath string, ids ...string) error {
 
 	spepa := nod.NewProgress("setting prefix exe path for wine-run...")
 	defer spepa.Done()
@@ -71,7 +72,7 @@ func SetPrefixExePath(ids []string, langCode string, exePath string) error {
 			return err
 		}
 
-		exePaths[prefixName] = []string{exePath}
+		exePaths[path.Join(prefixName, langCode)] = []string{exePath}
 
 		spepa.Increment()
 	}

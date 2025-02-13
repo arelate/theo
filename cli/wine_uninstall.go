@@ -54,7 +54,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 		return err
 	}
 
-	if err := DeletePrefixEnv(ids, force); err != nil {
+	if err := DeletePrefixEnv(langCode, force, ids...); err != nil {
 		return err
 	}
 

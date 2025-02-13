@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
+	"path"
 	"strings"
 )
 
@@ -15,15 +17,20 @@ func SetPrefixEnvHandler(u *url.URL) error {
 
 	ids := Ids(u)
 
+	langCode := defaultLangCode
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
 	var env []string
 	if q.Has("env") {
 		env = strings.Split(q.Get("env"), ",")
 	}
 
-	return SetPrefixEnv(ids, env)
+	return SetPrefixEnv(langCode, env, ids...)
 }
 
-func SetPrefixEnv(ids []string, env []string) error {
+func SetPrefixEnv(langCode string, env []string, ids ...string) error {
 
 	spea := nod.NewProgress("setting prefix environment variables for wine-run...")
 	defer spea.Done()
@@ -49,8 +56,8 @@ func SetPrefixEnv(ids []string, env []string) error {
 			return err
 		}
 
-		curEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
-		newEnvs[prefixName] = mergeEnv(curEnv, env)
+		curEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, path.Join(prefixName, langCode))
+		newEnvs[path.Join(prefixName, langCode)] = mergeEnv(curEnv, env)
 
 		spea.Increment()
 	}
