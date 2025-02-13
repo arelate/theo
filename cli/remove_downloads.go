@@ -29,6 +29,9 @@ func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 	defer rda.Done()
 
 	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
 
 	rda.TotalInt(len(ids))
 

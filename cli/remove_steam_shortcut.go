@@ -25,6 +25,10 @@ func RemoveSteamShortcut(ids ...string) error {
 	rssa := nod.Begin("removing Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer rssa.Done()
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	ok, err := steamStateDirExist()
 	if err != nil {
 		return err

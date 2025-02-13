@@ -34,6 +34,10 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 	ua := nod.NewProgress("uninstalling products...")
 	defer ua.Done()
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	if !force {
 		ua.EndWithResult("this operation requires force flag")
 		return nil

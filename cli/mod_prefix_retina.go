@@ -49,6 +49,10 @@ func ModPrefixRetina(id, langCode string, revert, verbose, force bool) error {
 	mpa := nod.Begin("modding retina in prefix for %s...", id)
 	defer mpa.Done()
 
+	if err := resolveProductTitles(id); err != nil {
+		return err
+	}
+
 	if data.CurrentOs() != vangogh_integration.MacOS {
 		mpa.EndWithResult("retina prefix mod is only applicable to %s", vangogh_integration.MacOS)
 		return nil

@@ -64,6 +64,10 @@ func WineInstall(langCode string,
 		return nil
 	}
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
 	langCodes := []string{langCode}
 

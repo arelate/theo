@@ -43,6 +43,9 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		[]string{langCode},
 		nil,
 		false)
+	if err := resolveProductTitles(id); err != nil {
+		return err
+	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {

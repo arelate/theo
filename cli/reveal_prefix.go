@@ -35,6 +35,10 @@ func RevealPrefix(langCode string, ids ...string) error {
 	rpa := nod.Begin("revealing prefix for %s...", strings.Join(ids, ","))
 	defer rpa.Done()
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err

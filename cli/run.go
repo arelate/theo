@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -43,6 +44,9 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 	langCodes := []string{langCode}
 
 	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
+	if err := resolveProductTitles(id); err != nil {
+		return err
+	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -86,4 +90,35 @@ func currentOsExecute(path string, env []string, verbose bool) error {
 	default:
 		return errors.New("cannot reveal on unknown operating system")
 	}
+}
+
+func resolveProductTitles(ids ...string) error {
+	rta := nod.Begin("resolving product titles...")
+	defer rta.Done()
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewReader(reduxDir, vangogh_integration.TitleProperty)
+	if err != nil {
+		return err
+	}
+
+	titles := make([]string, 0)
+
+	for _, id := range ids {
+		var title string
+		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
+			title = tp
+		} else {
+			title = "(undefined)"
+		}
+		titles = append(titles, fmt.Sprintf("%s:%s", id, title))
+	}
+
+	rta.EndWithResult(strings.Join(titles, "; "))
+
+	return nil
 }

@@ -30,6 +30,10 @@ func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string
 	ua := nod.NewProgress("updating installed products on %s...", operatingSystem.String())
 	defer ua.Done()
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
 	if err != nil {
 		return err

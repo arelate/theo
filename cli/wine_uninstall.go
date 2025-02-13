@@ -33,6 +33,10 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 	wua := nod.NewProgress("uninstalling WINE installed products...")
 	defer wua.Done()
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	if !force {
 		wua.EndWithResult("this operation requires force flag")
 		return nil

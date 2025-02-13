@@ -57,6 +57,9 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 	langCodes := []string{ip.langCode}
 
 	vangogh_integration.PrintParams(ids, currentOs, langCodes, ip.downloadTypes, true)
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
 
 	supported, err := filterNotSupported(ip.langCode, force, ids...)
 	if err != nil {

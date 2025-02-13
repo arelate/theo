@@ -32,6 +32,10 @@ func SetPrefixExePath(langCode string, exePath string, ids ...string) error {
 	spepa := nod.NewProgress("setting prefix exe path for wine-run...")
 	defer spepa.Done()
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	if strings.HasPrefix(exePath, ".") ||
 		strings.HasPrefix(exePath, "/") {
 		spepa.EndWithResult("exe path must be relative and cannot start with . or /")

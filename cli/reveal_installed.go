@@ -30,6 +30,9 @@ func RevealInstalled(langCode string, ids ...string) error {
 	langCodes := []string{langCode}
 
 	vangogh_integration.PrintParams(ids, currentOs, langCodes, nil, true)
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
 
 	fia.TotalInt(len(ids))
 

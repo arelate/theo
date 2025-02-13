@@ -53,6 +53,10 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool,
 	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer assa.Done()
 
+	if err := resolveProductTitles(ids...); err != nil {
+		return err
+	}
+
 	ok, err := steamStateDirExist()
 	if err != nil {
 		return err
@@ -132,6 +136,10 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 }
 
 func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate string, rdx redux.Readable) (*steam_integration.Shortcut, error) {
+
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
+		return nil, err
+	}
 
 	var title string
 	if tp, ok := rdx.GetLastVal(data.TitleProperty, id); ok && tp != "" {
