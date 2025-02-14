@@ -64,6 +64,11 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 
 func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 
+	latestUmuLauncherRelease, err := data.UmuLauncher.GetLatestRelease()
+	if err != nil {
+		return "", err
+	}
+
 	umuConfigsDir, err := pathways.GetAbsRelDir(data.UmuConfigs)
 	if err != nil {
 		return "", err
@@ -71,7 +76,9 @@ func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 
 	_, exeFilename := filepath.Split(exePath)
 
-	umuConfigPath := filepath.Join(umuConfigsDir, id+"-"+busan.Sanitize(exeFilename)+".toml")
+	umuConfigPath := filepath.Join(umuConfigsDir,
+		busan.Sanitize(latestUmuLauncherRelease.TagName),
+		id+"-"+busan.Sanitize(exeFilename)+".toml")
 
 	return umuConfigPath, nil
 }
