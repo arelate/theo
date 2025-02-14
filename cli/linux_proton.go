@@ -94,6 +94,13 @@ func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg 
 		return umuConfigPath, nil
 	}
 
+	umuConfigDir, _ := filepath.Split(umuConfigPath)
+	if _, err = os.Stat(umuConfigDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(umuConfigDir, 0755); err != nil {
+			return "", err
+		}
+	}
+
 	umuConfigFile, err := os.Create(umuConfigPath)
 	if err != nil {
 		return "", err
