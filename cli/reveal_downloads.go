@@ -22,10 +22,6 @@ func RevealDownloads(ids ...string) error {
 	rda := nod.Begin("revealing downloads...")
 	defer rda.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	return currentOsRevealDownloads(ids...)
 }
 

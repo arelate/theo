@@ -29,10 +29,6 @@ func DeletePrefixEnv(langCode string, force bool, ids ...string) error {
 	dpea := nod.Begin("deleting prefix environment variables...")
 	defer dpea.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	if !force {
 		dpea.EndWithResult("this operation requires force flag")
 		return nil

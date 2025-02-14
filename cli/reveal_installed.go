@@ -26,14 +26,6 @@ func RevealInstalled(langCode string, ids ...string) error {
 	fia := nod.NewProgress("revealing installed products...")
 	defer fia.Done()
 
-	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
-	langCodes := []string{langCode}
-
-	vangogh_integration.PrintParams(ids, currentOs, langCodes, nil, true)
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	fia.TotalInt(len(ids))
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)

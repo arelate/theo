@@ -39,10 +39,6 @@ func DefaultPrefixEnv(langCode string, ids ...string) error {
 	dpea := nod.Begin("setting prefix environment variables to defaults...")
 	defer dpea.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err

@@ -57,11 +57,6 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 	va := nod.NewProgress("validating downloads...")
 	defer va.Done()
 
-	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	for _, id := range ids {
 
 		metadata, err := getTheoMetadata(id, false)

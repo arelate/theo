@@ -53,10 +53,6 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool,
 	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer assa.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	ok, err := steamStateDirExist()
 	if err != nil {
 		return err

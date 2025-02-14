@@ -35,10 +35,6 @@ func SetPrefixEnv(langCode string, env []string, ids ...string) error {
 	spea := nod.NewProgress("setting prefix environment variables for wine-run...")
 	defer spea.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err

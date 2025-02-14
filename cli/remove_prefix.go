@@ -33,10 +33,6 @@ func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 	rpa := nod.NewProgress("removing prefixes for %s...", strings.Join(ids, ","))
 	defer rpa.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err

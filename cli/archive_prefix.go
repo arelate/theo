@@ -32,9 +32,6 @@ func ArchivePrefix(langCode string, ids ...string) error {
 	defer apa.Done()
 
 	vangogh_integration.PrintParams(ids, nil, []string{langCode}, nil, true)
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
