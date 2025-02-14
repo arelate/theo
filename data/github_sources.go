@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/boggydigital/busan"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/pathways"
 	"path/filepath"
@@ -115,5 +114,6 @@ func UmuProtonLatestReleasePath() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(umuProtonDir, busan.Sanitize(latestRelease.TagName)), nil
+	// won't sanitize TagName here as it's coming from unpacked release (as provided by the repo owner)
+	return filepath.Join(umuProtonDir, latestRelease.TagName), nil
 }
