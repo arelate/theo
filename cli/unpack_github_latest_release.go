@@ -8,7 +8,6 @@ import (
 	"github.com/boggydigital/nod"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
 func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
@@ -84,28 +83,11 @@ func untar(srcPath, dstPath string) error {
 	return cmd.Run()
 }
 
-func unzip(srcPath, dstPath string) error {
-	if _, err := os.Stat(dstPath); err != nil {
-		if err := os.MkdirAll(dstPath, 0755); err != nil {
-			return err
-		}
-	}
-
-	cmd := exec.Command("unzip", srcPath, "-d", dstPath)
-	return cmd.Run()
-}
-
 func unpackGitHubSource(ghs *data.GitHubSource, absSrcAssetPath, absDstPath string) error {
 	switch ghs.OwnerRepo {
 	case data.UmuProton.OwnerRepo:
-		return untar(absSrcAssetPath, absDstPath)
+		fallthrough
 	case data.UmuLauncher.OwnerRepo:
-		// first - unzip Zipapp.zip
-		if err := unzip(absSrcAssetPath, absDstPath); err != nil {
-			return err
-		}
-		// second - untar Zipapp.tar in the binaries dir
-		absSrcAssetPath = filepath.Join(absDstPath, "Zipapp.tar")
 		return untar(absSrcAssetPath, absDstPath)
 	default:
 		return errors.New("unknown GitHub source: " + ghs.OwnerRepo)

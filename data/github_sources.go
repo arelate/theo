@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const umuRunFilename = "umu-run"
+const relUmuRunPath = "umu/umu-run"
 
 type GitHubSource struct {
 	OwnerRepo string
@@ -21,7 +21,7 @@ type GitHubSource struct {
 
 var UmuLauncher = &GitHubSource{
 	OwnerRepo: "Open-Wine-Components/umu-launcher",
-	Asset:     "Zipapp.zip",
+	Asset:     "zipapp",
 }
 
 var UmuProton = &GitHubSource{
@@ -100,7 +100,7 @@ func UmuRunLatestReleasePath() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(absUmuBinDir, umuRunFilename), nil
+	return filepath.Join(absUmuBinDir, relUmuRunPath), nil
 }
 
 func UmuProtonLatestReleasePath() (string, error) {
