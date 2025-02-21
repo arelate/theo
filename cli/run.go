@@ -53,7 +53,10 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 		return err
 	}
 
-	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties, data.BundleNameProperty)
+	rdx, err := redux.NewReader(reduxDir,
+		data.BundleNameProperty,
+		data.ServerConnectionProperties,
+		data.SlugProperty)
 	if err != nil {
 		return err
 	}
