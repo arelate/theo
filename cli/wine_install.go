@@ -95,7 +95,7 @@ func WineInstall(langCode string,
 		return nil
 	}
 
-	if err := BackupMetadata(); err != nil {
+	if err = BackupMetadata(); err != nil {
 		return err
 	}
 
@@ -104,6 +104,11 @@ func WineInstall(langCode string,
 	}
 
 	if err = Validate(windowsOs, langCodes, downloadTypes, ids...); err != nil {
+		return err
+	}
+
+	rdx, err = rdx.RefreshWriter()
+	if err != nil {
 		return err
 	}
 
