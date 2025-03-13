@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
@@ -96,7 +97,10 @@ func downloadProductFiles(id string,
 
 		vr := vangogh_integration.ParseValidationResult(dl.ValidationResult)
 		if vr != vangogh_integration.ValidatedSuccessfully &&
-			vr != vangogh_integration.ValidatedMissingChecksum {
+			vr != vangogh_integration.ValidatedMissingChecksum &&
+			vr != vangogh_integration.ValidatedWithGeneratedChecksum {
+			errMsg := fmt.Sprintf("%s validation status %s prevented download", dl.Name, dl.ValidationResult)
+			nod.LogError(errors.New(errMsg))
 			continue
 		}
 
