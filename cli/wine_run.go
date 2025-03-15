@@ -9,6 +9,7 @@ import (
 	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -62,7 +63,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return err
 	}
 
-	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, prefixName)
+	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, path.Join(prefixName, langCode))
 	prefixEnv = mergeEnv(prefixEnv, env)
 
 	if ep, ok := rdx.GetLastVal(data.PrefixExePathProperty, prefixName); ok && ep != "" {
