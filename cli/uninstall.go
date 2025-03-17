@@ -49,7 +49,7 @@ func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) 
 	ua := nod.NewProgress("uninstalling products...")
 	defer ua.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
+	if err := resolveProductTitles(rdx, ids...); err != nil {
 		return err
 	}
 

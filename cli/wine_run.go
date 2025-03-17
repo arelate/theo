@@ -44,17 +44,18 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		[]string{langCode},
 		nil,
 		false)
-	if err := resolveProductTitles(id); err != nil {
-		return err
-	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty, vangogh_integration.TitleProperty)
 	if err != nil {
+		return err
+	}
+
+	if err = resolveProductTitles(rdx, id); err != nil {
 		return err
 	}
 

@@ -66,13 +66,6 @@ func WineInstall(langCode string,
 		return nil
 	}
 
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
-	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
-	langCodes := []string{langCode}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
@@ -82,6 +75,13 @@ func WineInstall(langCode string,
 	if err != nil {
 		return err
 	}
+
+	if err = resolveProductTitles(rdx, ids...); err != nil {
+		return err
+	}
+
+	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
+	langCodes := []string{langCode}
 
 	notInstalled, err := wineFilterNotInstalled(langCode, rdx, ids...)
 	if err != nil {

@@ -31,7 +31,7 @@ func WineUninstallHandler(u *url.URL) error {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.InstallParametersProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.InstallParametersProperty, vangogh_integration.TitleProperty)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func WineUninstall(langCode string, rdx redux.Writeable, archive, force bool, id
 	wua := nod.NewProgress("uninstalling WINE installed products...")
 	defer wua.Done()
 
-	if err := resolveProductTitles(ids...); err != nil {
+	if err := resolveProductTitles(rdx, ids...); err != nil {
 		return err
 	}
 

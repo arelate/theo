@@ -57,11 +57,6 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{ip.langCode}
 
-	vangogh_integration.PrintParams(ids, currentOs, langCodes, ip.downloadTypes, true)
-	if err := resolveProductTitles(ids...); err != nil {
-		return err
-	}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
@@ -69,6 +64,11 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 
 	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
 	if err != nil {
+		return err
+	}
+
+	vangogh_integration.PrintParams(ids, currentOs, langCodes, ip.downloadTypes, true)
+	if err = resolveProductTitles(rdx, ids...); err != nil {
 		return err
 	}
 

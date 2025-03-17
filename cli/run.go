@@ -43,21 +43,22 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{langCode}
 
-	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
-	if err := resolveProductTitles(id); err != nil {
-		return err
-	}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
+		vangogh_integration.TitleProperty,
 		data.BundleNameProperty,
 		data.ServerConnectionProperties,
 		data.SlugProperty)
 	if err != nil {
+		return err
+	}
+
+	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
+	if err = resolveProductTitles(rdx, id); err != nil {
 		return err
 	}
 
@@ -95,17 +96,11 @@ func currentOsExecute(path string, env []string, verbose bool) error {
 	}
 }
 
-func resolveProductTitles(ids ...string) error {
+func resolveProductTitles(rdx redux.Readable, ids ...string) error {
 	rta := nod.Begin("resolving product titles...")
 	defer rta.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewReader(reduxDir, vangogh_integration.TitleProperty)
-	if err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return err
 	}
 
