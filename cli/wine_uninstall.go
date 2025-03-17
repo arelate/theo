@@ -6,6 +6,7 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"path/filepath"
 )
@@ -25,10 +26,20 @@ func WineUninstallHandler(u *url.URL) error {
 	archive := q.Has("archive")
 	force := q.Has("force")
 
-	return WineUninstall(langCode, archive, force, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.InstallParametersProperty)
+	if err != nil {
+		return err
+	}
+
+	return WineUninstall(langCode, rdx, archive, force, ids...)
 }
 
-func WineUninstall(langCode string, archive, force bool, ids ...string) error {
+func WineUninstall(langCode string, rdx redux.Writeable, archive, force bool, ids ...string) error {
 
 	wua := nod.NewProgress("uninstalling WINE installed products...")
 	defer wua.Done()
@@ -54,11 +65,11 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 		return err
 	}
 
-	if err := RemovePrefix(langCode, archive, force, ids...); err != nil {
+	if err = RemovePrefix(langCode, archive, force, ids...); err != nil {
 		return err
 	}
 
-	if err := DeletePrefixEnv(langCode, force, ids...); err != nil {
+	if err = DeletePrefixEnv(langCode, force, ids...); err != nil {
 		return err
 	}
 
@@ -70,7 +81,7 @@ func WineUninstall(langCode string, archive, force bool, ids ...string) error {
 		wua.Increment()
 	}
 
-	if err = unpinInstallParameters(vangogh_integration.Windows, langCode, ids...); err != nil {
+	if err = unpinInstallParameters(vangogh_integration.Windows, langCode, rdx, ids...); err != nil {
 		return err
 	}
 

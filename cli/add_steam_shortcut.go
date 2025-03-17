@@ -118,7 +118,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 			}
 		}
 
-		metadata, err := getTheoMetadata(id, force)
+		metadata, err := getTheoMetadata(id, rdx, force)
 		if err != nil {
 			return err
 		}

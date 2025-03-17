@@ -14,7 +14,7 @@ import (
 	"net/http"
 )
 
-func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, error) {
+func getTheoMetadata(id string, rdx redux.Writeable, force bool) (*vangogh_integration.TheoMetadata, error) {
 
 	gtma := nod.NewProgress(" getting theo metadata...")
 	defer gtma.Done()
@@ -36,13 +36,7 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 		return tm, nil
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return nil, err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, data.TitleProperty, data.SlugProperty)
-	if err != nil {
+	if err = rdx.MustHave(data.ServerConnectionProperties, data.TitleProperty, data.SlugProperty); err != nil {
 		return nil, err
 	}
 
@@ -51,10 +45,10 @@ func getTheoMetadata(id string, force bool) (*vangogh_integration.TheoMetadata, 
 		return nil, err
 	} else {
 
-		if err := rdx.ReplaceValues(data.TitleProperty, id, tm.Title); err != nil {
+		if err = rdx.ReplaceValues(data.TitleProperty, id, tm.Title); err != nil {
 			return nil, err
 		}
-		if err := rdx.ReplaceValues(data.SlugProperty, id, tm.Slug); err != nil {
+		if err = rdx.ReplaceValues(data.SlugProperty, id, tm.Slug); err != nil {
 			return nil, err
 		}
 

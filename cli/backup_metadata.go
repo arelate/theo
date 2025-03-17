@@ -27,14 +27,14 @@ func BackupMetadata() error {
 		return err
 	}
 
-	if err := backups.Compress(metadataDir, backupsDir); err != nil {
+	if err = backups.Compress(metadataDir, backupsDir); err != nil {
 		return err
 	}
 
 	ca := nod.NewProgress("cleaning up old backups...")
 	defer ca.Done()
 
-	if err := backups.Cleanup(backupsDir, true, ca); err != nil {
+	if err = backups.Cleanup(backupsDir, true, ca); err != nil {
 		return err
 	}
 

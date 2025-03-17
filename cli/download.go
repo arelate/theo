@@ -18,12 +18,23 @@ func DownloadHandler(u *url.URL) error {
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	force := u.Query().Has("force")
 
-	return Download(operatingSystems, langCodes, downloadTypes, force, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, vangogh_integration.TitleProperty, vangogh_integration.SlugProperty)
+	if err != nil {
+		return err
+	}
+
+	return Download(operatingSystems, langCodes, downloadTypes, rdx, force, ids...)
 }
 
 func Download(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	rdx redux.Writeable,
 	force bool,
 	ids ...string) error {
 
@@ -36,12 +47,12 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, force)
+		metadata, err := getTheoMetadata(id, rdx, force)
 		if err != nil {
 			return err
 		}
 
-		if err = downloadProductFiles(id, metadata, operatingSystems, langCodes, downloadTypes, force); err != nil {
+		if err = downloadProductFiles(id, metadata, operatingSystems, langCodes, downloadTypes, rdx, force); err != nil {
 			return err
 		}
 
@@ -56,22 +67,17 @@ func downloadProductFiles(id string,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	rdx redux.Readable,
 	force bool) error {
 
 	gpdla := nod.Begin(" downloading %s...", metadata.Title)
 	defer gpdla.Done()
 
+	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+		return err
+	}
+
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
-
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties)
 	if err != nil {
 		return err
 	}

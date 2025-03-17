@@ -26,10 +26,25 @@ func UninstallHandler(u *url.URL) error {
 
 	force := q.Has("force")
 
-	return Uninstall(langCode, force, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir,
+		data.ServerConnectionProperties,
+		data.TitleProperty,
+		data.SlugProperty,
+		data.BundleNameProperty,
+		data.InstallParametersProperty)
+	if err != nil {
+		return err
+	}
+
+	return Uninstall(langCode, rdx, force, ids...)
 }
 
-func Uninstall(langCode string, force bool, ids ...string) error {
+func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) error {
 
 	ua := nod.NewProgress("uninstalling products...")
 	defer ua.Done()
@@ -55,24 +70,10 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		return err
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewReader(reduxDir,
-		data.ServerConnectionProperties,
-		data.TitleProperty,
-		data.SlugProperty,
-		data.BundleNameProperty)
-	if err != nil {
-		return err
-	}
-
 	ua.TotalInt(len(ids))
 
 	for _, id := range ids {
-		if err := currentOsUninstallProduct(id, langCode, rdx); err != nil {
+		if err = currentOsUninstallProduct(id, langCode, rdx); err != nil {
 			return err
 		}
 
@@ -83,7 +84,7 @@ func Uninstall(langCode string, force bool, ids ...string) error {
 		ua.Increment()
 	}
 
-	if err = unpinInstallParameters(data.CurrentOs(), langCode, ids...); err != nil {
+	if err = unpinInstallParameters(data.CurrentOs(), langCode, rdx, ids...); err != nil {
 		return err
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -46,12 +47,23 @@ func ValidateHandler(u *url.URL) error {
 	ids := Ids(u)
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 
-	return Validate(operatingSystems, langCodes, downloadTypes, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, vangogh_integration.TitleProperty, vangogh_integration.SlugProperty)
+	if err != nil {
+		return err
+	}
+
+	return Validate(operatingSystems, langCodes, downloadTypes, rdx, ids...)
 }
 
 func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	rdx redux.Writeable,
 	ids ...string) error {
 
 	va := nod.NewProgress("validating downloads...")
@@ -59,7 +71,7 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, false)
+		metadata, err := getTheoMetadata(id, rdx, false)
 		if err != nil {
 			return err
 		}

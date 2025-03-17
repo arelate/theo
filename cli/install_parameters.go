@@ -4,7 +4,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"strconv"
 	"strings"
@@ -77,20 +76,14 @@ func defaultInstallParameters(os vangogh_integration.OperatingSystem) *installPa
 	}
 }
 
-func pinInstallParameters(ip *installParameters, ids ...string) error {
+func pinInstallParameters(ip *installParameters, rdx redux.Writeable, ids ...string) error {
 
 	pipa := nod.Begin(" pinning install parameters...")
 	defer pipa.Done()
 
 	printInstallParameters(ip)
 
-	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.InstallParametersProperty)
-	if err != nil {
+	if err := rdx.MustHave(data.InstallParametersProperty); err != nil {
 		return err
 	}
 
@@ -112,25 +105,20 @@ func printInstallParameters(ip *installParameters) {
 func unpinInstallParameters(
 	operatingSystem vangogh_integration.OperatingSystem,
 	langCode string,
+	rdx redux.Writeable,
 	ids ...string) error {
 
 	uipa := nod.Begin(" unpinning install parameters...")
 	defer uipa.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.InstallParametersProperty)
-	if err != nil {
+	if err := rdx.MustHave(data.InstallParametersProperty); err != nil {
 		return err
 	}
 
 	for _, id := range ids {
 		if installParams, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
 			if olcip := filterInstallParameters(operatingSystem, langCode, installParams...); olcip != nil {
-				if err = rdx.CutValues(data.InstallParametersProperty, id, olcip.String()); err != nil {
+				if err := rdx.CutValues(data.InstallParametersProperty, id, olcip.String()); err != nil {
 					return err
 				}
 			}

@@ -45,6 +45,7 @@ install
     download-type&
     keep-downloads
     no-steam-shortcut
+    reveal
     force
 
 list-installed
@@ -138,6 +139,7 @@ update
     id^&
     lang-code
     all
+    reveal
 
 validate
     id^&*
@@ -153,6 +155,7 @@ wine-install
     download-type&
     keep-downloads
     no-steam-shortcut
+    reveal
     verbose
     force
 
@@ -174,3 +177,4 @@ wine-update
     id^&
     lang-code
     all
+    reveal

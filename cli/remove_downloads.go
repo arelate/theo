@@ -5,6 +5,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -16,12 +17,23 @@ func RemoveDownloadsHandler(u *url.URL) error {
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 	force := u.Query().Has("force")
 
-	return RemoveDownloads(operatingSystems, langCodes, downloadTypes, force, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, vangogh_integration.TitleProperty, vangogh_integration.SlugProperty)
+	if err != nil {
+		return err
+	}
+
+	return RemoveDownloads(operatingSystems, langCodes, downloadTypes, rdx, force, ids...)
 }
 
 func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	rdx redux.Writeable,
 	force bool,
 	ids ...string) error {
 
@@ -39,7 +51,7 @@ func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, force)
+		metadata, err := getTheoMetadata(id, rdx, force)
 		if err != nil {
 			return err
 		}
@@ -106,7 +118,7 @@ func removeProductDownloadLinks(id string,
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 	if entries, err := os.ReadDir(productDownloadsDir); err == nil && len(entries) == 0 {
 		rdda := nod.Begin(" removing empty product downloads directory...")
-		if err := os.Remove(productDownloadsDir); err != nil {
+		if err = os.Remove(productDownloadsDir); err != nil {
 			return err
 		}
 		rdda.Done()

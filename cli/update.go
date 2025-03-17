@@ -21,11 +21,22 @@ func UpdateHandler(u *url.URL) error {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
 	all := q.Has("all")
+	reveal := q.Has("reveal")
 
-	return Update(data.CurrentOs(), langCode, all, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, vangogh_integration.TitleProperty, vangogh_integration.SlugProperty, data.InstallParametersProperty)
+	if err != nil {
+		return err
+	}
+
+	return Update(data.CurrentOs(), langCode, rdx, all, reveal, ids...)
 }
 
-func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string, all bool, ids ...string) error {
+func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, all, reveal bool, ids ...string) error {
 
 	ua := nod.NewProgress("updating installed products on %s...", operatingSystem.String())
 	defer ua.Done()
@@ -51,7 +62,7 @@ func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string
 	ua.TotalInt(len(ids))
 
 	for _, id := range ids {
-		if err = checkProductUpdates(id, operatingSystem, langCode, kvOsLangInstalledMetadata); err != nil {
+		if err = checkProductUpdates(id, operatingSystem, langCode, rdx, kvOsLangInstalledMetadata, reveal); err != nil {
 			return err
 		}
 		ua.Increment()
@@ -63,7 +74,9 @@ func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string
 func checkProductUpdates(id string,
 	operatingSystem vangogh_integration.OperatingSystem,
 	langCode string,
-	kvOsLangInstalledMetadata kevlar.KeyValues) error {
+	rdx redux.Writeable,
+	kvOsLangInstalledMetadata kevlar.KeyValues,
+	reveal bool) error {
 
 	cpua := nod.Begin(" checking product updates for %s...", id)
 	defer cpua.Done()
@@ -84,7 +97,7 @@ func checkProductUpdates(id string,
 		return err
 	}
 
-	latestMetadata, err := getTheoMetadata(id, true)
+	latestMetadata, err := getTheoMetadata(id, rdx, true)
 	if err != nil {
 		return err
 	}
@@ -97,13 +110,7 @@ func checkProductUpdates(id string,
 		return nil
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewReader(reduxDir, data.InstallParametersProperty)
-	if err != nil {
+	if err = rdx.MustHave(data.InstallParametersProperty); err != nil {
 		return err
 	}
 
@@ -119,5 +126,5 @@ func checkProductUpdates(id string,
 
 	cpua.EndWithResult("found update to install: %s -> %s", installedVersion, latestVersion)
 
-	return Install(ip, true, id)
+	return Install(ip, reveal, true, id)
 }

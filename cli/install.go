@@ -30,6 +30,7 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
+	reveal := q.Has("reveal")
 	force := q.Has("force")
 
 	langCode := defaultLangCode
@@ -45,10 +46,10 @@ func InstallHandler(u *url.URL) error {
 		noSteamShortcut: q.Has("no-steam-shortcut"),
 	}
 
-	return Install(ip, force, ids...)
+	return Install(ip, reveal, force, ids...)
 }
 
-func Install(ip *installParameters, force bool, ids ...string) error {
+func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 
 	ia := nod.Begin("installing products...")
 	defer ia.Done()
@@ -61,7 +62,17 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 		return err
 	}
 
-	supported, err := filterNotSupported(ip.langCode, force, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
+	supported, err := filterNotSupported(ip.langCode, rdx, force, ids...)
 	if err != nil {
 		return err
 	}
@@ -73,7 +84,7 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 		return nil
 	}
 
-	notInstalled, err := filterNotInstalled(ip.langCode, ids...)
+	notInstalled, err := filterNotInstalled(rdx, ip.langCode, ids...)
 	if err != nil {
 		return err
 	}
@@ -91,16 +102,16 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 		return err
 	}
 
-	if err = Download(currentOs, langCodes, ip.downloadTypes, force, ids...); err != nil {
+	if err = Download(currentOs, langCodes, ip.downloadTypes, rdx, force, ids...); err != nil {
 		return err
 	}
 
-	if err = Validate(currentOs, langCodes, ip.downloadTypes, ids...); err != nil {
+	if err = Validate(currentOs, langCodes, ip.downloadTypes, rdx, ids...); err != nil {
 		return err
 	}
 
 	for _, id := range ids {
-		if err = currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, force); err != nil {
+		if err = currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, rdx, force); err != nil {
 			return err
 		}
 	}
@@ -112,7 +123,7 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 	}
 
 	if !ip.keepDownloads {
-		if err = RemoveDownloads(currentOs, langCodes, ip.downloadTypes, force, ids...); err != nil {
+		if err = RemoveDownloads(currentOs, langCodes, ip.downloadTypes, rdx, force, ids...); err != nil {
 			return err
 		}
 	}
@@ -121,29 +132,25 @@ func Install(ip *installParameters, force bool, ids ...string) error {
 		return err
 	}
 
-	if err = pinInstallParameters(ip, ids...); err != nil {
+	if err = pinInstallParameters(ip, rdx, ids...); err != nil {
 		return err
 	}
 
-	if err = RevealInstalled(ip.langCode, ids...); err != nil {
-		return err
+	if reveal {
+		if err = RevealInstalled(ip.langCode, ids...); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
+func filterNotInstalled(rdx redux.Readable, langCode string, ids ...string) ([]string, error) {
 
 	fia := nod.Begin(" checking existing installations...")
 	defer fia.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return nil, err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
-	if err != nil {
+	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
 		return nil, err
 	}
 
@@ -173,7 +180,7 @@ func filterNotInstalled(langCode string, ids ...string) ([]string, error) {
 	return notInstalled, nil
 }
 
-func filterNotSupported(langCode string, force bool, ids ...string) ([]string, error) {
+func filterNotSupported(langCode string, rdx redux.Writeable, force bool, ids ...string) ([]string, error) {
 
 	fnsa := nod.NewProgress(" checking operating systems support...")
 	defer fnsa.Done()
@@ -184,7 +191,7 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, force)
+		metadata, err := getTheoMetadata(id, rdx, force)
 		if err != nil {
 			return nil, err
 		}
@@ -204,22 +211,16 @@ func filterNotSupported(langCode string, force bool, ids ...string) ([]string, e
 	return supported, nil
 }
 
-func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_integration.DownloadType, force bool) error {
+func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_integration.DownloadType, rdx redux.Writeable, force bool) error {
 
 	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOs())
 	defer coipa.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
+	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.BundleNameProperty)
-	if err != nil {
-		return err
-	}
-
-	metadata, err := getTheoMetadata(id, force)
+	metadata, err := getTheoMetadata(id, rdx, force)
 	if err != nil {
 		return err
 	}

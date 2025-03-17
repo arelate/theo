@@ -33,6 +33,7 @@ func WineInstallHandler(u *url.URL) error {
 	keepDownloads := q.Has("keep-downloads")
 	noSteamShortcut := q.Has("no-steam-shortcut")
 	verbose := q.Has("verbose")
+	reveal := q.Has("reveal")
 	force := q.Has("force")
 
 	langCode := defaultLangCode
@@ -40,7 +41,7 @@ func WineInstallHandler(u *url.URL) error {
 		langCode = langCodes[0]
 	}
 
-	return WineInstall(langCode, env, downloadTypes, keepDownloads, noSteamShortcut, verbose, force, ids...)
+	return WineInstall(langCode, env, downloadTypes, keepDownloads, noSteamShortcut, verbose, reveal, force, ids...)
 }
 
 func WineInstall(langCode string,
@@ -49,6 +50,7 @@ func WineInstall(langCode string,
 	keepDownloads bool,
 	noSteamShortcut bool,
 	verbose bool,
+	reveal bool,
 	force bool,
 	ids ...string) error {
 
@@ -76,7 +78,7 @@ func WineInstall(langCode string,
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}
@@ -99,16 +101,11 @@ func WineInstall(langCode string,
 		return err
 	}
 
-	if err = Download(windowsOs, langCodes, downloadTypes, force, ids...); err != nil {
+	if err = Download(windowsOs, langCodes, downloadTypes, rdx, force, ids...); err != nil {
 		return err
 	}
 
-	if err = Validate(windowsOs, langCodes, downloadTypes, ids...); err != nil {
-		return err
-	}
-
-	rdx, err = rdx.RefreshWriter()
-	if err != nil {
+	if err = Validate(windowsOs, langCodes, downloadTypes, rdx, ids...); err != nil {
 		return err
 	}
 
@@ -137,7 +134,7 @@ func WineInstall(langCode string,
 	}
 
 	if !keepDownloads {
-		if err = RemoveDownloads(windowsOs, langCodes, downloadTypes, force, ids...); err != nil {
+		if err = RemoveDownloads(windowsOs, langCodes, downloadTypes, rdx, force, ids...); err != nil {
 			return err
 		}
 	}
@@ -154,12 +151,14 @@ func WineInstall(langCode string,
 		noSteamShortcut: noSteamShortcut,
 	}
 
-	if err = pinInstallParameters(ip, ids...); err != nil {
+	if err = pinInstallParameters(ip, rdx, ids...); err != nil {
 		return err
 	}
 
-	if err := RevealPrefix(langCode, ids...); err != nil {
-		return err
+	if reveal {
+		if err = RevealPrefix(langCode, ids...); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -193,7 +192,7 @@ func wineFilterNotInstalled(langCode string, rdx redux.Readable, ids ...string) 
 	return notInstalled, nil
 }
 
-func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
+func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
 
 	currentOs := data.CurrentOs()
 
@@ -205,7 +204,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Readable, env []string, d
 		return err
 	}
 
-	metadata, err := getTheoMetadata(id, force)
+	metadata, err := getTheoMetadata(id, rdx, force)
 	if err != nil {
 		return err
 	}
