@@ -48,11 +48,7 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 		return err
 	}
 
-	rdx, err := redux.NewReader(reduxDir,
-		vangogh_integration.TitleProperty,
-		data.BundleNameProperty,
-		data.ServerConnectionProperties,
-		data.SlugProperty)
+	rdx, err := redux.NewReader(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}

@@ -50,7 +50,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty, vangogh_integration.TitleProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}

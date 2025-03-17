@@ -29,5 +29,8 @@ func AllProperties() []string {
 		BundleNameProperty,
 		TitleProperty,
 		SlugProperty,
+		InstallParametersProperty,
+		PrefixEnvProperty,
+		PrefixExePathProperty,
 	}
 }

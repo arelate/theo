@@ -22,7 +22,7 @@ func RemoveDownloadsHandler(u *url.URL) error {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties, vangogh_integration.TitleProperty, vangogh_integration.SlugProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}

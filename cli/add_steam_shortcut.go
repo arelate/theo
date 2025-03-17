@@ -94,11 +94,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir,
-		data.TitleProperty,
-		data.BundleNameProperty,
-		data.ServerConnectionProperties,
-		data.SlugProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}

@@ -31,7 +31,7 @@ func WineUninstallHandler(u *url.URL) error {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.InstallParametersProperty, vangogh_integration.TitleProperty)
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}
