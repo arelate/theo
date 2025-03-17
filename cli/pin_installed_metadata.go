@@ -31,7 +31,7 @@ func pinInstalledMetadata(operatingSystems []vangogh_integration.OperatingSystem
 
 	for _, id := range ids {
 
-		if err := pinTheoMetadata(id, operatingSystems, langCode, kvTheoMetadata, force); err != nil {
+		if err = pinTheoMetadata(id, operatingSystems, langCode, kvTheoMetadata, force); err != nil {
 			return err
 		}
 

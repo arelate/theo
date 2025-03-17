@@ -4,11 +4,11 @@ import (
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -84,7 +84,7 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 		return nil
 	}
 
-	notInstalled, err := filterNotInstalled(rdx, ip.langCode, ids...)
+	notInstalled, err := filterNotInstalled(data.CurrentOs(), ip.langCode, ids...)
 	if err != nil {
 		return err
 	}
@@ -145,34 +145,39 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 	return nil
 }
 
-func filterNotInstalled(rdx redux.Readable, langCode string, ids ...string) ([]string, error) {
+func filterNotInstalled(operatingSystem vangogh_integration.OperatingSystem, langCode string, ids ...string) ([]string, error) {
 
-	fia := nod.Begin(" checking existing installations...")
-	defer fia.Done()
-
-	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
-		return nil, err
-	}
+	fnia := nod.Begin(" checking existing installations...")
+	defer fnia.Done()
 
 	notInstalled := make([]string, 0, len(ids))
 
+	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
+	if err != nil {
+		return nil, err
+	}
+
+	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(operatingSystem, langCode))
+
+	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, id := range ids {
 
-		if absBundlePath, err := data.GetAbsBundlePath(id, langCode, data.CurrentOs(), rdx); err == nil {
-			if _, err := os.Stat(absBundlePath); os.IsNotExist(err) {
-				notInstalled = append(notInstalled, id)
-			}
-		} else {
-			notInstalled = append(notInstalled, id)
+		if kvOsLangInstalledMetadata.Has(id) {
 			continue
 		}
+
+		notInstalled = append(notInstalled, id)
 	}
 
 	if len(notInstalled) == 0 {
-		fia.EndWithResult("products have existing installations: %s", strings.Join(ids, ","))
+		fnia.EndWithResult("all products have existing installations: %s", strings.Join(ids, ","))
 	} else {
-		fia.EndWithResult(
-			"%d product require installation: %s",
+		fnia.EndWithResult(
+			"%d product(s) require installation: %s",
 			len(notInstalled),
 			strings.Join(notInstalled, ","))
 	}

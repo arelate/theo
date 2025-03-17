@@ -8,7 +8,6 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -83,7 +82,7 @@ func WineInstall(langCode string,
 	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
 	langCodes := []string{langCode}
 
-	notInstalled, err := wineFilterNotInstalled(langCode, rdx, ids...)
+	notInstalled, err := filterNotInstalled(vangogh_integration.Windows, langCode, ids...)
 	if err != nil {
 		return err
 	}
@@ -162,34 +161,6 @@ func WineInstall(langCode string,
 	}
 
 	return nil
-}
-
-func wineFilterNotInstalled(langCode string, rdx redux.Readable, ids ...string) ([]string, error) {
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return nil, err
-	}
-
-	notInstalled := make([]string, 0, len(ids))
-
-	for _, id := range ids {
-
-		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
-		if err != nil {
-			notInstalled = append(notInstalled, id)
-			continue
-		}
-
-		absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
-
-		if _, err := os.Stat(absPrefixDriveCDir); err == nil {
-			continue
-		}
-
-		notInstalled = append(notInstalled, id)
-	}
-
-	return notInstalled, nil
 }
 
 func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
