@@ -129,3 +129,25 @@ func unpinInstallParameters(
 
 	return nil
 }
+
+func loadInstallParameters(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable, reveal, force bool) (*installParameters, error) {
+
+	if err := rdx.MustHave(data.InstallParametersProperty); err != nil {
+		return nil, err
+	}
+
+	var ip *installParameters
+
+	if allInstallParameters, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
+		ip = filterInstallParameters(operatingSystem, langCode, allInstallParameters...)
+	}
+
+	if ip == nil {
+		ip = defaultInstallParameters(operatingSystem)
+	}
+
+	ip.reveal = reveal
+	ip.force = force
+
+	return ip, nil
+}
