@@ -10,6 +10,7 @@ import (
 	"github.com/boggydigital/redux"
 	"net/url"
 	"path/filepath"
+	"strings"
 )
 
 func UpdateHandler(u *url.URL) error {
@@ -93,6 +94,14 @@ func filterUpdatedProducts(operatingSystem vangogh_integration.OperatingSystem, 
 		} else if updated {
 			updatedIds = append(updatedIds, id)
 		}
+
+		fupa.Increment()
+	}
+
+	if len(updatedIds) > 0 {
+		fupa.EndWithResult("found updates for: %s", strings.Join(updatedIds, ","))
+	} else {
+		fupa.EndWithResult("no updates found")
 	}
 
 	return updatedIds, nil
