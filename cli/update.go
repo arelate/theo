@@ -124,7 +124,10 @@ func checkProductUpdates(id string,
 		ip = defaultInstallParameters(operatingSystem)
 	}
 
+	ip.reveal = reveal
+	ip.force = true
+
 	cpua.EndWithResult("found update to install: %s -> %s", installedVersion, latestVersion)
 
-	return Install(ip, reveal, true, id)
+	return Install(ip, id)
 }

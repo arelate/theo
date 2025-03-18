@@ -15,6 +15,8 @@ type installParameters struct {
 	downloadTypes   []vangogh_integration.DownloadType
 	keepDownloads   bool
 	noSteamShortcut bool
+	reveal          bool // won't be serialized
+	force           bool // won't be serialized
 }
 
 func (ip *installParameters) String() string {

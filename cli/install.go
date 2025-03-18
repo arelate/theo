@@ -30,8 +30,6 @@ func InstallHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	reveal := q.Has("reveal")
-	force := q.Has("force")
 
 	langCode := defaultLangCode
 	if len(langCodes) > 0 {
@@ -44,12 +42,14 @@ func InstallHandler(u *url.URL) error {
 		downloadTypes:   downloadTypes,
 		keepDownloads:   q.Has("keep-downloads"),
 		noSteamShortcut: q.Has("no-steam-shortcut"),
+		reveal:          q.Has("reveal"),
+		force:           q.Has("force"),
 	}
 
-	return Install(ip, reveal, force, ids...)
+	return Install(ip, ids...)
 }
 
-func Install(ip *installParameters, reveal, force bool, ids ...string) error {
+func Install(ip *installParameters, ids ...string) error {
 
 	ia := nod.Begin("installing products...")
 	defer ia.Done()
@@ -72,7 +72,7 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 		return err
 	}
 
-	supported, err := filterNotSupported(ip.langCode, rdx, force, ids...)
+	supported, err := filterNotSupported(ip.langCode, rdx, ip.force, ids...)
 	if err != nil {
 		return err
 	}
@@ -90,10 +90,10 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 	}
 
 	if len(notInstalled) > 0 {
-		if !force {
+		if !ip.force {
 			ids = notInstalled
 		}
-	} else if !force {
+	} else if !ip.force {
 		ia.EndWithResult("all requested products are already installed")
 		return nil
 	}
@@ -102,7 +102,7 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 		return err
 	}
 
-	if err = Download(currentOs, langCodes, ip.downloadTypes, rdx, force, ids...); err != nil {
+	if err = Download(currentOs, langCodes, ip.downloadTypes, rdx, ip.force, ids...); err != nil {
 		return err
 	}
 
@@ -111,24 +111,24 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 	}
 
 	for _, id := range ids {
-		if err = currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, rdx, force); err != nil {
+		if err = currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, rdx, ip.force); err != nil {
 			return err
 		}
 	}
 
 	if !ip.noSteamShortcut {
-		if err := AddSteamShortcut(ip.langCode, runLaunchOptionsTemplate, force, ids...); err != nil {
+		if err := AddSteamShortcut(ip.langCode, runLaunchOptionsTemplate, ip.force, ids...); err != nil {
 			return err
 		}
 	}
 
 	if !ip.keepDownloads {
-		if err = RemoveDownloads(currentOs, langCodes, ip.downloadTypes, rdx, force, ids...); err != nil {
+		if err = RemoveDownloads(currentOs, langCodes, ip.downloadTypes, rdx, ip.force, ids...); err != nil {
 			return err
 		}
 	}
 
-	if err = pinInstalledMetadata(currentOs, ip.langCode, force, ids...); err != nil {
+	if err = pinInstalledMetadata(currentOs, ip.langCode, ip.force, ids...); err != nil {
 		return err
 	}
 
@@ -136,7 +136,7 @@ func Install(ip *installParameters, reveal, force bool, ids ...string) error {
 		return err
 	}
 
-	if reveal {
+	if ip.reveal {
 		if err = RevealInstalled(ip.langCode, ids...); err != nil {
 			return err
 		}

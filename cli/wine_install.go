@@ -29,29 +29,27 @@ func WineInstallHandler(u *url.URL) error {
 	if q.Has("env") {
 		env = strings.Split(q.Get("env"), ",")
 	}
-	keepDownloads := q.Has("keep-downloads")
-	noSteamShortcut := q.Has("no-steam-shortcut")
 	verbose := q.Has("verbose")
-	reveal := q.Has("reveal")
-	force := q.Has("force")
 
 	langCode := defaultLangCode
 	if len(langCodes) > 0 {
 		langCode = langCodes[0]
 	}
 
-	return WineInstall(langCode, env, downloadTypes, keepDownloads, noSteamShortcut, verbose, reveal, force, ids...)
+	ip := &installParameters{
+		operatingSystem: vangogh_integration.Windows,
+		langCode:        langCode,
+		downloadTypes:   downloadTypes,
+		keepDownloads:   q.Has("keep-downloads"),
+		noSteamShortcut: q.Has("no-steam-shortcut"),
+		reveal:          q.Has("reveal"),
+		force:           q.Has("force"),
+	}
+
+	return WineInstall(ip, env, verbose, ids...)
 }
 
-func WineInstall(langCode string,
-	env []string,
-	downloadTypes []vangogh_integration.DownloadType,
-	keepDownloads bool,
-	noSteamShortcut bool,
-	verbose bool,
-	reveal bool,
-	force bool,
-	ids ...string) error {
+func WineInstall(ip *installParameters, env []string, verbose bool, ids ...string) error {
 
 	start := time.Now().UTC().Unix()
 
@@ -80,18 +78,18 @@ func WineInstall(langCode string,
 	}
 
 	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
-	langCodes := []string{langCode}
+	langCodes := []string{ip.langCode}
 
-	notInstalled, err := filterNotInstalled(vangogh_integration.Windows, langCode, ids...)
+	notInstalled, err := filterNotInstalled(vangogh_integration.Windows, ip.langCode, ids...)
 	if err != nil {
 		return err
 	}
 
 	if len(notInstalled) > 0 {
-		if !force {
+		if !ip.force {
 			ids = notInstalled
 		}
-	} else if !force {
+	} else if !ip.force {
 		wia.EndWithResult("all requested products are already installed")
 		return nil
 	}
@@ -100,62 +98,54 @@ func WineInstall(langCode string,
 		return err
 	}
 
-	if err = Download(windowsOs, langCodes, downloadTypes, rdx, force, ids...); err != nil {
+	if err = Download(windowsOs, langCodes, ip.downloadTypes, rdx, ip.force, ids...); err != nil {
 		return err
 	}
 
-	if err = Validate(windowsOs, langCodes, downloadTypes, rdx, ids...); err != nil {
+	if err = Validate(windowsOs, langCodes, ip.downloadTypes, rdx, ids...); err != nil {
 		return err
 	}
 
-	if err = initPrefix(langCode, verbose, rdx, ids...); err != nil {
+	if err = initPrefix(ip.langCode, verbose, rdx, ids...); err != nil {
 		return err
 	}
 
 	for _, id := range ids {
-		if err = wineInstallProduct(id, langCode, rdx, env, downloadTypes, verbose, force); err != nil {
+		if err = wineInstallProduct(id, ip.langCode, rdx, env, ip.downloadTypes, verbose, ip.force); err != nil {
 			return err
 		}
 
-		if err = createPrefixInstalledFilesManifest(id, langCode, rdx, start); err != nil {
+		if err = createPrefixInstalledFilesManifest(id, ip.langCode, rdx, start); err != nil {
 			return err
 		}
 	}
 
-	if err = DefaultPrefixEnv(langCode, ids...); err != nil {
+	if err = DefaultPrefixEnv(ip.langCode, ids...); err != nil {
 		return err
 	}
 
-	if !noSteamShortcut {
-		if err := AddSteamShortcut(langCode, wineRunLaunchOptionsTemplate, force, ids...); err != nil {
+	if !ip.noSteamShortcut {
+		if err := AddSteamShortcut(ip.langCode, wineRunLaunchOptionsTemplate, ip.force, ids...); err != nil {
 			return err
 		}
 	}
 
-	if !keepDownloads {
-		if err = RemoveDownloads(windowsOs, langCodes, downloadTypes, rdx, force, ids...); err != nil {
+	if !ip.keepDownloads {
+		if err = RemoveDownloads(windowsOs, langCodes, ip.downloadTypes, rdx, ip.force, ids...); err != nil {
 			return err
 		}
 	}
 
-	if err = pinInstalledMetadata(windowsOs, langCode, force, ids...); err != nil {
+	if err = pinInstalledMetadata(windowsOs, ip.langCode, ip.force, ids...); err != nil {
 		return err
-	}
-
-	ip := &installParameters{
-		operatingSystem: vangogh_integration.Windows,
-		langCode:        langCode,
-		downloadTypes:   downloadTypes,
-		keepDownloads:   keepDownloads,
-		noSteamShortcut: noSteamShortcut,
 	}
 
 	if err = pinInstallParameters(ip, rdx, ids...); err != nil {
 		return err
 	}
 
-	if reveal {
-		if err = RevealPrefix(langCode, ids...); err != nil {
+	if ip.reveal {
+		if err = RevealPrefix(ip.langCode, ids...); err != nil {
 			return err
 		}
 	}
@@ -203,7 +193,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		if err := currentOsWineRun(id, langCode, rdx, env, verbose, force, absInstallerPath,
+		if err = currentOsWineRun(id, langCode, rdx, env, verbose, force, absInstallerPath,
 			innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg); err != nil {
 			return err
 		}
