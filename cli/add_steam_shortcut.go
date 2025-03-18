@@ -89,6 +89,11 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 		return err
 	}
 
+	if kvUserShortcuts == nil {
+		asfua.EndWithResult("user %s is missing shortcuts file", loginUser)
+		return nil
+	}
+
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
@@ -257,7 +262,9 @@ func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
 
 	absUserShortcutsPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", shortcutsFilename)
 
-	if _, err := os.Stat(absUserShortcutsPath); err != nil {
+	if _, err = os.Stat(absUserShortcutsPath); os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 

@@ -61,6 +61,11 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 		return err
 	}
 
+	if kvUserShortcuts == nil {
+		rsfua.EndWithResult("user %s is missing shortcuts file", loginUser)
+		return nil
+	}
+
 	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
 		if len(kvShortcuts.Values) == 0 {
 			rsfua.EndWithResult("%s has no shortcuts", loginUser)

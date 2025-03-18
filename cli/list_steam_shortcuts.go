@@ -49,6 +49,11 @@ func listUserShortcuts(loginUser string) error {
 		return err
 	}
 
+	if kvUserShortcuts == nil {
+		lusa.EndWithResult("user %s is missing shortcuts file", loginUser)
+		return nil
+	}
+
 	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
 
 		for _, shortcut := range kvShortcuts.Values {
