@@ -141,19 +141,19 @@ As a result - `theo` was built around this to provide convenience. Installing Cy
 
 There are few alternatives to consider to solve this better, that might be implemented later:
 
-1. use application depots that GOG Galaxy uses and transition `vangogh` to use those. Some considerations:
-   - Pros: this would also be aligned with Steam depots and solving this would allow vangogh to support DRM-free Steam games
-   - Cons: this would defeat independent nature of installers. Potentially this con can be solved by providing server-side ability to package depots into installers on demand. This needs to be investigated further (how to package files into installers, how to handle dependencies, how to handle installer scripts, etc).
-2. unpack installers on the `vangogh` server on demand, adding a step in the installation process. Some considerations:
+1. use application depots that GOG Galaxy uses and transition `vangogh` to use those. Considerations:
+   - Pros: this would solve both progress and double disk space requirements. This would also be aligned with Steam depots and solving this would allow vangogh to support DRM-free Steam games (and potentially more stores, e.g. Epic)
+   - Cons: this would defeat independent nature of installers. Potentially this con can be solved by providing server-side ability to package depots into installers on demand. This needs to be investigated further: how to package files into installers, how to handle dependencies, how to handle installer scripts, etc - potentially the way GOG Galaxy handles depots likely provides an answer to all those questions.
+2. unpack installers on the `vangogh` server on demand, adding a step in the installation process. Considerations:
    - Pros: this would allow to continue relying on installers as the primary stored artifacts
-   - Cons: this adds additional storage requirements on `vangogh` server, especially if unpacked installers are not discarded right away and are cached. This doesn't solve patching unless the previous version is also available (which by default is actually true today). In that case both versions would need to be unpacked and diffed to create a patch.
+   - Cons: this adds additional storage requirements on `vangogh` server, especially if unpacked installers are not discarded right away and are cached. This doesn't solve patching unless the previous version is also available (which by default is actually true today). In that case both versions would need to be unpacked and diffed to create a patch. In general - this doesn't solve the underlying issue of unpacking installers and just pushes it to the server. While certain things might be less of a problem, e.g. disk space - others will continue to be problematic, e.g. very long time to unpack large games with no good way to report progress.
 3. specifically for the patches - GOG provides them in certain cases, however the way they're implemented is not great and unless something changes radically that won't be a great solution:
    - Pros: updates might be easier in terms of disk space requirements 
-   - Cons: patches are not used in 100% of situations on GOG. Sometimes there's a patch. Sometimes there's an installer update. GOG also sometimes provides several patches from different versions to another version. Patches metadata is not super formal either - it's all part of the name, which would require heuristics to find the right patch for a given version. And of course that would only solve updates problem, but not the others. 
+   - Cons: patches are not used in 100% of situations on GOG. Sometimes there's a patch. Sometimes there's an installer update. GOG also sometimes provides several patches from different versions to another version. Patches metadata is not very formal either - it's all part of the name, which would require heuristics to find the right patch for a given version to another version as well as determining which version is the latest. And of course that would only solve updates problem, but not the others. 
 
 At the moment the first option seems the most beneficial and might get investigated in the future. One of the two must happen to allow more confidence in that path:
-- depots are implemented and validated as a viable option solving known limitations and preserving `vangogh` independence from `theo` (e.g. installers are still available as an option somehow - either on demand or as optionally stored)
-- `vangogh` independence becomes lower priority than resolving those limitations and newer features (e.g. Steam DRM-free games) combined. In this case `theo` will become required to install games from `vangogh`
+- depots are implemented and validated as a viable option solving known limitations and preserving `vangogh` independence from `theo` (e.g. installers or archives are still available as an option somehow - either on demand or as optionally stored)
+- `vangogh` independence becomes lower priority than resolving those limitations and newer features (e.g. Steam DRM-free games) combined. In this case `theo` will be required to download, install games from `vangogh`.
 
 ## Why is it called theo?
 
