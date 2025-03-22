@@ -41,7 +41,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 
 	forceRepoUpdate := force
 
-	for _, repo := range data.OsGitHubSources(os) {
+	for _, repo := range github_integration.OsGitHubSources(os) {
 
 		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.OwnerRepo); ok && ghsu != "" {
 			if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
@@ -59,7 +59,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 	return nil
 }
 
-func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx redux.Writeable, force bool) error {
+func getRepoReleases(ghs *github_integration.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx redux.Writeable, force bool) error {
 
 	grlra := nod.Begin(" %s...", ghs.OwnerRepo)
 	defer grlra.Done()

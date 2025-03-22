@@ -29,7 +29,7 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 		return err
 	}
 
-	for _, repo := range data.OsGitHubSources(os) {
+	for _, repo := range github_integration.OsGitHubSources(os) {
 
 		if err = cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
 			return err
@@ -39,7 +39,7 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 	return nil
 }
 
-func cleanupRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues) error {
+func cleanupRepoReleases(ghs *github_integration.GitHubSource, kvGitHubReleases kevlar.KeyValues) error {
 	crra := nod.Begin(" %s...", ghs.OwnerRepo)
 	defer crra.Done()
 

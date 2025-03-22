@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
@@ -64,7 +66,17 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 
 func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 
-	latestUmuLauncherRelease, err := data.UmuLauncher.GetLatestRelease()
+	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
+	if err != nil {
+		return "", err
+	}
+
+	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
+	if err != nil {
+		return "", err
+	}
+
+	latestUmuLauncherRelease, err := github_integration.UmuLauncher.GetLatestRelease(kvGitHubReleases)
 	if err != nil {
 		return "", err
 	}

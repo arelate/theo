@@ -5,7 +5,9 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"net/url"
 )
 
@@ -14,11 +16,21 @@ func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyste
 	cra := nod.Begin(" caching GitHub releases for %s...", operatingSystem)
 	defer cra.Done()
 
+	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
+	if err != nil {
+		return err
+	}
+
+	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
+	if err != nil {
+		return err
+	}
+
 	dc := dolo.DefaultClient
 
-	for _, ghs := range data.OsGitHubSources(operatingSystem) {
+	for _, ghs := range github_integration.OsGitHubSources(operatingSystem) {
 
-		latestRelease, err := ghs.GetLatestRelease()
+		latestRelease, err := ghs.GetLatestRelease(kvGitHubReleases)
 		if err != nil {
 			return err
 		}
@@ -35,7 +47,7 @@ func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyste
 	return nil
 }
 
-func cacheRepoRelease(ghs *data.GitHubSource, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
+func cacheRepoRelease(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
 
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.Done()
