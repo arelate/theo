@@ -51,7 +51,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 			}
 		}
 
-		if err := getRepoReleases(repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
+		if err = getRepoReleases(repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
 			return err
 		}
 	}
@@ -82,11 +82,10 @@ func getRepoReleases(ghs *data.GitHubSource, kvGitHubReleases kevlar.KeyValues, 
 		return errors.New(resp.Status)
 	}
 
-	if err := kvGitHubReleases.Set(ghs.OwnerRepo, resp.Body); err != nil {
+	if err = kvGitHubReleases.Set(ghs.OwnerRepo, resp.Body); err != nil {
 		return err
 	}
 
 	ft := time.Now().Format(time.RFC3339)
 	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, ghs.OwnerRepo, ft)
-
 }

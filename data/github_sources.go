@@ -7,6 +7,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/pathways"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -15,18 +16,18 @@ const relUmuRunPath = "umu/umu-run"
 
 type GitHubSource struct {
 	OwnerRepo string
-	Asset     string
+	AssetGlob string
 	Unpack    []string
 }
 
 var UmuLauncher = &GitHubSource{
 	OwnerRepo: "Open-Wine-Components/umu-launcher",
-	Asset:     "zipapp",
+	AssetGlob: "umu-launcher-*-zipapp.tar",
 }
 
 var UmuProton = &GitHubSource{
 	OwnerRepo: "Open-Wine-Components/umu-proton",
-	Asset:     ".tar.gz",
+	AssetGlob: "UMU-Proton-*.tar.gz",
 }
 
 func (ghs *GitHubSource) GetLatestRelease() (*github_integration.GitHubRelease, error) {
@@ -52,7 +53,7 @@ func (ghs *GitHubSource) GetLatestRelease() (*github_integration.GitHubRelease, 
 		return nil, err
 	}
 
-	if err := rcReleases.Close(); err != nil {
+	if err = rcReleases.Close(); err != nil {
 		return nil, err
 	}
 
@@ -70,9 +71,12 @@ func (ghs *GitHubSource) GetAsset(release *github_integration.GitHubRelease) *gi
 		return &release.Assets[0]
 	}
 
-	for _, asset := range release.Assets {
-		if strings.Contains(asset.Name, ghs.Asset) {
-			return &asset
+	if prefix, suffix, ok := strings.Cut(ghs.AssetGlob, "*"); ok {
+		for _, asset := range release.Assets {
+			_, file := path.Split(asset.Name)
+			if strings.HasPrefix(file, prefix) && strings.HasSuffix(file, suffix) {
+				return &asset
+			}
 		}
 	}
 
