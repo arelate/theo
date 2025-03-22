@@ -17,7 +17,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 	ura := nod.NewProgress("unpacking GitHub releases for %s...", operatingSystem)
 	defer ura.Done()
 
-	gitHubSources := github_integration.OsGitHubSources(operatingSystem)
+	gitHubSources := vangogh_integration.OperatingSystemGitHubSources(operatingSystem)
 
 	ura.TotalInt(len(gitHubSources))
 

@@ -8,8 +8,6 @@ import (
 	"net/url"
 )
 
-const forceGitHubUpdatesDays = 30
-
 func SetupWineHandler(u *url.URL) error {
 	return SetupWine(u.Query().Has("force"))
 }
@@ -30,7 +28,7 @@ func SetupWine(force bool) error {
 		return err
 	}
 
-	if err := cacheGitHubLatestRelease(currentOs, force); err != nil {
+	if err := downloadGitHubLatestRelease(currentOs, force); err != nil {
 		return err
 	}
 

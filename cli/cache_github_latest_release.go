@@ -11,7 +11,7 @@ import (
 	"net/url"
 )
 
-func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
+func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
 
 	cra := nod.Begin(" caching GitHub releases for %s...", operatingSystem)
 	defer cra.Done()
@@ -28,7 +28,7 @@ func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyste
 
 	dc := dolo.DefaultClient
 
-	for _, ghs := range github_integration.OsGitHubSources(operatingSystem) {
+	for _, ghs := range vangogh_integration.OperatingSystemGitHubSources(operatingSystem) {
 
 		latestRelease, err := ghs.GetLatestRelease(kvGitHubReleases)
 		if err != nil {
@@ -39,7 +39,7 @@ func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyste
 			continue
 		}
 
-		if err = cacheRepoRelease(ghs, latestRelease, dc, force); err != nil {
+		if err = downloadRepoRelease(ghs, latestRelease, dc, force); err != nil {
 			return err
 		}
 	}
@@ -47,7 +47,7 @@ func cacheGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyste
 	return nil
 }
 
-func cacheRepoRelease(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
+func downloadRepoRelease(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
 
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.Done()

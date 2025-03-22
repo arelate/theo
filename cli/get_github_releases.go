@@ -14,17 +14,19 @@ import (
 	"time"
 )
 
+const forceGitHubUpdatesDays = 30
+
 func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error {
 
-	gra := nod.Begin(" getting GitHub releases for %s...", os)
-	defer gra.Done()
+	ggra := nod.Begin(" getting GitHub releases for %s...", os)
+	defer ggra.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.GitHubReleasesUpdatedProperty)
+	rdx, err := redux.NewWriter(reduxDir, vangogh_integration.GitHubReleasesUpdatedProperty)
 	if err != nil {
 		return err
 	}
@@ -41,7 +43,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 
 	forceRepoUpdate := force
 
-	for _, repo := range github_integration.OsGitHubSources(os) {
+	for _, repo := range vangogh_integration.OperatingSystemGitHubSources(os) {
 
 		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.OwnerRepo); ok && ghsu != "" {
 			if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {

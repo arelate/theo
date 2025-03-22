@@ -29,7 +29,7 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 		return err
 	}
 
-	for _, repo := range github_integration.OsGitHubSources(os) {
+	for _, repo := range vangogh_integration.OperatingSystemGitHubSources(os) {
 
 		if err = cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
 			return err
