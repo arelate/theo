@@ -10,6 +10,7 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"path/filepath"
+	"slices"
 )
 
 func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, since int64, force bool) error {
@@ -32,6 +33,7 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 	}
 
 	updatedReleases := kvGitHubReleases.Since(since, kevlar.Create, kevlar.Update)
+	osRepos := vangogh_integration.OperatingSystemGitHubRepos(operatingSystem)
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -46,6 +48,10 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 	dc := dolo.DefaultClient
 
 	for repo := range updatedReleases {
+
+		if !slices.Contains(osRepos, repo) {
+			continue
+		}
 
 		latestRelease, err := github_integration.GetLatestRelease(repo, kvGitHubReleases)
 		if err != nil {

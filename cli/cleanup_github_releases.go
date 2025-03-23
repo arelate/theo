@@ -12,11 +12,12 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
-func cleanupGitHubReleases(os vangogh_integration.OperatingSystem, since int64, force bool) error {
+func cleanupGitHubReleases(operatingSystem vangogh_integration.OperatingSystem, since int64, force bool) error {
 
-	cra := nod.Begin("cleaning up cached GitHub releases, keeping the latest for %s...", os)
+	cra := nod.Begin("cleaning up cached GitHub releases, keeping the latest for %s...", operatingSystem)
 	defer cra.Done()
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
@@ -34,8 +35,13 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem, since int64, 
 	}
 
 	updatedReleases := kvGitHubReleases.Since(since, kevlar.Create, kevlar.Update)
+	osRepos := vangogh_integration.OperatingSystemGitHubRepos(operatingSystem)
 
 	for repo := range updatedReleases {
+
+		if !slices.Contains(osRepos, repo) {
+			continue
+		}
 
 		if err = cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
 			return err

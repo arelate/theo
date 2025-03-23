@@ -11,9 +11,9 @@ import (
 	"net/http"
 )
 
-func getGitHubReleases(os vangogh_integration.OperatingSystem) error {
+func getGitHubReleases(operatingSystem vangogh_integration.OperatingSystem) error {
 
-	ggra := nod.Begin(" getting GitHub releases for %s...", os)
+	ggra := nod.Begin(" getting GitHub releases for %s...", operatingSystem)
 	defer ggra.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
@@ -36,7 +36,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem) error {
 		return err
 	}
 
-	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(os) {
+	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(operatingSystem) {
 
 		if err = getRepoReleases(repo, kvGitHubReleases, rdx); err != nil {
 			return err

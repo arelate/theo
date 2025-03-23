@@ -10,6 +10,7 @@ import (
 	"github.com/boggydigital/pathways"
 	"os"
 	"os/exec"
+	"slices"
 )
 
 func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, since int64, force bool) error {
@@ -32,8 +33,13 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 	}
 
 	updatedReleases := kvGitHubReleases.Since(since, kevlar.Create, kevlar.Update)
+	osRepos := vangogh_integration.OperatingSystemGitHubRepos(operatingSystem)
 
 	for repo := range updatedReleases {
+
+		if !slices.Contains(osRepos, repo) {
+			continue
+		}
 
 		latestRelease, err := github_integration.GetLatestRelease(repo, kvGitHubReleases)
 		if err != nil {
