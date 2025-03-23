@@ -17,9 +17,9 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 	ura := nod.NewProgress("unpacking GitHub releases for %s...", operatingSystem)
 	defer ura.Done()
 
-	gitHubSources := vangogh_integration.OperatingSystemGitHubSources(operatingSystem)
+	gitHubRepos := vangogh_integration.OperatingSystemGitHubRepos(operatingSystem)
 
-	ura.TotalInt(len(gitHubSources))
+	ura.TotalInt(len(gitHubRepos))
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
@@ -31,9 +31,9 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 		return err
 	}
 
-	for _, ghs := range gitHubSources {
+	for _, repo := range gitHubRepos {
 
-		latestRelease, err := ghs.GetLatestRelease(kvGitHubReleases)
+		latestRelease, err := github_integration.GetLatestRelease(repo, kvGitHubReleases)
 		if err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 			continue
 		}
 
-		binDir, err := data.GetAbsBinariesDir(ghs, latestRelease)
+		binDir, err := data.GetAbsBinariesDir(repo, latestRelease)
 		if err != nil {
 			return err
 		}
@@ -53,8 +53,8 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 			continue
 		}
 
-		if asset := ghs.GetAsset(latestRelease); asset != nil {
-			if err := unpackAsset(ghs, latestRelease, asset); err != nil {
+		if asset := github_integration.GetReleaseAsset(repo, latestRelease); asset != nil {
+			if err := unpackAsset(repo, latestRelease, asset); err != nil {
 				return err
 			}
 		}
@@ -65,22 +65,22 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 	return nil
 }
 
-func unpackAsset(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) error {
+func unpackAsset(repo string, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) error {
 
 	uaa := nod.Begin(" unpacking %s, please wait...", asset.Name)
 	defer uaa.Done()
 
-	absPackedAssetPath, err := data.GetAbsReleaseAssetPath(ghs, release, asset)
+	absPackedAssetPath, err := data.GetAbsReleaseAssetPath(repo, release, asset)
 	if err != nil {
 		return err
 	}
 
-	absBinDir, err := data.GetAbsBinariesDir(ghs, release)
+	absBinDir, err := data.GetAbsBinariesDir(repo, release)
 	if err != nil {
 		return err
 	}
 
-	return unpackGitHubSource(ghs, absPackedAssetPath, absBinDir)
+	return unpackGitHubSource(repo, absPackedAssetPath, absBinDir)
 }
 
 func untar(srcPath, dstPath string) error {
@@ -95,13 +95,13 @@ func untar(srcPath, dstPath string) error {
 	return cmd.Run()
 }
 
-func unpackGitHubSource(ghs *github_integration.GitHubSource, absSrcAssetPath, absDstPath string) error {
-	switch ghs.OwnerRepo {
-	case github_integration.UmuProton.OwnerRepo:
+func unpackGitHubSource(repo string, absSrcAssetPath, absDstPath string) error {
+	switch repo {
+	case github_integration.UmuProtonRepo:
 		fallthrough
-	case github_integration.UmuLauncher.OwnerRepo:
+	case github_integration.UmuLauncherRepo:
 		return untar(absSrcAssetPath, absDstPath)
 	default:
-		return errors.New("unknown GitHub source: " + ghs.OwnerRepo)
+		return errors.New("unknown GitHub source: " + repo)
 	}
 }

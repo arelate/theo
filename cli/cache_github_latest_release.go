@@ -28,9 +28,9 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 
 	dc := dolo.DefaultClient
 
-	for _, ghs := range vangogh_integration.OperatingSystemGitHubSources(operatingSystem) {
+	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(operatingSystem) {
 
-		latestRelease, err := ghs.GetLatestRelease(kvGitHubReleases)
+		latestRelease, err := github_integration.GetLatestRelease(repo, kvGitHubReleases)
 		if err != nil {
 			return err
 		}
@@ -39,7 +39,7 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 			continue
 		}
 
-		if err = downloadRepoRelease(ghs, latestRelease, dc, force); err != nil {
+		if err = downloadRepoRelease(repo, latestRelease, dc, force); err != nil {
 			return err
 		}
 	}
@@ -47,12 +47,12 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 	return nil
 }
 
-func downloadRepoRelease(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
+func downloadRepoRelease(repo string, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
 
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.Done()
 
-	asset := ghs.GetAsset(release)
+	asset := github_integration.GetReleaseAsset(repo, release)
 	if asset == nil {
 		crra.EndWithResult("asset not found")
 		return nil
@@ -63,7 +63,7 @@ func downloadRepoRelease(ghs *github_integration.GitHubSource, release *github_i
 		return err
 	}
 
-	relDir, err := data.GetAbsReleasesDir(ghs, release)
+	relDir, err := data.GetAbsReleasesDir(repo, release)
 	if err != nil {
 		return err
 	}

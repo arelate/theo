@@ -29,7 +29,7 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 		return err
 	}
 
-	for _, repo := range vangogh_integration.OperatingSystemGitHubSources(os) {
+	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(os) {
 
 		if err = cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
 			return err
@@ -39,11 +39,11 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 	return nil
 }
 
-func cleanupRepoReleases(ghs *github_integration.GitHubSource, kvGitHubReleases kevlar.KeyValues) error {
-	crra := nod.Begin(" %s...", ghs.OwnerRepo)
+func cleanupRepoReleases(repo string, kvGitHubReleases kevlar.KeyValues) error {
+	crra := nod.Begin(" %s...", repo)
 	defer crra.Done()
 
-	rcReleases, err := kvGitHubReleases.Get(ghs.OwnerRepo)
+	rcReleases, err := kvGitHubReleases.Get(repo)
 	if err != nil {
 		return err
 	}
@@ -61,12 +61,12 @@ func cleanupRepoReleases(ghs *github_integration.GitHubSource, kvGitHubReleases 
 			continue
 		}
 
-		asset := ghs.GetAsset(&release)
+		asset := github_integration.GetReleaseAsset(repo, &release)
 		if asset == nil {
 			continue
 		}
 
-		absReleaseAssetPath, err := data.GetAbsReleaseAssetPath(ghs, &release, asset)
+		absReleaseAssetPath, err := data.GetAbsReleaseAssetPath(repo, &release, asset)
 		if err != nil {
 			return err
 		}

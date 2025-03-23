@@ -43,9 +43,9 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 
 	forceRepoUpdate := force
 
-	for _, repo := range vangogh_integration.OperatingSystemGitHubSources(os) {
+	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(os) {
 
-		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo.OwnerRepo); ok && ghsu != "" {
+		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo); ok && ghsu != "" {
 			if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
 				if ghsut.AddDate(0, 0, forceGitHubUpdatesDays).Before(time.Now()) {
 					forceRepoUpdate = true
@@ -61,17 +61,17 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 	return nil
 }
 
-func getRepoReleases(ghs *github_integration.GitHubSource, kvGitHubReleases kevlar.KeyValues, rdx redux.Writeable, force bool) error {
+func getRepoReleases(repo string, kvGitHubReleases kevlar.KeyValues, rdx redux.Writeable, force bool) error {
 
-	grlra := nod.Begin(" %s...", ghs.OwnerRepo)
+	grlra := nod.Begin(" %s...", repo)
 	defer grlra.Done()
 
-	if kvGitHubReleases.Has(ghs.OwnerRepo) && !force {
+	if kvGitHubReleases.Has(repo) && !force {
 		grlra.EndWithResult("skip recently updated")
 		return nil
 	}
 
-	owner, repo, _ := strings.Cut(ghs.OwnerRepo, "/")
+	owner, repo, _ := strings.Cut(repo, "/")
 	ghsu := github_integration.ReleasesUrl(owner, repo)
 
 	resp, err := http.DefaultClient.Get(ghsu.String())
@@ -84,10 +84,10 @@ func getRepoReleases(ghs *github_integration.GitHubSource, kvGitHubReleases kevl
 		return errors.New(resp.Status)
 	}
 
-	if err = kvGitHubReleases.Set(ghs.OwnerRepo, resp.Body); err != nil {
+	if err = kvGitHubReleases.Set(repo, resp.Body); err != nil {
 		return err
 	}
 
 	ft := time.Now().Format(time.RFC3339)
-	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, ghs.OwnerRepo, ft)
+	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, repo, ft)
 }

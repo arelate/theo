@@ -94,26 +94,26 @@ var AllAbsDirs = []pathways.AbsDir{
 	InstalledApps,
 }
 
-func GetAbsBinariesDir(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease) (string, error) {
+func GetAbsBinariesDir(repo string, release *github_integration.GitHubRelease) (string, error) {
 	binariesDir, err := pathways.GetAbsRelDir(Binaries)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(binariesDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
+	return filepath.Join(binariesDir, repo, busan.Sanitize(release.TagName)), nil
 }
 
-func GetAbsReleasesDir(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease) (string, error) {
+func GetAbsReleasesDir(repo string, release *github_integration.GitHubRelease) (string, error) {
 	assetsDir, err := pathways.GetAbsRelDir(Assets)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(assetsDir, ghs.OwnerRepo, busan.Sanitize(release.TagName)), nil
+	return filepath.Join(assetsDir, repo, busan.Sanitize(release.TagName)), nil
 }
 
-func GetAbsReleaseAssetPath(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) (string, error) {
-	relDir, err := GetAbsReleasesDir(ghs, release)
+func GetAbsReleaseAssetPath(repo string, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) (string, error) {
+	relDir, err := GetAbsReleasesDir(repo, release)
 	if err != nil {
 		return "", err
 	}

@@ -22,12 +22,12 @@ func UmuRunLatestReleasePath() (string, error) {
 		return "", err
 	}
 
-	latestRelease, err := github_integration.UmuLauncher.GetLatestRelease(kvGitHubReleases)
+	latestRelease, err := github_integration.GetLatestRelease(github_integration.UmuLauncherRepo, kvGitHubReleases)
 	if err != nil {
 		return "", err
 	}
 
-	absUmuBinDir, err := GetAbsBinariesDir(github_integration.UmuLauncher, latestRelease)
+	absUmuBinDir, err := GetAbsBinariesDir(github_integration.UmuLauncherRepo, latestRelease)
 	if err != nil {
 		return "", err
 	}
@@ -47,12 +47,12 @@ func UmuProtonLatestReleasePath() (string, error) {
 		return "", err
 	}
 
-	latestRelease, err := github_integration.UmuProton.GetLatestRelease(kvGitHubReleases)
+	latestRelease, err := github_integration.GetLatestRelease(github_integration.UmuProtonRepo, kvGitHubReleases)
 	if err != nil {
 		return "", err
 	}
 
-	umuProtonDir, err := GetAbsBinariesDir(github_integration.UmuProton, latestRelease)
+	umuProtonDir, err := GetAbsBinariesDir(github_integration.UmuProtonRepo, latestRelease)
 	if err != nil {
 		return "", err
 	}

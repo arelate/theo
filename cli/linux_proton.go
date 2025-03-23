@@ -76,7 +76,7 @@ func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 		return "", err
 	}
 
-	latestUmuLauncherRelease, err := github_integration.UmuLauncher.GetLatestRelease(kvGitHubReleases)
+	latestUmuLauncherRelease, err := github_integration.GetLatestRelease(github_integration.UmuLauncherRepo, kvGitHubReleases)
 	if err != nil {
 		return "", err
 	}
