@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
@@ -10,13 +9,9 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/http"
-	"strings"
-	"time"
 )
 
-const forceGitHubUpdatesDays = 30
-
-func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error {
+func getGitHubReleases(os vangogh_integration.OperatingSystem) error {
 
 	ggra := nod.Begin(" getting GitHub releases for %s...", os)
 	defer ggra.Done()
@@ -26,7 +21,7 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, vangogh_integration.GitHubReleasesUpdatedProperty)
+	rdx, err := redux.NewReader(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}
@@ -41,19 +36,9 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 		return err
 	}
 
-	forceRepoUpdate := force
-
 	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(os) {
 
-		if ghsu, ok := rdx.GetLastVal(data.GitHubReleasesUpdatedProperty, repo); ok && ghsu != "" {
-			if ghsut, err := time.Parse(time.RFC3339, ghsu); err == nil {
-				if ghsut.AddDate(0, 0, forceGitHubUpdatesDays).Before(time.Now()) {
-					forceRepoUpdate = true
-				}
-			}
-		}
-
-		if err = getRepoReleases(repo, kvGitHubReleases, rdx, forceRepoUpdate); err != nil {
+		if err = getRepoReleases(repo, kvGitHubReleases, rdx); err != nil {
 			return err
 		}
 	}
@@ -61,18 +46,15 @@ func getGitHubReleases(os vangogh_integration.OperatingSystem, force bool) error
 	return nil
 }
 
-func getRepoReleases(repo string, kvGitHubReleases kevlar.KeyValues, rdx redux.Writeable, force bool) error {
+func getRepoReleases(repo string, kvGitHubReleases kevlar.KeyValues, rdx redux.Readable) error {
 
 	grlra := nod.Begin(" %s...", repo)
 	defer grlra.Done()
 
-	if kvGitHubReleases.Has(repo) && !force {
-		grlra.EndWithResult("skip recently updated")
-		return nil
+	ghsu, err := data.ServerUrl(rdx, data.ServerGitHubReleasesPath, map[string]string{"repo": repo})
+	if err != nil {
+		return err
 	}
-
-	owner, repo, _ := strings.Cut(repo, "/")
-	ghsu := github_integration.ReleasesUrl(owner, repo)
 
 	resp, err := http.DefaultClient.Get(ghsu.String())
 	if err != nil {
@@ -84,10 +66,5 @@ func getRepoReleases(repo string, kvGitHubReleases kevlar.KeyValues, rdx redux.W
 		return errors.New(resp.Status)
 	}
 
-	if err = kvGitHubReleases.Set(repo, resp.Body); err != nil {
-		return err
-	}
-
-	ft := time.Now().Format(time.RFC3339)
-	return rdx.ReplaceValues(data.GitHubReleasesUpdatedProperty, repo, ft)
+	return kvGitHubReleases.Set(repo, resp.Body)
 }

@@ -12,14 +12,10 @@ import (
 	"os/exec"
 )
 
-func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
+func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, since int64, force bool) error {
 
-	ura := nod.NewProgress("unpacking GitHub releases for %s...", operatingSystem)
+	ura := nod.Begin("unpacking GitHub releases for %s...", operatingSystem)
 	defer ura.Done()
-
-	gitHubRepos := vangogh_integration.OperatingSystemGitHubRepos(operatingSystem)
-
-	ura.TotalInt(len(gitHubRepos))
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
@@ -31,7 +27,13 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 		return err
 	}
 
-	for _, repo := range gitHubRepos {
+	if force {
+		since = -1
+	}
+
+	updatedReleases := kvGitHubReleases.Since(since, kevlar.Create, kevlar.Update)
+
+	for repo := range updatedReleases {
 
 		latestRelease, err := github_integration.GetLatestRelease(repo, kvGitHubReleases)
 		if err != nil {
@@ -39,7 +41,6 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 		}
 
 		if latestRelease == nil {
-			ura.Increment()
 			continue
 		}
 
@@ -48,8 +49,7 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 			return err
 		}
 
-		if _, err := os.Stat(binDir); err == nil && !force {
-			ura.Increment()
+		if _, err = os.Stat(binDir); err == nil && !force {
 			continue
 		}
 
@@ -58,8 +58,6 @@ func unpackGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSyst
 				return err
 			}
 		}
-
-		ura.Increment()
 	}
 
 	return nil

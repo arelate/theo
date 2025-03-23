@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 )
 
-func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
+func cleanupGitHubReleases(os vangogh_integration.OperatingSystem, since int64, force bool) error {
 
 	cra := nod.Begin("cleaning up cached GitHub releases, keeping the latest for %s...", os)
 	defer cra.Done()
@@ -29,7 +29,13 @@ func cleanupGitHubReleases(os vangogh_integration.OperatingSystem) error {
 		return err
 	}
 
-	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(os) {
+	if force {
+		since = -1
+	}
+
+	updatedReleases := kvGitHubReleases.Since(since, kevlar.Create, kevlar.Update)
+
+	for repo := range updatedReleases {
 
 		if err = cleanupRepoReleases(repo, kvGitHubReleases); err != nil {
 			return err

@@ -6,6 +6,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"net/url"
+	"time"
 )
 
 func SetupWineHandler(u *url.URL) error {
@@ -13,6 +14,8 @@ func SetupWineHandler(u *url.URL) error {
 }
 
 func SetupWine(force bool) error {
+
+	start := time.Now().UTC().Unix()
 
 	currentOs := data.CurrentOs()
 
@@ -24,19 +27,19 @@ func SetupWine(force bool) error {
 	uwa := nod.Begin("setting up WINE for %s...", currentOs)
 	defer uwa.Done()
 
-	if err := getGitHubReleases(currentOs, force); err != nil {
+	if err := getGitHubReleases(currentOs); err != nil {
 		return err
 	}
 
-	if err := downloadGitHubLatestRelease(currentOs, force); err != nil {
+	if err := downloadGitHubLatestRelease(currentOs, start, force); err != nil {
 		return err
 	}
 
-	if err := cleanupGitHubReleases(currentOs); err != nil {
+	if err := cleanupGitHubReleases(currentOs, start, force); err != nil {
 		return err
 	}
 
-	if err := unpackGitHubLatestRelease(currentOs, force); err != nil {
+	if err := unpackGitHubLatestRelease(currentOs, start, force); err != nil {
 		return err
 	}
 

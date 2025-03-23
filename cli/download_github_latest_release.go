@@ -8,12 +8,13 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"net/url"
+	"github.com/boggydigital/redux"
+	"path/filepath"
 )
 
-func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, force bool) error {
+func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSystem, since int64, force bool) error {
 
-	cra := nod.Begin(" caching GitHub releases for %s...", operatingSystem)
+	cra := nod.Begin(" downloading GitHub latest releases for %s...", operatingSystem)
 	defer cra.Done()
 
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
@@ -26,9 +27,25 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 		return err
 	}
 
+	if force {
+		since = -1
+	}
+
+	updatedReleases := kvGitHubReleases.Since(since, kevlar.Create, kevlar.Update)
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewReader(reduxDir, data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
 	dc := dolo.DefaultClient
 
-	for _, repo := range vangogh_integration.OperatingSystemGitHubRepos(operatingSystem) {
+	for repo := range updatedReleases {
 
 		latestRelease, err := github_integration.GetLatestRelease(repo, kvGitHubReleases)
 		if err != nil {
@@ -39,7 +56,7 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 			continue
 		}
 
-		if err = downloadRepoRelease(repo, latestRelease, dc, force); err != nil {
+		if err = downloadRepoLatestRelease(repo, latestRelease, rdx, dc, force); err != nil {
 			return err
 		}
 	}
@@ -47,7 +64,7 @@ func downloadGitHubLatestRelease(operatingSystem vangogh_integration.OperatingSy
 	return nil
 }
 
-func downloadRepoRelease(repo string, release *github_integration.GitHubRelease, dc *dolo.Client, force bool) error {
+func downloadRepoLatestRelease(repo string, release *github_integration.GitHubRelease, rdx redux.Readable, dc *dolo.Client, force bool) error {
 
 	crra := nod.Begin(" - tag: %s...", release.TagName)
 	defer crra.Done()
@@ -58,7 +75,7 @@ func downloadRepoRelease(repo string, release *github_integration.GitHubRelease,
 		return nil
 	}
 
-	ru, err := url.Parse(asset.BrowserDownloadUrl)
+	glau, err := data.ServerUrl(rdx, data.ServerGitHubLatestAssetPath, map[string]string{"repo": repo})
 	if err != nil {
 		return err
 	}
@@ -71,7 +88,9 @@ func downloadRepoRelease(repo string, release *github_integration.GitHubRelease,
 	dra := nod.NewProgress(" - asset: %s", asset.Name)
 	defer dra.Done()
 
-	if err = dc.Download(ru, force, dra, relDir); err != nil {
+	_, assetFilename := filepath.Split(asset.BrowserDownloadUrl)
+
+	if err = dc.Download(glau, force, dra, relDir, assetFilename); err != nil {
 		return err
 	}
 
