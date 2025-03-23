@@ -20,12 +20,11 @@ const desktopGlob = "*.desktop"
 const mojosetupDir = ".mojosetup"
 
 func linuxInstallProduct(id string,
-	metadata *vangogh_integration.TheoMetadata,
-	link *vangogh_integration.TheoDownloadLink,
-	//absInstallerPath, installedAppsDir string,
+	downloadsManifest *vangogh_integration.DownloadsManifest,
+	link *vangogh_integration.ManifestDownloadLink,
 	rdx redux.Writeable) error {
 
-	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, metadata.Title)
+	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, downloadsManifest.Title)
 	defer lia.Done()
 
 	if err := rdx.MustHave(data.SlugProperty, data.BundleNameProperty); err != nil {
@@ -111,7 +110,7 @@ func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) erro
 	return cmd.Run()
 }
 
-func linuxPostDownloadActions(id string, link *vangogh_integration.TheoDownloadLink) error {
+func linuxPostDownloadActions(id string, link *vangogh_integration.ManifestDownloadLink) error {
 
 	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_integration.Linux, id)
 	defer lpda.Done()

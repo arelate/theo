@@ -47,12 +47,12 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, rdx, force)
+		downloadsManifest, err := getDownloadsManifest(id, rdx, force)
 		if err != nil {
 			return err
 		}
 
-		if err = downloadProductFiles(id, metadata, operatingSystems, langCodes, downloadTypes, rdx, force); err != nil {
+		if err = downloadProductFiles(id, downloadsManifest, operatingSystems, langCodes, downloadTypes, rdx, force); err != nil {
 			return err
 		}
 
@@ -63,14 +63,14 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 }
 
 func downloadProductFiles(id string,
-	metadata *vangogh_integration.TheoMetadata,
+	downloadsManifest *vangogh_integration.DownloadsManifest,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
 	rdx redux.Readable,
 	force bool) error {
 
-	gpdla := nod.Begin(" downloading %s...", metadata.Title)
+	gpdla := nod.Begin(" downloading %s...", downloadsManifest.Title)
 	defer gpdla.Done()
 
 	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
@@ -90,7 +90,7 @@ func downloadProductFiles(id string,
 		}
 	}
 
-	dls := metadata.DownloadLinks.
+	dls := downloadsManifest.DownloadLinks.
 		FilterOperatingSystems(operatingSystems...).
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)

@@ -16,7 +16,7 @@ import (
 
 const theoDirname = "theo"
 
-const manifestExt = ".txt"
+const inventoryExt = ".txt"
 
 func InitRootDir() (string, error) {
 	udhd, err := UserDataHomeDir()
@@ -61,29 +61,29 @@ const (
 )
 
 const (
-	Redux             pathways.RelDir = "_redux"
-	TheoMetadata      pathways.RelDir = "theo"
-	InstalledMetadata pathways.RelDir = "installed"
-	MacOsExtracts     pathways.RelDir = "_macos_extracts"
-	GitHubReleases    pathways.RelDir = "github-releases"
-	Assets            pathways.RelDir = "assets"
-	Binaries          pathways.RelDir = "binaries"
-	PrefixArchive     pathways.RelDir = "prefix-archive"
-	UmuConfigs        pathways.RelDir = "umu-configs"
-	Manifests         pathways.RelDir = "_manifests"
+	Redux              pathways.RelDir = "_redux"
+	DownloadsManifests pathways.RelDir = "downloads-manifests"
+	InstalledManifests pathways.RelDir = "installed-manifests"
+	MacOsExtracts      pathways.RelDir = "_macos_extracts"
+	GitHubReleases     pathways.RelDir = "github-releases"
+	Assets             pathways.RelDir = "assets"
+	Binaries           pathways.RelDir = "binaries"
+	PrefixArchive      pathways.RelDir = "prefix-archive"
+	UmuConfigs         pathways.RelDir = "umu-configs"
+	Inventory          pathways.RelDir = "_inventory"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
-	Redux:             Metadata,
-	TheoMetadata:      Metadata,
-	InstalledMetadata: Metadata,
-	GitHubReleases:    Metadata,
-	Assets:            Runtimes,
-	Binaries:          Runtimes,
-	PrefixArchive:     Backups,
-	MacOsExtracts:     Downloads,
-	UmuConfigs:        Runtimes,
-	Manifests:         InstalledApps,
+	Redux:              Metadata,
+	DownloadsManifests: Metadata,
+	InstalledManifests: Metadata,
+	GitHubReleases:     Metadata,
+	Assets:             Runtimes,
+	Binaries:           Runtimes,
+	PrefixArchive:      Backups,
+	MacOsExtracts:      Downloads,
+	UmuConfigs:         Runtimes,
+	Inventory:          InstalledApps,
 }
 
 var AllAbsDirs = []pathways.AbsDir{
@@ -92,7 +92,6 @@ var AllAbsDirs = []pathways.AbsDir{
 	Downloads,
 	Runtimes,
 	InstalledApps,
-	//Prefixes,
 }
 
 func GetAbsBinariesDir(ghs *github_integration.GitHubSource, release *github_integration.GitHubRelease) (string, error) {
@@ -156,20 +155,20 @@ func GetAbsPrefixDir(id, langCode string, rdx redux.Readable) (string, error) {
 	return filepath.Join(osLangInstalledAppsDir, prefixName), nil
 }
 
-func GetAbsManifestFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+func GetAbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
 	if err := rdx.MustHave(SlugProperty); err != nil {
 		return "", err
 	}
 
-	manifestsDir, err := pathways.GetAbsRelDir(Manifests)
+	inventoryDir, err := pathways.GetAbsRelDir(Inventory)
 	if err != nil {
 		return "", err
 	}
 
-	osLangManifestsDir := filepath.Join(manifestsDir, OsLangCode(operatingSystem, langCode))
+	osLangInventoryDir := filepath.Join(inventoryDir, OsLangCode(operatingSystem, langCode))
 
 	if slug, ok := rdx.GetLastVal(SlugProperty, id); ok && slug != "" {
-		return filepath.Join(osLangManifestsDir, slug+manifestExt), nil
+		return filepath.Join(osLangInventoryDir, slug+inventoryExt), nil
 	} else {
 		return "", errors.New("product slug is undefined: " + id)
 	}
@@ -183,10 +182,6 @@ func GetRelFilesModifiedAfter(absDir string, utcTime int64) ([]string, error) {
 		if err != nil {
 			return err
 		}
-
-		//if info.IsDir() {
-		//	return nil
-		//}
 
 		if info.ModTime().UTC().Unix() >= utcTime {
 			relPath, err := filepath.Rel(absDir, path)

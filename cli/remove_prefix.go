@@ -85,19 +85,19 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force
 		return nil
 	}
 
-	relManifestFiles, err := readManifest(id, langCode, vangogh_integration.Windows, rdx)
+	relInventoryFiles, err := readInventory(id, langCode, vangogh_integration.Windows, rdx)
 	if os.IsNotExist(err) {
-		rppa.EndWithResult("installed files manifest not found")
+		rppa.EndWithResult("installed files inventory not found")
 		return nil
 	} else if err != nil {
 		return err
 	}
 
-	if err = removePrefixInstalledFiles(absPrefixDir, relManifestFiles...); err != nil {
+	if err = removePrefixInstalledFiles(absPrefixDir, relInventoryFiles...); err != nil {
 		return err
 	}
 
-	if err = removePrefixDirs(absPrefixDir, relManifestFiles...); err != nil {
+	if err = removePrefixDirs(absPrefixDir, relInventoryFiles...); err != nil {
 		return err
 	}
 

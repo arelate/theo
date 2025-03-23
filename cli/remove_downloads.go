@@ -51,12 +51,12 @@ func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, rdx, force)
+		downloadsManifest, err := getDownloadsManifest(id, rdx, force)
 		if err != nil {
 			return err
 		}
 
-		if err = removeProductDownloadLinks(id, metadata, operatingSystems, langCodes, downloadTypes, downloadsDir); err != nil {
+		if err = removeProductDownloadLinks(id, downloadsManifest, operatingSystems, langCodes, downloadTypes, downloadsDir); err != nil {
 			return err
 		}
 
@@ -67,13 +67,13 @@ func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 }
 
 func removeProductDownloadLinks(id string,
-	metadata *vangogh_integration.TheoMetadata,
+	downloadsManifest *vangogh_integration.DownloadsManifest,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
 	downloadsDir string) error {
 
-	rdla := nod.Begin(" removing downloads for %s...", metadata.Title)
+	rdla := nod.Begin(" removing downloads for %s...", downloadsManifest.Title)
 	defer rdla.Done()
 
 	idPath := filepath.Join(downloadsDir, id)
@@ -82,7 +82,7 @@ func removeProductDownloadLinks(id string,
 		return nil
 	}
 
-	dls := metadata.DownloadLinks.
+	dls := downloadsManifest.DownloadLinks.
 		FilterOperatingSystems(operatingSystems...).
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)

@@ -66,20 +66,20 @@ func filterUpdatedProducts(operatingSystem vangogh_integration.OperatingSystem, 
 	fupa := nod.NewProgress("filtering updated products...")
 	defer fupa.Done()
 
-	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
+	installedManifestsDir, err := pathways.GetAbsRelDir(data.InstalledManifests)
 	if err != nil {
 		return nil, err
 	}
 
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(operatingSystem, langCode))
+	osLangInstalledManifestsDir := filepath.Join(installedManifestsDir, data.OsLangCode(operatingSystem, langCode))
 
-	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledManifests, err := kevlar.New(osLangInstalledManifestsDir, kevlar.JsonExt)
 	if err != nil {
 		return nil, err
 	}
 
 	if all {
-		for id := range kvOsLangInstalledMetadata.Keys() {
+		for id := range kvOsLangInstalledManifests.Keys() {
 			ids = append(ids, id)
 		}
 	}
@@ -89,7 +89,7 @@ func filterUpdatedProducts(operatingSystem vangogh_integration.OperatingSystem, 
 	updatedIds := make([]string, 0)
 
 	for _, id := range ids {
-		if updated, err := isProductUpdated(id, operatingSystem, langCode, rdx, kvOsLangInstalledMetadata); err != nil {
+		if updated, err := isProductUpdated(id, operatingSystem, langCode, rdx, kvOsLangInstalledManifests); err != nil {
 			return nil, err
 		} else if updated {
 			updatedIds = append(updatedIds, id)
@@ -108,34 +108,34 @@ func filterUpdatedProducts(operatingSystem vangogh_integration.OperatingSystem, 
 
 }
 
-func isProductUpdated(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, kvOsLangInstalledMetadata kevlar.KeyValues) (bool, error) {
+func isProductUpdated(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, kvOsLangInstalledManifests kevlar.KeyValues) (bool, error) {
 
 	cpua := nod.Begin(" checking product updates for %s...", id)
 	defer cpua.Done()
 
-	if !kvOsLangInstalledMetadata.Has(id) {
+	if !kvOsLangInstalledManifests.Has(id) {
 		cpua.EndWithResult("not installed on %s", operatingSystem)
 		return false, nil
 	}
 
-	rcInstalledMetadata, err := kvOsLangInstalledMetadata.Get(id)
+	rcInstalledManifest, err := kvOsLangInstalledManifests.Get(id)
 	if err != nil {
 		return false, err
 	}
-	defer rcInstalledMetadata.Close()
+	defer rcInstalledManifest.Close()
 
-	var installedMetadata vangogh_integration.TheoMetadata
-	if err = json.NewDecoder(rcInstalledMetadata).Decode(&installedMetadata); err != nil {
+	var installedManifest vangogh_integration.DownloadsManifest
+	if err = json.NewDecoder(rcInstalledManifest).Decode(&installedManifest); err != nil {
 		return false, err
 	}
 
-	latestMetadata, err := getTheoMetadata(id, rdx, true)
+	latestDownloadsManifest, err := getDownloadsManifest(id, rdx, true)
 	if err != nil {
 		return false, err
 	}
 
-	installedVersion := metadataVersion(&installedMetadata, operatingSystem, langCode)
-	latestVersion := metadataVersion(latestMetadata, operatingSystem, langCode)
+	installedVersion := manifestVersion(&installedManifest, operatingSystem, langCode)
+	latestVersion := manifestVersion(latestDownloadsManifest, operatingSystem, langCode)
 
 	if installedVersion == latestVersion {
 		cpua.EndWithResult("already at the latest version: %s", installedVersion)

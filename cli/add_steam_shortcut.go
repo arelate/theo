@@ -119,12 +119,12 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 			}
 		}
 
-		metadata, err := getTheoMetadata(id, rdx, force)
+		downloadsManifest, err := getDownloadsManifest(id, rdx, force)
 		if err != nil {
 			return err
 		}
 
-		if err := downloadSteamGridImages(loginUser, shortcut.AppId, &metadata.Images, rdx, force); err != nil {
+		if err := downloadSteamGridImages(loginUser, shortcut.AppId, &downloadsManifest.Images, rdx, force); err != nil {
 			return err
 		}
 	}
@@ -168,7 +168,7 @@ func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate s
 	return shortcut, nil
 }
 
-func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata *vangogh_integration.TheoImages, rdx redux.Readable, force bool) error {
+func downloadSteamGridImages(loginUser string, shortcutId uint32, manifestImages *vangogh_integration.ManifestImages, rdx redux.Readable, force bool) error {
 
 	dsgia := nod.Begin(" downloading Steam Grid images...")
 	defer dsgia.Done()
@@ -182,24 +182,24 @@ func downloadSteamGridImages(loginUser string, shortcutId uint32, imagesMetadata
 	dc := dolo.DefaultClient
 
 	imageProperties := make(map[vangogh_integration.ImageType]string)
-	if imagesMetadata.Image != "" {
-		imageProperties[vangogh_integration.Image] = imagesMetadata.Image
+	if manifestImages.Image != "" {
+		imageProperties[vangogh_integration.Image] = manifestImages.Image
 	}
-	if imagesMetadata.VerticalImage != "" {
-		imageProperties[vangogh_integration.VerticalImage] = imagesMetadata.VerticalImage
+	if manifestImages.VerticalImage != "" {
+		imageProperties[vangogh_integration.VerticalImage] = manifestImages.VerticalImage
 	}
-	if imagesMetadata.Hero != "" {
-		imageProperties[vangogh_integration.Hero] = imagesMetadata.Hero
-	} else if imagesMetadata.Background != "" {
-		imageProperties[vangogh_integration.Hero] = imagesMetadata.Background
+	if manifestImages.Hero != "" {
+		imageProperties[vangogh_integration.Hero] = manifestImages.Hero
+	} else if manifestImages.Background != "" {
+		imageProperties[vangogh_integration.Hero] = manifestImages.Background
 	}
-	if imagesMetadata.Logo != "" {
-		imageProperties[vangogh_integration.Logo] = imagesMetadata.Logo
+	if manifestImages.Logo != "" {
+		imageProperties[vangogh_integration.Logo] = manifestImages.Logo
 	}
-	if imagesMetadata.IconSquare != "" {
-		imageProperties[vangogh_integration.IconSquare] = imagesMetadata.IconSquare
-	} else if imagesMetadata.Icon != "" {
-		imageProperties[vangogh_integration.Icon] = imagesMetadata.Icon
+	if manifestImages.IconSquare != "" {
+		imageProperties[vangogh_integration.IconSquare] = manifestImages.IconSquare
+	} else if manifestImages.Icon != "" {
+		imageProperties[vangogh_integration.Icon] = manifestImages.Icon
 	}
 
 	for ip, imageId := range imageProperties {

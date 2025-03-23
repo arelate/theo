@@ -128,7 +128,7 @@ func Install(ip *installParameters, ids ...string) error {
 		}
 	}
 
-	if err = pinInstalledMetadata(currentOs, ip.langCode, ip.force, ids...); err != nil {
+	if err = pinInstalledManifests(currentOs, ip.langCode, ip.force, ids...); err != nil {
 		return err
 	}
 
@@ -152,21 +152,21 @@ func filterNotInstalled(operatingSystem vangogh_integration.OperatingSystem, lan
 
 	notInstalled := make([]string, 0, len(ids))
 
-	installedMetadataDir, err := pathways.GetAbsRelDir(data.InstalledMetadata)
+	installedManifestsDir, err := pathways.GetAbsRelDir(data.InstalledManifests)
 	if err != nil {
 		return nil, err
 	}
 
-	osLangInstalledMetadataDir := filepath.Join(installedMetadataDir, data.OsLangCode(operatingSystem, langCode))
+	osLangInstalledManifestsDir := filepath.Join(installedManifestsDir, data.OsLangCode(operatingSystem, langCode))
 
-	kvOsLangInstalledMetadata, err := kevlar.New(osLangInstalledMetadataDir, kevlar.JsonExt)
+	kvOsLangInstalledManifests, err := kevlar.New(osLangInstalledManifestsDir, kevlar.JsonExt)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, id := range ids {
 
-		if kvOsLangInstalledMetadata.Has(id) {
+		if kvOsLangInstalledManifests.Has(id) {
 			continue
 		}
 
@@ -196,12 +196,12 @@ func filterNotSupported(langCode string, rdx redux.Writeable, force bool, ids ..
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, rdx, force)
+		downloadsManifest, err := getDownloadsManifest(id, rdx, force)
 		if err != nil {
 			return nil, err
 		}
 
-		dls := metadata.DownloadLinks.
+		dls := downloadsManifest.DownloadLinks.
 			FilterOperatingSystems(data.CurrentOs()).
 			FilterLanguageCodes(langCode).
 			FilterDownloadTypes(vangogh_integration.Installer)
@@ -225,12 +225,12 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		return err
 	}
 
-	metadata, err := getTheoMetadata(id, rdx, force)
+	downloadsManifest, err := getDownloadsManifest(id, rdx, force)
 	if err != nil {
 		return err
 	}
 
-	dls := metadata.DownloadLinks.
+	dls := downloadsManifest.DownloadLinks.
 		FilterOperatingSystems(data.CurrentOs()).
 		FilterLanguageCodes(langCode).
 		FilterDownloadTypes(downloadTypes...)
@@ -250,15 +250,15 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 
 		switch vangogh_integration.ParseOperatingSystem(link.OS) {
 		case vangogh_integration.MacOS:
-			if err = macOsInstallProduct(id, metadata, &link, rdx, force); err != nil {
+			if err = macOsInstallProduct(id, downloadsManifest, &link, rdx, force); err != nil {
 				return err
 			}
 		case vangogh_integration.Linux:
-			if err = linuxInstallProduct(id, metadata, &link, rdx); err != nil {
+			if err = linuxInstallProduct(id, downloadsManifest, &link, rdx); err != nil {
 				return err
 			}
 		case vangogh_integration.Windows:
-			if err = windowsInstallProduct(id, metadata, &link, rdx); err != nil {
+			if err = windowsInstallProduct(id, downloadsManifest, &link, rdx); err != nil {
 				return err
 			}
 		default:

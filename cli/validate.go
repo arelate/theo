@@ -71,12 +71,12 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		metadata, err := getTheoMetadata(id, rdx, false)
+		downloadsManifest, err := getDownloadsManifest(id, rdx, false)
 		if err != nil {
 			return err
 		}
 
-		if err = validateLinks(id, operatingSystems, langCodes, downloadTypes, metadata); err != nil {
+		if err = validateLinks(id, operatingSystems, langCodes, downloadTypes, downloadsManifest); err != nil {
 			return err
 		}
 	}
@@ -88,9 +88,9 @@ func validateLinks(id string,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
-	metadata *vangogh_integration.TheoMetadata) error {
+	downloadsManifest *vangogh_integration.DownloadsManifest) error {
 
-	vla := nod.NewProgress("validating %s...", metadata.Title)
+	vla := nod.NewProgress("validating %s...", downloadsManifest.Title)
 	defer vla.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
@@ -98,7 +98,7 @@ func validateLinks(id string,
 		return err
 	}
 
-	dls := metadata.DownloadLinks.
+	dls := downloadsManifest.DownloadLinks.
 		FilterOperatingSystems(operatingSystems...).
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)
@@ -112,7 +112,7 @@ func validateLinks(id string,
 	results := make([]ValidationResult, 0, len(dls))
 
 	for _, dl := range dls {
-		vr, err := validateLink(id, dl, downloadsDir)
+		vr, err := validateLink(id, &dl, downloadsDir)
 		if err != nil {
 			vla.Error(err)
 		}
@@ -124,12 +124,12 @@ func validateLinks(id string,
 	return nil
 }
 
-func validateLink(id string, dl vangogh_integration.TheoDownloadLink, downloadsDir string) (ValidationResult, error) {
+func validateLink(id string, link *vangogh_integration.ManifestDownloadLink, downloadsDir string) (ValidationResult, error) {
 
-	dla := nod.NewProgress(" - %s...", dl.LocalFilename)
+	dla := nod.NewProgress(" - %s...", link.LocalFilename)
 	defer dla.Done()
 
-	absDownloadPath := filepath.Join(downloadsDir, id, dl.LocalFilename)
+	absDownloadPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
 	var stat os.FileInfo
 	var err error
@@ -139,7 +139,7 @@ func validateLink(id string, dl vangogh_integration.TheoDownloadLink, downloadsD
 		return ValResFileNotFound, nil
 	}
 
-	if dl.Md5 == "" {
+	if link.Md5 == "" {
 		dla.EndWithResult(ValResMissingChecksum)
 		return ValResMissingChecksum, nil
 	}
@@ -157,7 +157,7 @@ func validateLink(id string, dl vangogh_integration.TheoDownloadLink, downloadsD
 	}
 
 	computedMd5 := fmt.Sprintf("%x", h.Sum(nil))
-	if dl.Md5 == computedMd5 {
+	if link.Md5 == computedMd5 {
 		dla.EndWithResult(ValResValid)
 		return ValResValid, nil
 	} else {

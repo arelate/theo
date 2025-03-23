@@ -82,7 +82,7 @@ func ParsePostInstallScript(path string) (*PostInstallScript, error) {
 	return pis, nil
 }
 
-func PostInstallScriptPath(productExtractsDir string, link *vangogh_integration.TheoDownloadLink) string {
+func PostInstallScriptPath(productExtractsDir string, link *vangogh_integration.ManifestDownloadLink) string {
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
 	return filepath.Join(localFilenameExtractsDir, relPostInstallScriptPath)
 }

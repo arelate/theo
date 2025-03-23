@@ -115,7 +115,7 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 			return err
 		}
 
-		if err = createPrefixInstalledFilesManifest(id, ip.langCode, rdx, start); err != nil {
+		if err = createPrefixInstalledFilesInventory(id, ip.langCode, rdx, start); err != nil {
 			return err
 		}
 	}
@@ -136,7 +136,7 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		}
 	}
 
-	if err = pinInstalledMetadata(windowsOs, ip.langCode, ip.force, ids...); err != nil {
+	if err = pinInstalledManifests(windowsOs, ip.langCode, ip.force, ids...); err != nil {
 		return err
 	}
 
@@ -165,12 +165,12 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 		return err
 	}
 
-	metadata, err := getTheoMetadata(id, rdx, force)
+	downloadsManifest, err := getDownloadsManifest(id, rdx, force)
 	if err != nil {
 		return err
 	}
 
-	dls := metadata.DownloadLinks.
+	dls := downloadsManifest.DownloadLinks.
 		FilterOperatingSystems(vangogh_integration.Windows).
 		FilterLanguageCodes(langCode).
 		FilterDownloadTypes(downloadTypes...)
@@ -231,7 +231,7 @@ func initPrefix(langCode string, verbose bool, rdx redux.Readable, ids ...string
 	return nil
 }
 
-func createPrefixInstalledFilesManifest(id, langCode string, rdx redux.Readable, utcTime int64) error {
+func createPrefixInstalledFilesInventory(id, langCode string, rdx redux.Readable, utcTime int64) error {
 
 	cpifma := nod.Begin(" creating prefix installed files manifest...")
 	defer cpifma.Done()
@@ -241,5 +241,5 @@ func createPrefixInstalledFilesManifest(id, langCode string, rdx redux.Readable,
 		return err
 	}
 
-	return createManifest(absPrefixDir, id, langCode, vangogh_integration.Windows, rdx, utcTime)
+	return createInventory(absPrefixDir, id, langCode, vangogh_integration.Windows, rdx, utcTime)
 }
