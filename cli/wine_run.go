@@ -98,7 +98,11 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		}
 	}
 
-	if _, err := os.Stat(exePath); err != nil {
+	if _, err = os.Stat(exePath); err != nil {
+		return err
+	}
+
+	if err = setLastRunDate(rdx, id); err != nil {
 		return err
 	}
 

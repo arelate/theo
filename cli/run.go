@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -48,13 +49,17 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 		return err
 	}
 
-	rdx, err := redux.NewReader(reduxDir, data.AllProperties()...)
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
 	if err != nil {
 		return err
 	}
 
 	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
 	if err = resolveProductTitles(rdx, id); err != nil {
+		return err
+	}
+
+	if err = setLastRunDate(rdx, id); err != nil {
 		return err
 	}
 
@@ -113,4 +118,9 @@ func resolveProductTitles(rdx redux.Readable, ids ...string) error {
 	rta.EndWithResult(strings.Join(titles, "; "))
 
 	return nil
+}
+
+func setLastRunDate(rdx redux.Writeable, id string) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	return rdx.ReplaceValues(data.LastRunDateProperty, id, now)
 }

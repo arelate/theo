@@ -23,6 +23,7 @@ const (
 	NoSteamShortcutProperty   = "no-steam-shortcut"
 
 	InstallDateProperty = "install-date"
+	LastRunDateProperty = "last-run-date"
 )
 
 func AllProperties() []string {
@@ -35,5 +36,6 @@ func AllProperties() []string {
 		PrefixEnvProperty,
 		PrefixExePathProperty,
 		InstallDateProperty,
+		LastRunDateProperty,
 	}
 }
