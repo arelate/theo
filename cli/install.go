@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 )
 
 const (
@@ -136,6 +137,10 @@ func Install(ip *installParameters, ids ...string) error {
 		return err
 	}
 
+	if err = setInstallDates(rdx, ids...); err != nil {
+		return err
+	}
+
 	if ip.reveal {
 		if err = RevealInstalled(ip.langCode, ids...); err != nil {
 			return err
@@ -143,6 +148,21 @@ func Install(ip *installParameters, ids ...string) error {
 	}
 
 	return nil
+}
+
+func setInstallDates(rdx redux.Writeable, ids ...string) error {
+
+	if err := rdx.MustHave(data.InstallDateProperty); err != nil {
+		return err
+	}
+
+	installDates := make(map[string][]string)
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	for _, id := range ids {
+		installDates[id] = []string{now}
+	}
+	return rdx.BatchReplaceValues(data.InstallDateProperty, installDates)
 }
 
 func filterNotInstalled(operatingSystem vangogh_integration.OperatingSystem, langCode string, ids ...string) ([]string, error) {

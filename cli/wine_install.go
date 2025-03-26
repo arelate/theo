@@ -144,6 +144,10 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		return err
 	}
 
+	if err = setInstallDates(rdx, ids...); err != nil {
+		return err
+	}
+
 	if ip.reveal {
 		if err = RevealPrefix(ip.langCode, ids...); err != nil {
 			return err

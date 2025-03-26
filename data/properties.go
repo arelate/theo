@@ -21,6 +21,8 @@ const (
 	InstallParametersProperty = "install-parameters"
 	KeepDownloadsProperty     = "keep-downloads"
 	NoSteamShortcutProperty   = "no-steam-shortcut"
+
+	InstallDateProperty = "install-date"
 )
 
 func AllProperties() []string {
@@ -32,5 +34,6 @@ func AllProperties() []string {
 		InstallParametersProperty,
 		PrefixEnvProperty,
 		PrefixExePathProperty,
+		InstallDateProperty,
 	}
 }
