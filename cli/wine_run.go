@@ -112,8 +112,8 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 
 func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
 
-	msggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
-	defer msggla.Done()
+	gpggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
+	defer gpggla.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil
@@ -137,7 +137,7 @@ func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, erro
 		if err != nil {
 			return "", err
 		}
-		msggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
+		gpggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
 		return matches[0], nil
 	} else {
@@ -147,8 +147,8 @@ func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, erro
 
 func getPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
 
-	msggia := nod.Begin("locating goggame-%s.info in the install folder...", id)
-	defer msggia.Done()
+	gpggia := nod.Begin("locating goggame-%s.info in the install folder...", id)
+	defer gpggia.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil
@@ -170,7 +170,12 @@ func getPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 	}
 
 	if len(matches) == 1 {
-		msggia.EndWithResult("found %s", matches[0])
+		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
+		if err != nil {
+			return "", err
+		}
+		gpggia.EndWithResult("found %s", filepath.Join("C:", relMatch))
+
 		return matches[0], nil
 	} else {
 		return "", errors.New("cannot locate goggame-" + id + ".info in the GOG Games folder")
