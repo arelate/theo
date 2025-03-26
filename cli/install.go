@@ -69,12 +69,13 @@ func Install(ip *installParameters, ids ...string) error {
 	}
 
 	vangogh_integration.PrintParams(ids, currentOs, langCodes, ip.downloadTypes, true)
-	if err = resolveProductTitles(rdx, ids...); err != nil {
-		return err
-	}
 
 	supported, err := filterNotSupported(ip.langCode, rdx, ip.force, ids...)
 	if err != nil {
+		return err
+	}
+
+	if err = resolveProductTitles(rdx, ids...); err != nil {
 		return err
 	}
 

@@ -3,14 +3,16 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"path/filepath"
+	"time"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"path/filepath"
 )
 
 func ListInstalledHandler(u *url.URL) error {
@@ -49,7 +51,9 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		return err
 	}
 
-	rdx, err := redux.NewReader(reduxDir, data.InstallParametersProperty)
+	rdx, err := redux.NewReader(reduxDir,
+		data.InstallParametersProperty,
+		data.InstallDateProperty)
 	if err != nil {
 		return err
 	}
@@ -75,6 +79,12 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 			}
 		} else {
 			summary[name] = append(summary[name], "par.: (default) "+defaultInstallParameters(os).String())
+		}
+
+		if ids, ok := rdx.GetLastVal(data.InstallDateProperty, id); ok && ids != "" {
+			if installDate, err := time.Parse(time.RFC3339, ids); err == nil {
+				summary[name] = append(summary[name], "installed: "+installDate.Local().Format(time.DateTime))
+			}
 		}
 	}
 
