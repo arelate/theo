@@ -3,17 +3,23 @@ package cli
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
+)
+
+const (
+	gogInstallationLnkGlob = "GOG Games/*/*.lnk"
+	gogGameInfoGlob        = "GOG Games/*/goggame-{id}.info"
 )
 
 func WineRunHandler(u *url.URL) error {
@@ -86,7 +92,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	}
 
 	if exePath == "" {
-		exePath, err = getPrefixGogGamesLnk(id, langCode, rdx)
+		exePath, err = findPrefixGogGamesLnk(id, langCode, rdx)
 		if err != nil {
 			return err
 		}
@@ -110,45 +116,18 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath)
 }
 
-func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
-
-	gpggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
-	defer gpggla.Done()
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return "", nil
-	}
-
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
-	if err != nil {
-		return "", err
-	}
-
-	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
-
-	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, gogInstallationLnkGlob))
-	if err != nil {
-		return "", err
-	}
-
-	if len(matches) == 1 {
-
-		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
-		if err != nil {
-			return "", err
-		}
-		gpggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
-
-		return matches[0], nil
-	} else {
-		return "", errors.New("cannot locate suitable .lnk in the GOG Games folder")
-	}
+func findPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
+	return findPrefixFile(id, langCode, rdx, gogInstallationLnkGlob)
 }
 
-func getPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+func findPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
+	return findPrefixFile(id, langCode, rdx, gogGameInfoFilename)
+}
 
-	gpggia := nod.Begin("locating goggame-%s.info in the install folder...", id)
-	defer gpggia.Done()
+func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string) (string, error) {
+	fpfa := nod.Begin(" locating %s in the install folder...", filepath.Ext(globPattern))
+	defer fpfa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil
@@ -161,10 +140,7 @@ func getPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 
 	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
 
-	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
-	infoFilePath := filepath.Join(absPrefixDriveCDir, gogGameInfoFilename)
-
-	matches, err := filepath.Glob(infoFilePath)
+	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, globPattern))
 	if err != nil {
 		return "", err
 	}
@@ -174,17 +150,17 @@ func getPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 		if err != nil {
 			return "", err
 		}
-		gpggia.EndWithResult("found %s", filepath.Join("C:", relMatch))
+		fpfa.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
 		return matches[0], nil
 	} else {
-		return "", errors.New("cannot locate goggame-" + id + ".info in the GOG Games folder")
+		return "", errors.New("cannot locate suitable file in the GOG Games folder")
 	}
 }
 
 func getGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absGogGameInfoPath, err := getPrefixGogGameInfo(id, langCode, rdx)
+	absGogGameInfoPath, err := findPrefixGogGameInfo(id, langCode, rdx)
 	if err != nil {
 		return "", err
 	}

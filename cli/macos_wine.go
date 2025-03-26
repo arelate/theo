@@ -22,11 +22,6 @@ const (
 
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
-const (
-	gogInstallationLnkGlob = "GOG Games/*/*.lnk"
-	gogGameInfoGlob        = "GOG Games/*/goggame-{id}.info"
-)
-
 type (
 	wineRunFunc        func(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath string, arg ...string) error
 	wineInitPrefixFunc func(id, langCode string, rdx redux.Readable, verbose bool) error
