@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -77,6 +79,13 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	}
 
 	if exePath == "" {
+		exePath, err = getGogGameInfoExecutable(id, langCode, rdx)
+		if err != nil {
+			return err
+		}
+	}
+
+	if exePath == "" {
 		exePath, err = getPrefixGogGamesLnk(id, langCode, rdx)
 		if err != nil {
 			return err
@@ -99,4 +108,97 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	}
 
 	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath)
+}
+
+func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
+
+	msggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
+	defer msggla.Done()
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return "", nil
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
+
+	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, gogInstallationLnkGlob))
+	if err != nil {
+		return "", err
+	}
+
+	if len(matches) == 1 {
+
+		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
+		if err != nil {
+			return "", err
+		}
+		msggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
+
+		return matches[0], nil
+	} else {
+		return "", errors.New("cannot locate suitable .lnk in the GOG Games folder")
+	}
+}
+
+func getPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+
+	msggia := nod.Begin("locating goggame-%s.info in the install folder...", id)
+	defer msggia.Done()
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return "", nil
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
+
+	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
+	infoFilePath := filepath.Join(absPrefixDriveCDir, gogGameInfoFilename)
+
+	matches, err := filepath.Glob(infoFilePath)
+	if err != nil {
+		return "", err
+	}
+
+	if len(matches) == 1 {
+		msggia.EndWithResult("found %s", matches[0])
+		return matches[0], nil
+	} else {
+		return "", errors.New("cannot locate goggame-" + id + ".info in the GOG Games folder")
+	}
+}
+
+func getGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string, error) {
+
+	absGogGameInfoPath, err := getPrefixGogGameInfo(id, langCode, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	gogGameInfoFile, err := os.Open(absGogGameInfoPath)
+	if err != nil {
+		return "", err
+	}
+	defer gogGameInfoFile.Close()
+
+	var gogGameInfo gog_integration.GogGameInfo
+
+	if err = json.NewDecoder(gogGameInfoFile).Decode(&gogGameInfo); err != nil {
+		return "", err
+	}
+
+	relExePath := gogGameInfo.GetPrimaryPlayTaskPath()
+
+	absExeDir, _ := filepath.Split(absGogGameInfoPath)
+
+	return filepath.Join(absExeDir, relExePath), nil
 }

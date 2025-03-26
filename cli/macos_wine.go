@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -23,7 +22,10 @@ const (
 
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
-const gogInstallationLnkGlob = "GOG Games/*/*.lnk"
+const (
+	gogInstallationLnkGlob = "GOG Games/*/*.lnk"
+	gogGameInfoGlob        = "GOG Games/*/goggame-{id}.info"
+)
 
 type (
 	wineRunFunc        func(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath string, arg ...string) error
@@ -89,41 +91,6 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose
 	}
 
 	return cmd.Run()
-}
-
-func getPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
-
-	msggla := nod.Begin(" locating default .lnk in the install folder for %s...", id)
-	defer msggla.Done()
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return "", nil
-	}
-
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
-	if err != nil {
-		return "", err
-	}
-
-	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
-
-	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, gogInstallationLnkGlob))
-	if err != nil {
-		return "", err
-	}
-
-	if len(matches) == 1 {
-
-		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
-		if err != nil {
-			return "", err
-		}
-		msggla.EndWithResult("found %s", filepath.Join("C:", relMatch))
-
-		return matches[0], nil
-	} else {
-		return "", errors.New("cannot locate suitable .lnk in the GOG Games folder")
-	}
 }
 
 func macOsGetAbsCxBinDir(appDirs ...string) (string, error) {
