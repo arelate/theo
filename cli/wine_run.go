@@ -75,24 +75,8 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, path.Join(prefixName, langCode))
 	prefixEnv = mergeEnv(prefixEnv, env)
 
-	if ep, ok := rdx.GetLastVal(data.PrefixExePathProperty, prefixName); ok && ep != "" {
-		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
-		if err != nil {
-			return err
-		}
-
-		exePath = filepath.Join(absPrefixDir, relPrefixDriveCDir, ep)
-	}
-
 	if exePath == "" {
-		exePath, err = getGogGameInfoExecutable(id, langCode, rdx)
-		if err != nil {
-			return err
-		}
-	}
-
-	if exePath == "" {
-		exePath, err = findPrefixGogGamesLnk(id, langCode, rdx)
+		exePath, err = getExePath(id, langCode, rdx)
 		if err != nil {
 			return err
 		}
@@ -120,13 +104,39 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath)
 }
 
-func findPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
-	return findPrefixFile(id, langCode, rdx, gogInstallationLnkGlob)
+func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
+
+	prefixName, err := data.GetPrefixName(id, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	if ep, ok := rdx.GetLastVal(data.PrefixExePathProperty, path.Join(prefixName, langCode)); ok && ep != "" {
+		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+		if err != nil {
+			return "", err
+		}
+
+		return filepath.Join(absPrefixDir, relPrefixDriveCDir, ep), nil
+	}
+
+	exePath, err := findGogGameInfoExecutable(id, langCode, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	if exePath == "" {
+		exePath, err = findPrefixGogGamesLnk(id, langCode, rdx)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return exePath, nil
 }
 
-func findPrefixGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
-	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
-	return findPrefixFile(id, langCode, rdx, gogGameInfoFilename)
+func findPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
+	return findPrefixFile(id, langCode, rdx, gogInstallationLnkGlob)
 }
 
 func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string) (string, error) {
@@ -162,9 +172,10 @@ func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string)
 	}
 }
 
-func getGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string, error) {
+func findGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absGogGameInfoPath, err := findPrefixGogGameInfo(id, langCode, rdx)
+	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
+	absGogGameInfoPath, err := findPrefixFile(id, langCode, rdx, gogGameInfoFilename)
 	if err != nil {
 		return "", err
 	}
