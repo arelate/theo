@@ -81,10 +81,6 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		return err
 	}
 
-	if err = resolveProductTitles(rdx, ids...); err != nil {
-		return err
-	}
-
 	if len(notInstalled) > 0 {
 		if !ip.force {
 			ids = notInstalled

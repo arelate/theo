@@ -44,10 +44,6 @@ func WineUninstall(langCode string, rdx redux.Writeable, archive, force bool, id
 	wua := nod.NewProgress("uninstalling WINE installed products...")
 	defer wua.Done()
 
-	if err := resolveProductTitles(rdx, ids...); err != nil {
-		return err
-	}
-
 	if !force {
 		wua.EndWithResult("this operation requires force flag")
 		return nil

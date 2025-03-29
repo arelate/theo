@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -55,9 +54,6 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 	}
 
 	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
-	if err = resolveProductTitles(rdx, id); err != nil {
-		return err
-	}
 
 	if err = setLastRunDate(rdx, id); err != nil {
 		return err
@@ -95,29 +91,6 @@ func currentOsExecute(path string, env []string, verbose bool) error {
 	default:
 		return errors.New("cannot reveal on unknown operating system")
 	}
-}
-
-func resolveProductTitles(rdx redux.Readable, ids ...string) error {
-	rta := nod.Begin("resolving product titles...")
-	defer rta.Done()
-
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return err
-	}
-
-	titles := make([]string, 0)
-
-	for _, id := range ids {
-		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
-			titles = append(titles, fmt.Sprintf("%s (%s)", tp, id))
-		} else {
-			titles = append(titles, fmt.Sprintf("%s [%s]", id, "undefined"))
-		}
-	}
-
-	rta.EndWithResult(strings.Join(titles, "; "))
-
-	return nil
 }
 
 func setLastRunDate(rdx redux.Writeable, id string) error {

@@ -44,10 +44,6 @@ func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) 
 	ua := nod.NewProgress("uninstalling products...")
 	defer ua.Done()
 
-	if err := resolveProductTitles(rdx, ids...); err != nil {
-		return err
-	}
-
 	if !force {
 		ua.EndWithResult("this operation requires force flag")
 		return nil

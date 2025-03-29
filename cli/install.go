@@ -75,10 +75,6 @@ func Install(ip *installParameters, ids ...string) error {
 		return err
 	}
 
-	if err = resolveProductTitles(rdx, ids...); err != nil {
-		return err
-	}
-
 	if len(supported) > 0 {
 		ids = supported
 	} else {

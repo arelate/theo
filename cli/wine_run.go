@@ -63,10 +63,6 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return err
 	}
 
-	if err = resolveProductTitles(rdx, id); err != nil {
-		return err
-	}
-
 	prefixName, err := data.GetPrefixName(id, rdx)
 	if err != nil {
 		return err
