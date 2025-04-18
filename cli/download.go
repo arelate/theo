@@ -113,7 +113,9 @@ func downloadProductFiles(id string,
 
 		fileUrl, err := data.ServerUrl(rdx,
 			data.ServerFilesPath, map[string]string{
-				"manual-url": dl.ManualUrl,
+				"manual-url":    dl.ManualUrl,
+				"id":            id,
+				"download-type": dl.Type,
 			})
 		if err != nil {
 			fa.EndWithResult(err.Error())
