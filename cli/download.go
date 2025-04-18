@@ -103,8 +103,7 @@ func downloadProductFiles(id string,
 
 		vr := vangogh_integration.ParseValidationResult(dl.ValidationResult)
 		if vr != vangogh_integration.ValidatedSuccessfully &&
-			vr != vangogh_integration.ValidatedMissingChecksum &&
-			vr != vangogh_integration.ValidatedWithGeneratedChecksum {
+			vr != vangogh_integration.ValidatedMissingChecksum {
 			errMsg := fmt.Sprintf("%s validation status %s prevented download", dl.Name, dl.ValidationResult)
 			nod.LogError(errors.New(errMsg))
 			continue
