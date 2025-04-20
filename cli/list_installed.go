@@ -34,14 +34,14 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		nil,
 		false)
 
-	installedManifestsDir, err := pathways.GetAbsRelDir(data.InstalledManifests)
+	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
 	if err != nil {
 		return err
 	}
 
-	osLangInstalledManifestsDir := filepath.Join(installedManifestsDir, data.OsLangCode(os, langCode))
+	osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(os, langCode))
 
-	kvOsLangInstalledManifests, err := kevlar.New(osLangInstalledManifestsDir, kevlar.JsonExt)
+	kvOsLangInstalledDetails, err := kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
 	if err != nil {
 		return err
 	}
@@ -60,16 +60,16 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 
 	summary := make(map[string][]string)
 
-	for id := range kvOsLangInstalledManifests.Keys() {
+	for id := range kvOsLangInstalledDetails.Keys() {
 
-		installedManifest, err := getInstalledManifest(id, kvOsLangInstalledManifests)
+		installedDetails, err := getInstalledDetails(id, kvOsLangInstalledDetails)
 		if err != nil {
 			return err
 		}
 
-		name := fmt.Sprintf("%s (%s)", installedManifest.Title, id)
-		version := manifestVersion(installedManifest, os, langCode)
-		estimatedBytes := manifestEstimatedBytes(installedManifest, os, langCode)
+		name := fmt.Sprintf("%s (%s)", installedDetails.Title, id)
+		version := productDetailsVersion(installedDetails, os, langCode)
+		estimatedBytes := productDetailsEstimatedBytes(installedDetails, os, langCode)
 
 		summary[name] = append(summary[name], "size: "+fmtBytes(estimatedBytes), "ver.: "+version)
 
@@ -97,20 +97,21 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 	return nil
 }
 
-func getInstalledManifest(id string, kvInstalledManifests kevlar.KeyValues) (*vangogh_integration.DownloadsManifest, error) {
-	rcInstalled, err := kvInstalledManifests.Get(id)
+func getInstalledDetails(id string, kvInstalledDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
+
+	rcInstalledDetails, err := kvInstalledDetails.Get(id)
 	if err != nil {
 		return nil, err
 	}
-	defer rcInstalled.Close()
+	defer rcInstalledDetails.Close()
 
-	var installedManifest vangogh_integration.DownloadsManifest
+	var installedDetails vangogh_integration.ProductDetails
 
-	if err = json.NewDecoder(rcInstalled).Decode(&installedManifest); err != nil {
+	if err = json.NewDecoder(rcInstalledDetails).Decode(&installedDetails); err != nil {
 		return nil, err
 	}
 
-	return &installedManifest, nil
+	return &installedDetails, nil
 }
 
 func fmtBytes(b int) string {
@@ -127,8 +128,8 @@ func fmtBytes(b int) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-func manifestVersion(downloadsManifest *vangogh_integration.DownloadsManifest, operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
-	dls := downloadsManifest.DownloadLinks.
+func productDetailsVersion(productDetails *vangogh_integration.ProductDetails, operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
+	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(operatingSystem).
 		FilterDownloadTypes(vangogh_integration.Installer).
 		FilterLanguageCodes(langCode)
@@ -143,8 +144,8 @@ func manifestVersion(downloadsManifest *vangogh_integration.DownloadsManifest, o
 	return version
 }
 
-func manifestEstimatedBytes(downloadsManifest *vangogh_integration.DownloadsManifest, operatingSystem vangogh_integration.OperatingSystem, langCode string) int {
-	dls := downloadsManifest.DownloadLinks.
+func productDetailsEstimatedBytes(productDetails *vangogh_integration.ProductDetails, operatingSystem vangogh_integration.OperatingSystem, langCode string) int {
+	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(operatingSystem).
 		FilterDownloadTypes(vangogh_integration.Installer).
 		FilterLanguageCodes(langCode)

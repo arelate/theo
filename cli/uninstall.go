@@ -49,14 +49,14 @@ func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) 
 		return nil
 	}
 
-	installedManifestsDir, err := pathways.GetAbsRelDir(data.InstalledManifests)
+	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
 	if err != nil {
 		return err
 	}
 
-	osLangInstalledManifestsDir := filepath.Join(installedManifestsDir, data.OsLangCode(data.CurrentOs(), langCode))
+	osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(data.CurrentOs(), langCode))
 
-	kvOsLangInstalledManifests, err := kevlar.New(osLangInstalledManifestsDir, kevlar.JsonExt)
+	kvOsLangInstalledDetails, err := kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) 
 			return err
 		}
 
-		if err = kvOsLangInstalledManifests.Cut(id); err != nil {
+		if err = kvOsLangInstalledDetails.Cut(id); err != nil {
 			return err
 		}
 

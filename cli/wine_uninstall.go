@@ -49,14 +49,14 @@ func WineUninstall(langCode string, rdx redux.Writeable, archive, force bool, id
 		return nil
 	}
 
-	installedManifestsDir, err := pathways.GetAbsRelDir(data.InstalledManifests)
+	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
 	if err != nil {
 		return err
 	}
 
-	osLangInstalledManifestsDir := filepath.Join(installedManifestsDir, data.OsLangCode(vangogh_integration.Windows, langCode))
+	osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(vangogh_integration.Windows, langCode))
 
-	kvOsLangInstalledManifests, err := kevlar.New(osLangInstalledManifestsDir, kevlar.JsonExt)
+	kvOsLangInstalledDetails, err := kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func WineUninstall(langCode string, rdx redux.Writeable, archive, force bool, id
 	}
 
 	for _, id := range ids {
-		if err = kvOsLangInstalledManifests.Cut(id); err != nil {
+		if err = kvOsLangInstalledDetails.Cut(id); err != nil {
 			return err
 		}
 

@@ -30,18 +30,18 @@ func readInventory(id, langCode string, operatingSystem vangogh_integration.Oper
 		return nil, nil
 	}
 
-	manifestFile, err := os.Open(absInventoryFilename)
+	inventoryFile, err := os.Open(absInventoryFilename)
 	if err != nil {
 		return nil, err
 	}
 
 	relFiles := make([]string, 0)
-	manifestScanner := bufio.NewScanner(manifestFile)
-	for manifestScanner.Scan() {
-		relFiles = append(relFiles, manifestScanner.Text())
+	inventoryScanner := bufio.NewScanner(inventoryFile)
+	for inventoryScanner.Scan() {
+		relFiles = append(relFiles, inventoryScanner.Text())
 	}
 
-	if err = manifestScanner.Err(); err != nil {
+	if err = inventoryScanner.Err(); err != nil {
 		return nil, err
 	}
 

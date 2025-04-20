@@ -47,12 +47,12 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		downloadsManifest, err := getDownloadsManifest(id, rdx, force)
+		productDetails, err := getProductDetails(id, rdx, force)
 		if err != nil {
 			return err
 		}
 
-		if err = downloadProductFiles(id, downloadsManifest, operatingSystems, langCodes, downloadTypes, rdx, force); err != nil {
+		if err = downloadProductFiles(id, productDetails, operatingSystems, langCodes, downloadTypes, rdx, force); err != nil {
 			return err
 		}
 
@@ -63,14 +63,14 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 }
 
 func downloadProductFiles(id string,
-	downloadsManifest *vangogh_integration.DownloadsManifest,
+	productDetails *vangogh_integration.ProductDetails,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
 	rdx redux.Readable,
 	force bool) error {
 
-	gpdla := nod.Begin(" downloading %s...", downloadsManifest.Title)
+	gpdla := nod.Begin(" downloading %s...", productDetails.Title)
 	defer gpdla.Done()
 
 	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
@@ -90,7 +90,7 @@ func downloadProductFiles(id string,
 		}
 	}
 
-	dls := downloadsManifest.DownloadLinks.
+	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(operatingSystems...).
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)
@@ -101,9 +101,8 @@ func downloadProductFiles(id string,
 
 	for _, dl := range dls {
 
-		vr := vangogh_integration.ParseValidationResult(dl.ValidationResult)
-		if vr != vangogh_integration.ValidatedSuccessfully &&
-			vr != vangogh_integration.ValidatedMissingChecksum {
+		if dl.ValidationResult != vangogh_integration.ValidatedSuccessfully &&
+			dl.ValidationResult != vangogh_integration.ValidatedMissingChecksum {
 			errMsg := fmt.Sprintf("%s validation status %s prevented download", dl.Name, dl.ValidationResult)
 			nod.LogError(errors.New(errMsg))
 			continue
@@ -115,7 +114,7 @@ func downloadProductFiles(id string,
 			data.ServerFilesPath, map[string]string{
 				"manual-url":    dl.ManualUrl,
 				"id":            id,
-				"download-type": dl.Type,
+				"download-type": dl.Type.String(),
 			})
 		if err != nil {
 			fa.EndWithResult(err.Error())

@@ -61,29 +61,29 @@ const (
 )
 
 const (
-	Redux              pathways.RelDir = "_redux"
-	DownloadsManifests pathways.RelDir = "downloads-manifests"
-	InstalledManifests pathways.RelDir = "installed-manifests"
-	MacOsExtracts      pathways.RelDir = "_macos_extracts"
-	GitHubReleases     pathways.RelDir = "github-releases"
-	Assets             pathways.RelDir = "assets"
-	Binaries           pathways.RelDir = "binaries"
-	PrefixArchive      pathways.RelDir = "prefix-archive"
-	UmuConfigs         pathways.RelDir = "umu-configs"
-	Inventory          pathways.RelDir = "_inventory"
+	Redux            pathways.RelDir = "_redux"
+	ProductDetails   pathways.RelDir = "product-details"
+	InstalledDetails pathways.RelDir = "installed-details"
+	MacOsExtracts    pathways.RelDir = "_macos_extracts"
+	GitHubReleases   pathways.RelDir = "github-releases"
+	Assets           pathways.RelDir = "assets"
+	Binaries         pathways.RelDir = "binaries"
+	PrefixArchive    pathways.RelDir = "prefix-archive"
+	UmuConfigs       pathways.RelDir = "umu-configs"
+	Inventory        pathways.RelDir = "_inventory"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
-	Redux:              Metadata,
-	DownloadsManifests: Metadata,
-	InstalledManifests: Metadata,
-	GitHubReleases:     Metadata,
-	Assets:             Runtimes,
-	Binaries:           Runtimes,
-	PrefixArchive:      Backups,
-	MacOsExtracts:      Downloads,
-	UmuConfigs:         Runtimes,
-	Inventory:          InstalledApps,
+	Redux:            Metadata,
+	ProductDetails:   Metadata,
+	InstalledDetails: Metadata,
+	GitHubReleases:   Metadata,
+	Assets:           Runtimes,
+	Binaries:         Runtimes,
+	PrefixArchive:    Backups,
+	MacOsExtracts:    Downloads,
+	UmuConfigs:       Runtimes,
+	Inventory:        InstalledApps,
 }
 
 var AllAbsDirs = []pathways.AbsDir{

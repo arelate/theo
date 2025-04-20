@@ -7,8 +7,8 @@ import (
 )
 
 func windowsInstallProduct(id string,
-	downloadsManifest *vangogh_integration.DownloadsManifest,
-	link *vangogh_integration.ManifestDownloadLink,
+	productDetails *vangogh_integration.ProductDetails,
+	link *vangogh_integration.ProductDownloadLink,
 	rdx redux.Writeable) error {
 	return errors.New("support for Windows installation is not implemented")
 }

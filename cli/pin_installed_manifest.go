@@ -10,46 +10,46 @@ import (
 	"path/filepath"
 )
 
-func pinInstalledManifests(operatingSystems []vangogh_integration.OperatingSystem, langCode string, force bool, ids ...string) error {
+func pinInstalledDetails(operatingSystems []vangogh_integration.OperatingSystem, langCode string, force bool, ids ...string) error {
 
-	pima := nod.NewProgress("pinning download manifests as installed...")
-	defer pima.Done()
+	pida := nod.NewProgress("pinning product details as installed...")
+	defer pida.Done()
 
 	vangogh_integration.PrintParams(ids, operatingSystems, []string{langCode}, nil, false)
 
-	downloadsManifestsDir, err := pathways.GetAbsRelDir(data.DownloadsManifests)
+	productDetailsDir, err := pathways.GetAbsRelDir(data.ProductDetails)
 	if err != nil {
 		return err
 	}
 
-	kvDownloadsManifests, err := kevlar.New(downloadsManifestsDir, kevlar.JsonExt)
+	kvProductDetails, err := kevlar.New(productDetailsDir, kevlar.JsonExt)
 	if err != nil {
 		return err
 	}
 
-	pima.TotalInt(len(ids))
+	pida.TotalInt(len(ids))
 
 	for _, id := range ids {
 
-		if err = pinProductInstalledManifest(id, operatingSystems, langCode, kvDownloadsManifests, force); err != nil {
+		if err = pinProductInstalledDetails(id, operatingSystems, langCode, kvProductDetails, force); err != nil {
 			return err
 		}
 
-		pima.Increment()
+		pida.Increment()
 
 	}
 
 	return nil
 }
 
-func pinProductInstalledManifest(id string,
+func pinProductInstalledDetails(id string,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCode string,
-	kvDownloadsManifests kevlar.KeyValues,
+	kvProductDetails kevlar.KeyValues,
 	force bool) error {
 
 	for _, os := range operatingSystems {
-		if err := osPinInstalledManifest(id, os, langCode, kvDownloadsManifests, force); err != nil {
+		if err := osPinInstalledDetails(id, os, langCode, kvProductDetails, force); err != nil {
 			return err
 		}
 	}
@@ -57,41 +57,41 @@ func pinProductInstalledManifest(id string,
 	return nil
 }
 
-func osPinInstalledManifest(id string,
+func osPinInstalledDetails(id string,
 	operatingSystem vangogh_integration.OperatingSystem,
 	langCode string,
-	kvDownloadsManifests kevlar.KeyValues,
+	kvProductDetails kevlar.KeyValues,
 	force bool) error {
 
-	pimoa := nod.Begin(" pinning download manifest as installed...")
+	pimoa := nod.Begin(" pinning product details as installed...")
 	defer pimoa.Done()
 
-	installedManifestsDir, err := pathways.GetAbsRelDir(data.InstalledManifests)
+	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
 	if err != nil {
 		return err
 	}
 
-	osLangInstalledManifestsDir := filepath.Join(installedManifestsDir, data.OsLangCode(operatingSystem, langCode))
+	osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(operatingSystem, langCode))
 
-	kvOsLangInstalledManifests, err := kevlar.New(osLangInstalledManifestsDir, kevlar.JsonExt)
+	kvOsLangInstalledDetails, err := kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
 	if err != nil {
 		return err
 	}
 
-	if hasDownloadManifest := kvDownloadsManifests.Has(id); !hasDownloadManifest {
-		return errors.New("download manifest not found for: " + id)
+	if !kvProductDetails.Has(id) {
+		return errors.New("product details not found for: " + id)
 	}
 
-	if kvOsLangInstalledManifests.Has(id) && !force {
+	if kvOsLangInstalledDetails.Has(id) && !force {
 		return nil
 	}
 
-	src, err := kvDownloadsManifests.Get(id)
+	src, err := kvProductDetails.Get(id)
 	if err != nil {
 		return err
 	}
 
 	defer src.Close()
 
-	return kvOsLangInstalledManifests.Set(id, src)
+	return kvOsLangInstalledDetails.Set(id, src)
 }

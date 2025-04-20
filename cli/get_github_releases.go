@@ -51,7 +51,7 @@ func getRepoReleases(repo string, kvGitHubReleases kevlar.KeyValues, rdx redux.R
 	grlra := nod.Begin(" %s...", repo)
 	defer grlra.Done()
 
-	ghsu, err := data.ServerUrl(rdx, data.ServerGitHubReleasesPath, map[string]string{"repo": repo})
+	ghsu, err := data.ServerUrl(rdx, data.ApiGitHubReleasesPath, map[string]string{"repo": repo})
 	if err != nil {
 		return err
 	}

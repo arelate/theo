@@ -71,12 +71,12 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		downloadsManifest, err := getDownloadsManifest(id, rdx, false)
+		productDetails, err := getProductDetails(id, rdx, false)
 		if err != nil {
 			return err
 		}
 
-		if err = validateLinks(id, operatingSystems, langCodes, downloadTypes, downloadsManifest); err != nil {
+		if err = validateLinks(id, operatingSystems, langCodes, downloadTypes, productDetails); err != nil {
 			return err
 		}
 	}
@@ -88,9 +88,9 @@ func validateLinks(id string,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
-	downloadsManifest *vangogh_integration.DownloadsManifest) error {
+	productDetails *vangogh_integration.ProductDetails) error {
 
-	vla := nod.NewProgress("validating %s...", downloadsManifest.Title)
+	vla := nod.NewProgress("validating %s...", productDetails.Title)
 	defer vla.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
@@ -98,7 +98,7 @@ func validateLinks(id string,
 		return err
 	}
 
-	dls := downloadsManifest.DownloadLinks.
+	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(operatingSystems...).
 		FilterLanguageCodes(langCodes...).
 		FilterDownloadTypes(downloadTypes...)
@@ -124,7 +124,7 @@ func validateLinks(id string,
 	return nil
 }
 
-func validateLink(id string, link *vangogh_integration.ManifestDownloadLink, downloadsDir string) (ValidationResult, error) {
+func validateLink(id string, link *vangogh_integration.ProductDownloadLink, downloadsDir string) (ValidationResult, error) {
 
 	dla := nod.NewProgress(" - %s...", link.LocalFilename)
 	defer dla.Done()

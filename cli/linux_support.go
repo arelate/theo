@@ -20,11 +20,11 @@ const desktopGlob = "*.desktop"
 const mojosetupDir = ".mojosetup"
 
 func linuxInstallProduct(id string,
-	downloadsManifest *vangogh_integration.DownloadsManifest,
-	link *vangogh_integration.ManifestDownloadLink,
+	productDetails *vangogh_integration.ProductDetails,
+	link *vangogh_integration.ProductDownloadLink,
 	rdx redux.Writeable) error {
 
-	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, downloadsManifest.Title)
+	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, productDetails.Title)
 	defer lia.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
@@ -110,7 +110,7 @@ func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) erro
 	return cmd.Run()
 }
 
-func linuxPostDownloadActions(id string, link *vangogh_integration.ManifestDownloadLink) error {
+func linuxPostDownloadActions(id string, link *vangogh_integration.ProductDownloadLink) error {
 
 	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_integration.Linux, id)
 	defer lpda.Done()
@@ -229,7 +229,6 @@ func nixUninstallProduct(id, langCode string, operatingSystem vangogh_integratio
 		return nil
 	}
 
-	// TODO: similarly to wine-uninstall - use manifests to remove individual files
 	if err := os.RemoveAll(absBundlePath); err != nil {
 		return err
 	}

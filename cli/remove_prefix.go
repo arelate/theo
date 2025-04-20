@@ -105,16 +105,16 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force
 }
 
 func removePrefixInstalledFiles(absPrefixDir string, relFiles ...string) error {
-	rpifa := nod.NewProgress(" removing installed files listed in manifest...")
+	rpifa := nod.NewProgress(" removing inventoried files in prefix...")
 	defer rpifa.Done()
 
 	rpifa.TotalInt(len(relFiles))
 
 	for _, relFile := range relFiles {
 
-		absManifestFile := filepath.Join(absPrefixDir, relFile)
-		if stat, err := os.Stat(absManifestFile); err == nil && !stat.IsDir() {
-			if err = os.Remove(absManifestFile); err != nil {
+		absInventoryFile := filepath.Join(absPrefixDir, relFile)
+		if stat, err := os.Stat(absInventoryFile); err == nil && !stat.IsDir() {
+			if err = os.Remove(absInventoryFile); err != nil {
 				return err
 			}
 		}

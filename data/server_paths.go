@@ -1,11 +1,11 @@
 package data
 
 const (
-	ServerHealthPath            = "/api/health"
-	ServerHealthAuthPath        = "/api/health-auth"
-	ServerDownloadsManifestPath = "/api/downloads-manifest"
-	ServerGitHubReleasesPath    = "/api/github-releases"
-	ServerGitHubLatestAssetPath = "/api/github-latest-asset"
-	ServerFilesPath             = "/files"
-	ServerImagePath             = "/image"
+	ApiHealthPath            = "/api/health"
+	ApiHealthAuthPath        = "/api/health-auth"
+	ApiProductDetailsPath    = "/api/product-details"
+	ApiGitHubReleasesPath    = "/api/github-releases"
+	ApiGitHubLatestAssetPath = "/api/github-latest-asset"
+	ServerFilesPath          = "/files"
+	ServerImagePath          = "/image"
 )

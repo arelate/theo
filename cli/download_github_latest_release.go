@@ -81,7 +81,7 @@ func downloadRepoLatestRelease(repo string, release *github_integration.GitHubRe
 		return nil
 	}
 
-	glau, err := data.ServerUrl(rdx, data.ServerGitHubLatestAssetPath, map[string]string{"repo": repo})
+	glau, err := data.ServerUrl(rdx, data.ApiGitHubLatestAssetPath, map[string]string{"repo": repo})
 	if err != nil {
 		return err
 	}

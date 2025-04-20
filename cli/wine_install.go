@@ -132,7 +132,7 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		}
 	}
 
-	if err = pinInstalledManifests(windowsOs, ip.langCode, ip.force, ids...); err != nil {
+	if err = pinInstalledDetails(windowsOs, ip.langCode, ip.force, ids...); err != nil {
 		return err
 	}
 
@@ -165,12 +165,12 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 		return err
 	}
 
-	downloadsManifest, err := getDownloadsManifest(id, rdx, force)
+	productDetails, err := getProductDetails(id, rdx, force)
 	if err != nil {
 		return err
 	}
 
-	dls := downloadsManifest.DownloadLinks.
+	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(vangogh_integration.Windows).
 		FilterLanguageCodes(langCode).
 		FilterDownloadTypes(downloadTypes...)
@@ -233,7 +233,7 @@ func initPrefix(langCode string, verbose bool, rdx redux.Readable, ids ...string
 
 func createPrefixInstalledFilesInventory(id, langCode string, rdx redux.Readable, utcTime int64) error {
 
-	cpifma := nod.Begin(" creating prefix installed files manifest...")
+	cpifma := nod.Begin(" creating installed files inventory...")
 	defer cpifma.Done()
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)

@@ -25,12 +25,12 @@ const (
 )
 
 func macOsInstallProduct(id string,
-	downloadsManifest *vangogh_integration.DownloadsManifest,
-	link *vangogh_integration.ManifestDownloadLink,
+	productDetails *vangogh_integration.ProductDetails,
+	link *vangogh_integration.ProductDownloadLink,
 	rdx redux.Writeable,
 	force bool) error {
 
-	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, downloadsManifest.Title)
+	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, productDetails.Title)
 	defer mia.Done()
 
 	if err := macOsExtractInstaller(id, link, force); err != nil {
@@ -45,14 +45,14 @@ func macOsInstallProduct(id string,
 		return err
 	}
 
-	if err := macOsRemoveProductExtracts(id, downloadsManifest); err != nil {
+	if err := macOsRemoveProductExtracts(id, productDetails); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func macOsExtractInstaller(id string, link *vangogh_integration.ManifestDownloadLink, force bool) error {
+func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadLink, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
 	defer meia.Done()
@@ -104,7 +104,7 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ManifestDownload
 	return cmd.Run()
 }
 
-func macOsPlaceExtracts(id string, link *vangogh_integration.ManifestDownloadLink, rdx redux.Writeable, force bool) error {
+func macOsPlaceExtracts(id string, link *vangogh_integration.ProductDownloadLink, rdx redux.Writeable, force bool) error {
 
 	mpea := nod.Begin(" placing product installation files...")
 	defer mpea.Done()
@@ -236,7 +236,7 @@ func macOsPlaceDlc(absExtractsPayloadPath, absInstallationPath string, force boo
 }
 
 func macOsPostInstallActions(id string,
-	link *vangogh_integration.ManifestDownloadLink,
+	link *vangogh_integration.ProductDownloadLink,
 	rdx redux.Readable) error {
 
 	mpia := nod.Begin(" performing post-install %s actions for %s...", vangogh_integration.MacOS, id)
@@ -401,9 +401,9 @@ func macOsExecCatFiles(srcGlob string, dstPath string) error {
 	return nil
 }
 
-func macOsRemoveProductExtracts(id string, downloadsManifest *vangogh_integration.DownloadsManifest) error {
+func macOsRemoveProductExtracts(id string, productDetails *vangogh_integration.ProductDetails) error {
 
-	rela := nod.Begin(" removing extracts for %s...", downloadsManifest.Title)
+	rela := nod.Begin(" removing extracts for %s...", productDetails.Title)
 	defer rela.Done()
 
 	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
@@ -417,7 +417,7 @@ func macOsRemoveProductExtracts(id string, downloadsManifest *vangogh_integratio
 		return nil
 	}
 
-	dls := downloadsManifest.DownloadLinks.
+	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(vangogh_integration.MacOS)
 
 	for _, dl := range dls {

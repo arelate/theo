@@ -43,7 +43,7 @@ func TestServerConnection() error {
 
 func testServerConnectivity(rdx redux.Readable) error {
 
-	testUrl, err := data.ServerUrl(rdx, data.ServerHealthPath, nil)
+	testUrl, err := data.ServerUrl(rdx, data.ApiHealthPath, nil)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func testServerConnectivity(rdx redux.Readable) error {
 
 func testServerAuth(rdx redux.Readable) error {
 
-	testUrl, err := data.ServerUrl(rdx, data.ServerHealthAuthPath, nil)
+	testUrl, err := data.ServerUrl(rdx, data.ApiHealthAuthPath, nil)
 	if err != nil {
 		return err
 	}
