@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -24,7 +25,7 @@ func ListPrefixExePath() error {
 
 	rdx, err := redux.NewReader(reduxDir,
 		data.PrefixExePathProperty,
-		data.TitleProperty)
+		vangogh_integration.TitleProperty)
 	if err != nil {
 		return err
 	}

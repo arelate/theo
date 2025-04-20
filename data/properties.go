@@ -1,5 +1,7 @@
 package data
 
+import "github.com/arelate/southern_light/vangogh_integration"
+
 const (
 	ServerConnectionProperties = "server-connection"
 
@@ -10,8 +12,6 @@ const (
 	ServerPasswordProperty = "server-password"
 
 	BundleNameProperty = "bundle-name"
-	TitleProperty      = "title"
-	SlugProperty       = "slug"
 
 	PrefixEnvProperty     = "prefix-env"
 	PrefixExePathProperty = "prefix-exe-path"
@@ -30,8 +30,9 @@ func AllProperties() []string {
 	return []string{
 		ServerConnectionProperties,
 		BundleNameProperty,
-		TitleProperty,
-		SlugProperty,
+		vangogh_integration.TitleProperty,
+		vangogh_integration.SlugProperty,
+		vangogh_integration.SteamAppIdProperty,
 		InstallParametersProperty,
 		PrefixEnvProperty,
 		PrefixExePathProperty,

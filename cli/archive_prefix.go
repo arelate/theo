@@ -38,7 +38,7 @@ func ArchivePrefix(langCode string, ids ...string) error {
 		return err
 	}
 
-	rdx, err := redux.NewReader(reduxDir, data.SlugProperty)
+	rdx, err := redux.NewReader(reduxDir, vangogh_integration.SlugProperty)
 	if err != nil {
 		return err
 	}

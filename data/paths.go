@@ -124,7 +124,7 @@ func GetAbsReleaseAssetPath(repo string, release *github_integration.GitHubRelea
 }
 
 func GetPrefixName(id string, rdx redux.Readable) (string, error) {
-	if slug, ok := rdx.GetLastVal(SlugProperty, id); ok && slug != "" {
+	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
 		return slug, nil
 	} else {
 		return "", errors.New("product slug is undefined: " + id)
@@ -136,7 +136,7 @@ func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode st
 }
 
 func GetAbsPrefixDir(id, langCode string, rdx redux.Readable) (string, error) {
-	if err := rdx.MustHave(SlugProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", err
 	}
 
@@ -156,7 +156,7 @@ func GetAbsPrefixDir(id, langCode string, rdx redux.Readable) (string, error) {
 }
 
 func GetAbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
-	if err := rdx.MustHave(SlugProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", err
 	}
 
@@ -167,7 +167,7 @@ func GetAbsInventoryFilename(id, langCode string, operatingSystem vangogh_integr
 
 	osLangInventoryDir := filepath.Join(inventoryDir, OsLangCode(operatingSystem, langCode))
 
-	if slug, ok := rdx.GetLastVal(SlugProperty, id); ok && slug != "" {
+	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
 		return filepath.Join(osLangInventoryDir, slug+inventoryExt), nil
 	} else {
 		return "", errors.New("product slug is undefined: " + id)
@@ -215,7 +215,7 @@ func GetAbsBundlePath(id, langCode string, operatingSystem vangogh_integration.O
 	case vangogh_integration.MacOS:
 		bundleProperty = BundleNameProperty
 	case vangogh_integration.Linux:
-		bundleProperty = SlugProperty
+		bundleProperty = vangogh_integration.SlugProperty
 	case vangogh_integration.Windows:
 		return "", errors.New("support for Windows bundle path is not implemented")
 	default:

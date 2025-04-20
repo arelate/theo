@@ -39,7 +39,7 @@ func DeletePrefixEnv(langCode string, force bool, ids ...string) error {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty)
+	rdx, err := redux.NewWriter(reduxDir, vangogh_integration.SlugProperty, data.PrefixEnvProperty)
 	if err != nil {
 		return err
 	}

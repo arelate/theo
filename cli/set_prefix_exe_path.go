@@ -43,7 +43,7 @@ func SetPrefixExePath(langCode string, exePath string, ids ...string) error {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, vangogh_integration.SlugProperty, data.PrefixExePathProperty)
 	if err != nil {
 		return err
 	}

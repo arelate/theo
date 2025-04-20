@@ -16,6 +16,20 @@ import (
 	"strings"
 )
 
+const (
+	umuGogStore   = "gog"
+	umuSteamStore = "steam"
+)
+
+type UmuConfig struct {
+	GogId      string
+	SteamAppId string
+	Prefix     string
+	Proton     string
+	ExePath    string
+	Args       []string
+}
+
 func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath string, arg ...string) error {
 
 	_, exeFilename := filepath.Split(exePath)
@@ -23,7 +37,9 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer lwra.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+	if err := rdx.MustHave(
+		vangogh_integration.SlugProperty,
+		vangogh_integration.SteamAppIdProperty); err != nil {
 		return err
 	}
 
@@ -47,7 +63,19 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 		return err
 	}
 
-	absUmuConfigPath, err := createUmuConfig(id, absPrefixDir, absProtonPath, exePath, "gog", force, arg...)
+	umuCfg := &UmuConfig{
+		GogId:   id,
+		Prefix:  absPrefixDir,
+		Proton:  absProtonPath,
+		ExePath: exePath,
+		Args:    arg,
+	}
+
+	if steamAppId, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok && steamAppId != "" {
+		umuCfg.SteamAppId = steamAppId
+	}
+
+	absUmuConfigPath, err := createUmuConfig(umuCfg, force)
 	if err != nil {
 		return err
 	}
@@ -95,9 +123,9 @@ func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 	return umuConfigPath, nil
 }
 
-func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg ...string) (string, error) {
+func createUmuConfig(cfg *UmuConfig, force bool) (string, error) {
 
-	umuConfigPath, err := getAbsUmuConfigFilename(id, exePath)
+	umuConfigPath, err := getAbsUmuConfigFilename(cfg.GogId, cfg.ExePath)
 	if err != nil {
 		return "", err
 	}
@@ -121,24 +149,21 @@ func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg 
 	if _, err = io.WriteString(umuConfigFile, "[umu]\n"); err != nil {
 		return "", err
 	}
-	if _, err = io.WriteString(umuConfigFile, "prefix = \""+prefix+"\"\n"); err != nil {
+	if _, err = io.WriteString(umuConfigFile, "prefix = \""+cfg.Prefix+"\"\n"); err != nil {
 		return "", err
 	}
-	if _, err = io.WriteString(umuConfigFile, "proton = \""+proton+"\"\n"); err != nil {
+	if _, err = io.WriteString(umuConfigFile, "proton = \""+cfg.Proton+"\"\n"); err != nil {
 		return "", err
 	}
-	if _, err = io.WriteString(umuConfigFile, "game_id = \""+id+"\"\n"); err != nil {
+	if _, err = io.WriteString(umuConfigFile, "exe = \""+cfg.ExePath+"\"\n"); err != nil {
 		return "", err
 	}
-	if _, err = io.WriteString(umuConfigFile, "exe = \""+exePath+"\"\n"); err != nil {
-		return "", err
-	}
-	if len(arg) > 0 {
+	if len(cfg.Args) > 0 {
 		if _, err = io.WriteString(umuConfigFile, "launch_args = ["); err != nil {
 			return "", err
 		}
-		quotedArgs := make([]string, 0, len(arg))
-		for _, a := range arg {
+		quotedArgs := make([]string, 0, len(cfg.Args))
+		for _, a := range cfg.Args {
 			quotedArgs = append(quotedArgs, "\""+a+"\"")
 		}
 		if _, err = io.WriteString(umuConfigFile, strings.Join(quotedArgs, ", ")); err != nil {
@@ -147,7 +172,20 @@ func createUmuConfig(id, prefix, proton, exePath, store string, force bool, arg 
 		if _, err = io.WriteString(umuConfigFile, "]\n"); err != nil {
 			return "", err
 		}
+	}
 
+	var id, store string
+
+	if cfg.SteamAppId != "" {
+		id = cfg.SteamAppId
+		store = umuSteamStore
+	} else {
+		id = cfg.GogId
+		store = umuGogStore
+	}
+
+	if _, err = io.WriteString(umuConfigFile, "game_id = \""+id+"\"\n"); err != nil {
+		return "", err
 	}
 	if _, err = io.WriteString(umuConfigFile, "store = \""+store+"\"\n"); err != nil {
 		return "", err

@@ -36,7 +36,7 @@ func getDownloadsManifest(id string, rdx redux.Writeable, force bool) (*vangogh_
 		return dm, nil
 	}
 
-	if err = rdx.MustHave(data.ServerConnectionProperties, data.TitleProperty, data.SlugProperty); err != nil {
+	if err = rdx.MustHave(data.ServerConnectionProperties, vangogh_integration.TitleProperty, vangogh_integration.SlugProperty); err != nil {
 		return nil, err
 	}
 
@@ -45,10 +45,10 @@ func getDownloadsManifest(id string, rdx redux.Writeable, force bool) (*vangogh_
 		return nil, err
 	} else {
 
-		if err = rdx.ReplaceValues(data.TitleProperty, id, dm.Title); err != nil {
+		if err = rdx.ReplaceValues(vangogh_integration.TitleProperty, id, dm.Title); err != nil {
 			return nil, err
 		}
-		if err = rdx.ReplaceValues(data.SlugProperty, id, dm.Slug); err != nil {
+		if err = rdx.ReplaceValues(vangogh_integration.SlugProperty, id, dm.Slug); err != nil {
 			return nil, err
 		}
 

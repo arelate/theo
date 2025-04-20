@@ -139,7 +139,7 @@ func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate s
 	}
 
 	var title string
-	if tp, ok := rdx.GetLastVal(data.TitleProperty, id); ok && tp != "" {
+	if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
 		title = tp
 	} else {
 		return nil, errors.New("add-steam-shortcut: product is missing title")

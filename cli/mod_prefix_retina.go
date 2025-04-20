@@ -59,7 +59,7 @@ func ModPrefixRetina(id, langCode string, revert, verbose, force bool) error {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty)
+	rdx, err := redux.NewWriter(reduxDir, vangogh_integration.SlugProperty, data.PrefixEnvProperty, data.PrefixExePathProperty)
 	if err != nil {
 		return err
 	}

@@ -88,7 +88,7 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 	for _, id := range ids {
 
 		var title string
-		if tp, ok := rdx.GetLastVal(data.TitleProperty, id); ok && tp != "" {
+		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
 			title = tp
 		} else {
 			return errors.New("product is missing title")

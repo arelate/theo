@@ -38,7 +38,7 @@ func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 		return err
 	}
 
-	rdx, err := redux.NewWriter(reduxDir, data.SlugProperty)
+	rdx, err := redux.NewWriter(reduxDir, vangogh_integration.SlugProperty)
 	if err != nil {
 		return err
 	}
