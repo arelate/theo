@@ -39,6 +39,9 @@ download
     download-type&
     force
 
+get-product-details
+    id^*
+
 install
     id^&*
     lang-code

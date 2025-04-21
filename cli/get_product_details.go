@@ -12,9 +12,30 @@ import (
 	"github.com/boggydigital/redux"
 	"io"
 	"net/http"
+	"net/url"
 )
 
-func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_integration.ProductDetails, error) {
+func GetProductDetailsHandler(u *url.URL) error {
+	q := u.Query()
+
+	id := q.Get("id")
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
+	_, err = GetProductDetails(id, rdx, true)
+
+	return err
+}
+
+func GetProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_integration.ProductDetails, error) {
 
 	gpda := nod.NewProgress(" getting product details...")
 	defer gpda.Done()

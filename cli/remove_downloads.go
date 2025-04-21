@@ -51,7 +51,7 @@ func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		productDetails, err := getProductDetails(id, rdx, force)
+		productDetails, err := GetProductDetails(id, rdx, force)
 		if err != nil {
 			return err
 		}

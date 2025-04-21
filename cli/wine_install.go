@@ -165,7 +165,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 		return err
 	}
 
-	productDetails, err := getProductDetails(id, rdx, force)
+	productDetails, err := GetProductDetails(id, rdx, force)
 	if err != nil {
 		return err
 	}

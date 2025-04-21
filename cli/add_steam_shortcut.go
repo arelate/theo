@@ -119,7 +119,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 			}
 		}
 
-		productDetails, err := getProductDetails(id, rdx, force)
+		productDetails, err := GetProductDetails(id, rdx, force)
 		if err != nil {
 			return err
 		}

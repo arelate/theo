@@ -57,6 +57,7 @@ func main() {
 		"delete-prefix-env":       cli.DeletePrefixEnvHandler,
 		"delete-prefix-exe-path":  cli.DeletePrefixExePathHandler,
 		"download":                cli.DownloadHandler,
+		"get-product-details":     cli.GetProductDetailsHandler,
 		"install":                 cli.InstallHandler,
 		"list-installed":          cli.ListInstalledHandler,
 		"list-prefix-env":         cli.ListPrefixEnvHandler,

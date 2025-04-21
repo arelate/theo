@@ -129,7 +129,7 @@ func isProductUpdated(id string, operatingSystem vangogh_integration.OperatingSy
 		return false, err
 	}
 
-	latestProductDetails, err := getProductDetails(id, rdx, true)
+	latestProductDetails, err := GetProductDetails(id, rdx, true)
 	if err != nil {
 		return false, err
 	}

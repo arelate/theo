@@ -213,7 +213,7 @@ func filterNotSupported(langCode string, rdx redux.Writeable, force bool, ids ..
 
 	for _, id := range ids {
 
-		productDetails, err := getProductDetails(id, rdx, force)
+		productDetails, err := GetProductDetails(id, rdx, force)
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +242,7 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		return err
 	}
 
-	productDetails, err := getProductDetails(id, rdx, force)
+	productDetails, err := GetProductDetails(id, rdx, force)
 	if err != nil {
 		return err
 	}
