@@ -30,7 +30,7 @@ type UmuConfig struct {
 	Args       []string
 }
 
-func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, installPath string, arg ...string) error {
+func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, pwdPath string, arg ...string) error {
 
 	_, exeFilename := filepath.Split(exePath)
 
@@ -82,8 +82,8 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 
 	cmd := exec.Command(absUmuRunPath, "--config", absUmuConfigPath)
 
-	if installPath != "" {
-		cmd.Dir = installPath
+	if pwdPath != "" {
+		cmd.Dir = pwdPath
 	}
 
 	cmd.Env = append(os.Environ(), env...)

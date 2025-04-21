@@ -23,7 +23,7 @@ const (
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
 type (
-	wineRunFunc        func(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, installPath string, arg ...string) error
+	wineRunFunc        func(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, pwdPath string, arg ...string) error
 	wineInitPrefixFunc func(id, langCode string, rdx redux.Readable, verbose bool) error
 )
 
@@ -38,7 +38,7 @@ func macOsInitPrefix(id, langCode string, rdx redux.Readable, verbose bool) erro
 	return macOsCreateCxBottle(id, langCode, rdx, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, installPath string, arg ...string) error {
+func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, pwdPath string, arg ...string) error {
 
 	_, exeFilename := filepath.Split(exePath)
 
@@ -76,8 +76,8 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose
 
 	cmd := exec.Command(absWineBinPath, arg...)
 
-	if installPath != "" {
-		cmd.Dir = installPath
+	if pwdPath != "" {
+		cmd.Dir = pwdPath
 	}
 
 	if verbose {
