@@ -13,12 +13,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 func GetProductDetailsHandler(u *url.URL) error {
 	q := u.Query()
 
-	id := q.Get("id")
+	ids := strings.Split(q.Get("id"), ",")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -30,9 +31,13 @@ func GetProductDetailsHandler(u *url.URL) error {
 		return err
 	}
 
-	_, err = GetProductDetails(id, rdx, true)
+	for _, id := range ids {
+		if _, err = GetProductDetails(id, rdx, true); err != nil {
+			return err
+		}
+	}
 
-	return err
+	return nil
 }
 
 func GetProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_integration.ProductDetails, error) {

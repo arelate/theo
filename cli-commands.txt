@@ -40,7 +40,7 @@ download
     force
 
 get-product-details
-    id^*
+    id^&*
 
 install
     id^&*
