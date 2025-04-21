@@ -479,6 +479,7 @@ func macOsExecute(path string, env []string, verbose bool) error {
 	path = macOsLocateAppBundle(path)
 
 	cmd := exec.Command("open", path)
+	cmd.Dir = path
 
 	if verbose {
 		cmd.Stdout = os.Stdout

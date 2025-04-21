@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	gogInstallationLnkGlob = "GOG Games/*/*.lnk"
-	gogGameInfoGlob        = "GOG Games/*/goggame-{id}.info"
+	gogGameInstallDir      = gogGamesDir + "/*"
+	gogInstallationLnkGlob = gogGamesDir + "/*/*.lnk"
+	gogGameInfoGlob        = gogGamesDir + "/*/goggame-{id}.info"
 )
 
 func WineRunHandler(u *url.URL) error {
@@ -36,13 +37,14 @@ func WineRunHandler(u *url.URL) error {
 		env = strings.Split(q.Get("env"), ",")
 	}
 	exePath := q.Get("exe-path")
+	installPath := q.Get("install-path")
 	verbose := q.Has("verbose")
 	force := q.Has("force")
 
-	return WineRun(id, langCode, exePath, env, verbose, force)
+	return WineRun(id, langCode, exePath, installPath, env, verbose, force)
 }
 
-func WineRun(id string, langCode string, exePath string, env []string, verbose, force bool) error {
+func WineRun(id string, langCode string, exePath, installPath string, env []string, verbose, force bool) error {
 
 	wra := nod.Begin("running %s version with WINE...", vangogh_integration.Windows)
 	defer wra.Done()
@@ -78,6 +80,13 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		}
 	}
 
+	if installPath == "" {
+		installPath, err = findGogGameInstallPath(id, langCode, rdx)
+		if err != nil {
+			return err
+		}
+	}
+
 	if _, err = os.Stat(exePath); err != nil {
 		return err
 	}
@@ -97,7 +106,7 @@ func WineRun(id string, langCode string, exePath string, env []string, verbose, 
 		return errors.New("wine-run: unsupported operating system")
 	}
 
-	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath)
+	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath, installPath)
 }
 
 func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
@@ -132,11 +141,11 @@ func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
 }
 
 func findPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
-	return findPrefixFile(id, langCode, rdx, gogInstallationLnkGlob)
+	return findPrefixFile(id, langCode, rdx, gogInstallationLnkGlob, "default .lnk")
 }
 
-func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string) (string, error) {
-	fpfa := nod.Begin(" locating %s in the install folder...", filepath.Ext(globPattern))
+func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string, msg string) (string, error) {
+	fpfa := nod.Begin(" locating %s...", msg)
 	defer fpfa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
@@ -155,14 +164,22 @@ func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string)
 		return "", err
 	}
 
-	if len(matches) == 1 {
-		relMatch, err := filepath.Rel(absPrefixDriveCDir, matches[0])
+	filteredMatches := make([]string, 0, len(matches))
+	for _, match := range matches {
+		if _, filename := filepath.Split(match); strings.HasPrefix(filename, ".") {
+			continue
+		}
+		filteredMatches = append(filteredMatches, match)
+	}
+
+	if len(filteredMatches) == 1 {
+		relMatch, err := filepath.Rel(absPrefixDriveCDir, filteredMatches[0])
 		if err != nil {
 			return "", err
 		}
 		fpfa.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
-		return matches[0], nil
+		return filteredMatches[0], nil
 	} else {
 		return "", errors.New("cannot locate suitable file in the GOG Games folder")
 	}
@@ -171,7 +188,7 @@ func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string)
 func findGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string, error) {
 
 	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
-	absGogGameInfoPath, err := findPrefixFile(id, langCode, rdx, gogGameInfoFilename)
+	absGogGameInfoPath, err := findPrefixFile(id, langCode, rdx, gogGameInfoFilename, ".info file")
 	if err != nil {
 		return "", err
 	}
@@ -193,4 +210,8 @@ func findGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string,
 	absExeDir, _ := filepath.Split(absGogGameInfoPath)
 
 	return filepath.Join(absExeDir, relExePath), nil
+}
+
+func findGogGameInstallPath(id, langCode string, rdx redux.Readable) (string, error) {
+	return findPrefixFile(id, langCode, rdx, gogGameInstallDir, "install path")
 }

@@ -184,6 +184,7 @@ func linuxExecute(path string, env []string, verbose bool) error {
 	startShPath := linuxLocateStartSh(path)
 
 	cmd := exec.Command(startShPath)
+	cmd.Dir = path
 
 	if verbose {
 		cmd.Stdout = os.Stdout

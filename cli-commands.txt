@@ -167,6 +167,7 @@ wine-run
     lang-code
     env&
     exe-path
+    install-path
     verbose
     force
 
