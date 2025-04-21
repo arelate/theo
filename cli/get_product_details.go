@@ -36,26 +36,18 @@ func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_int
 		return dm, nil
 	}
 
-	// TODO: replace with reduction func to extract more properties
-
-	if err = rdx.MustHave(data.ServerConnectionProperties, vangogh_integration.TitleProperty, vangogh_integration.SlugProperty); err != nil {
+	productDetails, err := fetchRemoteProductDetails(id, rdx, kvProductDetails)
+	if err != nil {
 		return nil, err
 	}
 
-	defer gpda.EndWithResult("fetched remote")
-	if dm, err := fetchRemoteProductDetails(id, rdx, kvProductDetails); err != nil {
+	gpda.EndWithResult("fetched remote")
+
+	if err = reduceProductDetails(id, productDetails, rdx); err != nil {
 		return nil, err
-	} else {
-
-		if err = rdx.ReplaceValues(vangogh_integration.TitleProperty, id, dm.Title); err != nil {
-			return nil, err
-		}
-		if err = rdx.ReplaceValues(vangogh_integration.SlugProperty, id, dm.Slug); err != nil {
-			return nil, err
-		}
-
-		return dm, nil
 	}
+
+	return productDetails, nil
 }
 
 func readLocalProductDetails(id string, kvProductDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
@@ -111,4 +103,39 @@ func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails k
 	}
 
 	return &productDetails, nil
+}
+
+func reduceProductDetails(id string, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
+
+	rpda := nod.Begin(" reducing product details...")
+	defer rpda.Done()
+
+	propertyValues := make(map[string][]string)
+
+	oss := make([]string, 0, len(productDetails.OperatingSystems))
+	for _, os := range productDetails.OperatingSystems {
+		oss = append(oss, os.String())
+	}
+
+	propertyValues[vangogh_integration.SlugProperty] = []string{productDetails.Slug}
+	propertyValues[vangogh_integration.SteamAppIdProperty] = []string{productDetails.SteamAppId}
+	propertyValues[vangogh_integration.TitleProperty] = []string{productDetails.Title}
+	propertyValues[vangogh_integration.OperatingSystemsProperty] = oss
+	propertyValues[vangogh_integration.DevelopersProperty] = productDetails.Developers
+	propertyValues[vangogh_integration.PublishersProperty] = productDetails.Publishers
+	propertyValues[vangogh_integration.VerticalImageProperty] = []string{productDetails.Images.VerticalImage}
+	propertyValues[vangogh_integration.ImageProperty] = []string{productDetails.Images.Image}
+	propertyValues[vangogh_integration.HeroProperty] = []string{productDetails.Images.Hero}
+	propertyValues[vangogh_integration.LogoProperty] = []string{productDetails.Images.Logo}
+	propertyValues[vangogh_integration.IconProperty] = []string{productDetails.Images.Icon}
+	propertyValues[vangogh_integration.IconSquareProperty] = []string{productDetails.Images.IconSquare}
+	propertyValues[vangogh_integration.BackgroundProperty] = []string{productDetails.Images.Background}
+
+	for property, values := range propertyValues {
+		if err := rdx.ReplaceValues(property, id, values...); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
