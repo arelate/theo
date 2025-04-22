@@ -79,7 +79,7 @@ func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) 
 		return err
 	}
 
-	if err = RemoveSteamShortcut(ids...); err != nil {
+	if err = RemoveSteamShortcut(rdx, ids...); err != nil {
 		return err
 	}
 

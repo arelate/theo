@@ -81,7 +81,7 @@ func WineUninstall(langCode string, rdx redux.Writeable, archive, force bool, id
 		return err
 	}
 
-	if err := RemoveSteamShortcut(ids...); err != nil {
+	if err := RemoveSteamShortcut(rdx, ids...); err != nil {
 		return err
 	}
 

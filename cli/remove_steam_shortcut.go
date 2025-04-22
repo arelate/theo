@@ -18,10 +18,21 @@ import (
 
 func RemoveSteamShortcutHandler(u *url.URL) error {
 	ids := Ids(u)
-	return RemoveSteamShortcut(ids...)
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
+	return RemoveSteamShortcut(rdx, ids...)
 }
 
-func RemoveSteamShortcut(ids ...string) error {
+func RemoveSteamShortcut(rdx redux.Readable, ids ...string) error {
 	rssa := nod.Begin("removing Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer rssa.Done()
 
@@ -41,7 +52,7 @@ func RemoveSteamShortcut(ids ...string) error {
 	}
 
 	for _, loginUser := range loginUsers {
-		if err := removeSteamShortcutsForUser(loginUser, ids...); err != nil {
+		if err := removeSteamShortcutsForUser(loginUser, rdx, ids...); err != nil {
 			return err
 		}
 	}
@@ -49,7 +60,7 @@ func RemoveSteamShortcut(ids ...string) error {
 	return nil
 }
 
-func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
+func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...string) error {
 
 	rsfua := nod.Begin(" removing Steam user %s shortcuts for %s...",
 		loginUser,
@@ -71,16 +82,6 @@ func removeSteamShortcutsForUser(loginUser string, ids ...string) error {
 			rsfua.EndWithResult("%s has no shortcuts", loginUser)
 			return nil
 		}
-	}
-
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
-	if err != nil {
-		return err
 	}
 
 	removeShortcutAppIds := make([]uint32, 0, len(ids))
