@@ -115,7 +115,7 @@ func Install(ip *installParameters, ids ...string) error {
 	}
 
 	if !ip.noSteamShortcut {
-		if err := AddSteamShortcut(ip.langCode, runLaunchOptionsTemplate, ip.force, ids...); err != nil {
+		if err := AddSteamShortcut(ip.langCode, runLaunchOptionsTemplate, rdx, ip.force, ids...); err != nil {
 			return err
 		}
 	}

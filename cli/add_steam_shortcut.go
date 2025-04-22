@@ -46,10 +46,20 @@ func AddSteamShortcutHandler(u *url.URL) error {
 		launchOptionsTemplate = runLaunchOptionsTemplate
 	}
 
-	return AddSteamShortcut(langCode, launchOptionsTemplate, force, ids...)
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
+	return AddSteamShortcut(langCode, launchOptionsTemplate, rdx, force, ids...)
 }
 
-func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool, ids ...string) error {
+func AddSteamShortcut(langCode string, launchOptionsTemplate string, rdx redux.Writeable, force bool, ids ...string) error {
 	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer assa.Done()
 
@@ -69,7 +79,7 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool,
 	}
 
 	for _, loginUser := range loginUsers {
-		if err = addSteamShortcutsForUser(loginUser, langCode, launchOptionsTemplate, force, ids...); err != nil {
+		if err = addSteamShortcutsForUser(loginUser, langCode, launchOptionsTemplate, rdx, force, ids...); err != nil {
 			return err
 		}
 	}
@@ -77,7 +87,7 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, force bool,
 	return nil
 }
 
-func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTemplate string, force bool, ids ...string) error {
+func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTemplate string, rdx redux.Writeable, force bool, ids ...string) error {
 
 	asfua := nod.Begin(" adding Steam user %s shortcuts for %s...",
 		loginUser,
@@ -92,16 +102,6 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 	if kvUserShortcuts == nil {
 		asfua.EndWithResult("user %s is missing shortcuts file", loginUser)
 		return nil
-	}
-
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
-	if err != nil {
-		return err
 	}
 
 	for _, id := range ids {
