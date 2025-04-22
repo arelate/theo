@@ -9,7 +9,7 @@
 add-steam-shortcut
     id^&
     lang-code
-    wine
+    target*={steam-shortcut-targets}
     force
 
 archive-prefix
@@ -150,6 +150,11 @@ validate
     lang-code&
 
 version
+
+winecfg
+    id^*
+    lang-code
+    verbose
 
 wine-install
     id^&*

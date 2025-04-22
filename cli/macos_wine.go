@@ -80,13 +80,11 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose
 		cmd.Dir = pwdPath
 	}
 
+	cmd.Env = append(os.Environ(), env...)
+
 	if verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-	}
-
-	for _, e := range env {
-		cmd.Env = append(cmd.Env, e)
 	}
 
 	return cmd.Run()

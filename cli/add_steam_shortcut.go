@@ -22,11 +22,6 @@ const (
 	shortcutsFilename  = "shortcuts.vdf"
 )
 
-const (
-	runLaunchOptionsTemplate     = "run {id}"
-	wineRunLaunchOptionsTemplate = "wine-run {id}"
-)
-
 func AddSteamShortcutHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -38,13 +33,7 @@ func AddSteamShortcutHandler(u *url.URL) error {
 	}
 	force := q.Has("force")
 
-	var launchOptionsTemplate string
-	switch q.Has("wine") {
-	case true:
-		launchOptionsTemplate = wineRunLaunchOptionsTemplate
-	case false:
-		launchOptionsTemplate = runLaunchOptionsTemplate
-	}
+	target := ParseSteamShortcutTarget(q.Get("target"))
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -56,10 +45,10 @@ func AddSteamShortcutHandler(u *url.URL) error {
 		return err
 	}
 
-	return AddSteamShortcut(langCode, launchOptionsTemplate, rdx, force, ids...)
+	return AddSteamShortcut(target, langCode, rdx, force, ids...)
 }
 
-func AddSteamShortcut(langCode string, launchOptionsTemplate string, rdx redux.Writeable, force bool, ids ...string) error {
+func AddSteamShortcut(target SteamShortcutTarget, langCode string, rdx redux.Writeable, force bool, ids ...string) error {
 	assa := nod.Begin("adding Steam shortcuts for %s...", strings.Join(ids, ","))
 	defer assa.Done()
 
@@ -79,7 +68,7 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, rdx redux.W
 	}
 
 	for _, loginUser := range loginUsers {
-		if err = addSteamShortcutsForUser(loginUser, langCode, launchOptionsTemplate, rdx, force, ids...); err != nil {
+		if err = addSteamShortcutsForUser(loginUser, target, langCode, rdx, force, ids...); err != nil {
 			return err
 		}
 	}
@@ -87,7 +76,7 @@ func AddSteamShortcut(langCode string, launchOptionsTemplate string, rdx redux.W
 	return nil
 }
 
-func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTemplate string, rdx redux.Writeable, force bool, ids ...string) error {
+func addSteamShortcutsForUser(loginUser string, target SteamShortcutTarget, langCode string, rdx redux.Writeable, force bool, ids ...string) error {
 
 	asfua := nod.Begin(" adding Steam user %s shortcuts for %s...",
 		loginUser,
@@ -106,7 +95,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 
 	for _, id := range ids {
 
-		shortcut, err := createSteamShortcut(loginUser, id, langCode, launchOptionsTemplate, rdx)
+		shortcut, err := createSteamShortcut(loginUser, target, id, langCode, rdx)
 		if err != nil {
 			return err
 		}
@@ -132,7 +121,7 @@ func addSteamShortcutsForUser(loginUser string, langCode string, launchOptionsTe
 	return nil
 }
 
-func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate string, rdx redux.Readable) (*steam_integration.Shortcut, error) {
+func createSteamShortcut(loginUser string, target SteamShortcutTarget, id, langCode string, rdx redux.Readable) (*steam_integration.Shortcut, error) {
 
 	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return nil, err
@@ -147,22 +136,23 @@ func createSteamShortcut(loginUser, id, langCode string, launchOptionsTemplate s
 
 	shortcutId := steam_integration.ShortcutAppId(title)
 
-	theoExecutable, err := data.TheoExecutable()
+	exe, launchOptions, err := GetSteamShortcutExeLaunchOptions(id, langCode, target, rdx)
 	if err != nil {
 		return nil, err
 	}
 
-	launchOptions := strings.Replace(launchOptionsTemplate, "{id}", id, 1)
-	if langCode != "" && langCode != defaultLangCode {
-		launchOptions += " -lang-code " + langCode
+	installPath, err := findGogGameInstallPath(id, langCode, rdx)
+	if err != nil {
+		return nil, err
 	}
 
 	shortcut := steam_integration.NewShortcut()
 
 	shortcut.AppId = shortcutId
 	shortcut.AppName = title
-	shortcut.Exe = theoExecutable
+	shortcut.Exe = exe
 	shortcut.LaunchOptions = launchOptions
+	shortcut.StartDir = installPath
 	shortcut.Icon = getGridIconPath(loginUser, shortcutId)
 
 	return shortcut, nil

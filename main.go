@@ -40,10 +40,14 @@ func main() {
 		os.Exit(2)
 	}
 
+	valueDelegates := map[string]func() []string{
+		"steam-shortcut-targets": cli.AllSteamShortcutTargets,
+	}
+
 	defs, err := clo.Load(
 		bytes.NewBuffer(cliCommands),
 		bytes.NewBuffer(cliHelp),
-		nil)
+		valueDelegates)
 	if err != nil {
 		log.Println(err.Error())
 		os.Exit(3)
@@ -84,6 +88,7 @@ func main() {
 		"update":                  cli.UpdateHandler,
 		"validate":                cli.ValidateHandler,
 		"version":                 cli.VersionHandler,
+		"winecfg":                 cli.WineCfgHandler,
 		"wine-install":            cli.WineInstallHandler,
 		"wine-run":                cli.WineRunHandler,
 		"wine-uninstall":          cli.WineUninstallHandler,
