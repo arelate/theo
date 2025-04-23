@@ -59,6 +59,7 @@ list-prefix-env
 list-prefix-exe-path
 
 list-steam-shortcuts
+    all-key-values
 
 list-wine-installed
     lang-code

@@ -17,11 +17,14 @@ var printedKeys = []string{
 	"LaunchOptions",
 }
 
-func ListSteamShortcutsHandler(_ *url.URL) error {
-	return ListSteamShortcuts()
+func ListSteamShortcutsHandler(u *url.URL) error {
+
+	allKeyValues := u.Query().Has("all-key-values")
+
+	return ListSteamShortcuts(allKeyValues)
 }
 
-func ListSteamShortcuts() error {
+func ListSteamShortcuts(allKeyValues bool) error {
 	lssa := nod.Begin("listing Steam shortcuts for all users...")
 	defer lssa.Done()
 
@@ -41,7 +44,7 @@ func ListSteamShortcuts() error {
 	}
 
 	for _, loginUser := range loginUsers {
-		if err := listUserShortcuts(loginUser); err != nil {
+		if err := listUserShortcuts(loginUser, allKeyValues); err != nil {
 			return err
 		}
 	}
@@ -49,7 +52,7 @@ func ListSteamShortcuts() error {
 	return nil
 }
 
-func listUserShortcuts(loginUser string) error {
+func listUserShortcuts(loginUser string, allKeyValues bool) error {
 
 	lusa := nod.Begin("listing shortcuts for %s...", loginUser)
 	defer lusa.Done()
@@ -72,7 +75,16 @@ func listUserShortcuts(loginUser string) error {
 			shortcutKey := fmt.Sprintf("shortcut: %s", shortcut.Key)
 
 			for _, kv := range shortcut.Values {
-				if slices.Contains(printedKeys, kv.Key) && kv.TypedValue != nil {
+
+				var addKeyValue bool
+				switch allKeyValues {
+				case true:
+					addKeyValue = true
+				case false:
+					addKeyValue = slices.Contains(printedKeys, kv.Key) && kv.TypedValue != nil
+				}
+
+				if addKeyValue {
 					keyValue := fmt.Sprintf("%s: %v", kv.Key, kv.TypedValue)
 					shortcutValues[shortcutKey] = append(shortcutValues[shortcutKey], keyValue)
 				}
