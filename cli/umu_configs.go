@@ -27,8 +27,7 @@ type UmuConfig struct {
 	Args       []string
 }
 
-func getAbsUmuConfigFilename(id, exePath string) (string, error) {
-
+func getLatestUmuConfigsDir() (string, error) {
 	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
 	if err != nil {
 		return "", err
@@ -49,11 +48,22 @@ func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 		return "", err
 	}
 
+	latestUmuConfigsDir := filepath.Join(umuConfigsDir, busan.Sanitize(latestUmuLauncherRelease.TagName))
+
+	return latestUmuConfigsDir, nil
+
+}
+
+func getAbsUmuConfigFilename(id, exePath string) (string, error) {
+
+	latestUmuConfigsDir, err := getLatestUmuConfigsDir()
+	if err != nil {
+		return "", err
+	}
+
 	_, exeFilename := filepath.Split(exePath)
 
-	umuConfigPath := filepath.Join(umuConfigsDir,
-		busan.Sanitize(latestUmuLauncherRelease.TagName),
-		id+"-"+busan.Sanitize(exeFilename)+".toml")
+	umuConfigPath := filepath.Join(latestUmuConfigsDir, id+"-"+busan.Sanitize(exeFilename)+".toml")
 
 	return umuConfigPath, nil
 }
@@ -134,17 +144,17 @@ func removeAllUmuConfigs() error {
 	rauca := nod.NewProgress("removing all umu-configs...")
 	defer rauca.Done()
 
-	umuConfigsDir, err := pathways.GetAbsRelDir(data.UmuConfigs)
+	latestUmuConfigsDir, err := getLatestUmuConfigsDir()
 	if err != nil {
 		return err
 	}
 
-	ucd, err := os.Open(umuConfigsDir)
+	lucd, err := os.Open(latestUmuConfigsDir)
 	if err != nil {
 		return err
 	}
 
-	relFilenames, err := ucd.Readdirnames(-1)
+	relFilenames, err := lucd.Readdirnames(-1)
 	if err != nil {
 		return err
 	}
@@ -157,12 +167,16 @@ func removeAllUmuConfigs() error {
 			continue
 		}
 
-		afn := filepath.Join(umuConfigsDir, rfn)
+		afn := filepath.Join(latestUmuConfigsDir, rfn)
 		if err = os.Remove(afn); err != nil {
 			return err
 		}
 
 		rauca.Increment()
+	}
+
+	if err = removeDirIfEmpty(latestUmuConfigsDir); err != nil {
+		return err
 	}
 
 	return nil
