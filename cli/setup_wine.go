@@ -43,5 +43,9 @@ func SetupWine(force bool) error {
 		return err
 	}
 
+	if err := removeAllUmuConfigs(); err != nil {
+		return err
+	}
+
 	return nil
 }
