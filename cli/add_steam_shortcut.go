@@ -254,12 +254,20 @@ func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
 
 	if _, err = os.Stat(absUserShortcutsPath); os.IsNotExist(err) {
 		// initialize new Steam shortcuts data if the current users has no shortcuts
-		return make([]*steam_vdf.KeyValues, 0), nil
+		return emptyUserShortcuts(), nil
 	} else if err != nil {
 		return nil, err
 	}
 
 	return steam_vdf.ParseBinary(absUserShortcutsPath)
+}
+
+func emptyUserShortcuts() []*steam_vdf.KeyValues {
+	var kvShortcuts []*steam_vdf.KeyValues
+
+	kvShortcuts = append(kvShortcuts, &steam_vdf.KeyValues{Key: "shortcuts"})
+
+	return kvShortcuts
 }
 
 func getGridIconPath(loginUser string, appId uint32) string {

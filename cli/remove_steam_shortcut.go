@@ -73,13 +73,13 @@ func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...st
 	}
 
 	if len(kvUserShortcuts) == 0 {
-		rsfua.EndWithResult("user %s has no shortcuts.vdf", loginUser)
+		rsfua.EndWithResult("user %s has no shortcuts", loginUser)
 		return nil
 	}
 
 	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
 		if len(kvShortcuts.Values) == 0 {
-			rsfua.EndWithResult("user %s has zero shortcuts", loginUser)
+			rsfua.EndWithResult("user %s has no shortcuts", loginUser)
 			return nil
 		}
 	}
