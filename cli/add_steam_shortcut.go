@@ -253,7 +253,8 @@ func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
 	absUserShortcutsPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", shortcutsFilename)
 
 	if _, err = os.Stat(absUserShortcutsPath); os.IsNotExist(err) {
-		return nil, nil
+		// initialize new Steam shortcuts data if the current users has no shortcuts
+		return make([]*steam_vdf.KeyValues, 0), nil
 	} else if err != nil {
 		return nil, err
 	}
