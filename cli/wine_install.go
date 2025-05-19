@@ -90,6 +90,19 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		return nil
 	}
 
+	binariesDir, err := pathways.GetAbsRelDir(data.Binaries)
+	if err != nil {
+		return err
+	}
+
+	if empty, err := isDirEmpty(binariesDir); empty && err == nil {
+		if err = SetupWine(false); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+
 	if err = BackupMetadata(); err != nil {
 		return err
 	}

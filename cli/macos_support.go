@@ -454,15 +454,20 @@ func hasOnlyDSStore(entries []fs.DirEntry) bool {
 	return false
 }
 
-func removeDirIfEmpty(dirPath string) error {
+func isDirEmpty(dirPath string) (bool, error) {
 	if entries, err := os.ReadDir(dirPath); err == nil && len(entries) == 0 {
-		if err := os.Remove(dirPath); err != nil {
-			return err
-		}
+		return true, nil
 	} else if err == nil && hasOnlyDSStore(entries) {
-		if err := os.RemoveAll(dirPath); err != nil {
-			return err
-		}
+		return true, nil
+	} else if err != nil {
+		return false, err
+	}
+	return false, nil
+}
+
+func removeDirIfEmpty(dirPath string) error {
+	if empty, err := isDirEmpty(dirPath); empty && err == nil {
+		return os.RemoveAll(dirPath)
 	} else if err != nil {
 		return err
 	}

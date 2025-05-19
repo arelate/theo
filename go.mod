@@ -17,5 +17,5 @@ require (
 require (
 	github.com/boggydigital/match_node v0.1.19 // indirect
 	github.com/boggydigital/wits v0.2.3 // indirect
-	golang.org/x/net v0.39.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
 )

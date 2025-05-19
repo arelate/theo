@@ -149,6 +149,10 @@ func removeAllUmuConfigs() error {
 		return err
 	}
 
+	if _, err = os.Stat(latestUmuConfigsDir); os.IsNotExist(err) {
+		return nil
+	}
+
 	lucd, err := os.Open(latestUmuConfigsDir)
 	if err != nil {
 		return err
