@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -56,8 +55,6 @@ func linuxInstallProduct(id string,
 		return err
 	}
 
-	fmt.Println(preInstallDesktopFiles)
-
 	if err := linuxExecuteInstaller(absInstallerPath, absBundlePath); err != nil {
 		return err
 	}
@@ -83,8 +80,6 @@ func linuxInstallProduct(id string,
 			return err
 		}
 	}
-
-	fmt.Println(postInstallDesktopFiles)
 
 	return nil
 }
