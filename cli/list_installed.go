@@ -114,7 +114,7 @@ func getInstalledDetails(id string, kvInstalledDetails kevlar.KeyValues) (*vango
 	return &installedDetails, nil
 }
 
-func fmtBytes(b int) string {
+func fmtBytes(b int64) string {
 	const unit = 1000
 	if b < unit {
 		return fmt.Sprintf("%d B", b)
@@ -144,15 +144,15 @@ func productDetailsVersion(productDetails *vangogh_integration.ProductDetails, o
 	return version
 }
 
-func productDetailsEstimatedBytes(productDetails *vangogh_integration.ProductDetails, operatingSystem vangogh_integration.OperatingSystem, langCode string) int {
+func productDetailsEstimatedBytes(productDetails *vangogh_integration.ProductDetails, operatingSystem vangogh_integration.OperatingSystem, langCode string) int64 {
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(operatingSystem).
 		FilterDownloadTypes(vangogh_integration.Installer).
 		FilterLanguageCodes(langCode)
 
-	var size int
+	var size int64
 	for _, dl := range dls {
-		size += dl.EstimatedBytes
+		size += int64(dl.EstimatedBytes)
 	}
 
 	return size

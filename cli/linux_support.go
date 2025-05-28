@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -11,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -225,9 +227,53 @@ func nixUninstallProduct(id, langCode string, operatingSystem vangogh_integratio
 		return nil
 	}
 
-	if err := os.RemoveAll(absBundlePath); err != nil {
+	if err = os.RemoveAll(absBundlePath); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func nixFreeSpace(path string) (int64, error) {
+
+	dfPath, err := exec.LookPath("df")
+	if err != nil {
+		return -1, err
+	}
+
+	buf := bytes.NewBuffer(nil)
+
+	dfCmd := exec.Command(dfPath, "-k", "-I", path)
+	dfCmd.Stdout = buf
+
+	if err = dfCmd.Run(); err != nil {
+		return -1, err
+	}
+
+	var lines []string
+	if lines = strings.Split(buf.String(), "\n"); len(lines) < 2 {
+		return -1, errors.New("unsupported df output lines format")
+	}
+
+	var ai int
+	if ai = strings.Index(lines[0], "Available"); ai == 0 || ai >= len(lines[0])-1 {
+		return -1, errors.New("df output is missing Available")
+	}
+
+	var sub string
+	if sub = lines[1][ai:]; len(sub) == 0 {
+		return -1, errors.New("df values format is too short")
+	}
+
+	var abs string
+	var ok bool
+	if abs, _, ok = strings.Cut(sub, " "); !ok {
+		abs = sub
+	}
+
+	if abi, err := strconv.ParseInt(abs, 10, 32); err == nil {
+		return abi * 1024, nil
+	} else {
+		return -1, err
+	}
 }

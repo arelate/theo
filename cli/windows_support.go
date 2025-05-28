@@ -24,3 +24,7 @@ func windowsExecute(path string, env []string, verbose bool) error {
 func windowsUninstallProduct(id, langCode string, rdx redux.Readable) error {
 	return errors.New("support for Windows uninstallation is not implemented")
 }
+
+func windowsFreeSpace(path string) (int64, error) {
+	return -1, errors.New("support for Windows free space determination is not implemented")
+}
