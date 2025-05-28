@@ -111,6 +111,7 @@ run
     lang-code
     env&
     verbose
+    force
 
 serve
     port$

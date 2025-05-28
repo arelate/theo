@@ -65,6 +65,10 @@ func WineRun(id string, langCode string, exePath, installPath string, env []stri
 		return err
 	}
 
+	if err = checkProductType(id, rdx, force); err != nil {
+		return err
+	}
+
 	prefixName, err := data.GetPrefixName(id, rdx)
 	if err != nil {
 		return err

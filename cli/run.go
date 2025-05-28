@@ -31,11 +31,12 @@ func RunHandler(u *url.URL) error {
 		env = strings.Split(q.Get("env"), ",")
 	}
 	verbose := q.Has("verbose")
+	force := q.Has("force")
 
-	return Run(id, langCode, env, verbose)
+	return Run(id, langCode, env, verbose, force)
 }
 
-func Run(id string, langCode string, env []string, verbose bool) error {
+func Run(id string, langCode string, env []string, verbose, force bool) error {
 
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.Done()
@@ -55,11 +56,37 @@ func Run(id string, langCode string, env []string, verbose bool) error {
 
 	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
 
+	if err = checkProductType(id, rdx, force); err != nil {
+		return err
+	}
+
 	if err = setLastRunDate(rdx, id); err != nil {
 		return err
 	}
 
 	return currentOsRunApp(id, langCode, rdx, env, verbose)
+}
+
+func checkProductType(id string, rdx redux.Writeable, force bool) error {
+
+	productDetails, err := GetProductDetails(id, rdx, force)
+	if err != nil {
+		return err
+	}
+
+	switch productDetails.ProductType {
+	case vangogh_integration.GameProductType:
+		// do nothing, proceed normally
+		return nil
+	case vangogh_integration.PackProductType:
+		return errors.New("cannot run a PACK product, please run included game(s): " +
+			strings.Join(productDetails.IncludesGames, ","))
+	case vangogh_integration.DlcProductType:
+		return errors.New("cannot run a DLC product, please run required game(s): " +
+			strings.Join(productDetails.RequiresGames, ","))
+	}
+
+	return nil
 }
 
 func currentOsRunApp(id, langCode string, rdx redux.Readable, env []string, verbose bool) error {
@@ -69,7 +96,9 @@ func currentOsRunApp(id, langCode string, rdx redux.Readable, env []string, verb
 		return err
 	}
 
-	if _, err := os.Stat(absBundlePath); err != nil {
+	if _, err := os.Stat(absBundlePath); os.IsNotExist(err) {
+		return errors.New("cannot find app bundle, please reinstall the app " + id)
+	} else if err != nil {
 		return err
 	}
 
