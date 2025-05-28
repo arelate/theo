@@ -61,6 +61,14 @@ func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) 
 		return err
 	}
 
+	var flattened bool
+	if ids, flattened, err = gameProductTypesFlatMap(rdx, force, ids...); err != nil {
+		return err
+	} else if flattened {
+		ua.EndWithResult("uninstalling PACK included games")
+		return Uninstall(langCode, rdx, force, ids...)
+	}
+
 	ua.TotalInt(len(ids))
 
 	for _, id := range ids {
