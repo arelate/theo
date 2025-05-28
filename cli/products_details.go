@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
@@ -66,6 +67,10 @@ func GetProductsDetails(rdx redux.Writeable, force bool, ids ...string) (Product
 		pd, err := GetProductDetails(id, rdx, force)
 		if err != nil {
 			return nil, err
+		}
+
+		if pd.ProductType == "" {
+			return nil, errors.New("product details are missing product type")
 		}
 
 		psd = append(psd, pd)
