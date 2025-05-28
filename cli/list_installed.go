@@ -71,7 +71,9 @@ func ListInstalled(os vangogh_integration.OperatingSystem, langCode string) erro
 		version := productDetailsVersion(installedDetails, os, langCode)
 		estimatedBytes := productDetailsEstimatedBytes(installedDetails, os, langCode)
 
-		summary[name] = append(summary[name], "size: "+fmtBytes(estimatedBytes), "ver.: "+version)
+		summary[name] = append(summary[name],
+			"size: "+vangogh_integration.FormatBytes(estimatedBytes),
+			"ver.: "+version)
 
 		if installParams, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
 			for _, ips := range installParams {
@@ -112,20 +114,6 @@ func getInstalledDetails(id string, kvInstalledDetails kevlar.KeyValues) (*vango
 	}
 
 	return &installedDetails, nil
-}
-
-func fmtBytes(b int64) string {
-	const unit = 1000
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB",
-		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
 func productDetailsVersion(productDetails *vangogh_integration.ProductDetails, operatingSystem vangogh_integration.OperatingSystem, langCode string) string {

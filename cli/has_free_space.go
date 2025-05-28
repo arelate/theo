@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -36,7 +37,7 @@ func HasFreeSpaceHandler(u *url.URL) error {
 
 func HasFreeSpace(path string, bytes int64) (bool, error) {
 
-	hfsa := nod.Begin("checking available free space for %s at %s...", fmtBytes(bytes), path)
+	hfsa := nod.Begin("checking available free space for %s at %s...", vangogh_integration.FormatBytes(bytes), path)
 	defer hfsa.Done()
 
 	currentOs := data.CurrentOs()
@@ -61,12 +62,44 @@ func HasFreeSpace(path string, bytes int64) (bool, error) {
 
 	switch availableBytes > bytes {
 	case true:
-		hfsa.EndWithResult("enough space for %s (%s free)", fmtBytes(bytes), fmtBytes(availableBytes))
+		hfsa.EndWithResult("enough space for %s (%s free)",
+			vangogh_integration.FormatBytes(bytes),
+			vangogh_integration.FormatBytes(availableBytes))
 		return true, nil
 	case false:
-		hfsa.EndWithResult("not enough space for %s (%s free)", fmtBytes(bytes), fmtBytes(availableBytes))
+		hfsa.EndWithResult("not enough space for %s (%s free)",
+			vangogh_integration.FormatBytes(bytes),
+			vangogh_integration.FormatBytes(availableBytes))
 		return false, nil
 	}
 
 	return availableBytes > bytes, nil
+}
+
+func hasFreeSpaceForProduct(
+	productDetails *vangogh_integration.ProductDetails,
+	targetPath string,
+	operatingSystems []vangogh_integration.OperatingSystem,
+	langCodes []string,
+	downloadTypes []vangogh_integration.DownloadType,
+	force bool) error {
+
+	var totalEstimatedBytes int64
+
+	dls := productDetails.DownloadLinks.
+		FilterOperatingSystems(operatingSystems...).
+		FilterLanguageCodes(langCodes...).
+		FilterDownloadTypes(downloadTypes...)
+
+	for _, dl := range dls {
+		totalEstimatedBytes += dl.EstimatedBytes
+	}
+
+	if ok, err := HasFreeSpace(targetPath, totalEstimatedBytes); err != nil {
+		return err
+	} else if !ok && !force {
+		return fmt.Errorf("not enough space for %s at %s"+productDetails.Id, targetPath)
+	} else {
+		return nil
+	}
 }

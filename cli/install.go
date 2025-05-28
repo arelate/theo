@@ -257,6 +257,16 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		return nil
 	}
 
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return err
+	}
+
+	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
+		[]vangogh_integration.OperatingSystem{data.CurrentOs()}, []string{langCode}, downloadTypes, force); err != nil {
+		return err
+	}
+
 	installerExts := []string{pkgExt, shExt, exeExt}
 
 	for _, link := range dls {

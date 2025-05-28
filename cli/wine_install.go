@@ -183,6 +183,16 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 		return err
 	}
 
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return err
+	}
+
+	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
+		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows}, []string{langCode}, downloadTypes, force); err != nil {
+		return err
+	}
+
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(vangogh_integration.Windows).
 		FilterLanguageCodes(langCode).

@@ -82,6 +82,11 @@ func downloadProductFiles(id string,
 		return err
 	}
 
+	if err = hasFreeSpaceForProduct(productDetails, downloadsDir,
+		operatingSystems, langCodes, downloadTypes, force); err != nil {
+		return err
+	}
+
 	dc := dolo.DefaultClient
 
 	if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
