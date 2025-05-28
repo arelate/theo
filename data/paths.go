@@ -16,7 +16,10 @@ import (
 
 const theoDirname = "theo"
 
-const inventoryExt = ".txt"
+const (
+	inventoryExt      = ".txt"
+	MacOsAppBundleExt = ".app"
+)
 
 func InitRootDir() (string, error) {
 	udhd, err := UserDataHomeDir()
@@ -209,26 +212,16 @@ func GetAbsBundlePath(id, langCode string, operatingSystem vangogh_integration.O
 
 	osLangInstalledAppsDir := filepath.Join(installedAppsDir, OsLangCode(operatingSystem, langCode))
 
-	var bundleProperty string
-
-	switch operatingSystem {
-	case vangogh_integration.MacOS:
-		bundleProperty = BundleNameProperty
-	case vangogh_integration.Linux:
-		bundleProperty = vangogh_integration.SlugProperty
-	case vangogh_integration.Windows:
-		return "", errors.New("support for Windows bundle path is not implemented")
-	default:
-		return "", errors.New("unsupported operating system: " + operatingSystem.String())
-	}
-
-	if err = rdx.MustHave(bundleProperty); err != nil {
+	if err = rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", err
 	}
 
-	if appBundle, ok := rdx.GetLastVal(bundleProperty, id); ok && appBundle != "" {
-		return filepath.Join(osLangInstalledAppsDir, appBundle), nil
+	var appBundle string
+	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
+		appBundle = slug
+	} else {
+		return "", errors.New("slug is not defined for product " + id)
 	}
 
-	return "", errors.New(bundleProperty + " is not defined for product " + id)
+	return filepath.Join(osLangInstalledAppsDir, appBundle), nil
 }

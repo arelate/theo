@@ -34,7 +34,6 @@ func RevealInstalled(langCode string, ids ...string) error {
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
-		data.BundleNameProperty,
 		data.ServerConnectionProperties,
 		vangogh_integration.SlugProperty)
 	if err != nil {

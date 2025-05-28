@@ -11,8 +11,6 @@ const (
 	ServerUsernameProperty = "server-username"
 	ServerPasswordProperty = "server-password"
 
-	BundleNameProperty = "bundle-name"
-
 	PrefixEnvProperty     = "prefix-env"
 	PrefixExePathProperty = "prefix-exe-path"
 
@@ -29,7 +27,6 @@ const (
 func AllProperties() []string {
 	return []string{
 		ServerConnectionProperties,
-		BundleNameProperty,
 		vangogh_integration.TitleProperty,
 		vangogh_integration.SlugProperty,
 		vangogh_integration.SteamAppIdProperty,

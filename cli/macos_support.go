@@ -20,10 +20,6 @@ const (
 	catCmdPfx = "cat "
 )
 
-const (
-	macOsAppBundleExt = ".app"
-)
-
 func macOsInstallProduct(id string,
 	productDetails *vangogh_integration.ProductDetails,
 	link *vangogh_integration.ProductDownloadLink,
@@ -113,7 +109,7 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.ProductDownloadLink
 		return errors.New("placing .pkg extracts is only supported on " + vangogh_integration.MacOS.String())
 	}
 
-	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
 	}
 
@@ -132,23 +128,17 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.ProductDownloadLink
 
 	absExtractPayloadPath := filepath.Join(productExtractsDir, link.LocalFilename, relPayloadPath)
 
-	if _, err := os.Stat(absExtractPayloadPath); os.IsNotExist(err) {
+	if _, err = os.Stat(absExtractPayloadPath); os.IsNotExist(err) {
 		return errors.New("cannot locate extracts payload")
-	}
-
-	bundleName := postInstallScript.BundleName()
-
-	if bundleName == "" {
-		return errors.New("cannot determine bundle name from postinstall file")
-	}
-
-	if err := rdx.AddValues(data.BundleNameProperty, id, bundleName); err != nil {
-		return err
 	}
 
 	installerType := postInstallScript.InstallerType()
 
 	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
+
+	if strings.HasSuffix(postInstallScript.bundleName, data.MacOsAppBundleExt) {
+		absBundlePath = filepath.Join(absBundlePath, postInstallScript.bundleName)
+	}
 
 	switch installerType {
 	case "game":
@@ -270,9 +260,9 @@ func macOsPostInstallActions(id string,
 
 	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
 
-	// some macOS bundles point to a directory, not an .app package
+	// macOS bundle path points to a directory, not an .app package
 	// try to locate .app package inside the bundle dir
-	if !strings.HasSuffix(absBundlePath, macOsAppBundleExt) {
+	if !strings.HasSuffix(absBundlePath, data.MacOsAppBundleExt) {
 		absBundlePath = macOsLocateAppBundle(absBundlePath)
 	}
 
@@ -291,11 +281,11 @@ func macOsPostInstallActions(id string,
 
 func macOsLocateAppBundle(path string) string {
 
-	if strings.HasSuffix(path, macOsAppBundleExt) {
+	if strings.HasSuffix(path, data.MacOsAppBundleExt) {
 		return path
 	}
 
-	if matches, err := filepath.Glob(filepath.Join(path, "*"+macOsAppBundleExt)); err == nil {
+	if matches, err := filepath.Glob(filepath.Join(path, "*"+data.MacOsAppBundleExt)); err == nil {
 		if len(matches) == 1 {
 			return matches[0]
 		}

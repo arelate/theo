@@ -246,7 +246,7 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOs())
 	defer coipa.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
 	}
 

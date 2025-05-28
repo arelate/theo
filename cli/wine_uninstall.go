@@ -66,7 +66,7 @@ func WineUninstall(langCode string, rdx redux.Writeable, archive, force bool, id
 		return err
 	} else if flattened {
 		wua.EndWithResult("uninstalling PACK included games")
-		return Uninstall(langCode, rdx, force, ids...)
+		return WineUninstall(langCode, rdx, archive, force, ids...)
 	}
 
 	if err = RemovePrefix(langCode, archive, force, ids...); err != nil {

@@ -28,7 +28,7 @@ func linuxInstallProduct(id string,
 	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, productDetails.Title)
 	defer lia.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
 	}
 
