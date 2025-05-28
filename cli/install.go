@@ -70,6 +70,14 @@ func Install(ip *installParameters, ids ...string) error {
 
 	vangogh_integration.PrintParams(ids, currentOs, langCodes, ip.downloadTypes, true)
 
+	var flattened bool
+	if ids, flattened, err = gameProductTypesFlatMap(rdx, ip.force, ids...); err != nil {
+		return err
+	} else if flattened {
+		ia.EndWithResult("installing PACK included games")
+		return Install(ip, ids...)
+	}
+
 	supported, err := filterNotSupported(ip.langCode, rdx, ip.force, ids...)
 	if err != nil {
 		return err
@@ -293,4 +301,24 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 		}
 	}
 	return nil
+}
+
+func gameProductTypesFlatMap(rdx redux.Writeable, force bool, ids ...string) ([]string, bool, error) {
+
+	productsDetails, err := GetProductsDetails(rdx, force, ids...)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if dlcs := productsDetails.Filter(vangogh_integration.DlcProductType); len(dlcs) > 0 {
+		da := nod.Begin(" skipping DLC products " + strings.Join(dlcs.Ids(), ","))
+		da.Done()
+		productsDetails = productsDetails.Filter(vangogh_integration.GameProductType, vangogh_integration.PackProductType)
+	}
+
+	if gameProductsDetails := productsDetails.Filter(vangogh_integration.GameProductType); len(gameProductsDetails) == len(productsDetails) {
+		return productsDetails.Ids(), false, nil
+	} else {
+		return productsDetails.GameAndIncludedGamesIds(), true, nil
+	}
 }

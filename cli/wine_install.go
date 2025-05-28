@@ -76,6 +76,14 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 	windowsOs := []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
 	langCodes := []string{ip.langCode}
 
+	var flattened bool
+	if ids, flattened, err = gameProductTypesFlatMap(rdx, ip.force, ids...); err != nil {
+		return err
+	} else if flattened {
+		wia.EndWithResult("WINE installing PACK included games")
+		return WineInstall(ip, env, verbose, ids...)
+	}
+
 	notInstalled, err := filterNotInstalled(vangogh_integration.Windows, ip.langCode, ids...)
 	if err != nil {
 		return err

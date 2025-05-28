@@ -42,7 +42,7 @@ func GetProductDetailsHandler(u *url.URL) error {
 
 func GetProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_integration.ProductDetails, error) {
 
-	gpda := nod.NewProgress(" getting product details...")
+	gpda := nod.NewProgress(" getting product details for %s...", id)
 	defer gpda.Done()
 
 	productDetailsDir, err := pathways.GetAbsRelDir(data.ProductDetails)
