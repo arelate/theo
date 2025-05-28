@@ -22,10 +22,16 @@ func TheoExecutable() (string, error) {
 		return "", errors.New("unsupported operating system")
 	}
 
+	// check PATH first and make sure the location specified there exists
 	if binPath, err := exec.LookPath(binFilename); err == nil && binPath != "" {
+		if _, err = os.Stat(binPath); err == nil {
+			return binPath, nil
+		}
+	}
+
+	// get the current process path
+	if binPath, err := os.Executable(); err == nil {
 		return binPath, nil
-	} else if executable, err := os.Executable(); err == nil {
-		return executable, nil
 	}
 
 	return "", errors.New("theo binary not found, please add it to a PATH location")
