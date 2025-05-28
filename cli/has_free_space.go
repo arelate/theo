@@ -10,6 +10,8 @@ import (
 	"strconv"
 )
 
+const preserveFreeSpacePercent = 1
+
 func HasFreeSpaceHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -59,6 +61,10 @@ func HasFreeSpace(path string, bytes int64) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	// we don't want to consume all available space, so reserving
+	// specified percentage of available capacity before the checks
+	availableBytes = (100 - preserveFreeSpacePercent) * availableBytes / 100
 
 	switch availableBytes > bytes {
 	case true:
