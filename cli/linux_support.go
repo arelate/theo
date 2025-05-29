@@ -243,7 +243,7 @@ func nixFreeSpace(path string) (int64, error) {
 
 	buf := bytes.NewBuffer(nil)
 
-	dfCmd := exec.Command(dfPath, "-k", "-I", path)
+	dfCmd := exec.Command(dfPath, "-k", path)
 	dfCmd.Stdout = buf
 
 	if err = dfCmd.Run(); err != nil {
