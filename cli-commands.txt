@@ -155,6 +155,7 @@ validate
     id^&*
     os&
     lang-code&
+    manual-url-filter&
 
 version
 

@@ -47,6 +47,13 @@ func ValidateHandler(u *url.URL) error {
 	ids := Ids(u)
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 
+	q := u.Query()
+
+	var manualUrlFilter []string
+	if q.Has("manual-url-filter") {
+		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
+	}
+
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
@@ -57,12 +64,13 @@ func ValidateHandler(u *url.URL) error {
 		return err
 	}
 
-	return Validate(operatingSystems, langCodes, downloadTypes, rdx, ids...)
+	return Validate(operatingSystems, langCodes, downloadTypes, manualUrlFilter, rdx, ids...)
 }
 
 func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	manualUrlFilter []string,
 	rdx redux.Writeable,
 	ids ...string) error {
 
@@ -76,8 +84,19 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 			return err
 		}
 
-		if err = validateLinks(id, operatingSystems, langCodes, downloadTypes, productDetails); err != nil {
+		if mismatchedManualUrls, err := validateLinks(id, operatingSystems, langCodes, downloadTypes, manualUrlFilter, productDetails); err != nil {
 			return err
+		} else if len(mismatchedManualUrls) > 0 {
+
+			// redownload and revalidate any manual-urls that resulted in mismatched checksums
+
+			if err = Download(operatingSystems, langCodes, downloadTypes, mismatchedManualUrls, rdx, true, id); err != nil {
+				return err
+			}
+
+			if _, err = validateLinks(id, operatingSystems, langCodes, downloadTypes, manualUrlFilter, productDetails); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -88,14 +107,15 @@ func validateLinks(id string,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
-	productDetails *vangogh_integration.ProductDetails) error {
+	manualUrlFilter []string,
+	productDetails *vangogh_integration.ProductDetails) ([]string, error) {
 
 	vla := nod.NewProgress("validating %s...", productDetails.Title)
 	defer vla.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	dls := productDetails.DownloadLinks.
@@ -104,24 +124,35 @@ func validateLinks(id string,
 		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
-		return errors.New("no links are matching operating params")
+		return nil, errors.New("no links are matching operating params")
 	}
 
 	vla.TotalInt(len(dls))
 
 	results := make([]ValidationResult, 0, len(dls))
 
+	var mismatchedManualUrls []string
+
 	for _, dl := range dls {
+		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
+			continue
+		}
+
 		vr, err := validateLink(id, &dl, downloadsDir)
 		if err != nil {
 			vla.Error(err)
 		}
+
+		if vr == ValResMismatch {
+			mismatchedManualUrls = append(mismatchedManualUrls, dl.ManualUrl)
+		}
+
 		results = append(results, vr)
 	}
 
 	vla.EndWithResult(summarizeValidationResults(results))
 
-	return nil
+	return mismatchedManualUrls, nil
 }
 
 func validateLink(id string, link *vangogh_integration.ProductDownloadLink, downloadsDir string) (ValidationResult, error) {

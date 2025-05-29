@@ -119,7 +119,7 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		return err
 	}
 
-	if err = Validate(windowsOs, langCodes, ip.downloadTypes, rdx, ids...); err != nil {
+	if err = Validate(windowsOs, langCodes, ip.downloadTypes, nil, rdx, ids...); err != nil {
 		return err
 	}
 

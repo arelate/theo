@@ -112,7 +112,7 @@ func Install(ip *installParameters, ids ...string) error {
 		return err
 	}
 
-	if err = Validate(currentOs, langCodes, ip.downloadTypes, rdx, ids...); err != nil {
+	if err = Validate(currentOs, langCodes, ip.downloadTypes, nil, rdx, ids...); err != nil {
 		return err
 	}
 
