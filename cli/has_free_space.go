@@ -40,7 +40,14 @@ func HasFreeSpaceHandler(u *url.URL) error {
 
 func HasFreeSpace(path string, bytes int64) (bool, error) {
 
-	hfsa := nod.Begin("checking available free space for %s at %s...", vangogh_integration.FormatBytes(bytes), path)
+	var relPath string
+	if userHomeDataRel, err := data.RelToUserDataHome(path); err == nil {
+		relPath = userHomeDataRel
+	} else {
+		return false, err
+	}
+
+	hfsa := nod.Begin("checking free space at %s...", relPath)
 	defer hfsa.Done()
 
 	currentOs := data.CurrentOs()
@@ -69,12 +76,12 @@ func HasFreeSpace(path string, bytes int64) (bool, error) {
 
 	switch availableBytes > bytes {
 	case true:
-		hfsa.EndWithResult("enough space for %s (%s free)",
+		hfsa.EndWithResult("found enough for %s (%s free)",
 			vangogh_integration.FormatBytes(bytes),
 			vangogh_integration.FormatBytes(availableBytes))
 		return true, nil
 	case false:
-		hfsa.EndWithResult("not enough space for %s (%s free)",
+		hfsa.EndWithResult("not enough for %s (%s free)",
 			vangogh_integration.FormatBytes(bytes),
 			vangogh_integration.FormatBytes(availableBytes))
 		return false, nil

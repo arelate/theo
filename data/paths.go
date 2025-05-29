@@ -225,3 +225,16 @@ func GetAbsBundlePath(id, langCode string, operatingSystem vangogh_integration.O
 
 	return filepath.Join(osLangInstalledAppsDir, appBundle), nil
 }
+
+func RelToUserDataHome(path string) (string, error) {
+	udhd, err := UserDataHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	if strings.HasPrefix(path, udhd) {
+		return strings.Replace(path, udhd, "~Data", 1), nil
+	} else {
+		return path, nil
+	}
+}
