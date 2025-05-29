@@ -10,13 +10,23 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
+	"slices"
+	"strings"
 )
 
 func DownloadHandler(u *url.URL) error {
 
 	ids := Ids(u)
 	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	force := u.Query().Has("force")
+
+	q := u.Query()
+
+	var manualUrlFilter []string
+	if q.Has("manual-url-filter") {
+		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
+	}
+
+	force := q.Has("force")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -28,12 +38,13 @@ func DownloadHandler(u *url.URL) error {
 		return err
 	}
 
-	return Download(operatingSystems, langCodes, downloadTypes, rdx, force, ids...)
+	return Download(operatingSystems, langCodes, downloadTypes, manualUrlFilter, rdx, force, ids...)
 }
 
 func Download(operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	manualUrlFilter []string,
 	rdx redux.Writeable,
 	force bool,
 	ids ...string) error {
@@ -52,7 +63,7 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 			return err
 		}
 
-		if err = downloadProductFiles(id, productDetails, operatingSystems, langCodes, downloadTypes, rdx, force); err != nil {
+		if err = downloadProductFiles(id, productDetails, operatingSystems, langCodes, downloadTypes, manualUrlFilter, rdx, force); err != nil {
 			return err
 		}
 
@@ -67,6 +78,7 @@ func downloadProductFiles(id string,
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	manualUrlFilter []string,
 	rdx redux.Readable,
 	force bool) error {
 
@@ -105,6 +117,10 @@ func downloadProductFiles(id string,
 	}
 
 	for _, dl := range dls {
+
+		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
+			continue
+		}
 
 		if dl.ValidationResult != vangogh_integration.ValidatedSuccessfully &&
 			dl.ValidationResult != vangogh_integration.ValidatedMissingChecksum {

@@ -37,6 +37,7 @@ download
     os&
     lang-code&
     download-type&
+    manual-url-filter&
     force
 
 get-product-details

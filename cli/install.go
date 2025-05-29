@@ -108,7 +108,7 @@ func Install(ip *installParameters, ids ...string) error {
 		return err
 	}
 
-	if err = Download(currentOs, langCodes, ip.downloadTypes, rdx, ip.force, ids...); err != nil {
+	if err = Download(currentOs, langCodes, ip.downloadTypes, nil, rdx, ip.force, ids...); err != nil {
 		return err
 	}
 

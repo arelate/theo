@@ -115,7 +115,7 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		return err
 	}
 
-	if err = Download(windowsOs, langCodes, ip.downloadTypes, rdx, ip.force, ids...); err != nil {
+	if err = Download(windowsOs, langCodes, ip.downloadTypes, nil, rdx, ip.force, ids...); err != nil {
 		return err
 	}
 
