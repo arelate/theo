@@ -76,7 +76,7 @@ func HasFreeSpace(path string, bytes int64) (bool, error) {
 
 	switch availableBytes > bytes {
 	case true:
-		hfsa.EndWithResult("found enough for %s (%s free)",
+		hfsa.EndWithResult("enough for %s (%s free)",
 			vangogh_integration.FormatBytes(bytes),
 			vangogh_integration.FormatBytes(availableBytes))
 		return true, nil
