@@ -7,6 +7,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"net/url"
+	"slices"
 	"strconv"
 )
 
@@ -88,6 +89,7 @@ func hasFreeSpaceForProduct(
 	operatingSystems []vangogh_integration.OperatingSystem,
 	langCodes []string,
 	downloadTypes []vangogh_integration.DownloadType,
+	manualUrlFilter []string,
 	force bool) error {
 
 	var totalEstimatedBytes int64
@@ -98,6 +100,9 @@ func hasFreeSpaceForProduct(
 		FilterDownloadTypes(downloadTypes...)
 
 	for _, dl := range dls {
+		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
+			continue
+		}
 		totalEstimatedBytes += dl.EstimatedBytes
 	}
 

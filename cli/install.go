@@ -271,7 +271,7 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 	}
 
 	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
-		[]vangogh_integration.OperatingSystem{data.CurrentOs()}, []string{langCode}, downloadTypes, force); err != nil {
+		[]vangogh_integration.OperatingSystem{data.CurrentOs()}, []string{langCode}, downloadTypes, nil, force); err != nil {
 		return err
 	}
 

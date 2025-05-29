@@ -95,7 +95,7 @@ func downloadProductFiles(id string,
 	}
 
 	if err = hasFreeSpaceForProduct(productDetails, downloadsDir,
-		operatingSystems, langCodes, downloadTypes, force); err != nil {
+		operatingSystems, langCodes, downloadTypes, manualUrlFilter, force); err != nil {
 		return err
 	}
 

@@ -197,7 +197,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 	}
 
 	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
-		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows}, []string{langCode}, downloadTypes, force); err != nil {
+		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows}, []string{langCode}, downloadTypes, nil, force); err != nil {
 		return err
 	}
 
