@@ -129,7 +129,7 @@ func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
 		return filepath.Join(absPrefixDir, relPrefixDriveCDir, ep), nil
 	}
 
-	exePath, err := findGogGameInfoExecutable(id, langCode, rdx)
+	exePath, err := findGogGameInfoPrimaryPlaytaskExe(id, langCode, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -189,7 +189,7 @@ func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string,
 	}
 }
 
-func findGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string, error) {
+func findGogGameInfoPath(id, langCode string, rdx redux.Readable) (string, error) {
 
 	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
 	absGogGameInfoPath, err := findPrefixFile(id, langCode, rdx, gogGameInfoFilename, ".info file")
@@ -197,15 +197,34 @@ func findGogGameInfoExecutable(id, langCode string, rdx redux.Readable) (string,
 		return "", err
 	}
 
+	return absGogGameInfoPath, nil
+}
+
+func getGogGameInfo(absGogGameInfoPath string) (*gog_integration.GogGameInfo, error) {
+
 	gogGameInfoFile, err := os.Open(absGogGameInfoPath)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer gogGameInfoFile.Close()
 
 	var gogGameInfo gog_integration.GogGameInfo
-
 	if err = json.NewDecoder(gogGameInfoFile).Decode(&gogGameInfo); err != nil {
+		return nil, err
+	}
+
+	return &gogGameInfo, nil
+}
+
+func findGogGameInfoPrimaryPlaytaskExe(id, langCode string, rdx redux.Readable) (string, error) {
+
+	absGogGameInfoPath, err := findGogGameInfoPath(id, langCode, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	gogGameInfo, err := getGogGameInfo(absGogGameInfoPath)
+	if err != nil {
 		return "", err
 	}
 

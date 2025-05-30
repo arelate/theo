@@ -59,6 +59,10 @@ install
 list-installed
     lang-code
 
+list-playtasks
+    id^*
+    lang-code
+
 list-prefix-env
 
 list-prefix-exe-path

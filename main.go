@@ -65,6 +65,7 @@ func main() {
 		"has-free-space":          cli.HasFreeSpaceHandler,
 		"install":                 cli.InstallHandler,
 		"list-installed":          cli.ListInstalledHandler,
+		"list-playtasks":          cli.ListPlaytasksHandler,
 		"list-prefix-env":         cli.ListPrefixEnvHandler,
 		"list-prefix-exe-path":    cli.ListPrefixExePathHandler,
 		"list-steam-shortcuts":    cli.ListSteamShortcutsHandler,
