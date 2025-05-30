@@ -59,8 +59,17 @@ func ListPlaytasks(id string, langCode string) error {
 		if pt.IsPrimary {
 			list = append(list, "isPrimary:true")
 		}
+		if pt.IsHidden {
+			list = append(list, "isHidden:true")
+		}
 		if len(pt.Languages) > 0 {
 			list = append(list, "languages:"+strings.Join(pt.Languages, ","))
+		}
+		if pt.Link != "" {
+			list = append(list, "link:"+pt.Link)
+		}
+		if len(pt.OsBitness) > 0 {
+			list = append(list, "osBitness:"+strings.Join(pt.OsBitness, ","))
 		}
 		if pt.Path != "" {
 			list = append(list, "path:"+pt.Path)
@@ -68,9 +77,6 @@ func ListPlaytasks(id string, langCode string) error {
 		list = append(list, "type:"+pt.Type)
 		if pt.WorkingDir != "" {
 			list = append(list, "workingDir:"+pt.WorkingDir)
-		}
-		if pt.Link != "" {
-			list = append(list, "link:"+pt.Link)
 		}
 
 		playtasksSummary["name:"+pt.Name] = list
