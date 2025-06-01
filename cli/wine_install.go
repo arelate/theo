@@ -224,8 +224,15 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		if err = currentOsWineRun(id, langCode, rdx, env, verbose, force, absInstallerPath, downloadsDir,
-			innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg); err != nil {
+		et := &execTask{
+			exe:     absInstallerPath,
+			workDir: downloadsDir,
+			args:    []string{innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg},
+			env:     env,
+			verbose: verbose,
+		}
+
+		if err = currentOsWineRun(id, langCode, rdx, et, force); err != nil {
 			return err
 		}
 	}

@@ -87,9 +87,16 @@ func ModPrefixRetina(id, langCode string, revert, verbose, force bool) error {
 		return err
 	}
 
+	et := &execTask{
+		exe:     regeditBin,
+		workDir: absDriveCroot,
+		args:    []string{absRegPath},
+		verbose: verbose,
+	}
+
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		if err := macOsWineRun(id, langCode, rdx, nil, verbose, force, regeditBin, absDriveCroot, absRegPath); err != nil {
+		if err := macOsWineRun(id, langCode, rdx, et, force); err != nil {
 			return err
 		}
 	default:

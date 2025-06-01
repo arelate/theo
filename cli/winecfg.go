@@ -44,5 +44,10 @@ func WineCfg(id, langCode string, verbose, force bool) error {
 
 	absWineCfgPath := filepath.Join(absPrefixDir, relPrefixDriveCDir, relWineCfgPath)
 
-	return WineRun(id, langCode, absWineCfgPath, "", nil, verbose, force)
+	et := &execTask{
+		exe:     absWineCfgPath,
+		verbose: verbose,
+	}
+
+	return WineRun(id, langCode, et, force)
 }

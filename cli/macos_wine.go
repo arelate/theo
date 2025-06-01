@@ -23,7 +23,7 @@ const (
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
 type (
-	wineRunFunc        func(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, pwdPath string, arg ...string) error
+	wineRunFunc        func(id, langCode string, rdx redux.Readable, et *execTask, force bool) error
 	wineInitPrefixFunc func(id, langCode string, rdx redux.Readable, verbose bool) error
 )
 
@@ -38,9 +38,9 @@ func macOsInitPrefix(id, langCode string, rdx redux.Readable, verbose bool) erro
 	return macOsCreateCxBottle(id, langCode, rdx, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, pwdPath string, arg ...string) error {
+func macOsWineRun(id, langCode string, rdx redux.Readable, et *execTask, force bool) error {
 
-	_, exeFilename := filepath.Split(exePath)
+	_, exeFilename := filepath.Split(et.exe)
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer mwra.Done()
@@ -49,9 +49,9 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose
 		return err
 	}
 
-	if verbose && len(env) > 0 {
+	if et.verbose && len(et.env) > 0 {
 		pea := nod.Begin(" env:")
-		pea.EndWithResult(strings.Join(env, " "))
+		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
 	absCxBinDir, err := macOsGetAbsCxBinDir()
@@ -66,23 +66,23 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, env []string, verbose
 		return err
 	}
 
-	if strings.HasSuffix(exePath, ".lnk") {
-		arg = append([]string{"--start", exePath}, arg...)
+	if strings.HasSuffix(et.exe, ".lnk") {
+		et.args = append([]string{"--start", et.exe}, et.args...)
 	} else {
-		arg = append([]string{exePath}, arg...)
+		et.args = append([]string{et.exe}, et.args...)
 	}
 
-	arg = append([]string{"--bottle", absPrefixDir}, arg...)
+	et.args = append([]string{"--bottle", absPrefixDir}, et.args...)
 
-	cmd := exec.Command(absWineBinPath, arg...)
+	cmd := exec.Command(absWineBinPath, et.args...)
 
-	if pwdPath != "" {
-		cmd.Dir = pwdPath
+	if et.workDir != "" {
+		cmd.Dir = et.workDir
 	}
 
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = append(os.Environ(), et.env...)
 
-	if verbose {
+	if et.verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}

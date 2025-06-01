@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbose, force bool, exePath, pwdPath string, arg ...string) error {
+func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force bool) error {
 
-	_, exeFilename := filepath.Split(exePath)
+	_, exeFilename := filepath.Split(et.exe)
 
 	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer lwra.Done()
@@ -24,9 +24,9 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 		return err
 	}
 
-	if verbose && len(env) > 0 {
+	if et.verbose && len(et.env) > 0 {
 		pea := nod.Begin(" env:")
-		pea.EndWithResult(strings.Join(env, " "))
+		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
 	absUmuRunPath, err := data.UmuRunLatestReleasePath()
@@ -48,8 +48,8 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 		GogId:   id,
 		Prefix:  absPrefixDir,
 		Proton:  absProtonPath,
-		ExePath: exePath,
-		Args:    arg,
+		ExePath: et.exe,
+		Args:    et.args,
 	}
 
 	if steamAppId, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok && steamAppId != "" {
@@ -63,13 +63,13 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, env []string, verbo
 
 	cmd := exec.Command(absUmuRunPath, "--config", absUmuConfigPath)
 
-	if pwdPath != "" {
-		cmd.Dir = pwdPath
+	if et.workDir != "" {
+		cmd.Dir = et.workDir
 	}
 
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = append(os.Environ(), et.env...)
 
-	if verbose {
+	if et.verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}

@@ -32,19 +32,22 @@ func WineRunHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
-	env := make([]string, 0)
-	if q.Has("env") {
-		env = strings.Split(q.Get("env"), ",")
+
+	et := &execTask{
+		exe:     q.Get("exe-path"),
+		workDir: q.Get("working-dir"),
+		verbose: q.Has("verbose"),
 	}
-	exePath := q.Get("exe-path")
-	installPath := q.Get("install-path")
-	verbose := q.Has("verbose")
+	if q.Has("env") {
+		et.env = strings.Split(q.Get("env"), ",")
+	}
+
 	force := q.Has("force")
 
-	return WineRun(id, langCode, exePath, installPath, env, verbose, force)
+	return WineRun(id, langCode, et, force)
 }
 
-func WineRun(id string, langCode string, exePath, installPath string, env []string, verbose, force bool) error {
+func WineRun(id string, langCode string, et *execTask, force bool) error {
 
 	wra := nod.Begin("running %s version with WINE...", vangogh_integration.Windows)
 	defer wra.Done()
@@ -75,23 +78,23 @@ func WineRun(id string, langCode string, exePath, installPath string, env []stri
 	}
 
 	prefixEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, path.Join(prefixName, langCode))
-	prefixEnv = mergeEnv(prefixEnv, env)
+	et.env = mergeEnv(prefixEnv, et.env)
 
-	if exePath == "" {
-		exePath, err = getExePath(id, langCode, rdx)
+	if et.exe == "" {
+		et.exe, err = getExePath(id, langCode, rdx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if installPath == "" {
-		installPath, err = findGogGameInstallPath(id, langCode, rdx)
+	if et.workDir == "" {
+		et.workDir, err = findGogGameInstallPath(id, langCode, rdx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if _, err = os.Stat(exePath); err != nil {
+	if _, err = os.Stat(et.exe); err != nil {
 		return err
 	}
 
@@ -110,7 +113,7 @@ func WineRun(id string, langCode string, exePath, installPath string, env []stri
 		return errors.New("wine-run: unsupported operating system")
 	}
 
-	return currentOsWineRun(id, langCode, rdx, prefixEnv, verbose, force, exePath, installPath)
+	return currentOsWineRun(id, langCode, rdx, et, force)
 }
 
 func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
