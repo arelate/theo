@@ -38,7 +38,7 @@ func ListPlaytasks(id string, langCode string) error {
 		return err
 	}
 
-	absGogGameInfoPath, err := findGogGameInfoPath(id, langCode, rdx)
+	absGogGameInfoPath, err := findPrefixGogGameInfoPath(id, langCode, rdx)
 	if err != nil {
 		return err
 	}

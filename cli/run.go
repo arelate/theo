@@ -26,17 +26,20 @@ func RunHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
-	var env []string
-	if q.Has("env") {
-		env = strings.Split(q.Get("env"), ",")
+
+	et := &execTask{
+		verbose: q.Has("verbose"),
 	}
-	verbose := q.Has("verbose")
+	if q.Has("env") {
+		et.env = strings.Split(q.Get("env"), ",")
+	}
+
 	force := q.Has("force")
 
-	return Run(id, langCode, env, verbose, force)
+	return Run(id, langCode, et, force)
 }
 
-func Run(id string, langCode string, env []string, verbose, force bool) error {
+func Run(id string, langCode string, et *execTask, force bool) error {
 
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.Done()
@@ -64,7 +67,7 @@ func Run(id string, langCode string, env []string, verbose, force bool) error {
 		return err
 	}
 
-	return currentOsRunApp(id, langCode, rdx, env, verbose)
+	return currentOsRunApp(id, langCode, rdx, et)
 }
 
 func checkProductType(id string, rdx redux.Writeable, force bool) error {
@@ -89,7 +92,7 @@ func checkProductType(id string, rdx redux.Writeable, force bool) error {
 	return nil
 }
 
-func currentOsRunApp(id, langCode string, rdx redux.Readable, env []string, verbose bool) error {
+func currentOsRunApp(id, langCode string, rdx redux.Readable, et *execTask) error {
 
 	absBundlePath, err := data.GetAbsBundlePath(id, langCode, data.CurrentOs(), rdx)
 	if err != nil {
@@ -102,21 +105,21 @@ func currentOsRunApp(id, langCode string, rdx redux.Readable, env []string, verb
 		return err
 	}
 
-	if err := currentOsExecute(absBundlePath, env, verbose); err != nil {
+	if err := currentOsExecute(absBundlePath, et); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func currentOsExecute(path string, env []string, verbose bool) error {
+func currentOsExecute(path string, et *execTask) error {
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		return macOsExecute(path, env, verbose)
+		return macOsExecute(path, et)
 	case vangogh_integration.Windows:
-		return windowsExecute(path, env, verbose)
+		return windowsExecute(path, et)
 	case vangogh_integration.Linux:
-		return linuxExecute(path, env, verbose)
+		return linuxExecute(path, et)
 	default:
 		return errors.New("cannot reveal on unknown operating system")
 	}

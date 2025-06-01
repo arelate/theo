@@ -469,19 +469,19 @@ func macOsReveal(path string) error {
 	return cmd.Run()
 }
 
-func macOsExecute(path string, env []string, verbose bool) error {
+func macOsExecute(path string, et *execTask) error {
 
 	path = macOsLocateAppBundle(path)
 
 	cmd := exec.Command("open", path)
 	cmd.Dir = path
 
-	if verbose {
+	if et.verbose {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
 
-	for _, e := range env {
+	for _, e := range et.env {
 		cmd.Env = append(cmd.Env, e)
 	}
 

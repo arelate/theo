@@ -189,7 +189,7 @@ func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string,
 	}
 }
 
-func findGogGameInfoPath(id, langCode string, rdx redux.Readable) (string, error) {
+func findPrefixGogGameInfoPath(id, langCode string, rdx redux.Readable) (string, error) {
 
 	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
 	absGogGameInfoPath, err := findPrefixFile(id, langCode, rdx, gogGameInfoFilename, ".info file")
@@ -218,7 +218,7 @@ func getGogGameInfo(absGogGameInfoPath string) (*gog_integration.GogGameInfo, er
 
 func findGogGameInfoPrimaryPlaytaskExe(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absGogGameInfoPath, err := findGogGameInfoPath(id, langCode, rdx)
+	absGogGameInfoPath, err := findPrefixGogGameInfoPath(id, langCode, rdx)
 	if err != nil {
 		return "", err
 	}
