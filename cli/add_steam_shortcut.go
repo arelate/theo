@@ -144,7 +144,7 @@ func createSteamShortcut(loginUser string, target SteamShortcutTarget, id, langC
 	// this is only required for WINE targets
 	var installPath string
 	if target == SteamShortcutTargetWineRun || target == SteamShortcutTargetExe {
-		installPath, err = findGogGameInstallPath(id, langCode, rdx)
+		installPath, err = prefixFindGogGameInstallPath(id, langCode, rdx)
 		if err != nil {
 			return nil, err
 		}

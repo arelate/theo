@@ -113,6 +113,7 @@ reveal-prefix
 
 run
     id^
+    os
     lang-code
     env&
     verbose

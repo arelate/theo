@@ -7,7 +7,10 @@ import (
 )
 
 func UserDataHomeDir() (string, error) {
-	switch CurrentOs() {
+
+	currentOs := CurrentOs()
+
+	switch currentOs {
 	case vangogh_integration.Linux:
 		uhd, err := os.UserHomeDir()
 		if err != nil {
@@ -20,6 +23,6 @@ func UserDataHomeDir() (string, error) {
 	case vangogh_integration.MacOS:
 		return os.UserConfigDir()
 	default:
-		panic("unsupported operating system")
+		panic(currentOs.ErrUnsupported())
 	}
 }

@@ -1,9 +1,10 @@
 package cli
 
 type execTask struct {
-	exe     string
-	workDir string
-	args    []string
-	env     []string
-	verbose bool
+	exe      string
+	workDir  string
+	args     []string
+	env      []string
+	playTask string
+	verbose  bool
 }

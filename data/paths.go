@@ -17,8 +17,7 @@ import (
 const theoDirname = "theo"
 
 const (
-	inventoryExt      = ".txt"
-	MacOsAppBundleExt = ".app"
+	inventoryExt = ".txt"
 )
 
 func InitRootDir() (string, error) {
@@ -203,7 +202,7 @@ func GetRelFilesModifiedAfter(absDir string, utcTime int64) ([]string, error) {
 	return files, nil
 }
 
-func GetAbsBundlePath(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+func GetAbsInstalledPath(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
 
 	installedAppsDir, err := pathways.GetAbsDir(InstalledApps)
 	if err != nil {

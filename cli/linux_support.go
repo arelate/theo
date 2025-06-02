@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"errors"
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -19,6 +20,10 @@ import (
 const desktopGlob = "*.desktop"
 
 const mojosetupDir = ".mojosetup"
+
+const linuxStartShFilename = "start.sh"
+
+const relLinuxGogGameInfoDir = "game"
 
 func linuxInstallProduct(id string,
 	productDetails *vangogh_integration.ProductDetails,
@@ -43,7 +48,7 @@ func linuxInstallProduct(id string,
 		return err
 	}
 
-	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.Linux, rdx)
+	absInstalledPath, err := data.GetAbsInstalledPath(id, link.LanguageCode, vangogh_integration.Linux, rdx)
 	if err != nil {
 		return err
 	}
@@ -57,7 +62,7 @@ func linuxInstallProduct(id string,
 		return err
 	}
 
-	if err := linuxExecuteInstaller(absInstallerPath, absBundlePath); err != nil {
+	if err = linuxExecuteInstaller(absInstallerPath, absInstalledPath); err != nil {
 		return err
 	}
 
@@ -76,7 +81,7 @@ func linuxInstallProduct(id string,
 		}
 	}
 
-	mojosetupProductDir := filepath.Join(absBundlePath, mojosetupDir)
+	mojosetupProductDir := filepath.Join(absInstalledPath, mojosetupDir)
 	if _, err = os.Stat(mojosetupProductDir); err == nil {
 		if err := os.RemoveAll(mojosetupProductDir); err != nil {
 			return err
@@ -176,12 +181,10 @@ func linuxReveal(path string) error {
 	return cmd.Run()
 }
 
-func linuxExecute(path string, et *execTask) error {
+func nixExec(et *execTask) error {
 
-	startShPath := linuxLocateStartSh(path)
-
-	cmd := exec.Command(startShPath)
-	cmd.Dir = path
+	cmd := exec.Command(et.exe, et.args...)
+	cmd.Dir = et.workDir
 
 	if et.verbose {
 		cmd.Stdout = os.Stdout
@@ -195,21 +198,24 @@ func linuxExecute(path string, et *execTask) error {
 	return cmd.Run()
 }
 
-func linuxLocateStartSh(path string) string {
-	if strings.HasSuffix(path, linuxStartShFilename) {
-		return path
+func linuxFindStartSh(id, langCode string, rdx redux.Readable) (string, error) {
+
+	absInstalledPath, err := data.GetAbsInstalledPath(id, langCode, vangogh_integration.Linux, rdx)
+	if err != nil {
+		return "", err
 	}
 
-	absStartShPath := filepath.Join(path, linuxStartShFilename)
-	if _, err := os.Stat(absStartShPath); err == nil {
-		return absStartShPath
+	absStartShPath := filepath.Join(absInstalledPath, linuxStartShFilename)
+	if _, err = os.Stat(absStartShPath); err == nil {
+		return absStartShPath, nil
 	} else if os.IsNotExist(err) {
-		if matches, err := filepath.Glob(filepath.Join(path, "*", linuxStartShFilename)); err == nil && len(matches) > 0 {
-			return matches[0]
+		var matches []string
+		if matches, err = filepath.Glob(filepath.Join(absInstalledPath, "*", linuxStartShFilename)); err == nil && len(matches) > 0 {
+			return matches[0], nil
 		}
 	}
 
-	return path
+	return "", errors.New("cannot locate start.sh for " + id)
 }
 
 func nixUninstallProduct(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
@@ -217,7 +223,7 @@ func nixUninstallProduct(id, langCode string, operatingSystem vangogh_integratio
 	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, id)
 	defer umpa.Done()
 
-	absBundlePath, err := data.GetAbsBundlePath(id, langCode, operatingSystem, rdx)
+	absBundlePath, err := data.GetAbsInstalledPath(id, langCode, operatingSystem, rdx)
 	if err != nil {
 		return err
 	}
@@ -276,4 +282,49 @@ func nixFreeSpace(path string) (int64, error) {
 	} else {
 		return -1, err
 	}
+}
+
+func linuxFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+
+	absInstalledPath, err := data.GetAbsInstalledPath(id, langCode, vangogh_integration.Linux, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	gogGameInfoFilename := strings.Replace(gog_integration.GogGameInfoFilenameTemplate, "{id}", id, 1)
+
+	absGogGameInfoPath := filepath.Join(absInstalledPath, relLinuxGogGameInfoDir, gogGameInfoFilename)
+
+	if _, err = os.Stat(absGogGameInfoPath); err == nil {
+		return absGogGameInfoPath, nil
+	} else if os.IsNotExist(err) {
+		return "", nil
+	} else {
+		return "", err
+	}
+}
+
+func linuxExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integration.GogGameInfo, et *execTask) (*execTask, error) {
+
+	if pt := gogGameInfo.GetPlayTask(et.playTask); pt != nil {
+		absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
+
+		absExePath := filepath.Join(absGogGameInfoDir, pt.Path)
+
+		et.exe = absExePath
+		et.workDir = absGogGameInfoDir
+
+		if pt.Arguments != "" {
+			et.args = append(et.args, pt.Arguments)
+		}
+	}
+
+	return et, nil
+}
+
+func linuxExecTaskStartSh(absStartShPath string, et *execTask) (*execTask, error) {
+
+	et.exe = absStartShPath
+
+	return et, nil
 }

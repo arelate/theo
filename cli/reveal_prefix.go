@@ -14,7 +14,6 @@ import (
 
 const (
 	relPrefixDriveCDir = "drive_c"
-	gogGamesDir        = "GOG Games"
 )
 
 func RevealPrefixHandler(u *url.URL) error {

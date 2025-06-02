@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -16,9 +17,11 @@ import (
 	"strings"
 )
 
-const (
-	catCmdPfx = "cat "
-)
+const catCmdPfx = "cat "
+
+const appBundleExt = ".app"
+
+const relMacOsGogGameInfoDir = "Contents/Resources"
 
 func macOsInstallProduct(id string,
 	productDetails *vangogh_integration.ProductDetails,
@@ -74,9 +77,9 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadL
 	// if the product extracts dir already exists - that would imply that the product
 	// has been extracted already. Remove the directory with contents if forced
 	// Return early otherwise (if not forced).
-	if _, err := os.Stat(localFilenameExtractsDir); err == nil {
+	if _, err = os.Stat(localFilenameExtractsDir); err == nil {
 		if force {
-			if err := os.RemoveAll(localFilenameExtractsDir); err != nil {
+			if err = os.RemoveAll(localFilenameExtractsDir); err != nil {
 				return err
 			}
 		} else {
@@ -85,8 +88,8 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadL
 	}
 
 	productExtractDir, _ := filepath.Split(localFilenameExtractsDir)
-	if _, err := os.Stat(productExtractDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(productExtractDir, 0755); err != nil {
+	if _, err = os.Stat(productExtractDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(productExtractDir, 0755); err != nil {
 			return err
 		}
 	}
@@ -134,9 +137,9 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.ProductDownloadLink
 
 	installerType := postInstallScript.InstallerType()
 
-	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
+	absBundlePath, err := data.GetAbsInstalledPath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
 
-	if strings.HasSuffix(postInstallScript.bundleName, data.MacOsAppBundleExt) {
+	if strings.HasSuffix(postInstallScript.bundleName, appBundleExt) {
 		absBundlePath = filepath.Join(absBundlePath, postInstallScript.bundleName)
 	}
 
@@ -158,7 +161,7 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 	// when installing a game
 	if _, err := os.Stat(absInstallationPath); err == nil {
 		if force {
-			if err := os.RemoveAll(absInstallationPath); err != nil {
+			if err = os.RemoveAll(absInstallationPath); err != nil {
 				return err
 			}
 		} else {
@@ -258,40 +261,22 @@ func macOsPostInstallActions(id string,
 		return err
 	}
 
-	absBundlePath, err := data.GetAbsBundlePath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
-
-	// macOS bundle path points to a directory, not an .app package
-	// try to locate .app package inside the bundle dir
-	if !strings.HasSuffix(absBundlePath, data.MacOsAppBundleExt) {
-		absBundlePath = macOsLocateAppBundle(absBundlePath)
+	absBundlePath, err := macOsFindBundleApp(id, link.LanguageCode, rdx)
+	if err != nil {
+		return err
 	}
 
 	if customCommands := pis.CustomCommands(); len(customCommands) > 0 {
-		if err := macOsProcessPostInstallScript(customCommands, productDownloadsDir, absBundlePath); err != nil {
+		if err = macOsProcessPostInstallScript(customCommands, productDownloadsDir, absBundlePath); err != nil {
 			return err
 		}
 	}
 
-	if err := macOsRemoveXattrs(absBundlePath); err != nil {
+	if err = macOsRemoveXattrs(absBundlePath); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func macOsLocateAppBundle(path string) string {
-
-	if strings.HasSuffix(path, data.MacOsAppBundleExt) {
-		return path
-	}
-
-	if matches, err := filepath.Glob(filepath.Join(path, "*"+data.MacOsAppBundleExt)); err == nil {
-		if len(matches) == 1 {
-			return matches[0]
-		}
-	}
-
-	return path
 }
 
 func macOsRemoveXattrs(path string) error {
@@ -307,7 +292,7 @@ func macOsRemoveXattrs(path string) error {
 	return cmd.Run()
 }
 
-func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundleInstallPath string) error {
+func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundleAppPath string) error {
 
 	pcca := nod.NewProgress(" processing post-install commands...")
 	defer pcca.Done()
@@ -318,7 +303,7 @@ func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundl
 		if strings.HasPrefix(cmd, catCmdPfx) {
 			if catCmdParts := strings.Split(strings.TrimPrefix(cmd, catCmdPfx), " "); len(catCmdParts) == 3 {
 				srcGlob := strings.Trim(strings.Replace(catCmdParts[0], "\"${pkgpath}\"", productDownloadsDir, 1), "\"")
-				dstPath := strings.Trim(strings.Replace(catCmdParts[2], "${gog_full_path}", bundleInstallPath, 1), "\"")
+				dstPath := strings.Trim(strings.Replace(catCmdParts[2], "${gog_full_path}", bundleAppPath, 1), "\"")
 				if err := macOsExecCatFiles(srcGlob, dstPath); err != nil {
 					return err
 				}
@@ -469,21 +454,82 @@ func macOsReveal(path string) error {
 	return cmd.Run()
 }
 
-func macOsExecute(path string, et *execTask) error {
+func macOsFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
 
-	path = macOsLocateAppBundle(path)
-
-	cmd := exec.Command("open", path)
-	cmd.Dir = path
-
-	if et.verbose {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+	absBundleAppPath, err := macOsFindBundleApp(id, langCode, rdx)
+	if err != nil {
+		return "", err
 	}
 
-	for _, e := range et.env {
-		cmd.Env = append(cmd.Env, e)
+	gogGameInfoFilename := strings.Replace(gog_integration.GogGameInfoFilenameTemplate, "{id}", id, 1)
+
+	absGogGameInfoPath := filepath.Join(absBundleAppPath, relMacOsGogGameInfoDir, gogGameInfoFilename)
+
+	if _, err = os.Stat(absGogGameInfoPath); err == nil {
+		return absGogGameInfoPath, nil
+	} else if os.IsNotExist(err) {
+		// some GOG games put Contents/Resources in the top install location, not app bundle
+
+		var absInstalledPath string
+		absInstalledPath, err = data.GetAbsInstalledPath(id, langCode, vangogh_integration.MacOS, rdx)
+		if err != nil {
+			return "", err
+		}
+
+		absGogGameInfoPath = filepath.Join(absInstalledPath, relMacOsGogGameInfoDir, gogGameInfoFilename)
+		if _, err = os.Stat(absGogGameInfoPath); err == nil {
+			return absGogGameInfoPath, nil
+		}
+	} else {
+		return "", err
 	}
 
-	return cmd.Run()
+	return "", nil
+}
+
+func macOsFindBundleApp(id, langCode string, rdx redux.Readable) (string, error) {
+
+	absInstalledPath, err := data.GetAbsInstalledPath(id, langCode, vangogh_integration.MacOS, rdx)
+	if err != nil {
+		return "", err
+	}
+
+	if strings.HasSuffix(absInstalledPath, appBundleExt) {
+		return absInstalledPath, nil
+	}
+
+	var matches []string
+	if matches, err = filepath.Glob(filepath.Join(absInstalledPath, "*"+appBundleExt)); err == nil {
+		if len(matches) == 1 {
+			return matches[0], nil
+		}
+	}
+
+	return "", errors.New("cannot locate macOS bundle.app for " + id)
+}
+
+func macOsExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integration.GogGameInfo, et *execTask) (*execTask, error) {
+
+	if pt := gogGameInfo.GetPlayTask(et.playTask); pt != nil {
+		absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
+		absExeRootDir := strings.TrimSuffix(absGogGameInfoDir, relMacOsGogGameInfoDir+"/")
+
+		absExePath := filepath.Join(absExeRootDir, pt.Path)
+		et.exe = absExePath
+		et.workDir = absExeRootDir
+
+		if pt.Arguments != "" {
+			et.args = append(et.args, pt.Arguments)
+		}
+	}
+
+	return et, nil
+}
+
+func macOsExecTaskBundleApp(absBundleAppPath string, et *execTask) (*execTask, error) {
+
+	et.exe = "open"
+	et.args = append([]string{absBundleAppPath}, et.args...)
+
+	return et, nil
 }

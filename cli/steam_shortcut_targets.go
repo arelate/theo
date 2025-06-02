@@ -67,13 +67,13 @@ func GetSteamShortcutExeLaunchOptions(id string, langCode string, target SteamSh
 		launchOptions = strings.Replace(wineRunLaunchOptionsTemplate, "{id}", id, 1)
 		launchOptions = strings.Replace(launchOptions, "{lang-code}", langCode, 1)
 	case SteamShortcutTargetExe:
-		exe, err = findPrefixGogGameInfoPrimaryPlayTaskExe(id, langCode, rdx)
+		exe, err = prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode, rdx)
 		if err != nil {
 			return "", "", err
 		}
 
 		if exe == "" {
-			exe, err = findPrefixGogGamesLnk(id, langCode, rdx)
+			exe, err = prefixFindGogGamesLnk(id, langCode, rdx)
 			if err != nil {
 				return "", "", err
 			}

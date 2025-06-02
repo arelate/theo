@@ -7,12 +7,13 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
 
-func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 
 	prefixName, err := data.GetPrefixName(id, rdx)
 	if err != nil {
@@ -28,13 +29,13 @@ func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
 		return filepath.Join(absPrefixDir, relPrefixDriveCDir, ep), nil
 	}
 
-	exePath, err := findPrefixGogGameInfoPrimaryPlayTaskExe(id, langCode, rdx)
+	exePath, err := prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode, rdx)
 	if err != nil {
 		return "", err
 	}
 
 	if exePath == "" {
-		exePath, err = findPrefixGogGamesLnk(id, langCode, rdx)
+		exePath, err = prefixFindGogGamesLnk(id, langCode, rdx)
 		if err != nil {
 			return "", err
 		}
@@ -43,13 +44,7 @@ func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
 	return exePath, nil
 }
 
-func findPrefixGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
-	return findPrefixFile(id, langCode, rdx, gogInstallationLnkGlob, "default .lnk")
-}
-
-func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string, msg string) (string, error) {
-	fpfa := nod.Begin(" locating %s...", msg)
-	defer fpfa.Done()
+func prefixFindGlobFile(id, langCode string, rdx redux.Readable, globPattern string) (string, error) {
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil
@@ -76,32 +71,44 @@ func findPrefixFile(id, langCode string, rdx redux.Readable, globPattern string,
 	}
 
 	if len(filteredMatches) == 1 {
-		relMatch, err := filepath.Rel(absPrefixDriveCDir, filteredMatches[0])
-		if err != nil {
+
+		if _, err = os.Stat(filteredMatches[0]); err == nil {
+			return filteredMatches[0], nil
+		} else if os.IsNotExist(err) {
+			return "", nil
+		} else {
 			return "", err
 		}
-		fpfa.EndWithResult("found %s", filepath.Join("C:", relMatch))
 
-		return filteredMatches[0], nil
-	} else {
-		return "", errors.New("cannot locate suitable file in the GOG Games folder")
-	}
-}
-
-func findPrefixGogGameInfoPath(id, langCode string, rdx redux.Readable) (string, error) {
-
-	gogGameInfoFilename := strings.Replace(gogGameInfoGlob, "{id}", id, -1)
-	absGogGameInfoPath, err := findPrefixFile(id, langCode, rdx, gogGameInfoFilename, ".info file")
-	if err != nil {
-		return "", err
 	}
 
-	return absGogGameInfoPath, nil
+	return "", nil
 }
 
-func findPrefixGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixFindGogGameInstallPath(id, langCode string, rdx redux.Readable) (string, error) {
+	fi := nod.Begin(" finding install path...")
+	defer fi.Done()
 
-	absGogGameInfoPath, err := findPrefixGogGameInfoPath(id, langCode, rdx)
+	return prefixFindGlobFile(id, langCode, rdx, gogGameInstallDir)
+}
+
+func prefixFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+	fpggi := nod.Begin(" finding goggame-%s.info...", id)
+	defer fpggi.Done()
+
+	return prefixFindGlobFile(id, langCode, rdx, strings.Replace(gogGameInfoGlobTemplate, "{id}", id, -1))
+}
+
+func prefixFindGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
+	fpl := nod.Begin(" finding .lnk...")
+	defer fpl.Done()
+
+	return prefixFindGlobFile(id, langCode, rdx, gogGameLnkGlob)
+}
+
+func prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Readable) (string, error) {
+
+	absGogGameInfoPath, err := prefixFindGogGameInfo(id, langCode, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +119,7 @@ func findPrefixGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Read
 	}
 
 	var relExePath string
-	if ppt := gogGameInfo.PrimaryPlayTask(); ppt != nil {
+	if ppt := gogGameInfo.GetPlayTask(""); ppt != nil {
 		relExePath = ppt.Path
 	} else if len(gogGameInfo.PlayTasks) > 0 {
 		relExePath = gogGameInfo.PlayTasks[0].Path
@@ -125,8 +132,4 @@ func findPrefixGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Read
 	absExeDir, _ := filepath.Split(absGogGameInfoPath)
 
 	return filepath.Join(absExeDir, relExePath), nil
-}
-
-func findGogGameInstallPath(id, langCode string, rdx redux.Readable) (string, error) {
-	return findPrefixFile(id, langCode, rdx, gogGameInstallDir, "install path")
 }

@@ -109,7 +109,7 @@ func currentOsUninstallProduct(id, langCode string, rdx redux.Readable) error {
 			return err
 		}
 	default:
-		panic("unsupported operating system")
+		return currentOs.ErrUnsupported()
 	}
 	return nil
 }

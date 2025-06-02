@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"net/url"
 	"os"
 	"path"
@@ -12,12 +11,6 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-)
-
-const (
-	gogGameInstallDir      = gogGamesDir + "/*"
-	gogInstallationLnkGlob = gogGamesDir + "/*/*.lnk"
-	gogGameInfoGlob        = gogGamesDir + "/*/goggame-{id}.info"
 )
 
 func WineRunHandler(u *url.URL) error {
@@ -78,14 +71,14 @@ func WineRun(id string, langCode string, et *execTask, force bool) error {
 	et.env = mergeEnv(prefixEnv, et.env)
 
 	if et.exe == "" {
-		et.exe, err = getExePath(id, langCode, rdx)
+		et.exe, err = prefixGetExePath(id, langCode, rdx)
 		if err != nil {
 			return err
 		}
 	}
 
 	if et.workDir == "" {
-		et.workDir, err = findGogGameInstallPath(id, langCode, rdx)
+		et.workDir, err = prefixFindGogGameInstallPath(id, langCode, rdx)
 		if err != nil {
 			return err
 		}
@@ -101,13 +94,15 @@ func WineRun(id string, langCode string, et *execTask, force bool) error {
 
 	var currentOsWineRun wineRunFunc
 
-	switch data.CurrentOs() {
+	currentOs := data.CurrentOs()
+
+	switch currentOs {
 	case vangogh_integration.MacOS:
 		currentOsWineRun = macOsWineRun
 	case vangogh_integration.Linux:
 		currentOsWineRun = linuxProtonRun
 	default:
-		return errors.New("wine-run: unsupported operating system")
+		return currentOs.ErrUnsupported()
 	}
 
 	return currentOsWineRun(id, langCode, rdx, et, force)

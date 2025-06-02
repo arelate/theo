@@ -15,6 +15,6 @@ func CurrentOs() vangogh_integration.OperatingSystem {
 	if os, ok := goOperatingSystems[runtime.GOOS]; ok {
 		return os
 	} else {
-		panic("unsupported operating system")
+		panic(os.ErrUnsupported())
 	}
 }

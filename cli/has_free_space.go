@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -63,7 +62,7 @@ func HasFreeSpace(path string, bytes int64) (bool, error) {
 	case vangogh_integration.Linux:
 		availableBytes, err = nixFreeSpace(path)
 	default:
-		return false, errors.New("unsupported operating system")
+		return false, currentOs.ErrUnsupported()
 	}
 
 	if err != nil {

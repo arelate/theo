@@ -2,19 +2,16 @@ package cli
 
 import (
 	"errors"
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"os"
+	"path/filepath"
 	"strings"
 	"time"
-)
-
-const (
-	linuxStartShFilename = "start.sh"
 )
 
 func RunHandler(u *url.URL) error {
@@ -22,13 +19,20 @@ func RunHandler(u *url.URL) error {
 	q := u.Query()
 
 	id := q.Get(vangogh_integration.IdProperty)
+
+	operatingSystem := data.CurrentOs()
+	if q.Has(vangogh_integration.OperatingSystemsProperty) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	}
+
 	langCode := defaultLangCode
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
 
 	et := &execTask{
-		verbose: q.Has("verbose"),
+		verbose:  q.Has("verbose"),
+		playTask: q.Get("playtask"),
 	}
 	if q.Has("env") {
 		et.env = strings.Split(q.Get("env"), ",")
@@ -36,10 +40,10 @@ func RunHandler(u *url.URL) error {
 
 	force := q.Has("force")
 
-	return Run(id, langCode, et, force)
+	return Run(id, operatingSystem, langCode, et, force)
 }
 
-func Run(id string, langCode string, et *execTask, force bool) error {
+func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, et *execTask, force bool) error {
 
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.Done()
@@ -67,7 +71,7 @@ func Run(id string, langCode string, et *execTask, force bool) error {
 		return err
 	}
 
-	return currentOsRunApp(id, langCode, rdx, et)
+	return osRun(id, operatingSystem, langCode, rdx, et)
 }
 
 func checkProductType(id string, rdx redux.Writeable, force bool) error {
@@ -92,40 +96,191 @@ func checkProductType(id string, rdx redux.Writeable, force bool) error {
 	return nil
 }
 
-func currentOsRunApp(id, langCode string, rdx redux.Readable, et *execTask) error {
+func setLastRunDate(rdx redux.Writeable, id string) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	return rdx.ReplaceValues(data.LastRunDateProperty, id, now)
+}
 
-	absBundlePath, err := data.GetAbsBundlePath(id, langCode, data.CurrentOs(), rdx)
+func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) error {
+	if operatingSystem == vangogh_integration.MacOS && data.CurrentOs() != vangogh_integration.MacOS {
+		return errors.New("running macOS versions is only supported on macOS")
+	}
+	if operatingSystem == vangogh_integration.Linux && data.CurrentOs() != vangogh_integration.Linux {
+		return errors.New("running Linux versions is only supported on Linux")
+	}
+	return nil
+}
+
+func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable, et *execTask) error {
+
+	if err := osConfirmRunnability(operatingSystem); err != nil {
+		return err
+	}
+
+	absGogGameInfoPath, err := osFindGogGameInfo(id, operatingSystem, langCode, rdx)
 	if err != nil {
 		return err
 	}
 
-	if _, err := os.Stat(absBundlePath); os.IsNotExist(err) {
-		return errors.New("cannot find app bundle, please reinstall the app " + id)
-	} else if err != nil {
-		return err
+	switch absGogGameInfoPath {
+	case "":
+		var absDefaultLauncherPath string
+		if absDefaultLauncherPath, err = osFindDefaultLauncher(id, operatingSystem, langCode, rdx); err != nil {
+			return err
+		}
+		if et, err = osExecTaskDefaultLauncher(absDefaultLauncherPath, operatingSystem, et); err != nil {
+			return err
+		}
+	default:
+		if et, err = osExecTaskGogGameInfo(absGogGameInfoPath, operatingSystem, et); err != nil {
+			return err
+		}
 	}
 
-	if err := currentOsExecute(absBundlePath, et); err != nil {
-		return err
+	return osExec(operatingSystem, et)
+}
+
+func osFindGogGameInfo(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
+
+	var gogGameInfoPath string
+	var err error
+
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		gogGameInfoPath, err = macOsFindGogGameInfo(id, langCode, rdx)
+	case vangogh_integration.Linux:
+		gogGameInfoPath, err = linuxFindGogGameInfo(id, langCode, rdx)
+	case vangogh_integration.Windows:
+		currentOs := data.CurrentOs()
+		switch currentOs {
+		case vangogh_integration.MacOS:
+			fallthrough
+		case vangogh_integration.Linux:
+			gogGameInfoPath, err = prefixFindGogGameInfo(id, langCode, rdx)
+		case vangogh_integration.Windows:
+			gogGameInfoPath, err = windowsFindGogGameInfo(id, langCode, rdx)
+		default:
+			return "", currentOs.ErrUnsupported()
+		}
+	default:
+		return "", operatingSystem.ErrUnsupported()
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	return gogGameInfoPath, nil
+}
+
+func osExecTaskGogGameInfo(absGogGameInfoPath string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) (*execTask, error) {
+
+	_, gogGameInfoFilename := filepath.Split(absGogGameInfoPath)
+
+	eggia := nod.Begin(" running %s...", gogGameInfoFilename)
+	defer eggia.Done()
+
+	gogGameInfo, err := gog_integration.GetGogGameInfo(absGogGameInfoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsExecTaskGogGameInfo(absGogGameInfoPath, gogGameInfo, et)
+	case vangogh_integration.Linux:
+		return linuxExecTaskGogGameInfo(absGogGameInfoPath, gogGameInfo, et)
+	case vangogh_integration.Windows:
+		currentOs := data.CurrentOs()
+		switch currentOs {
+		case vangogh_integration.MacOS:
+			// exec task for macOS prefix
+		case vangogh_integration.Linux:
+			// exec task for Linux prefix
+		case vangogh_integration.Windows:
+			return windowsExecTaskGogGameInfo(absGogGameInfoPath, gogGameInfo, et)
+		default:
+			return nil, currentOs.ErrUnsupported()
+		}
+	default:
+		return nil, operatingSystem.ErrUnsupported()
+	}
+
+	return nil, nil
+}
+
+func osFindDefaultLauncher(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
+
+	var defaultLauncherPath string
+	var err error
+
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		defaultLauncherPath, err = macOsFindBundleApp(id, langCode, rdx)
+	case vangogh_integration.Linux:
+		defaultLauncherPath, err = linuxFindStartSh(id, langCode, rdx)
+	case vangogh_integration.Windows:
+		currentOs := data.CurrentOs()
+		switch currentOs {
+		case vangogh_integration.MacOS:
+			fallthrough
+		case vangogh_integration.Linux:
+			defaultLauncherPath, err = prefixFindGogGamesLnk(id, langCode, rdx)
+		case vangogh_integration.Windows:
+			defaultLauncherPath, err = windowsFindGogGamesLnk(id, langCode, rdx)
+		default:
+			return "", currentOs.ErrUnsupported()
+		}
+	default:
+		return "", operatingSystem.ErrUnsupported()
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	return defaultLauncherPath, nil
+}
+
+func osExecTaskDefaultLauncher(absDefaultLauncherPath string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) (*execTask, error) {
+
+	_, defaultLauncherFilename := filepath.Split(absDefaultLauncherPath)
+
+	eggia := nod.Begin(" running %s...", defaultLauncherFilename)
+	defer eggia.Done()
+
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsExecTaskBundleApp(absDefaultLauncherPath, et)
+	case vangogh_integration.Linux:
+		return linuxExecTaskStartSh(absDefaultLauncherPath, et)
+	case vangogh_integration.Windows:
+		currentOs := data.CurrentOs()
+		switch currentOs {
+		case vangogh_integration.MacOS:
+			// exec task for macOS prefix
+		case vangogh_integration.Linux:
+			// exec task for Linux prefix
+		case vangogh_integration.Windows:
+			return windowsExecTaskLnk(absDefaultLauncherPath, et)
+		default:
+			return nil, currentOs.ErrUnsupported()
+		}
+	default:
+		return nil, operatingSystem.ErrUnsupported()
+	}
+
+	return nil, nil
+}
+
+func osExec(operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
+
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		fallthrough
+	case vangogh_integration.Linux:
+		return nixExec(et)
 	}
 
 	return nil
-}
-
-func currentOsExecute(path string, et *execTask) error {
-	switch data.CurrentOs() {
-	case vangogh_integration.MacOS:
-		return macOsExecute(path, et)
-	case vangogh_integration.Windows:
-		return windowsExecute(path, et)
-	case vangogh_integration.Linux:
-		return linuxExecute(path, et)
-	default:
-		return errors.New("cannot reveal on unknown operating system")
-	}
-}
-
-func setLastRunDate(rdx redux.Writeable, id string) error {
-	now := time.Now().UTC().Format(time.RFC3339)
-	return rdx.ReplaceValues(data.LastRunDateProperty, id, now)
 }

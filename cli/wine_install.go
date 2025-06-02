@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -213,7 +212,7 @@ func wineInstallProduct(id, langCode string, rdx redux.Writeable, env []string, 
 	case vangogh_integration.Linux:
 		currentOsWineRun = linuxProtonRun
 	default:
-		return errors.New("wine-install: unsupported operating system")
+		return currentOs.ErrUnsupported()
 	}
 
 	for _, link := range dls {
@@ -248,13 +247,16 @@ func initPrefix(langCode string, verbose bool, rdx redux.Readable, ids ...string
 	cpa.TotalInt(len(ids))
 
 	var currentOsWineInitPrefix wineInitPrefixFunc
-	switch data.CurrentOs() {
+
+	currentOs := data.CurrentOs()
+
+	switch currentOs {
 	case vangogh_integration.MacOS:
 		currentOsWineInitPrefix = macOsInitPrefix
 	case vangogh_integration.Linux:
 		currentOsWineInitPrefix = linuxInitPrefix
 	default:
-		return errors.New("init-prefix: unsupported operating system")
+		return currentOs.ErrUnsupported()
 	}
 
 	for _, id := range ids {

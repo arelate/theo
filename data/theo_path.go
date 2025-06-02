@@ -11,7 +11,9 @@ func TheoExecutable() (string, error) {
 
 	binFilename := "theo"
 
-	switch CurrentOs() {
+	currentOs := CurrentOs()
+
+	switch currentOs {
 	case vangogh_integration.Windows:
 		binFilename += ".exe"
 	case vangogh_integration.Linux:
@@ -19,7 +21,7 @@ func TheoExecutable() (string, error) {
 	case vangogh_integration.MacOS:
 	// do nothing
 	default:
-		return "", errors.New("unsupported operating system")
+		return "", currentOs.ErrUnsupported()
 	}
 
 	// check PATH first and make sure the location specified there exists
