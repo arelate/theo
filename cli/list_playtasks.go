@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -43,7 +44,7 @@ func ListPlayTasks(id string, langCode string) error {
 		return err
 	}
 
-	gogGameInfo, err := getGogGameInfo(absGogGameInfoPath)
+	gogGameInfo, err := gog_integration.GetGogGameInfo(absGogGameInfoPath)
 	if err != nil {
 		return err
 	}
