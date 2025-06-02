@@ -132,7 +132,7 @@ func getExePath(id, langCode string, rdx redux.Readable) (string, error) {
 		return filepath.Join(absPrefixDir, relPrefixDriveCDir, ep), nil
 	}
 
-	exePath, err := findGogGameInfoPrimaryPlaytaskExe(id, langCode, rdx)
+	exePath, err := findGogGameInfoPrimaryPlayTaskExe(id, langCode, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -219,7 +219,7 @@ func getGogGameInfo(absGogGameInfoPath string) (*gog_integration.GogGameInfo, er
 	return &gogGameInfo, nil
 }
 
-func findGogGameInfoPrimaryPlaytaskExe(id, langCode string, rdx redux.Readable) (string, error) {
+func findGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Readable) (string, error) {
 
 	absGogGameInfoPath, err := findPrefixGogGameInfoPath(id, langCode, rdx)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func ListPlaytasksHandler(u *url.URL) error {
+func ListPlayTasksHandler(u *url.URL) error {
 
 	q := u.Query()
 
@@ -20,12 +20,12 @@ func ListPlaytasksHandler(u *url.URL) error {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
 
-	return ListPlaytasks(id, langCode)
+	return ListPlayTasks(id, langCode)
 }
 
-func ListPlaytasks(id string, langCode string) error {
+func ListPlayTasks(id string, langCode string) error {
 
-	lpta := nod.Begin("listing playtasks for %s...", id)
+	lpta := nod.Begin("listing playTasks for %s...", id)
 	defer lpta.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
@@ -48,7 +48,7 @@ func ListPlaytasks(id string, langCode string) error {
 		return err
 	}
 
-	playtasksSummary := make(map[string][]string)
+	playTasksSummary := make(map[string][]string)
 
 	for _, pt := range gogGameInfo.PlayTasks {
 		list := make([]string, 0)
@@ -79,10 +79,10 @@ func ListPlaytasks(id string, langCode string) error {
 			list = append(list, "workingDir:"+pt.WorkingDir)
 		}
 
-		playtasksSummary["name:"+pt.Name] = list
+		playTasksSummary["name:"+pt.Name] = list
 	}
 
-	lpta.EndWithSummary("found the following playtasks:", playtasksSummary)
+	lpta.EndWithSummary("found the following playTasks:", playTasksSummary)
 
 	return nil
 }
