@@ -102,7 +102,8 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 		return err
 	}
 
-	if empty, err := isDirEmpty(binariesDir); empty && err == nil {
+	var empty bool
+	if empty, err = osIsDirEmpty(binariesDir); empty && err == nil {
 		if err = SetupWine(false); err != nil {
 			return err
 		}

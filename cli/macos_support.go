@@ -17,11 +17,11 @@ import (
 	"strings"
 )
 
-const catCmdPfx = "cat "
-
-const appBundleExt = ".app"
-
-const relMacOsGogGameInfoDir = "Contents/Resources"
+const (
+	catCmdPfx              = "cat "
+	appBundleExt           = ".app"
+	relMacOsGogGameInfoDir = "Contents/Resources"
+)
 
 func macOsInstallProduct(id string,
 	productDetails *vangogh_integration.ProductDetails,
@@ -304,7 +304,7 @@ func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundl
 			if catCmdParts := strings.Split(strings.TrimPrefix(cmd, catCmdPfx), " "); len(catCmdParts) == 3 {
 				srcGlob := strings.Trim(strings.Replace(catCmdParts[0], "\"${pkgpath}\"", productDownloadsDir, 1), "\"")
 				dstPath := strings.Trim(strings.Replace(catCmdParts[2], "${gog_full_path}", bundleAppPath, 1), "\"")
-				if err := macOsExecCatFiles(srcGlob, dstPath); err != nil {
+				if err := macOsCatFiles(srcGlob, dstPath); err != nil {
 					return err
 				}
 			}
@@ -317,7 +317,7 @@ func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundl
 	return nil
 }
 
-func macOsExecCatFiles(srcGlob string, dstPath string) error {
+func macOsCatFiles(srcGlob string, dstPath string) error {
 
 	if srcGlob == "" {
 		return errors.New("cat command source glob cannot be empty")
@@ -414,7 +414,12 @@ func macOsRemoveProductExtracts(id string, productDetails *vangogh_integration.P
 	}
 
 	rdda := nod.Begin(" removing empty product extracts directory...")
-	if err := removeDirIfEmpty(idPath); err != nil {
+	var empty bool
+	if empty, err = osIsDirEmpty(idPath); empty && err == nil {
+		if err = os.RemoveAll(idPath); err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
 	}
 	rdda.Done()
@@ -422,31 +427,14 @@ func macOsRemoveProductExtracts(id string, productDetails *vangogh_integration.P
 	return nil
 }
 
-func hasOnlyDSStore(entries []fs.DirEntry) bool {
+func macOsIsDirEmptyOrDsStoreOnly(entries []fs.DirEntry) bool {
+	if len(entries) == 0 {
+		return true
+	}
 	if len(entries) == 1 {
 		return entries[0].Name() == ".DS_Store"
 	}
 	return false
-}
-
-func isDirEmpty(dirPath string) (bool, error) {
-	if entries, err := os.ReadDir(dirPath); err == nil && len(entries) == 0 {
-		return true, nil
-	} else if err == nil && hasOnlyDSStore(entries) {
-		return true, nil
-	} else if err != nil {
-		return false, err
-	}
-	return false, nil
-}
-
-func removeDirIfEmpty(dirPath string) error {
-	if empty, err := isDirEmpty(dirPath); empty && err == nil {
-		return os.RemoveAll(dirPath)
-	} else if err != nil {
-		return err
-	}
-	return nil
 }
 
 func macOsReveal(path string) error {
@@ -514,7 +502,14 @@ func macOsExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integr
 		absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
 		absExeRootDir := strings.TrimSuffix(absGogGameInfoDir, relMacOsGogGameInfoDir+"/")
 
-		absExePath := filepath.Join(absExeRootDir, pt.Path)
+		exePath := pt.Path
+		// account for Windows-style relative paths, e.g. DOSBOX\DOSBOX.exe
+		if parts := strings.Split(exePath, "\\"); len(parts) > 1 {
+			exePath = filepath.Join(parts...)
+		}
+
+		absExePath := filepath.Join(absExeRootDir, exePath)
+
 		et.exe = absExePath
 		et.workDir = absExeRootDir
 

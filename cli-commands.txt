@@ -184,8 +184,8 @@ wine-run
     id^*
     lang-code
     env&
-    exe-path
-    working-dir
+    exe
+    work-dir
     verbose
     force
 

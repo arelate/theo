@@ -126,7 +126,11 @@ func removeRepoReleaseDirs(absDirs iter.Seq[string]) error {
 	defer rda.Done()
 
 	for absDir := range absDirs {
-		if err := removeDirIfEmpty(absDir); err != nil {
+		if empty, err := osIsDirEmpty(absDir); empty && err == nil {
+			if err = os.RemoveAll(absDir); err != nil {
+				return err
+			}
+		} else if err != nil {
 			return err
 		}
 	}

@@ -179,7 +179,12 @@ func removeAllUmuConfigs() error {
 		rauca.Increment()
 	}
 
-	if err = removeDirIfEmpty(latestUmuConfigsDir); err != nil {
+	var empty bool
+	if empty, err = osIsDirEmpty(latestUmuConfigsDir); empty && err == nil {
+		if err = os.RemoveAll(latestUmuConfigsDir); err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
 	}
 

@@ -51,6 +51,8 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
 	langCodes := []string{langCode}
 
+	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
+
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
@@ -60,8 +62,6 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 	if err != nil {
 		return err
 	}
-
-	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
 
 	if err = checkProductType(id, rdx, force); err != nil {
 		return err

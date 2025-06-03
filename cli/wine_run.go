@@ -24,8 +24,8 @@ func WineRunHandler(u *url.URL) error {
 	}
 
 	et := &execTask{
-		exe:     q.Get("exe-path"),
-		workDir: q.Get("working-dir"),
+		exe:     q.Get("exe"),
+		workDir: q.Get("work-dir"),
 		verbose: q.Has("verbose"),
 	}
 	if q.Has("env") {

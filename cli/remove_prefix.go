@@ -139,7 +139,12 @@ func removePrefixDirs(absPrefixDir string, relFiles ...string) error {
 
 		absDir := filepath.Join(absPrefixDir, relFile)
 		if stat, err := os.Stat(absDir); err == nil && stat.IsDir() {
-			if err = removeDirIfEmpty(absDir); err != nil {
+			var empty bool
+			if empty, err = osIsDirEmpty(absDir); empty && err == nil {
+				if err = os.RemoveAll(absDir); err != nil {
+					return err
+				}
+			} else if err != nil {
 				return err
 			}
 		}
