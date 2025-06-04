@@ -119,11 +119,12 @@ func prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Read
 	}
 
 	var relExePath string
-	if ppt := gogGameInfo.GetPlayTask(""); ppt != nil {
-		relExePath = ppt.Path
-	} else if len(gogGameInfo.PlayTasks) > 0 {
-		relExePath = gogGameInfo.PlayTasks[0].Path
+	ppt, err := gogGameInfo.GetPlayTask("")
+	if err != nil {
+		return "", err
 	}
+
+	relExePath = ppt.Path
 
 	if relExePath == "" {
 		return "", errors.New("cannot determine primary or first playTask for " + id)

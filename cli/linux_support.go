@@ -181,7 +181,7 @@ func linuxReveal(path string) error {
 	return cmd.Run()
 }
 
-func nixExec(et *execTask) error {
+func nixRunExecTask(et *execTask) error {
 
 	cmd := exec.Command(et.exe, et.args...)
 	cmd.Dir = et.workDir
@@ -306,17 +306,27 @@ func linuxFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 
 func linuxExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integration.GogGameInfo, et *execTask) (*execTask, error) {
 
-	if pt := gogGameInfo.GetPlayTask(et.playTask); pt != nil {
-		absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
+	pt, err := gogGameInfo.GetPlayTask(et.playTask)
+	if err != nil {
+		return nil, err
+	}
 
-		absExePath := filepath.Join(absGogGameInfoDir, pt.Path)
+	absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
 
-		et.exe = absExePath
-		et.workDir = absGogGameInfoDir
+	exePath := pt.Path
+	// account for Windows-style relative paths, e.g. DOSBOX\DOSBOX.exe
+	if parts := strings.Split(exePath, "\\"); len(parts) > 1 {
+		exePath = filepath.Join(parts...)
+	}
 
-		if pt.Arguments != "" {
-			et.args = append(et.args, pt.Arguments)
-		}
+	absExePath := filepath.Join(absGogGameInfoDir, exePath)
+
+	et.name = pt.Name
+	et.exe = absExePath
+	et.workDir = filepath.Join(absGogGameInfoDir, pt.WorkingDir)
+
+	if pt.Arguments != "" {
+		et.args = append(et.args, pt.Arguments)
 	}
 
 	return et, nil

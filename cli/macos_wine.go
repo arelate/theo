@@ -90,6 +90,51 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, et *execTask, force b
 	return cmd.Run()
 }
 
+func macOsWineRunExecTask(et *execTask) error {
+
+	mwra := nod.Begin(" running %s with WINE, please wait...", et.name)
+	defer mwra.Done()
+
+	if et.verbose && len(et.env) > 0 {
+		pea := nod.Begin(" env:")
+		pea.EndWithResult(strings.Join(et.env, " "))
+	}
+
+	absCxBinDir, err := macOsGetAbsCxBinDir()
+	if err != nil {
+		return err
+	}
+
+	absWineBinPath := filepath.Join(absCxBinDir, relWineFilename)
+
+	if strings.HasSuffix(et.exe, ".lnk") {
+		et.args = append([]string{"--start", et.exe}, et.args...)
+	} else {
+		et.args = append([]string{et.exe}, et.args...)
+	}
+
+	et.args = append([]string{"--bottle", et.prefix}, et.args...)
+
+	if et.workDir != "" {
+		et.args = append([]string{"--workdir", et.workDir}, et.args...)
+	}
+
+	cmd := exec.Command(absWineBinPath, et.args...)
+
+	if et.workDir != "" {
+		cmd.Dir = et.workDir
+	}
+
+	cmd.Env = et.env
+
+	if et.verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	return cmd.Run()
+}
+
 func macOsGetAbsCxBinDir(appDirs ...string) (string, error) {
 	if len(appDirs) == 0 {
 		appDirs = append(appDirs, absDefaultApplicationsDir)

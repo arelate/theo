@@ -77,6 +77,56 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 	return cmd.Run()
 }
 
+func linuxProtonRunExecTask(gogId, steamAppId string, et *execTask, force bool) error {
+
+	lwra := nod.Begin(" running %s with Proton, please wait...", et.name)
+	defer lwra.Done()
+
+	if et.verbose && len(et.env) > 0 {
+		pea := nod.Begin(" env:")
+		pea.EndWithResult(strings.Join(et.env, " "))
+	}
+
+	absUmuRunPath, err := data.UmuRunLatestReleasePath()
+	if err != nil {
+		return err
+	}
+
+	absProtonPath, err := data.UmuProtonLatestReleasePath()
+	if err != nil {
+		return err
+	}
+
+	umuCfg := &UmuConfig{
+		GogId:      gogId,
+		SteamAppId: steamAppId,
+		Prefix:     et.prefix,
+		Proton:     absProtonPath,
+		ExePath:    et.exe,
+		Args:       et.args,
+	}
+
+	absUmuConfigPath, err := createUmuConfig(umuCfg, force)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(absUmuRunPath, "--config", absUmuConfigPath)
+
+	if et.workDir != "" {
+		cmd.Dir = et.workDir
+	}
+
+	cmd.Env = append(os.Environ(), et.env...)
+
+	if et.verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	return cmd.Run()
+}
+
 func linuxInitPrefix(id, langCode string, rdx redux.Readable, _ bool) error {
 	lipa := nod.Begin(" initializing prefix...")
 	defer lipa.Done()

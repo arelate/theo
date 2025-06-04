@@ -57,7 +57,8 @@ install
     force
 
 list-installed
-    lang-code
+    os&
+    lang-code&
 
 list-playtasks
     id^*
@@ -69,9 +70,6 @@ list-prefix-exe-path
 
 list-steam-shortcuts
     all-key-values
-
-list-wine-installed
-    lang-code
 
 mod-prefix-retina
     id^*
@@ -116,6 +114,8 @@ run
     os
     lang-code
     env&
+    playtask
+    default-launcher
     verbose
     force
 

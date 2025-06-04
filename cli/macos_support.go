@@ -498,24 +498,28 @@ func macOsFindBundleApp(id, langCode string, rdx redux.Readable) (string, error)
 
 func macOsExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integration.GogGameInfo, et *execTask) (*execTask, error) {
 
-	if pt := gogGameInfo.GetPlayTask(et.playTask); pt != nil {
-		absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
-		absExeRootDir := strings.TrimSuffix(absGogGameInfoDir, relMacOsGogGameInfoDir+"/")
+	pt, err := gogGameInfo.GetPlayTask(et.playTask)
+	if err != nil {
+		return nil, err
+	}
 
-		exePath := pt.Path
-		// account for Windows-style relative paths, e.g. DOSBOX\DOSBOX.exe
-		if parts := strings.Split(exePath, "\\"); len(parts) > 1 {
-			exePath = filepath.Join(parts...)
-		}
+	absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
+	absExeRootDir := strings.TrimSuffix(absGogGameInfoDir, relMacOsGogGameInfoDir+"/")
 
-		absExePath := filepath.Join(absExeRootDir, exePath)
+	exePath := pt.Path
+	// account for Windows-style relative paths, e.g. DOSBOX\DOSBOX.exe
+	if parts := strings.Split(exePath, "\\"); len(parts) > 1 {
+		exePath = filepath.Join(parts...)
+	}
 
-		et.exe = absExePath
-		et.workDir = absExeRootDir
+	absExePath := filepath.Join(absExeRootDir, exePath)
 
-		if pt.Arguments != "" {
-			et.args = append(et.args, pt.Arguments)
-		}
+	et.name = pt.Name
+	et.exe = absExePath
+	et.workDir = filepath.Join(absExeRootDir, pt.WorkingDir)
+
+	if pt.Arguments != "" {
+		et.args = append(et.args, pt.Arguments)
 	}
 
 	return et, nil
