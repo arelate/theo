@@ -40,14 +40,10 @@ func main() {
 		os.Exit(2)
 	}
 
-	valueDelegates := map[string]func() []string{
-		"steam-shortcut-targets": cli.AllSteamShortcutTargets,
-	}
-
 	defs, err := clo.Load(
 		bytes.NewBuffer(cliCommands),
 		bytes.NewBuffer(cliHelp),
-		valueDelegates)
+		nil)
 	if err != nil {
 		log.Println(err.Error())
 		os.Exit(3)
