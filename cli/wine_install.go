@@ -142,8 +142,10 @@ func WineInstall(ip *installParameters, env []string, verbose bool, ids ...strin
 	}
 
 	if !ip.noSteamShortcut {
-		if err = AddSteamShortcut(ip.langCode, rdx, ip.force, ids...); err != nil {
-			return err
+		for _, id := range ids {
+			if err = AddSteamShortcut(id, ip.operatingSystem, ip.langCode, rdx, ip.force); err != nil {
+				return err
+			}
 		}
 	}
 

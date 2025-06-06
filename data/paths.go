@@ -202,29 +202,6 @@ func GetRelFilesModifiedAfter(absDir string, utcTime int64) ([]string, error) {
 	return files, nil
 }
 
-func GetAbsInstalledPath(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
-
-	installedAppsDir, err := pathways.GetAbsDir(InstalledApps)
-	if err != nil {
-		return "", err
-	}
-
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, OsLangCode(operatingSystem, langCode))
-
-	if err = rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return "", err
-	}
-
-	var appBundle string
-	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
-		appBundle = slug
-	} else {
-		return "", errors.New("slug is not defined for product " + id)
-	}
-
-	return filepath.Join(osLangInstalledAppsDir, appBundle), nil
-}
-
 func RelToUserDataHome(path string) (string, error) {
 	udhd, err := UserDataHomeDir()
 	if err != nil {

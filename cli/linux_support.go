@@ -48,7 +48,7 @@ func linuxInstallProduct(id string,
 		return err
 	}
 
-	absInstalledPath, err := data.GetAbsInstalledPath(id, link.LanguageCode, vangogh_integration.Linux, rdx)
+	absInstalledPath, err := osInstalledPath(id, link.LanguageCode, vangogh_integration.Linux, rdx)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func nixRunExecTask(et *execTask) error {
 
 func linuxFindStartSh(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absInstalledPath, err := data.GetAbsInstalledPath(id, langCode, vangogh_integration.Linux, rdx)
+	absInstalledPath, err := osInstalledPath(id, langCode, vangogh_integration.Linux, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -223,7 +223,7 @@ func nixUninstallProduct(id, langCode string, operatingSystem vangogh_integratio
 	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, id)
 	defer umpa.Done()
 
-	absBundlePath, err := data.GetAbsInstalledPath(id, langCode, operatingSystem, rdx)
+	absBundlePath, err := osInstalledPath(id, langCode, operatingSystem, rdx)
 	if err != nil {
 		return err
 	}
@@ -286,7 +286,7 @@ func nixFreeSpace(path string) (int64, error) {
 
 func linuxFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absInstalledPath, err := data.GetAbsInstalledPath(id, langCode, vangogh_integration.Linux, rdx)
+	absInstalledPath, err := osInstalledPath(id, langCode, vangogh_integration.Linux, rdx)
 	if err != nil {
 		return "", err
 	}

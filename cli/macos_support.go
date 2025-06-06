@@ -137,7 +137,7 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.ProductDownloadLink
 
 	installerType := postInstallScript.InstallerType()
 
-	absBundlePath, err := data.GetAbsInstalledPath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
+	absBundlePath, err := osInstalledPath(id, link.LanguageCode, vangogh_integration.MacOS, rdx)
 
 	if strings.HasSuffix(postInstallScript.bundleName, appBundleExt) {
 		absBundlePath = filepath.Join(absBundlePath, postInstallScript.bundleName)
@@ -459,7 +459,7 @@ func macOsFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 		// some GOG games put Contents/Resources in the top install location, not app bundle
 
 		var absInstalledPath string
-		absInstalledPath, err = data.GetAbsInstalledPath(id, langCode, vangogh_integration.MacOS, rdx)
+		absInstalledPath, err = osInstalledPath(id, langCode, vangogh_integration.MacOS, rdx)
 		if err != nil {
 			return "", err
 		}
@@ -477,7 +477,7 @@ func macOsFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 
 func macOsFindBundleApp(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absInstalledPath, err := data.GetAbsInstalledPath(id, langCode, vangogh_integration.MacOS, rdx)
+	absInstalledPath, err := osInstalledPath(id, langCode, vangogh_integration.MacOS, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -531,4 +531,27 @@ func macOsExecTaskBundleApp(absBundleAppPath string, et *execTask) (*execTask, e
 	et.args = append([]string{absBundleAppPath}, et.args...)
 
 	return et, nil
+}
+
+func osInstalledPath(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return "", err
+	}
+
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(operatingSystem, langCode))
+
+	if err = rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return "", err
+	}
+
+	var appBundle string
+	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
+		appBundle = slug
+	} else {
+		return "", errors.New("slug is not defined for product " + id)
+	}
+
+	return filepath.Join(osLangInstalledAppsDir, appBundle), nil
 }

@@ -49,7 +49,7 @@ func currentOsRevealInstalledApps(langCode string, rdx redux.Readable, ids ...st
 
 	switch len(ids) {
 	case 1:
-		revealPath, err = data.GetAbsInstalledPath(ids[0], langCode, data.CurrentOs(), rdx)
+		revealPath, err = osInstalledPath(ids[0], langCode, data.CurrentOs(), rdx)
 	default:
 		revealPath, err = pathways.GetAbsDir(data.InstalledApps)
 	}

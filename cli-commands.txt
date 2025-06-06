@@ -8,6 +8,7 @@
 
 add-steam-shortcut
     id^&
+    os
     lang-code
     force
 

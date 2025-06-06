@@ -55,7 +55,7 @@ func Install(ip *installParameters, ids ...string) error {
 	ia := nod.Begin("installing products...")
 	defer ia.Done()
 
-	currentOs := []vangogh_integration.OperatingSystem{data.CurrentOs()}
+	currentOs := []vangogh_integration.OperatingSystem{ip.operatingSystem}
 	langCodes := []string{ip.langCode}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
@@ -123,8 +123,10 @@ func Install(ip *installParameters, ids ...string) error {
 	}
 
 	if !ip.noSteamShortcut {
-		if err = AddSteamShortcut(ip.langCode, rdx, ip.force, ids...); err != nil {
-			return err
+		for _, id := range ids {
+			if err = AddSteamShortcut(id, ip.operatingSystem, ip.langCode, rdx, ip.force); err != nil {
+				return err
+			}
 		}
 	}
 
