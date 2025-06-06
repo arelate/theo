@@ -91,6 +91,14 @@ func createUmuConfig(cfg *UmuConfig, force bool) (string, error) {
 		return "", err
 	}
 
+	escapedArgs := make([]string, 0, len(cfg.Args))
+	for _, arg := range cfg.Args {
+		//ea := strings.Replace(a, "\"", "\\\"", -1)
+		ea := strings.Replace(arg, "\\", "\\\\", -1)
+		ea = strings.Replace(ea, "\"", "\\\"", -1)
+		escapedArgs = append(escapedArgs, ea)
+	}
+
 	if _, err = io.WriteString(umuConfigFile, "[umu]\n"); err != nil {
 		return "", err
 	}
@@ -108,8 +116,8 @@ func createUmuConfig(cfg *UmuConfig, force bool) (string, error) {
 			return "", err
 		}
 		quotedArgs := make([]string, 0, len(cfg.Args))
-		for _, a := range cfg.Args {
-			quotedArgs = append(quotedArgs, "\""+a+"\"")
+		for _, ea := range escapedArgs {
+			quotedArgs = append(quotedArgs, "\""+ea+"\"")
 		}
 		if _, err = io.WriteString(umuConfigFile, strings.Join(quotedArgs, ", ")); err != nil {
 			return "", err
