@@ -22,7 +22,8 @@ const (
 	shortcutsFilename  = "shortcuts.vdf"
 )
 
-const runLaunchOptionsTemplate = "run {id} -lang-code {lang-code}"
+const runTemplate = "run {id}"
+const langCodeTemplate = "-lang-code {lang-code}"
 
 func AddSteamShortcutHandler(u *url.URL) error {
 
@@ -142,8 +143,11 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 		return nil, err
 	}
 
-	launchOptions := strings.Replace(runLaunchOptionsTemplate, "{id}", id, 1)
-	launchOptions = strings.Replace(launchOptions, "{lang-code}", langCode, 1)
+	launchOptions := make([]string, 0, 2)
+	launchOptions = append(launchOptions, strings.Replace(runTemplate, "{id}", id, 1))
+	if langCode != defaultLangCode {
+		launchOptions = append(launchOptions, strings.Replace(langCodeTemplate, "{lang-code}", langCode, 1))
+	}
 
 	var installedPath string
 
@@ -177,7 +181,7 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 	shortcut.AppId = shortcutId
 	shortcut.AppName = title
 	shortcut.Exe = theoExecutable
-	shortcut.LaunchOptions = launchOptions
+	shortcut.LaunchOptions = strings.Join(launchOptions, " ")
 	shortcut.StartDir = installedPath
 	shortcut.Icon = getGridIconPath(loginUser, shortcutId)
 
