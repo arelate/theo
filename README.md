@@ -37,7 +37,7 @@ Before using any of the commands below, `theo` needs to be set up to connect to 
 
 This is only needed to be done once and `theo` will use those settings from that moment and should work until `vangogh` configuration has changed (when different username/password are set). If you ever need to reset this configuration, `reset-server-connection` can help with that.
 
-## Installing native versions with theo
+## Installing games with theo (native versions and Windows versions on macOS, Linux)
 
 Basic usage of `theo` comes down to the following commands:
 
@@ -53,29 +53,19 @@ More helpful commands:
 
 `theo reveal-installed <gog-game-id>` - will open the directory containing game installation
 
-## Installing Windows versions on macOS, Linux with theo
-
-`theo` provides a set of commands to manage Windows versions on macOS, Linux using [WINE](http://winehq.org):
-
-`theo wine-install <gog-game-id>` - will install Windows version of a game
-
-`theo wine-run <gog-game-id>` - will run installed version of a game
-
-`theo wine-uninstall <gog-game-id> -force` - will uninstall a game
+## macOS requirements for Windows games
 
 On macOS this functionality **requires** a version of [CrossOver](https://www.codeweavers.com/crossover) purchased and licensed for the current user. `theo` assumes CrossOver bundle is located in `/Applications`. Please note that `theo` uses CrossOver 25 environment variables that won't work in version 24 or earlier. At the moment I'm planning to maintain support for the latest version of CrossOver only. In the future alternatives will be considered (e.g. Kegworks, binary WINE distributions, etc).
 
-On Linux `theo` will use [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) and [umu-proton](https://github.com/Open-Wine-Components/umu-proton). You don't need to do anything, theo will download the latest versions for you automatically, as needed. Those will be installed under `theo` state folder, not globally.
+## Linux requirements for Windows games
 
-More helpful commands:
-
-`theo list-wine-installed` - will print all currently installed Windows versions
+On Linux `theo` will use [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) and [umu-proton](https://github.com/Open-Wine-Components/umu-proton). You don't need to do anything, theo will download the latest versions for you automatically from `vangogh`, as needed. Those will be installed under `theo` state folder, not globally and won't interfere with other apps.
 
 ## Advanced usage scenarios
 
 ### Using specific language version
 
-theo allows you to specify [language](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) version to use, when available on GOG and setup on vangogh:
+theo allows you to specify [language](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) version to use, when available on vangogh:
 
 `theo install <gog-game-id> -lang-code ja` - will install Japanese version of a game (if it's available)
 
@@ -159,7 +149,7 @@ At the moment the first option seems the most beneficial and might get investiga
 
 Theodorus van Gogh (1 May 1857 – 25 January 1891) was a Dutch art dealer and the younger brother of Vincent van Gogh. Known as Theo, his support of his older brother's artistic ambitions and well-being allowed Vincent to devote himself entirely to painting. As an art dealer, Theo van Gogh played a crucial role in introducing contemporary French art to the public.
 
-## Windows client?
+## When will theo support native Windows versions on Windows?
 
 At the moment `theo` is focused on macOS and Linux support. Implementing (native installations) Windows support in the future should be relatively straightforward - a good starting point would be adding actual implementations for stub functions in [cli/windows_support.go](https://github.com/arelate/theo/blob/main/cli/windows_support.go) and then testing assumptions - e.g. [data/user_dirs.go](https://github.com/arelate/theo/blob/main/data/user_dirs.go). 
 
