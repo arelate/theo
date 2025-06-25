@@ -2,9 +2,9 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
@@ -29,34 +29,51 @@ func InstallHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	ids := Ids(u)
-	_, langCodes, downloadTypes := OsLangCodeDownloadType(u)
+	id := q.Get(vangogh_integration.IdProperty)
 
-	langCode := defaultLangCode
-	if len(langCodes) > 0 {
-		langCode = langCodes[0]
+	os := vangogh_integration.AnyOperatingSystem
+	if q.Has(vangogh_integration.OperatingSystemsProperty) {
+		os = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	ip := &installParameters{
-		operatingSystem: data.CurrentOs(),
-		langCode:        langCode,
-		downloadTypes:   downloadTypes,
-		keepDownloads:   q.Has("keep-downloads"),
-		noSteamShortcut: q.Has("no-steam-shortcut"),
+	langCode := defaultLangCode
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	var downloadTypes []vangogh_integration.DownloadType
+	if q.Has(vangogh_integration.DownloadTypeProperty) {
+		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
+		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
+	} else {
+		downloadTypes = append(downloadTypes, vangogh_integration.Installer, vangogh_integration.DLC)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: os,
+		LangCode:        langCode,
+		DownloadTypes:   downloadTypes,
+		KeepDownloads:   q.Has("keep-downloads"),
+		NoSteamShortcut: q.Has("no-steam-shortcut"),
 		reveal:          q.Has("reveal"),
+		verbose:         q.Has("verbose"),
 		force:           q.Has("force"),
 	}
 
-	return Install(ip, ids...)
+	if q.Has("env") {
+		ii.Env = strings.Split(q.Get("env"), ",")
+	}
+
+	return Install(id, ii)
 }
 
-func Install(ip *installParameters, ids ...string) error {
+func Install(id string, ii *InstallInfo) error {
 
-	ia := nod.Begin("installing products...")
+	ia := nod.Begin("installing %s...", id)
 	defer ia.Done()
 
-	currentOs := []vangogh_integration.OperatingSystem{ip.operatingSystem}
-	langCodes := []string{ip.langCode}
+	operatingSystems := []vangogh_integration.OperatingSystem{ii.OperatingSystem}
+	langCodes := []string{ii.LangCode}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -68,88 +85,106 @@ func Install(ip *installParameters, ids ...string) error {
 		return err
 	}
 
-	vangogh_integration.PrintParams(ids, currentOs, langCodes, ip.downloadTypes, true)
+	vangogh_integration.PrintParams([]string{id}, operatingSystems, langCodes, ii.DownloadTypes, true)
 
-	var flattened bool
-	if ids, flattened, err = gameProductTypesFlatMap(rdx, ip.force, ids...); err != nil {
-		return err
-	} else if flattened {
-		ia.EndWithResult("installing PACK included games")
-		return Install(ip, ids...)
-	}
-
-	supported, err := filterNotSupported(ip.langCode, rdx, ip.force, ids...)
+	productDetails, err := GetProductDetails(id, rdx, ii.force)
 	if err != nil {
 		return err
 	}
 
-	if len(supported) > 0 {
-		ids = supported
-	} else {
-		ia.EndWithResult("requested products are not supported on %s", data.CurrentOs())
+	switch productDetails.ProductType {
+	case vangogh_integration.DlcProductType:
+		ia.EndWithResult("install %s required product(s) to get this downloadable content", strings.Join(productDetails.RequiresGames, ","))
 		return nil
-	}
-
-	notInstalled, err := filterNotInstalled(data.CurrentOs(), ip.langCode, ids...)
-	if err != nil {
-		return err
-	}
-
-	if len(notInstalled) > 0 {
-		if !ip.force {
-			ids = notInstalled
+	case vangogh_integration.PackProductType:
+		ia.EndWithResult("installing product(s) included in this pack: %s", strings.Join(productDetails.IncludesGames, ","))
+		for _, includedId := range productDetails.IncludesGames {
+			if err = Install(includedId, ii); err != nil {
+				return err
+			}
 		}
-	} else if !ip.force {
-		ia.EndWithResult("all requested products are already installed")
 		return nil
+	case vangogh_integration.GameProductType:
+		// do nothing
+	default:
+		return errors.New("unknown product type " + productDetails.ProductType)
+	}
+
+	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
+		if slices.Contains(productDetails.OperatingSystems, data.CurrentOs()) {
+			ii.OperatingSystem = data.CurrentOs()
+		} else if slices.Contains(productDetails.OperatingSystems, vangogh_integration.Windows) {
+			ii.OperatingSystem = vangogh_integration.Windows
+		} else {
+			unsupportedOsMsg := fmt.Sprintf("product doesn't support %s or %s, only %v",
+				data.CurrentOs(), vangogh_integration.Windows, productDetails.OperatingSystems)
+			return errors.New(unsupportedOsMsg)
+		}
+	}
+
+	ii.AddProductDetails(productDetails)
+
+	if !ii.force {
+
+		if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+			installInfo, err := matchInstallInfo(ii, installedInfoLines...)
+			if err != nil {
+				return err
+			}
+
+			if installInfo != nil {
+				ia.EndWithResult("product %s is already installed", id)
+				return nil
+			} else {
+				return err
+			}
+
+		}
+
 	}
 
 	if err = BackupMetadata(); err != nil {
 		return err
 	}
 
-	if err = Download(currentOs, langCodes, ip.downloadTypes, nil, rdx, ip.force, ids...); err != nil {
+	os := []vangogh_integration.OperatingSystem{ii.OperatingSystem}
+
+	if err = Download(os, langCodes, ii.DownloadTypes, nil, rdx, ii.force, id); err != nil {
 		return err
 	}
 
-	if err = Validate(currentOs, langCodes, ip.downloadTypes, nil, rdx, ids...); err != nil {
+	if err = Validate(os, langCodes, ii.DownloadTypes, nil, rdx, id); err != nil {
 		return err
 	}
 
-	for _, id := range ids {
-		if err = currentOsInstallProduct(id, ip.langCode, ip.downloadTypes, rdx, ip.force); err != nil {
+	if err = osInstallProduct(id, ii, productDetails, rdx); err != nil {
+		return err
+	}
+
+	if !ii.NoSteamShortcut {
+		if err = AddSteamShortcut(id, ii.OperatingSystem, ii.LangCode, rdx, ii.force); err != nil {
 			return err
 		}
 	}
 
-	if !ip.noSteamShortcut {
-		for _, id := range ids {
-			if err = AddSteamShortcut(id, ip.operatingSystem, ip.langCode, rdx, ip.force); err != nil {
-				return err
-			}
-		}
-	}
-
-	if !ip.keepDownloads {
-		if err = RemoveDownloads(currentOs, langCodes, ip.downloadTypes, rdx, ip.force, ids...); err != nil {
+	if !ii.KeepDownloads {
+		if err = RemoveDownloads(os, langCodes, ii.DownloadTypes, rdx, ii.force, id); err != nil {
 			return err
 		}
 	}
 
-	if err = pinInstalledDetails(currentOs, ip.langCode, ip.force, ids...); err != nil {
+	if err = pinInstallInfo(id, ii, rdx); err != nil {
 		return err
 	}
 
-	if err = pinInstallParameters(ip, rdx, ids...); err != nil {
+	idInstalledDate := map[string][]string{id: {time.Now().UTC().Format(time.RFC3339)}}
+	if err = rdx.BatchReplaceValues(data.InstallDateProperty, idInstalledDate); err != nil {
 		return err
 	}
 
-	if err = setInstallDates(rdx, ids...); err != nil {
-		return err
-	}
-
-	if ip.reveal {
-		if err = RevealInstalled(ip.langCode, ids...); err != nil {
+	if ii.reveal {
+		if err = RevealInstalled(id, ii); err != nil {
 			return err
 		}
 	}
@@ -157,113 +192,24 @@ func Install(ip *installParameters, ids ...string) error {
 	return nil
 }
 
-func setInstallDates(rdx redux.Writeable, ids ...string) error {
+func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
 
-	if err := rdx.MustHave(data.InstallDateProperty); err != nil {
-		return err
-	}
+	start := time.Now().UTC().Unix()
 
-	installDates := make(map[string][]string)
-	now := time.Now().UTC().Format(time.RFC3339)
-
-	for _, id := range ids {
-		installDates[id] = []string{now}
-	}
-	return rdx.BatchReplaceValues(data.InstallDateProperty, installDates)
-}
-
-func filterNotInstalled(operatingSystem vangogh_integration.OperatingSystem, langCode string, ids ...string) ([]string, error) {
-
-	fnia := nod.Begin(" checking existing installations...")
-	defer fnia.Done()
-
-	notInstalled := make([]string, 0, len(ids))
-
-	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
-	if err != nil {
-		return nil, err
-	}
-
-	osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(operatingSystem, langCode))
-
-	kvOsLangInstalledDetails, err := kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, id := range ids {
-
-		if kvOsLangInstalledDetails.Has(id) {
-			continue
-		}
-
-		notInstalled = append(notInstalled, id)
-	}
-
-	if len(notInstalled) == 0 {
-		fnia.EndWithResult("all products have existing installations: %s", strings.Join(ids, ","))
-	} else {
-		fnia.EndWithResult(
-			"%d product(s) require installation: %s",
-			len(notInstalled),
-			strings.Join(notInstalled, ","))
-	}
-
-	return notInstalled, nil
-}
-
-func filterNotSupported(langCode string, rdx redux.Writeable, force bool, ids ...string) ([]string, error) {
-
-	fnsa := nod.NewProgress(" checking operating systems support...")
-	defer fnsa.Done()
-
-	fnsa.TotalInt(len(ids))
-
-	supported := make([]string, 0, len(ids))
-
-	for _, id := range ids {
-
-		productDetails, err := GetProductDetails(id, rdx, force)
-		if err != nil {
-			return nil, err
-		}
-
-		dls := productDetails.DownloadLinks.
-			FilterOperatingSystems(data.CurrentOs()).
-			FilterLanguageCodes(langCode).
-			FilterDownloadTypes(vangogh_integration.Installer)
-
-		if len(dls) > 0 {
-			supported = append(supported, id)
-		}
-
-		fnsa.Increment()
-	}
-
-	return supported, nil
-}
-
-func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh_integration.DownloadType, rdx redux.Writeable, force bool) error {
-
-	coipa := nod.Begin(" installing %s on %s...", id, data.CurrentOs())
+	coipa := nod.Begin("installing %s, %s, %s...", id, ii.OperatingSystem, ii.LangCode)
 	defer coipa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
 	}
 
-	productDetails, err := GetProductDetails(id, rdx, force)
-	if err != nil {
-		return err
-	}
-
 	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(data.CurrentOs()).
-		FilterLanguageCodes(langCode).
-		FilterDownloadTypes(downloadTypes...)
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterLanguageCodes(ii.LangCode).
+		FilterDownloadTypes(ii.DownloadTypes...)
 
 	if len(dls) == 0 {
-		coipa.EndWithResult("no links are matching operating params")
+		coipa.EndWithResult("no links are matching install params")
 		return nil
 	}
 
@@ -273,7 +219,7 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 	}
 
 	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
-		[]vangogh_integration.OperatingSystem{data.CurrentOs()}, []string{langCode}, downloadTypes, nil, force); err != nil {
+		[]vangogh_integration.OperatingSystem{ii.OperatingSystem}, []string{ii.LangCode}, ii.DownloadTypes, nil, ii.force); err != nil {
 		return err
 	}
 
@@ -287,40 +233,49 @@ func currentOsInstallProduct(id string, langCode string, downloadTypes []vangogh
 
 		switch link.OperatingSystem {
 		case vangogh_integration.MacOS:
-			if err = macOsInstallProduct(id, productDetails, &link, rdx, force); err != nil {
+
+			if err = macOsInstallProduct(id, productDetails, &link, rdx, ii.force); err != nil {
 				return err
 			}
+
 		case vangogh_integration.Linux:
+
 			if err = linuxInstallProduct(id, productDetails, &link, rdx); err != nil {
 				return err
 			}
+
 		case vangogh_integration.Windows:
-			if err = windowsInstallProduct(id, productDetails, &link, rdx); err != nil {
-				return err
+
+			switch data.CurrentOs() {
+			case vangogh_integration.Windows:
+
+				if err = windowsInstallProduct(id, productDetails, &link, rdx); err != nil {
+					return err
+				}
+
+			default:
+
+				if err = prefixInit(id, ii.LangCode, rdx, ii.verbose); err != nil {
+					return err
+				}
+
+				if err = prefixInstallProduct(id, ii.LangCode, rdx, ii.Env, ii.DownloadTypes, ii.verbose, ii.force); err != nil {
+					return err
+				}
+
+				if err = prefixCreateInventory(id, ii.LangCode, rdx, start); err != nil {
+					return err
+				}
+
+				if err = DefaultPrefixEnv(ii.LangCode, id); err != nil {
+					return err
+				}
+
 			}
 		default:
-			return errors.New("unknown os" + link.OperatingSystem.String())
+			return link.OperatingSystem.ErrUnsupported()
 		}
 	}
+
 	return nil
-}
-
-func gameProductTypesFlatMap(rdx redux.Writeable, force bool, ids ...string) ([]string, bool, error) {
-
-	productsDetails, err := GetProductsDetails(rdx, force, ids...)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if dlcs := productsDetails.Filter(vangogh_integration.DlcProductType); len(dlcs) > 0 {
-		da := nod.Begin(" skipping DLC products " + strings.Join(dlcs.Ids(), ","))
-		da.Done()
-		productsDetails = productsDetails.Filter(vangogh_integration.GameProductType, vangogh_integration.PackProductType)
-	}
-
-	if gameProductsDetails := productsDetails.Filter(vangogh_integration.GameProductType); len(gameProductsDetails) == len(productsDetails) {
-		return productsDetails.Ids(), false, nil
-	} else {
-		return productsDetails.GameAndIncludedGamesIds(), true, nil
-	}
 }

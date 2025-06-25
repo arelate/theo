@@ -6,12 +6,21 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
+
+const (
+	innoSetupVerySilentArg        = "/VERYSILENT"
+	innoSetupNoRestartArg         = "/NORESTART"
+	innoSetupCloseApplicationsArg = "/CLOSEAPPLICATIONS"
+)
+
+const relPrefixDriveCDir = "drive_c"
 
 func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 
@@ -133,4 +142,128 @@ func prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Read
 	absExeDir, _ := filepath.Split(absGogGameInfoPath)
 
 	return filepath.Join(absExeDir, relExePath), nil
+}
+
+func prefixInit(id string, langCode string, rdx redux.Readable, verbose bool) error {
+
+	cpa := nod.Begin("initializing prefix for %s...", id)
+	defer cpa.Done()
+
+	switch data.CurrentOs() {
+	case vangogh_integration.MacOS:
+		return macOsInitPrefix(id, langCode, rdx, verbose)
+	case vangogh_integration.Linux:
+		return linuxInitPrefix(id, langCode, rdx, verbose)
+	default:
+		return data.CurrentOs().ErrUnsupported()
+	}
+}
+
+func prefixInstallProduct(id, langCode string, rdx redux.Writeable, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
+
+	currentOs := data.CurrentOs()
+
+	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, currentOs)
+	defer wipa.Done()
+
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return err
+	}
+
+	productDetails, err := GetProductDetails(id, rdx, force)
+	if err != nil {
+		return err
+	}
+
+	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
+	if err != nil {
+		return err
+	}
+
+	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
+		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows}, []string{langCode}, downloadTypes, nil, force); err != nil {
+		return err
+	}
+
+	dls := productDetails.DownloadLinks.
+		FilterOperatingSystems(vangogh_integration.Windows).
+		FilterLanguageCodes(langCode).
+		FilterDownloadTypes(downloadTypes...)
+
+	var currentOsWineRun wineRunFunc
+	switch currentOs {
+	case vangogh_integration.MacOS:
+		currentOsWineRun = macOsWineRun
+	case vangogh_integration.Linux:
+		currentOsWineRun = linuxProtonRun
+	default:
+		return currentOs.ErrUnsupported()
+	}
+
+	for _, link := range dls {
+
+		if linkExt := filepath.Ext(link.LocalFilename); linkExt != exeExt {
+			continue
+		}
+
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+
+		et := &execTask{
+			exe:     absInstallerPath,
+			workDir: downloadsDir,
+			args:    []string{innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg},
+			env:     env,
+			verbose: verbose,
+		}
+
+		if err = currentOsWineRun(id, langCode, rdx, et, force); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func prefixCreateInventory(id, langCode string, rdx redux.Readable, utcTime int64) error {
+
+	cpifma := nod.Begin(" creating installed files inventory...")
+	defer cpifma.Done()
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	if err != nil {
+		return err
+	}
+
+	return createInventory(absPrefixDir, id, langCode, vangogh_integration.Windows, rdx, utcTime)
+}
+
+func prefixReveal(id string, langCode string) error {
+
+	rpa := nod.Begin("revealing prefix for %s...", id)
+	defer rpa.Done()
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewReader(reduxDir, vangogh_integration.SlugProperty)
+	if err != nil {
+		return err
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(absPrefixDir); os.IsNotExist(err) {
+		rpa.EndWithResult("not found")
+		return nil
+	}
+
+	absPrefixDriveCPath := filepath.Join(absPrefixDir, relPrefixDriveCDir, gogGamesDir)
+
+	return currentOsReveal(absPrefixDriveCPath)
 }

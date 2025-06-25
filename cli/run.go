@@ -60,12 +60,14 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 	}
 
 	if operatingSystem == vangogh_integration.AnyOperatingSystem {
-		if ips, ok := rdx.GetLastVal(data.InstallParametersProperty, id); ok {
-			ip := parseInstallParameters(ips)
-			operatingSystem = ip.operatingSystem
-		} else {
-			operatingSystem = data.CurrentOs()
+
+		os, err := installedInfoOperatingSystem(id, rdx)
+		if err != nil {
+			return err
 		}
+
+		operatingSystem = os
+
 	}
 
 	currentOs := []vangogh_integration.OperatingSystem{operatingSystem}

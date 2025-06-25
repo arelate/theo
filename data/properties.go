@@ -16,9 +16,7 @@ const (
 
 	GitHubReleasesUpdatedProperty = "github-releases-updated"
 
-	InstallParametersProperty = "install-parameters"
-	KeepDownloadsProperty     = "keep-downloads"
-	NoSteamShortcutProperty   = "no-steam-shortcut"
+	InstallInfoProperty = "install-info"
 
 	InstallDateProperty = "install-date"
 	LastRunDateProperty = "last-run-date"
@@ -40,7 +38,7 @@ func AllProperties() []string {
 		vangogh_integration.IconProperty,
 		vangogh_integration.IconSquareProperty,
 		vangogh_integration.BackgroundProperty,
-		InstallParametersProperty,
+		InstallInfoProperty,
 		PrefixEnvProperty,
 		PrefixExePathProperty,
 		InstallDateProperty,

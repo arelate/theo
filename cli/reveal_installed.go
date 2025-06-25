@@ -11,22 +11,32 @@ import (
 
 func RevealInstalledHandler(u *url.URL) error {
 
-	ids := Ids(u)
+	q := u.Query()
 
-	langCode := defaultLangCode
-	if u.Query().Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = u.Query().Get(vangogh_integration.LanguageCodeProperty)
+	id := q.Get(vangogh_integration.IdProperty)
+
+	operatingSystem := vangogh_integration.AnyOperatingSystem
+	if q.Has(vangogh_integration.OperatingSystemsProperty) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	return RevealInstalled(langCode, ids...)
+	langCode := defaultLangCode
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        langCode,
+	}
+
+	return RevealInstalled(id, ii)
 }
 
-func RevealInstalled(langCode string, ids ...string) error {
+func RevealInstalled(id string, ii *InstallInfo) error {
 
-	fia := nod.NewProgress("revealing installed products...")
-	defer fia.Done()
-
-	fia.TotalInt(len(ids))
+	ria := nod.Begin("revealing installation for %s...", id)
+	defer ria.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -34,30 +44,47 @@ func RevealInstalled(langCode string, ids ...string) error {
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
-		data.ServerConnectionProperties,
+		data.InstallInfoProperty,
 		vangogh_integration.SlugProperty)
 	if err != nil {
 		return err
 	}
 
-	return currentOsRevealInstalledApps(langCode, rdx, ids...)
-}
+	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
 
-func currentOsRevealInstalledApps(langCode string, rdx redux.Readable, ids ...string) error {
-	var revealPath string
-	var err error
+		os, err := installedInfoOperatingSystem(id, rdx)
+		if err != nil {
+			return err
+		}
 
-	switch len(ids) {
-	case 1:
-		revealPath, err = osInstalledPath(ids[0], langCode, data.CurrentOs(), rdx)
-	default:
-		revealPath, err = pathways.GetAbsDir(data.InstalledApps)
+		ii.OperatingSystem = os
+
 	}
 
+	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+		installedInfo, err := matchInstallInfo(ii, installedInfoLines...)
+		if err != nil {
+			return err
+		}
+
+		if installedInfo != nil {
+			return currentOsRevealInstalled(id, ii, rdx)
+		} else {
+			ria.EndWithResult("no installation found for %s on %s", id, ii.OperatingSystem)
+		}
+
+	}
+
+	return nil
+}
+
+func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) error {
+
+	revealPath, err := osInstalledPath(id, ii.OperatingSystem, ii.LangCode, rdx)
 	if err != nil {
 		return err
 	}
 
 	return currentOsReveal(revealPath)
-
 }

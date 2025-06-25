@@ -1,28 +1,50 @@
 package cli
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
+	"maps"
 	"net/url"
-	"path/filepath"
+	"slices"
 	"strings"
 )
 
 func UpdateHandler(u *url.URL) error {
 
 	q := u.Query()
-	ids := Ids(u)
-	langCode := defaultLangCode
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+
+	id := q.Get(vangogh_integration.IdProperty)
+
+	ii := &InstallInfo{
+		reveal:  q.Has("reveal"),
+		verbose: q.Has("verbose"),
 	}
+
+	if q.Has("env") {
+		ii.Env = strings.Split(q.Get("env"), ",")
+	}
+
 	all := q.Has("all")
-	reveal := q.Has("reveal")
+
+	return Update(id, ii, all)
+}
+
+func Update(id string, ii *InstallInfo, all bool) error {
+
+	var updateMsg string
+	switch all {
+	case false:
+		updateMsg = fmt.Sprintf("updating %s...", id)
+	case true:
+		updateMsg = fmt.Sprintf("updating all products...")
+	}
+
+	ua := nod.NewProgress(updateMsg)
+	defer ua.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -34,114 +56,140 @@ func UpdateHandler(u *url.URL) error {
 		return err
 	}
 
-	return Update(data.CurrentOs(), langCode, rdx, reveal, all, ids...)
-}
-
-func Update(operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, reveal, all bool, ids ...string) error {
-
-	ua := nod.NewProgress("updating installed %s products...", operatingSystem.String())
-	defer ua.Done()
-
-	updatedIds, err := filterUpdatedProducts(operatingSystem, langCode, rdx, all, ids...)
+	updatedIdsInstallInfo, err := checkProductsUpdates(id, ii, rdx, all)
 	if err != nil {
 		return err
 	}
 
-	for _, id := range updatedIds {
-		ip, err := loadInstallParameters(id, operatingSystem, langCode, rdx, reveal, true)
-		if err != nil {
-			return err
-		}
-
-		if err = Install(ip, id); err != nil {
-			return err
+	for updatedId, installedInfoSlice := range updatedIdsInstallInfo {
+		for _, installedInfo := range installedInfoSlice {
+			if err = Install(updatedId, installedInfo); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func filterUpdatedProducts(operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, all bool, ids ...string) ([]string, error) {
+func checkProductsUpdates(id string, ii *InstallInfo, rdx redux.Writeable, all bool) (map[string][]*InstallInfo, error) {
 
-	fupa := nod.NewProgress("filtering updated products...")
-	defer fupa.Done()
+	cpua := nod.NewProgress("checking for products updates...")
+	defer cpua.Done()
 
-	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
-	if err != nil {
+	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
 		return nil, err
 	}
 
-	osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(operatingSystem, langCode))
-
-	kvOsLangInstalledDetails, err := kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
-	if err != nil {
-		return nil, err
+	checkIds := make([]string, 0)
+	if id != "" {
+		checkIds = append(checkIds, id)
 	}
 
 	if all {
-		for id := range kvOsLangInstalledDetails.Keys() {
-			ids = append(ids, id)
+		for installedId := range rdx.Keys(data.InstallInfoProperty) {
+			checkIds = append(checkIds, installedId)
 		}
 	}
 
-	fupa.TotalInt(len(ids))
+	cpua.TotalInt(len(checkIds))
 
-	updatedIds := make([]string, 0)
+	updatedIdInstalledInfo := make(map[string][]*InstallInfo)
 
-	for _, id := range ids {
-		if updated, err := isProductUpdated(id, operatingSystem, langCode, rdx, kvOsLangInstalledDetails); err != nil {
+	for _, checkId := range checkIds {
+		if uii, err := checkProductUpdates(checkId, rdx, ii.force); err == nil && len(uii) > 0 {
+			updatedIdInstalledInfo[id] = uii
+		} else if err != nil {
 			return nil, err
-		} else if updated {
-			updatedIds = append(updatedIds, id)
 		}
 
-		fupa.Increment()
+		cpua.Increment()
 	}
 
-	if len(updatedIds) > 0 {
-		fupa.EndWithResult("found updates for: %s", strings.Join(updatedIds, ","))
+	if len(updatedIdInstalledInfo) > 0 {
+		cpua.EndWithResult("found updates for: %s", strings.Join(slices.Collect(maps.Keys(updatedIdInstalledInfo)), ","))
 	} else {
-		fupa.EndWithResult("no updates found")
+		cpua.EndWithResult("all products are up to date")
 	}
 
-	return updatedIds, nil
+	return updatedIdInstalledInfo, nil
 
 }
 
-func isProductUpdated(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, kvOsLangInstalledDetails kevlar.KeyValues) (bool, error) {
+func checkProductUpdates(id string, rdx redux.Writeable, force bool) ([]*InstallInfo, error) {
 
 	cpua := nod.Begin(" checking product updates for %s...", id)
 	defer cpua.Done()
 
-	if !kvOsLangInstalledDetails.Has(id) {
-		cpua.EndWithResult("not installed on %s", operatingSystem)
-		return false, nil
+	updatedInstalledInfo := make([]*InstallInfo, 0)
+
+	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+		for _, line := range installedInfoLines {
+
+			installedInfo, err := parseInstallInfo(line)
+			if err != nil {
+				return nil, err
+			}
+
+			if updated, err := isInstalledInfoUpdated(id, installedInfo, rdx, force); updated && err == nil {
+				updatedInstalledInfo = append(updatedInstalledInfo, installedInfo)
+			} else if err != nil {
+				return nil, err
+			}
+
+		}
+
 	}
 
-	rcInstalledDetails, err := kvOsLangInstalledDetails.Get(id)
-	if err != nil {
-		return false, err
-	}
-	defer rcInstalledDetails.Close()
+	return updatedInstalledInfo, nil
 
-	var installedDetails vangogh_integration.ProductDetails
-	if err = json.NewDecoder(rcInstalledDetails).Decode(&installedDetails); err != nil {
-		return false, err
-	}
+}
+
+func isInstalledInfoUpdated(id string, installedInfo *InstallInfo, rdx redux.Writeable, force bool) (bool, error) {
+
+	iiiua := nod.Begin(" checking %s %s-%s version...", id, installedInfo.OperatingSystem, installedInfo.LangCode)
+	defer iiiua.Done()
 
 	latestProductDetails, err := GetProductDetails(id, rdx, true)
 	if err != nil {
 		return false, err
 	}
 
-	installedVersion := productDetailsVersion(&installedDetails, operatingSystem, langCode)
-	latestVersion := productDetailsVersion(latestProductDetails, operatingSystem, langCode)
+	installedVersion := installedInfo.Version
+	latestVersion := productDetailsVersion(latestProductDetails, installedInfo)
+
+	if installedVersion == "" && !force {
+		iiiua.EndWithResult("cannot determine installed version")
+		return false, nil
+	}
+
+	if latestVersion == "" && !force {
+		iiiua.EndWithResult("cannot determine latest version")
+		return false, nil
+	}
 
 	if installedVersion == latestVersion {
-		cpua.EndWithResult("already at the latest version: %s", installedVersion)
+		iiiua.EndWithResult("already at the latest version: %s", installedVersion)
 		return false, nil
 	} else {
-		cpua.EndWithResult("found update to install: %s -> %s", installedVersion, latestVersion)
+		iiiua.EndWithResult("found update to install: %s -> %s", installedVersion, latestVersion)
 		return true, nil
 	}
+}
+
+func productDetailsVersion(productDetails *vangogh_integration.ProductDetails, ii *InstallInfo) string {
+	dls := productDetails.DownloadLinks.
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterDownloadTypes(vangogh_integration.Installer).
+		FilterLanguageCodes(ii.LangCode)
+
+	var version string
+	for ii, dl := range dls {
+		if ii == 0 {
+			version = dl.Version
+		}
+	}
+
+	return version
 }

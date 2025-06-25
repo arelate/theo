@@ -23,8 +23,7 @@ const (
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
 type (
-	wineRunFunc        func(id, langCode string, rdx redux.Readable, et *execTask, force bool) error
-	wineInitPrefixFunc func(id, langCode string, rdx redux.Readable, verbose bool) error
+	wineRunFunc func(id, langCode string, rdx redux.Readable, et *execTask, force bool) error
 )
 
 func macOsInitPrefix(id, langCode string, rdx redux.Readable, verbose bool) error {

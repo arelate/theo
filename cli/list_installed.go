@@ -1,62 +1,45 @@
 package cli
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
-	"net/url"
-	"path/filepath"
-	"strings"
-	"time"
-
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
+	"net/url"
+	"slices"
+	"strings"
+	"time"
 )
 
 func ListInstalledHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	var operatingSystems []vangogh_integration.OperatingSystem
+	operatingSystem := vangogh_integration.AnyOperatingSystem
 	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(q.Get(vangogh_integration.OperatingSystemsProperty), ","))
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	if len(operatingSystems) == 0 {
-		for _, os := range vangogh_integration.AllOperatingSystems() {
-			if os == vangogh_integration.AnyOperatingSystem {
-				continue
-			}
-			operatingSystems = append(operatingSystems, os)
-		}
-	}
-
-	var langCodes []string
+	langCode := defaultLangCode
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCodes = append(langCodes, strings.Split(q.Get(vangogh_integration.LanguageCodeProperty), ",")...)
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
 
-	if len(langCodes) == 0 {
-		langCodes = append(langCodes, defaultLangCode)
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        langCode,
 	}
 
-	return ListInstalled(operatingSystems, langCodes)
+	return ListInstalled(ii)
 }
 
-func ListInstalled(operatingSystems []vangogh_integration.OperatingSystem, langCodes []string) error {
+func ListInstalled(ii *InstallInfo) error {
 
-	lia := nod.Begin("listing installed products...")
+	lia := nod.Begin("listing installed products for %s, %s...", ii.OperatingSystem, ii.LangCode)
 	defer lia.Done()
-
-	vangogh_integration.PrintParams(nil, operatingSystems, langCodes, nil, false)
-
-	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
-	if err != nil {
-		return err
-	}
 
 	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
 	if err != nil {
@@ -64,7 +47,8 @@ func ListInstalled(operatingSystems []vangogh_integration.OperatingSystem, langC
 	}
 
 	rdx, err := redux.NewReader(reduxDir,
-		data.InstallParametersProperty,
+		vangogh_integration.TitleProperty,
+		data.InstallInfoProperty,
 		data.InstallDateProperty)
 	if err != nil {
 		return err
@@ -72,46 +56,58 @@ func ListInstalled(operatingSystems []vangogh_integration.OperatingSystem, langC
 
 	summary := make(map[string][]string)
 
-	for _, os := range operatingSystems {
-		for _, langCode := range langCodes {
+	installedIds := slices.Collect(rdx.Keys(data.InstallInfoProperty))
+	installedIds, err = rdx.Sort(installedIds, false, vangogh_integration.TitleProperty)
+	if err != nil {
+		return err
+	}
 
-			osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(os, langCode))
+	for _, id := range installedIds {
 
-			var kvOsLangInstalledDetails kevlar.KeyValues
-			kvOsLangInstalledDetails, err = kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
+		title := id
+		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok {
+			title = fmt.Sprintf("%s (%s)", tp, id)
+		}
+
+		var installedDate string
+		if ids, ok := rdx.GetLastVal(data.InstallDateProperty, id); ok && ids != "" {
+			if installDate, err := time.Parse(time.RFC3339, ids); err == nil {
+				installedDate = installDate.Local().Format(time.DateTime)
+			}
+		}
+
+		installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id)
+		if !ok {
+			return errors.New("install info not found for " + id)
+		}
+
+		for _, line := range installedInfoLines {
+
+			installedInfo, err := parseInstallInfo(line)
 			if err != nil {
 				return err
 			}
 
-			for id := range kvOsLangInstalledDetails.Keys() {
+			infoLines := make([]string, 0)
 
-				installedDetails, err := getInstalledDetails(id, kvOsLangInstalledDetails)
-				if err != nil {
-					return err
+			if (ii.OperatingSystem == vangogh_integration.AnyOperatingSystem ||
+				installedInfo.OperatingSystem == ii.OperatingSystem) &&
+				installedInfo.LangCode == ii.LangCode {
+
+				infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
+				infoLines = append(infoLines, "lang: "+installedInfo.LangCode)
+				infoLines = append(infoLines, "version: "+installedInfo.Version)
+				if installedInfo.EstimatedBytes > 0 {
+					infoLines = append(infoLines, "size: "+vangogh_integration.FormatBytes(installedInfo.EstimatedBytes))
 				}
 
-				name := fmt.Sprintf("%s (%s)", installedDetails.Title, id)
-				version := productDetailsVersion(installedDetails, os, langCode)
-				estimatedBytes := productDetailsEstimatedBytes(installedDetails, os, langCode)
-
-				summary[name] = append(summary[name],
-					"size: "+vangogh_integration.FormatBytes(estimatedBytes),
-					"ver.: "+version)
-
-				if installParams, ok := rdx.GetAllValues(data.InstallParametersProperty, id); ok {
-					for _, ips := range installParams {
-						summary[name] = append(summary[name], "par.: "+ips)
-					}
-				} else {
-					summary[name] = append(summary[name], "par.: (default) "+defaultInstallParameters(os).String())
+				summary[title] = append(summary[title], strings.Join(infoLines, "; "))
+				if installedDate != "" {
+					summary[title] = append(summary[title], "- installed: "+installedDate)
 				}
 
-				if ids, ok := rdx.GetLastVal(data.InstallDateProperty, id); ok && ids != "" {
-					if installDate, err := time.Parse(time.RFC3339, ids); err == nil {
-						summary[name] = append(summary[name], "installed: "+installDate.Local().Format(time.DateTime))
-					}
-				}
 			}
+
 		}
 
 	}
@@ -123,51 +119,4 @@ func ListInstalled(operatingSystems []vangogh_integration.OperatingSystem, langC
 	}
 
 	return nil
-}
-
-func getInstalledDetails(id string, kvInstalledDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
-
-	rcInstalledDetails, err := kvInstalledDetails.Get(id)
-	if err != nil {
-		return nil, err
-	}
-	defer rcInstalledDetails.Close()
-
-	var installedDetails vangogh_integration.ProductDetails
-
-	if err = json.NewDecoder(rcInstalledDetails).Decode(&installedDetails); err != nil {
-		return nil, err
-	}
-
-	return &installedDetails, nil
-}
-
-func productDetailsVersion(productDetails *vangogh_integration.ProductDetails, operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
-	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(operatingSystem).
-		FilterDownloadTypes(vangogh_integration.Installer).
-		FilterLanguageCodes(langCode)
-
-	var version string
-	for ii, dl := range dls {
-		if ii == 0 {
-			version = dl.Version
-		}
-	}
-
-	return version
-}
-
-func productDetailsEstimatedBytes(productDetails *vangogh_integration.ProductDetails, operatingSystem vangogh_integration.OperatingSystem, langCode string) int64 {
-	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(operatingSystem).
-		FilterDownloadTypes(vangogh_integration.Installer).
-		FilterLanguageCodes(langCode)
-
-	var size int64
-	for _, dl := range dls {
-		size += int64(dl.EstimatedBytes)
-	}
-
-	return size
 }

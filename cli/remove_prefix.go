@@ -22,13 +22,12 @@ func RemovePrefixHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
-	archive := !q.Has("no-archive")
 	force := q.Has("force")
 
-	return RemovePrefix(langCode, archive, force, ids...)
+	return RemovePrefix(langCode, force, ids...)
 }
 
-func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
+func RemovePrefix(langCode string, force bool, ids ...string) error {
 
 	rpa := nod.NewProgress("removing prefixes for %s...", strings.Join(ids, ","))
 	defer rpa.Done()
@@ -46,7 +45,7 @@ func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 	rpa.TotalInt(len(ids))
 
 	for _, id := range ids {
-		if err := removeProductPrefix(id, langCode, rdx, archive, force); err != nil {
+		if err := removeProductPrefix(id, langCode, rdx, force); err != nil {
 			return err
 		}
 
@@ -56,7 +55,7 @@ func RemovePrefix(langCode string, archive, force bool, ids ...string) error {
 	return nil
 }
 
-func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force bool) error {
+func removeProductPrefix(id, langCode string, rdx redux.Readable, force bool) error {
 	rppa := nod.Begin(" removing installed files from prefix for %s...", id)
 	defer rppa.Done()
 
@@ -72,12 +71,6 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, archive, force
 	if _, err = os.Stat(absPrefixDir); os.IsNotExist(err) {
 		rppa.EndWithResult("not present")
 		return nil
-	}
-
-	if archive {
-		if err = ArchivePrefix(langCode, id); err != nil {
-			return err
-		}
 	}
 
 	if !force {

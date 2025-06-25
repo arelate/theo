@@ -77,7 +77,6 @@ func main() {
 		"reveal-backups":          cli.RevealBackupsHandler,
 		"reveal-downloads":        cli.RevealDownloadsHandler,
 		"reveal-installed":        cli.RevealInstalledHandler,
-		"reveal-prefix":           cli.RevealPrefixHandler,
 		"reset-server-connection": cli.ResetServerConnectionHandler,
 		"run":                     cli.RunHandler,
 		"test-server-connection":  cli.TestServerConnectionHandler,
@@ -86,10 +85,7 @@ func main() {
 		"validate":                cli.ValidateHandler,
 		"version":                 cli.VersionHandler,
 		"winecfg":                 cli.WineCfgHandler,
-		"wine-install":            cli.WineInstallHandler,
 		"wine-run":                cli.WineRunHandler,
-		"wine-uninstall":          cli.WineUninstallHandler,
-		"wine-update":             cli.WineUpdateHandler,
 	})
 
 	if err = defs.AssertCommandsHaveHandlers(); err != nil {

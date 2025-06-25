@@ -48,17 +48,20 @@ has-free-space
     bytes*^
 
 install
-    id^&*
+    id^*
+    os
     lang-code
     download-type&
     keep-downloads
     no-steam-shortcut
+    env&
     reveal
+    verbose
     force
 
 list-installed
-    os&
-    lang-code&
+    os
+    lang-code
 
 list-playtasks
     id^*
@@ -87,7 +90,6 @@ remove-downloads
 remove-prefix
     id^&*
     lang-code
-    no-archive
     force
 
 remove-steam-shortcut
@@ -102,11 +104,8 @@ reveal-downloads
     id^&
 
 reveal-installed
-    id^&
-    lang-code
-
-reveal-prefix
-    id^&*
+    id^
+    os
     lang-code
 
 run
@@ -146,15 +145,17 @@ setup-wine
 test-server-connection
 
 uninstall
-    id^&*
+    id^*
+    os
     lang-code
+    verbose
     force
 
 update
-    id^&
-    lang-code
+    id^
     all
     reveal
+    verbose
 
 validate
     id^&*
@@ -169,17 +170,6 @@ winecfg
     lang-code
     verbose
 
-wine-install
-    id^&*
-    lang-code
-    env&
-    download-type&
-    keep-downloads
-    no-steam-shortcut
-    reveal
-    verbose
-    force
-
 wine-run
     id^*
     lang-code
@@ -188,15 +178,3 @@ wine-run
     work-dir
     verbose
     force
-
-wine-uninstall
-    id^&*
-    lang-code
-    archive
-    force
-
-wine-update
-    id^&
-    lang-code
-    all
-    reveal

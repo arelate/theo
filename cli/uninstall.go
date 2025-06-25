@@ -3,28 +3,42 @@ package cli
 import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"path/filepath"
 )
 
 func UninstallHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	ids := Ids(u)
+	id := q.Get(vangogh_integration.IdProperty)
 
-	_, langCodes, _ := OsLangCodeDownloadType(u)
-
-	langCode := defaultLangCode
-	if len(langCodes) > 0 {
-		langCode = langCodes[0]
+	operatingSystem := vangogh_integration.AnyOperatingSystem
+	if q.Has(vangogh_integration.OperatingSystemsProperty) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	force := q.Has("force")
+	langCode := defaultLangCode
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        langCode,
+		verbose:         q.Has("verbose"),
+		force:           q.Has("force"),
+	}
+
+	return Uninstall(id, ii)
+}
+
+func Uninstall(id string, ii *InstallInfo) error {
+
+	ua := nod.Begin("uninstalling %s...", id)
+	defer ua.Done()
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -36,58 +50,45 @@ func UninstallHandler(u *url.URL) error {
 		return err
 	}
 
-	return Uninstall(langCode, rdx, force, ids...)
-}
-
-func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) error {
-
-	ua := nod.NewProgress("uninstalling products...")
-	defer ua.Done()
-
-	if !force {
-		ua.EndWithResult("this operation requires force flag")
+	if !ii.force {
+		ua.EndWithResult("uninstallation requires force parameter")
 		return nil
 	}
 
-	installedDetailsDir, err := pathways.GetAbsRelDir(data.InstalledDetails)
-	if err != nil {
-		return err
-	}
+	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
 
-	osLangInstalledDetailsDir := filepath.Join(installedDetailsDir, data.OsLangCode(data.CurrentOs(), langCode))
-
-	kvOsLangInstalledDetails, err := kevlar.New(osLangInstalledDetailsDir, kevlar.JsonExt)
-	if err != nil {
-		return err
-	}
-
-	var flattened bool
-	if ids, flattened, err = gameProductTypesFlatMap(rdx, force, ids...); err != nil {
-		return err
-	} else if flattened {
-		ua.EndWithResult("uninstalling PACK included games")
-		return Uninstall(langCode, rdx, force, ids...)
-	}
-
-	ua.TotalInt(len(ids))
-
-	for _, id := range ids {
-		if err = currentOsUninstallProduct(id, langCode, rdx); err != nil {
+		os, err := installedInfoOperatingSystem(id, rdx)
+		if err != nil {
 			return err
 		}
 
-		if err = kvOsLangInstalledDetails.Cut(id); err != nil {
+		ii.OperatingSystem = os
+
+	}
+
+	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+		installInfo, err := matchInstallInfo(ii, installedInfoLines...)
+		if err != nil {
 			return err
 		}
 
-		ua.Increment()
+		if installInfo == nil {
+			ua.EndWithResult("%s is not installed for %s", id, ii.OperatingSystem)
+			return nil
+		}
+
 	}
 
-	if err = unpinInstallParameters(data.CurrentOs(), langCode, rdx, ids...); err != nil {
+	if err = osUninstallProduct(id, ii, rdx); err != nil {
 		return err
 	}
 
-	if err = RemoveSteamShortcut(rdx, ids...); err != nil {
+	if err = unpinInstallInfo(id, ii, rdx); err != nil {
+		return err
+	}
+
+	if err = RemoveSteamShortcut(rdx, id); err != nil {
 		return err
 	}
 
@@ -95,21 +96,43 @@ func Uninstall(langCode string, rdx redux.Writeable, force bool, ids ...string) 
 
 }
 
-func currentOsUninstallProduct(id, langCode string, rdx redux.Readable) error {
-	currentOs := data.CurrentOs()
-	switch currentOs {
+func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Readable) error {
+
+	oupa := nod.Begin(" uninstalling %s for %s...", id, ii.OperatingSystem)
+	defer oupa.Done()
+
+	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		fallthrough
 	case vangogh_integration.Linux:
-		if err := nixUninstallProduct(id, langCode, currentOs, rdx); err != nil {
+		if err := nixUninstallProduct(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
 			return err
 		}
 	case vangogh_integration.Windows:
-		if err := windowsUninstallProduct(id, langCode, rdx); err != nil {
-			return err
+		currentOs := data.CurrentOs()
+		switch currentOs {
+		case vangogh_integration.MacOS:
+			fallthrough
+		case vangogh_integration.Linux:
+
+			if err := RemovePrefix(ii.LangCode, ii.force, id); err != nil {
+				return err
+			}
+
+			if err := DeletePrefixEnv(ii.LangCode, ii.force, id); err != nil {
+				return err
+			}
+
+		case vangogh_integration.Windows:
+			if err := windowsUninstallProduct(id, ii.LangCode, rdx); err != nil {
+				return err
+			}
+		default:
+			return currentOs.ErrUnsupported()
 		}
 	default:
-		return currentOs.ErrUnsupported()
+		return ii.OperatingSystem.ErrUnsupported()
 	}
+
 	return nil
 }
