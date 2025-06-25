@@ -19,21 +19,14 @@ func UpdateHandler(u *url.URL) error {
 
 	id := q.Get(vangogh_integration.IdProperty)
 
-	ii := &InstallInfo{
-		reveal:  q.Has("reveal"),
-		verbose: q.Has("verbose"),
-	}
-
-	if q.Has("env") {
-		ii.Env = strings.Split(q.Get("env"), ",")
-	}
-
 	all := q.Has("all")
+	verbose := q.Has("verbose")
+	force := q.Has("force")
 
-	return Update(id, ii, all)
+	return Update(id, all, verbose, force)
 }
 
-func Update(id string, ii *InstallInfo, all bool) error {
+func Update(id string, all, verbose, force bool) error {
 
 	var updateMsg string
 	switch all {
@@ -56,13 +49,16 @@ func Update(id string, ii *InstallInfo, all bool) error {
 		return err
 	}
 
-	updatedIdsInstallInfo, err := checkProductsUpdates(id, ii, rdx, all)
+	updatedIdsInstallInfo, err := checkProductsUpdates(id, rdx, all, force)
 	if err != nil {
 		return err
 	}
 
 	for updatedId, installedInfoSlice := range updatedIdsInstallInfo {
 		for _, installedInfo := range installedInfoSlice {
+
+			installedInfo.verbose = verbose
+
 			if err = Install(updatedId, installedInfo); err != nil {
 				return err
 			}
@@ -72,7 +68,7 @@ func Update(id string, ii *InstallInfo, all bool) error {
 	return nil
 }
 
-func checkProductsUpdates(id string, ii *InstallInfo, rdx redux.Writeable, all bool) (map[string][]*InstallInfo, error) {
+func checkProductsUpdates(id string, rdx redux.Writeable, all, force bool) (map[string][]*InstallInfo, error) {
 
 	cpua := nod.NewProgress("checking for products updates...")
 	defer cpua.Done()
@@ -97,7 +93,7 @@ func checkProductsUpdates(id string, ii *InstallInfo, rdx redux.Writeable, all b
 	updatedIdInstalledInfo := make(map[string][]*InstallInfo)
 
 	for _, checkId := range checkIds {
-		if uii, err := checkProductUpdates(checkId, rdx, ii.force); err == nil && len(uii) > 0 {
+		if uii, err := checkProductUpdates(checkId, rdx, force); err == nil && len(uii) > 0 {
 			updatedIdInstalledInfo[id] = uii
 		} else if err != nil {
 			return nil, err

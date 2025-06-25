@@ -154,8 +154,8 @@ uninstall
 update
     id^
     all
-    reveal
     verbose
+    force
 
 validate
     id^&*
