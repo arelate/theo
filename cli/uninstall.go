@@ -81,7 +81,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 		}
 
 		if installInfo == nil {
-			ua.EndWithResult("%s is not installed for %s-%s", id, ii.OperatingSystem, ii.LangCode)
+			ua.EndWithResult("on installation info found for %s-%s", id, ii.OperatingSystem, ii.LangCode)
 			return nil
 		}
 

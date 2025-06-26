@@ -20,7 +20,7 @@ func RevealInstalledHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := defaultLangCode
+	langCode := "" // installed info language will be used instead of default
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
@@ -59,8 +59,14 @@ func RevealInstalled(id string, ii *InstallInfo) error {
 		ii.OperatingSystem = os
 	}
 
-	// not using installed info lang-code, since we want to display all products
-	// and only allow filtering by operating system
+	if ii.LangCode == "" {
+		lc, err := installedInfoLangCode(id, ii.OperatingSystem, rdx)
+		if err != nil {
+			return err
+		}
+
+		ii.LangCode = lc
+	}
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
@@ -72,7 +78,7 @@ func RevealInstalled(id string, ii *InstallInfo) error {
 		if installedInfo != nil {
 			return currentOsRevealInstalled(id, ii, rdx)
 		} else {
-			ria.EndWithResult("no installation found for %s on %s", id, ii.OperatingSystem)
+			ria.EndWithResult("no installation found for %s-%s", ii.OperatingSystem, ii.LangCode)
 		}
 
 	}
