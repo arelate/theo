@@ -51,15 +51,16 @@ func RevealInstalled(id string, ii *InstallInfo) error {
 	}
 
 	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-
 		os, err := installedInfoOperatingSystem(id, rdx)
 		if err != nil {
 			return err
 		}
 
 		ii.OperatingSystem = os
-
 	}
+
+	// not using installed info lang-code, since we want to display all products
+	// and only allow filtering by operating system
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 

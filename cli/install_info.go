@@ -8,6 +8,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
+	"slices"
 	"strings"
 )
 
@@ -140,20 +141,79 @@ func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integr
 		switch len(installedInfoLines) {
 		case 0:
 			return vangogh_integration.AnyOperatingSystem, errors.New("zero length installed info for " + id)
-		case 1:
+		default:
 
-			ii, err := parseInstallInfo(installedInfoLines[0])
-			if err != nil {
-				return vangogh_integration.AnyOperatingSystem, err
+			distinctOs := make([]vangogh_integration.OperatingSystem, 0)
+
+			for _, line := range installedInfoLines {
+
+				ii, err := parseInstallInfo(line)
+				if err != nil {
+					return vangogh_integration.AnyOperatingSystem, err
+				}
+
+				if !slices.Contains(distinctOs, ii.OperatingSystem) {
+					distinctOs = append(distinctOs, ii.OperatingSystem)
+				}
+
 			}
 
-			iiosa.EndWithResult(ii.OperatingSystem.String())
-			return ii.OperatingSystem, nil
+			switch len(distinctOs) {
+			case 0:
+				return vangogh_integration.AnyOperatingSystem, errors.New("no supported operating system for " + id)
+			case 1:
+				return distinctOs[0], nil
+			default:
+				return vangogh_integration.AnyOperatingSystem, errors.New("please specify operating system for " + id)
+			}
 
-		default:
-			return vangogh_integration.AnyOperatingSystem, errors.New("please specify OS version for " + id)
 		}
 	} else {
 		return vangogh_integration.AnyOperatingSystem, errors.New("no installation found for " + id)
+	}
+}
+
+func installedInfoLangCode(id string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+	iilca := nod.Begin(" checking installed language code for %s...", id)
+	defer iilca.Done()
+
+	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+		switch len(installedInfoLines) {
+		case 0:
+			return "", errors.New("zero length installed info for " + id)
+		default:
+
+			distinctLangCodes := make([]string, 0)
+
+			for _, line := range installedInfoLines {
+
+				ii, err := parseInstallInfo(line)
+				if err != nil {
+					return "", err
+				}
+
+				if ii.OperatingSystem != operatingSystem {
+					continue
+				}
+
+				if !slices.Contains(distinctLangCodes, ii.LangCode) {
+					distinctLangCodes = append(distinctLangCodes, ii.LangCode)
+				}
+
+			}
+
+			switch len(distinctLangCodes) {
+			case 0:
+				return "", errors.New("no supported language code system for " + id)
+			case 1:
+				return distinctLangCodes[0], nil
+			default:
+				return "", errors.New("please specify language code for " + id)
+			}
+
+		}
+	} else {
+		return "", errors.New("no installation found for " + id)
 	}
 }

@@ -20,7 +20,7 @@ func UninstallHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := defaultLangCode
+	langCode := "" // installed info language will be used instead of default
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
@@ -56,14 +56,21 @@ func Uninstall(id string, ii *InstallInfo) error {
 	}
 
 	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-
 		os, err := installedInfoOperatingSystem(id, rdx)
 		if err != nil {
 			return err
 		}
 
 		ii.OperatingSystem = os
+	}
 
+	if ii.LangCode == "" {
+		lc, err := installedInfoLangCode(id, ii.OperatingSystem, rdx)
+		if err != nil {
+			return err
+		}
+
+		ii.LangCode = lc
 	}
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
@@ -74,7 +81,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 		}
 
 		if installInfo == nil {
-			ua.EndWithResult("%s is not installed for %s", id, ii.OperatingSystem)
+			ua.EndWithResult("%s is not installed for %s-%s", id, ii.OperatingSystem, ii.LangCode)
 			return nil
 		}
 

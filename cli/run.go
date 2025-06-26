@@ -25,7 +25,7 @@ func RunHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := defaultLangCode
+	langCode := "" // installed info language will be used instead of default
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
@@ -60,14 +60,21 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 	}
 
 	if operatingSystem == vangogh_integration.AnyOperatingSystem {
-
 		os, err := installedInfoOperatingSystem(id, rdx)
 		if err != nil {
 			return err
 		}
 
 		operatingSystem = os
+	}
 
+	if langCode == "" {
+		lc, err := installedInfoLangCode(id, operatingSystem, rdx)
+		if err != nil {
+			return err
+		}
+
+		langCode = lc
 	}
 
 	currentOs := []vangogh_integration.OperatingSystem{operatingSystem}
