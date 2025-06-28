@@ -39,7 +39,7 @@ func AddSteamShortcutHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := defaultLangCode
+	langCode := ""
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
@@ -75,6 +75,24 @@ func AddSteamShortcut(id string, operatingSystem vangogh_integration.OperatingSy
 	loginUsers, err := getSteamLoginUsers()
 	if err != nil {
 		return err
+	}
+
+	if operatingSystem == vangogh_integration.AnyOperatingSystem {
+		iios, err := installedInfoOperatingSystem(id, rdx)
+		if err != nil {
+			return err
+		}
+
+		operatingSystem = iios
+	}
+
+	if langCode == "" {
+		lc, err := installedInfoLangCode(id, operatingSystem, rdx)
+		if err != nil {
+			return err
+		}
+
+		langCode = lc
 	}
 
 	for _, loginUser := range loginUsers {

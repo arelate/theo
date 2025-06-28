@@ -56,12 +56,12 @@ func Uninstall(id string, ii *InstallInfo) error {
 	}
 
 	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-		os, err := installedInfoOperatingSystem(id, rdx)
+		iios, err := installedInfoOperatingSystem(id, rdx)
 		if err != nil {
 			return err
 		}
 
-		ii.OperatingSystem = os
+		ii.OperatingSystem = iios
 	}
 
 	if ii.LangCode == "" {

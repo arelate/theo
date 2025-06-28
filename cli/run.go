@@ -60,12 +60,12 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 	}
 
 	if operatingSystem == vangogh_integration.AnyOperatingSystem {
-		os, err := installedInfoOperatingSystem(id, rdx)
+		iios, err := installedInfoOperatingSystem(id, rdx)
 		if err != nil {
 			return err
 		}
 
-		operatingSystem = os
+		operatingSystem = iios
 	}
 
 	if langCode == "" {
