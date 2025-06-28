@@ -39,19 +39,18 @@ func (ii *InstallInfo) String() (string, error) {
 
 func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails) {
 
-	for _, dl := range pd.DownloadLinks {
-		if dl.OperatingSystem != ii.OperatingSystem {
-			continue
-		}
+	dls := pd.DownloadLinks.
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterLanguageCodes(ii.LangCode).
+		FilterDownloadTypes(vangogh_integration.Installer)
 
-		if dl.Type != vangogh_integration.Installer {
-			continue
-		}
+	if len(dls)>0 {
+		ii.Version = dls[0].Version
+	}
 
-		ii.Version = dl.Version
-		ii.EstimatedBytes = dl.EstimatedBytes
-		break
-
+	ii.EstimatedBytes = 0
+	for _, dl := range dls {
+		ii.EstimatedBytes += dl.EstimatedBytes
 	}
 }
 
