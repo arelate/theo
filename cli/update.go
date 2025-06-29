@@ -147,7 +147,7 @@ func isInstalledInfoUpdated(id string, installedInfo *InstallInfo, rdx redux.Wri
 	iiiua := nod.Begin(" checking %s %s-%s version...", id, installedInfo.OperatingSystem, installedInfo.LangCode)
 	defer iiiua.Done()
 
-	latestProductDetails, err := GetProductDetails(id, rdx, true)
+	latestProductDetails, err := getProductDetails(id, rdx, true)
 	if err != nil {
 		return false, err
 	}

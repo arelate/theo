@@ -1,15 +1,18 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
+	"os"
+	"path/filepath"
 )
 
-func RevealInstalledHandler(u *url.URL) error {
+func RevealHandler(u *url.URL) error {
 
 	q := u.Query()
 
@@ -30,10 +33,37 @@ func RevealInstalledHandler(u *url.URL) error {
 		LangCode:        langCode,
 	}
 
-	return RevealInstalled(id, ii)
+	installed := q.Has("installed")
+	downloads := q.Has("downloads")
+	backups := q.Has("backups")
+
+	return Reveal(id, ii, installed, downloads, backups)
 }
 
-func RevealInstalled(id string, ii *InstallInfo) error {
+func Reveal(id string, ii *InstallInfo, installed, downloads, backups bool) error {
+
+	if installed {
+		if err := revealInstalled(id, ii); err != nil {
+			return err
+		}
+	}
+
+	if downloads {
+		if err := revealDownloads(id); err != nil {
+			return err
+		}
+	}
+
+	if backups {
+		if err := revealBackups(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func revealInstalled(id string, ii *InstallInfo) error {
 
 	ria := nod.Begin("revealing installation for %s...", id)
 	defer ria.Done()
@@ -94,4 +124,49 @@ func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) er
 	}
 
 	return currentOsReveal(revealPath)
+}
+
+func revealBackups() error {
+
+	rda := nod.Begin("revealing backups...")
+	defer rda.Done()
+
+	backupsDir, err := pathways.GetAbsDir(data.Backups)
+	if err != nil {
+		return err
+	}
+
+	return currentOsReveal(backupsDir)
+}
+
+func revealDownloads(id string) error {
+
+	rda := nod.Begin("revealing downloads...")
+	defer rda.Done()
+
+	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
+	if err != nil {
+		return err
+	}
+
+	productDownloadsDir := filepath.Join(downloadsDir, id)
+
+	if _, err = os.Stat(productDownloadsDir); err == nil {
+		return currentOsReveal(productDownloadsDir)
+	} else {
+		return currentOsReveal(downloadsDir)
+	}
+}
+
+func currentOsReveal(path string) error {
+	switch data.CurrentOs() {
+	case vangogh_integration.MacOS:
+		return macOsReveal(path)
+	case vangogh_integration.Windows:
+		return windowsReveal(path)
+	case vangogh_integration.Linux:
+		return linuxReveal(path)
+	default:
+		return errors.New("cannot reveal on unknown operating system")
+	}
 }

@@ -95,7 +95,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if err = RemoveSteamShortcut(rdx, id); err != nil {
+	if err = removeSteamShortcut(rdx, id); err != nil {
 		return err
 	}
 

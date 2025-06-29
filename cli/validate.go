@@ -79,7 +79,7 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 
 	for _, id := range ids {
 
-		productDetails, err := GetProductDetails(id, rdx, false)
+		productDetails, err := getProductDetails(id, rdx, false)
 		if err != nil {
 			return err
 		}

@@ -6,12 +6,6 @@
 # {} - placeholder values
 # {^} - placeholder values, first value is default
 
-add-steam-shortcut
-    id^&
-    os
-    lang-code
-    force
-
 archive-prefix
     id^&*
     lang-code
@@ -40,9 +34,6 @@ download
     manual-url-filter&
     force
 
-get-product-details
-    id^&*
-
 install
     id^*
     os
@@ -55,20 +46,17 @@ install
     verbose
     force
 
-list-installed
+list
+    installed
+    playtasks
+    steam-shortcuts
     os
     lang-code
-
-list-playtasks
-    id^*
-    lang-code
-
-list-prefix-env
-
-list-prefix-exe-path
-
-list-steam-shortcuts
+    id
     all-key-values
+
+# list-prefix-env
+# list-prefix-exe-path
 
 mod-prefix-retina
     id^*
@@ -88,21 +76,13 @@ remove-prefix
     lang-code
     force
 
-remove-steam-shortcut
-    id^&
-    lang-code
-
-reset-server-connection
-
-reveal-backups
-
-reveal-downloads
-    id^&
-
-reveal-installed
+reveal
     id^
     os
     lang-code
+    installed
+    downloads
+    backups
 
 run
     id^
@@ -128,17 +108,23 @@ set-prefix-exe-path
     lang-code
     exe-path
 
-set-server-connection
+setup-server
     protocol
     address*
     port
     username*
     password*
+    test
 
 setup-wine
     force
 
-test-server-connection
+steam-shortcut
+    add&
+    remove&
+    os
+    lang-code
+    force
 
 uninstall
     id^*

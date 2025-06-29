@@ -171,7 +171,7 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 		return err
 	}
 
-	productDetails, err := GetProductDetails(id, rdx, force)
+	productDetails, err := getProductDetails(id, rdx, force)
 	if err != nil {
 		return err
 	}

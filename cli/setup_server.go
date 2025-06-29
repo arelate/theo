@@ -11,11 +11,105 @@ import (
 	"net/url"
 )
 
-func TestServerConnectionHandler(_ *url.URL) error {
-	return TestServerConnection()
+type SetupProperties map[string]string
+
+func SetupServerHandler(u *url.URL) error {
+
+	q := u.Query()
+
+	protocol := q.Get("protocol")
+	address := q.Get("address")
+	port := q.Get("port")
+
+	username := q.Get("username")
+	password := q.Get("password")
+
+	test := q.Has("test")
+
+	return SetupServer(protocol, address, port, username, password, test)
 }
 
-func TestServerConnection() error {
+func SetupServer(
+	protocol, address, port string,
+	username, password string,
+	test bool) error {
+
+	// resetting setup properties since not every property is required (e.g. port, protocol)
+	// and it would be possible to end up with a set of properties that will let to failures
+	// in non-obvious ways
+	if err := resetServerSetup(); err != nil {
+		return err
+	}
+
+	sa := nod.Begin("setting up server connection...")
+	defer sa.Done()
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties)
+	if err != nil {
+		return err
+	}
+
+	setupProperties := make(map[string][]string)
+
+	if protocol != "" {
+		setupProperties[data.ServerProtocolProperty] = []string{protocol}
+	}
+
+	setupProperties[data.ServerAddressProperty] = []string{address}
+
+	if port != "" {
+		setupProperties[data.ServerPortProperty] = []string{port}
+	}
+
+	setupProperties[data.ServerUsernameProperty] = []string{username}
+	setupProperties[data.ServerPasswordProperty] = []string{password}
+
+	if err = rdx.BatchReplaceValues(data.ServerConnectionProperties, setupProperties); err != nil {
+		return err
+	}
+
+	if test {
+		return testServer()
+	}
+
+	return nil
+}
+
+func resetServerSetup() error {
+	rsa := nod.Begin("resetting server setup...")
+	defer rsa.Done()
+
+	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	if err != nil {
+		return err
+	}
+
+	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties)
+	if err != nil {
+		return err
+	}
+
+	setupProperties := []string{
+		data.ServerProtocolProperty,
+		data.ServerAddressProperty,
+		data.ServerPortProperty,
+		data.ServerUsernameProperty,
+		data.ServerPasswordProperty,
+	}
+
+	if err = rdx.CutKeys(data.ServerConnectionProperties, setupProperties...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func testServer() error {
 
 	tsa := nod.Begin("testing server connection...")
 	defer tsa.EndWithResult("success - server setup is valid")
@@ -30,11 +124,11 @@ func TestServerConnection() error {
 		return err
 	}
 
-	if err := testServerConnectivity(rdx); err != nil {
+	if err = testServerConnectivity(rdx); err != nil {
 		return err
 	}
 
-	if err := testServerAuth(rdx); err != nil {
+	if err = testServerAuth(rdx); err != nil {
 		return err
 	}
 

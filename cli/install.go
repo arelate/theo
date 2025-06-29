@@ -82,7 +82,7 @@ func Install(id string, ii *InstallInfo) error {
 
 	vangogh_integration.PrintParams([]string{id}, operatingSystems, langCodes, ii.DownloadTypes, true)
 
-	productDetails, err := GetProductDetails(id, rdx, ii.force)
+	productDetails, err := getProductDetails(id, rdx, ii.force)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func Install(id string, ii *InstallInfo) error {
 	}
 
 	if !ii.NoSteamShortcut {
-		if err = AddSteamShortcut(id, ii.OperatingSystem, ii.LangCode, rdx, ii.force); err != nil {
+		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, rdx, ii.force); err != nil {
 			return err
 		}
 	}
@@ -179,7 +179,7 @@ func Install(id string, ii *InstallInfo) error {
 	}
 
 	if ii.reveal {
-		if err = RevealInstalled(id, ii); err != nil {
+		if err = revealInstalled(id, ii); err != nil {
 			return err
 		}
 	}

@@ -55,7 +55,7 @@ package cli
 //
 //	for _, id := range ids {
 //
-//		pd, err := GetProductDetails(id, rdx, force)
+//		pd, err := getProductDetails(id, rdx, force)
 //		if err != nil {
 //			return nil, err
 //		}

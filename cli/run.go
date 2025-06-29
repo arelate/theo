@@ -95,7 +95,7 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 
 func checkProductType(id string, rdx redux.Writeable, force bool) error {
 
-	productDetails, err := GetProductDetails(id, rdx, force)
+	productDetails, err := getProductDetails(id, rdx, force)
 	if err != nil {
 		return err
 	}
