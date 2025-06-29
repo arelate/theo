@@ -9,6 +9,8 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -138,17 +140,6 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 		return err
 	}
 
-	var absGogGameInfoPath string
-	switch et.defaultLauncher {
-	case false:
-		absGogGameInfoPath, err = osFindGogGameInfo(id, operatingSystem, langCode, rdx)
-		if err != nil {
-			return err
-		}
-	case true:
-		// do nothing
-	}
-
 	if operatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
 
 		var absPrefixDir string
@@ -158,6 +149,46 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 			return err
 		}
 
+		prefixName, err := data.GetPrefixName(id, rdx)
+		if err != nil {
+			return err
+		}
+
+		langPrefixName := path.Join(prefixName, langCode)
+
+		if env, ok := rdx.GetAllValues(data.PrefixEnvProperty, langPrefixName); ok {
+			et.env = mergeEnv(et.env, env)
+		}
+
+		if exe, ok := rdx.GetLastVal(data.PrefixExeProperty, langPrefixName); ok {
+
+			absExePath := filepath.Join(absPrefixDir, exe)
+			if _, err = os.Stat(absExePath); err == nil {
+				et.name = exe
+				et.exe = absExePath
+			}
+
+		}
+
+		var steamAppId string
+		if sai, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok {
+			steamAppId = sai
+		}
+
+		if et.exe != "" {
+			return osExec(id, steamAppId, operatingSystem, et, force)
+		}
+	}
+
+	var absGogGameInfoPath string
+	switch et.defaultLauncher {
+	case false:
+		absGogGameInfoPath, err = osFindGogGameInfo(id, operatingSystem, langCode, rdx)
+		if err != nil {
+			return err
+		}
+	case true:
+		// do nothing
 	}
 
 	switch absGogGameInfoPath {

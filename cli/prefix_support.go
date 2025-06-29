@@ -29,7 +29,7 @@ func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 		return "", err
 	}
 
-	if ep, ok := rdx.GetLastVal(data.PrefixExePathProperty, path.Join(prefixName, langCode)); ok && ep != "" {
+	if ep, ok := rdx.GetLastVal(data.PrefixExeProperty, path.Join(prefixName, langCode)); ok && ep != "" {
 		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 		if err != nil {
 			return "", err

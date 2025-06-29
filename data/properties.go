@@ -11,8 +11,8 @@ const (
 	ServerUsernameProperty = "server-username"
 	ServerPasswordProperty = "server-password"
 
-	PrefixEnvProperty     = "prefix-env"
-	PrefixExePathProperty = "prefix-exe-path"
+	PrefixEnvProperty = "prefix-env"
+	PrefixExeProperty = "prefix-exe"
 
 	GitHubReleasesUpdatedProperty = "github-releases-updated"
 
@@ -40,7 +40,7 @@ func AllProperties() []string {
 		vangogh_integration.BackgroundProperty,
 		InstallInfoProperty,
 		PrefixEnvProperty,
-		PrefixExePathProperty,
+		PrefixExeProperty,
 		InstallDateProperty,
 		LastRunDateProperty,
 	}

@@ -254,7 +254,7 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 				return err
 			}
 
-			if err = DefaultPrefixEnv(ii.LangCode, id); err != nil {
+			if err = prefixDefaultEnv(id, ii.LangCode, rdx); err != nil {
 				return err
 			}
 

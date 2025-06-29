@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"github.com/arelate/theo/cli"
+	"github.com/arelate/theo/clo_delegates"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/clo"
 	"github.com/boggydigital/nod"
@@ -28,62 +29,47 @@ func main() {
 
 	theoRootDir, err := data.InitRootDir()
 	if err != nil {
-		log.Println(err.Error())
-		os.Exit(1)
+		log.Fatalln(err.Error())
 	}
 
 	if err = pathways.Setup("",
 		theoRootDir,
 		data.RelToAbsDirs,
 		data.AllAbsDirs...); err != nil {
-		log.Println(err.Error())
-		os.Exit(2)
+		log.Fatalln(err.Error())
 	}
 
 	defs, err := clo.Load(
 		bytes.NewBuffer(cliCommands),
 		bytes.NewBuffer(cliHelp),
-		nil)
+		clo_delegates.FuncMap)
 	if err != nil {
-		log.Println(err.Error())
-		os.Exit(3)
+		log.Fatalln(err.Error())
 	}
 
 	clo.HandleFuncs(map[string]clo.Handler{
-		"archive-prefix":         cli.ArchivePrefixHandler,
-		"backup-metadata":        cli.BackupMetadataHandler,
-		"default-prefix-env":     cli.DefaultPrefixEnvHandler,
-		"delete-prefix-env":      cli.DeletePrefixEnvHandler,
-		"delete-prefix-exe-path": cli.DeletePrefixExePathHandler,
-		"download":               cli.DownloadHandler,
-		"install":                cli.InstallHandler,
-		"list":                   cli.ListHandler,
-		"mod-prefix-retina":      cli.ModPrefixRetinaHandler,
-		"remove-downloads":       cli.RemoveDownloadsHandler,
-		"remove-prefix":          cli.RemovePrefixHandler,
-		"reveal":                 cli.RevealHandler,
-		"run":                    cli.RunHandler,
-		"serve":                  cli.ServeHandler,
-		"set-prefix-env":         cli.SetPrefixEnvHandler,
-		"set-prefix-exe-path":    cli.SetPrefixExePathHandler,
-		"setup-server":           cli.SetupServerHandler,
-		"setup-wine":             cli.SetupWineHandler,
-		"steam-shortcut":         cli.SteamShortcutHandler,
-		"uninstall":              cli.UninstallHandler,
-		"update":                 cli.UpdateHandler,
-		"validate":               cli.ValidateHandler,
-		"version":                cli.VersionHandler,
-		"winecfg":                cli.WineCfgHandler,
-		"wine-run":               cli.WineRunHandler,
+		"backup-metadata":  cli.BackupMetadataHandler,
+		"download":         cli.DownloadHandler,
+		"install":          cli.InstallHandler,
+		"list":             cli.ListHandler,
+		"prefix":           cli.PrefixHandler,
+		"remove-downloads": cli.RemoveDownloadsHandler,
+		"reveal":           cli.RevealHandler,
+		"run":              cli.RunHandler,
+		"setup-server":     cli.SetupServerHandler,
+		"setup-wine":       cli.SetupWineHandler,
+		"steam-shortcut":   cli.SteamShortcutHandler,
+		"uninstall":        cli.UninstallHandler,
+		"update":           cli.UpdateHandler,
+		"validate":         cli.ValidateHandler,
+		"version":          cli.VersionHandler,
 	})
 
 	if err = defs.AssertCommandsHaveHandlers(); err != nil {
-		log.Println(err.Error())
-		os.Exit(4)
+		log.Fatalln(err.Error())
 	}
 
 	if err = defs.Serve(os.Args[1:]); err != nil {
-		log.Println(err.Error())
-		os.Exit(5)
+		log.Fatalln(err.Error())
 	}
 }

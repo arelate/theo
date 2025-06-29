@@ -103,7 +103,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 
 }
 
-func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Readable) error {
+func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	oupa := nod.Begin(" uninstalling %s for %s...", id, ii.OperatingSystem)
 	defer oupa.Done()
@@ -122,11 +122,11 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Readable) error {
 			fallthrough
 		case vangogh_integration.Linux:
 
-			if err := RemovePrefix(ii.LangCode, ii.force, id); err != nil {
+			if err := removeProductPrefix(id, ii.LangCode, rdx, ii.force); err != nil {
 				return err
 			}
 
-			if err := DeletePrefixEnv(ii.LangCode, ii.force, id); err != nil {
+			if err := prefixDeleteEnv(id, ii.LangCode, rdx, ii.force); err != nil {
 				return err
 			}
 

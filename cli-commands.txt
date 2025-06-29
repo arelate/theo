@@ -6,25 +6,7 @@
 # {} - placeholder values
 # {^} - placeholder values, first value is default
 
-archive-prefix
-    id^&*
-    lang-code
-
 backup-metadata
-
-default-prefix-env
-    id^*
-    lang-code
-
-delete-prefix-env
-    id^*
-    lang-code
-    force
-
-delete-prefix-exe-path
-    id^*
-    lang-code
-    force
 
 download
     id^&*
@@ -55,13 +37,19 @@ list
     id
     all-key-values
 
-# list-prefix-env
-# list-prefix-exe-path
-
-mod-prefix-retina
+prefix
     id^*
     lang-code
-    revert
+    env&
+    exe
+    program={wine-programs}
+    mod={prefix-mods}
+    default-env
+    delete-env
+    delete-exe
+    info
+    archive
+    remove
     verbose
     force
 
@@ -70,11 +58,6 @@ remove-downloads
     os&
     lang-code&
     download-type&
-
-remove-prefix
-    id^&*
-    lang-code
-    force
 
 reveal
     id^
@@ -95,26 +78,12 @@ run
     verbose
     force
 
-serve
-    port$
-    stderr$
-
-set-prefix-env
-    id^*
-    lang-code
-    env&
-
-set-prefix-exe-path
-    id^*
-    lang-code
-    exe-path
-
 setup-server
     protocol
-    address*
+    address
     port
-    username*
-    password*
+    username
+    password
     test
 
 setup-wine
@@ -147,8 +116,3 @@ validate
     manual-url-filter&
 
 version
-
-winecfg
-    id^*
-    lang-code
-    verbose
