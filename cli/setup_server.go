@@ -24,21 +24,21 @@ func SetupServerHandler(u *url.URL) error {
 	username := q.Get("username")
 	password := q.Get("password")
 
+	reset := q.Has("reset")
 	test := q.Has("test")
 
-	return SetupServer(protocol, address, port, username, password, test)
+	return SetupServer(protocol, address, port, username, password, reset, test)
 }
 
 func SetupServer(
 	protocol, address, port string,
 	username, password string,
-	test bool) error {
+	reset, test bool) error {
 
-	// resetting setup properties since not every property is required (e.g. port, protocol)
-	// and it would be possible to end up with a set of properties that will let to failures
-	// in non-obvious ways
-	if err := resetServerSetup(); err != nil {
-		return err
+	if reset {
+		if err := resetServerSetup(); err != nil {
+			return err
+		}
 	}
 
 	sa := nod.Begin("setting up server connection...")
@@ -60,17 +60,26 @@ func SetupServer(
 		setupProperties[data.ServerProtocolProperty] = []string{protocol}
 	}
 
-	setupProperties[data.ServerAddressProperty] = []string{address}
+	if address != "" {
+		setupProperties[data.ServerAddressProperty] = []string{address}
+	}
 
 	if port != "" {
 		setupProperties[data.ServerPortProperty] = []string{port}
 	}
 
-	setupProperties[data.ServerUsernameProperty] = []string{username}
-	setupProperties[data.ServerPasswordProperty] = []string{password}
+	if username != "" {
+		setupProperties[data.ServerUsernameProperty] = []string{username}
+	}
 
-	if err = rdx.BatchReplaceValues(data.ServerConnectionProperties, setupProperties); err != nil {
-		return err
+	if password != "" {
+		setupProperties[data.ServerPasswordProperty] = []string{password}
+	}
+
+	if len(setupProperties) > 0 {
+		if err = rdx.BatchReplaceValues(data.ServerConnectionProperties, setupProperties); err != nil {
+			return err
+		}
 	}
 
 	if test {
