@@ -13,6 +13,7 @@ const (
 
 	PrefixEnvProperty = "prefix-env"
 	PrefixExeProperty = "prefix-exe"
+	PrefixArgProperty = "prefix-arg"
 
 	GitHubReleasesUpdatedProperty = "github-releases-updated"
 

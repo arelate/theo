@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/backups"
@@ -49,6 +50,10 @@ func PrefixHandler(u *url.URL) error {
 		et.env = strings.Split(q.Get("env"), ",")
 	}
 
+	if q.Has("arg") {
+		et.args = strings.Split(q.Get("arg"), ",")
+	}
+
 	mod := q.Get("mod")
 	program := q.Get("program")
 
@@ -57,6 +62,8 @@ func PrefixHandler(u *url.URL) error {
 
 	deleteExe := q.Has("delete-exe")
 
+	deleteArg := q.Has("delete-arg")
+
 	info := q.Has("info")
 	archive := q.Has("archive")
 	remove := q.Has("remove")
@@ -64,14 +71,14 @@ func PrefixHandler(u *url.URL) error {
 
 	return Prefix(id, langCode,
 		mod, program,
-		defaultEnv, deleteEnv, deleteExe,
+		defaultEnv, deleteEnv, deleteExe, deleteArg,
 		info, archive, remove,
 		et, force)
 }
 
 func Prefix(id string, langCode string,
 	mod, program string,
-	defaultEnv, deleteEnv, deleteExe bool,
+	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
 	info, archive, remove bool,
 	et *execTask, force bool) error {
 
@@ -93,7 +100,7 @@ func Prefix(id string, langCode string,
 	et.prefix = absPrefixDir
 
 	if deleteEnv {
-		if err = prefixDeleteEnv(id, langCode, rdx, force); err != nil {
+		if err = prefixDeleteProperty(id, langCode, data.PrefixEnvProperty, rdx, force); err != nil {
 			return err
 		}
 	}
@@ -105,7 +112,13 @@ func Prefix(id string, langCode string,
 	}
 
 	if deleteExe {
-		if err = prefixDeleteExe(id, langCode, rdx, force); err != nil {
+		if err = prefixDeleteProperty(id, langCode, data.PrefixExeProperty, rdx, force); err != nil {
+			return err
+		}
+	}
+
+	if deleteArg {
+		if err = prefixDeleteProperty(id, langCode, data.PrefixArgProperty, rdx, force); err != nil {
 			return err
 		}
 	}
@@ -118,6 +131,12 @@ func Prefix(id string, langCode string,
 
 	if et.exe != "" {
 		if err = prefixSetExe(id, langCode, et.exe, rdx); err != nil {
+			return err
+		}
+	}
+
+	if len(et.args) > 0 {
+		if err = prefixSetArgs(id, langCode, et.args, rdx); err != nil {
 			return err
 		}
 	}
@@ -391,7 +410,7 @@ func removePrefixDirs(absPrefixDir string, relFiles ...string) error {
 
 func prefixSetEnv(id, langCode string, env []string, rdx redux.Writeable) error {
 
-	spea := nod.Begin("setting prefix environment variables...")
+	spea := nod.Begin("setting %s...", data.PrefixEnvProperty)
 	defer spea.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixEnvProperty); err != nil {
@@ -443,7 +462,7 @@ func encodeEnv(de map[string]string) []string {
 
 func prefixSetExe(id, langCode string, exe string, rdx redux.Writeable) error {
 
-	spepa := nod.Begin("setting prefix exe path for wine-run...")
+	spepa := nod.Begin("setting %s...", data.PrefixExeProperty)
 	defer spepa.Done()
 
 	if strings.HasPrefix(exe, ".") ||
@@ -455,8 +474,6 @@ func prefixSetExe(id, langCode string, exe string, rdx redux.Writeable) error {
 	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixExeProperty); err != nil {
 		return err
 	}
-
-	exePaths := make(map[string][]string)
 
 	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
 	if err != nil {
@@ -473,13 +490,28 @@ func prefixSetExe(id, langCode string, exe string, rdx redux.Writeable) error {
 		return err
 	}
 
-	exePaths[path.Join(prefixName, langCode)] = []string{exe}
+	langPrefixName := path.Join(prefixName, langCode)
 
-	if err = rdx.BatchReplaceValues(data.PrefixExeProperty, exePaths); err != nil {
+	return rdx.ReplaceValues(data.PrefixExeProperty, langPrefixName, exe)
+}
+
+func prefixSetArgs(id, langCode string, args []string, rdx redux.Writeable) error {
+
+	spepa := nod.Begin("setting %s...", data.PrefixArgProperty)
+	defer spepa.Done()
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixArgProperty); err != nil {
 		return err
 	}
 
-	return nil
+	prefixName, err := data.GetPrefixName(id, rdx)
+	if err != nil {
+		return err
+	}
+
+	langPrefixName := path.Join(prefixName, langCode)
+
+	return rdx.ReplaceValues(data.PrefixArgProperty, langPrefixName, args...)
 }
 
 func prefixInfo(id, langCode string, rdx redux.Readable) error {
@@ -501,15 +533,13 @@ func prefixInfo(id, langCode string, rdx redux.Readable) error {
 
 	summary := make(map[string][]string)
 
-	if envValues, ok := rdx.GetAllValues(data.PrefixEnvProperty, langPrefixName); ok {
-		for _, env := range envValues {
-			summary[langPrefixName] = append(summary[langPrefixName], "env:"+env)
-		}
-	}
+	properties := []string{data.PrefixEnvProperty, data.PrefixExeProperty, data.PrefixArgProperty}
 
-	if exeValues, ok := rdx.GetAllValues(data.PrefixExeProperty, langPrefixName); ok {
-		for _, exe := range exeValues {
-			summary[langPrefixName] = append(summary[langPrefixName], "exe:"+exe)
+	for _, p := range properties {
+		if values, ok := rdx.GetAllValues(p, langPrefixName); ok {
+			for _, value := range values {
+				summary[langPrefixName] = append(summary[langPrefixName], fmt.Sprintf("%s:%s", p, value))
+			}
 		}
 	}
 
@@ -541,9 +571,8 @@ func prefixDefaultEnv(id, langCode string, rdx redux.Writeable) error {
 	return rdx.ReplaceValues(data.PrefixEnvProperty, langPrefixName, osEnvDefaults[data.CurrentOs()]...)
 }
 
-func prefixDeleteEnv(id, langCode string, rdx redux.Writeable, force bool) error {
-
-	pdea := nod.Begin("deleting prefix environment variables...")
+func prefixDeleteProperty(id, langCode, property string, rdx redux.Writeable, force bool) error {
+	pdea := nod.Begin("deleting %s...", property)
 	defer pdea.Done()
 
 	if !force {
@@ -551,7 +580,7 @@ func prefixDeleteEnv(id, langCode string, rdx redux.Writeable, force bool) error
 		return nil
 	}
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixEnvProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty, property); err != nil {
 		return err
 	}
 
@@ -562,29 +591,5 @@ func prefixDeleteEnv(id, langCode string, rdx redux.Writeable, force bool) error
 
 	langPrefixName := path.Join(prefixName, langCode)
 
-	return rdx.CutKeys(data.PrefixEnvProperty, langPrefixName)
-}
-
-func prefixDeleteExe(id, langCode string, rdx redux.Writeable, force bool) error {
-
-	pdea := nod.Begin("deleting prefix exe path...")
-	defer pdea.Done()
-
-	if !force {
-		pdea.EndWithResult("this operation requires -force flag")
-		return nil
-	}
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixExeProperty); err != nil {
-		return err
-	}
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	langPrefixName := path.Join(prefixName, langCode)
-
-	return rdx.CutKeys(data.PrefixExeProperty, langPrefixName)
+	return rdx.CutKeys(property, langPrefixName)
 }

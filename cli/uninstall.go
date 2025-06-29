@@ -126,7 +126,7 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 				return err
 			}
 
-			if err := prefixDeleteEnv(id, ii.LangCode, rdx, ii.force); err != nil {
+			if err := prefixDeleteProperty(id, ii.LangCode, data.PrefixEnvProperty, rdx, ii.force); err != nil {
 				return err
 			}
 

@@ -41,12 +41,14 @@ prefix
     id^*
     lang-code
     env&
+    arg&
     exe
     program={wine-programs}
     mod={prefix-mods}
     default-env
     delete-env
     delete-exe
+    delete-arg
     info
     archive
     remove
