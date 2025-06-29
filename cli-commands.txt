@@ -91,6 +91,7 @@ run
     env&
     playtask
     default-launcher
+    work-dir
     verbose
     force
 
@@ -151,12 +152,3 @@ winecfg
     id^*
     lang-code
     verbose
-
-wine-run
-    id^*
-    lang-code
-    env&
-    exe
-    work-dir
-    verbose
-    force

@@ -31,6 +31,7 @@ func RunHandler(u *url.URL) error {
 	}
 
 	et := &execTask{
+		workDir:         q.Get("work-dir"),
 		verbose:         q.Has("verbose"),
 		playTask:        q.Get("playtask"),
 		defaultLauncher: q.Has("default-launcher"),
