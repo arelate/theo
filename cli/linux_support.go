@@ -17,20 +17,21 @@ import (
 	"strings"
 )
 
-const desktopGlob = "*.desktop"
-
-const mojosetupDir = ".mojosetup"
+const (
+	desktopGlob  = "*.desktop"
+	mojosetupDir = ".mojosetup"
+)
+const relLinuxGogGameInfoDir = "game"
 
 const linuxStartShFilename = "start.sh"
 
-const relLinuxGogGameInfoDir = "game"
+const shExt = ".sh"
 
 func linuxInstallProduct(id string,
-	productDetails *vangogh_integration.ProductDetails,
-	link *vangogh_integration.ProductDownloadLink,
+	dls vangogh_integration.ProductDownloadLinks,
 	rdx redux.Writeable) error {
 
-	lia := nod.Begin("installing %s version of %s...", vangogh_integration.Linux, productDetails.Title)
+	lia := nod.Begin("installing %s for %s...", id, vangogh_integration.Linux)
 	defer lia.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
@@ -42,49 +43,56 @@ func linuxInstallProduct(id string,
 		return err
 	}
 
-	absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+	for _, link := range dls {
 
-	if _, err = os.Stat(absInstallerPath); err != nil {
-		return err
-	}
-
-	absInstalledPath, err := osInstalledPath(id, vangogh_integration.Linux, link.LanguageCode, rdx)
-	if err != nil {
-		return err
-	}
-
-	if err := linuxPostDownloadActions(id, link); err != nil {
-		return err
-	}
-
-	preInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
-	if err != nil {
-		return err
-	}
-
-	if err = linuxExecuteInstaller(absInstallerPath, absInstalledPath); err != nil {
-		return err
-	}
-
-	postInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
-	if err != nil {
-		return err
-	}
-
-	for _, pidf := range postInstallDesktopFiles {
-		if slices.Contains(preInstallDesktopFiles, pidf) {
+		if filepath.Ext(link.LocalFilename) != shExt {
 			continue
 		}
 
-		if err := os.Remove(pidf); err != nil {
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+
+		if _, err = os.Stat(absInstallerPath); err != nil {
 			return err
 		}
-	}
 
-	mojosetupProductDir := filepath.Join(absInstalledPath, mojosetupDir)
-	if _, err = os.Stat(mojosetupProductDir); err == nil {
-		if err := os.RemoveAll(mojosetupProductDir); err != nil {
+		absInstalledPath, err := osInstalledPath(id, vangogh_integration.Linux, link.LanguageCode, rdx)
+		if err != nil {
 			return err
+		}
+
+		if err = linuxPostDownloadActions(id, &link); err != nil {
+			return err
+		}
+
+		preInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
+		if err != nil {
+			return err
+		}
+
+		if err = linuxExecuteInstaller(absInstallerPath, absInstalledPath); err != nil {
+			return err
+		}
+
+		postInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
+		if err != nil {
+			return err
+		}
+
+		for _, pidf := range postInstallDesktopFiles {
+			if slices.Contains(preInstallDesktopFiles, pidf) {
+				continue
+			}
+
+			if err = os.Remove(pidf); err != nil {
+				return err
+			}
+		}
+
+		mojosetupProductDir := filepath.Join(absInstalledPath, mojosetupDir)
+		if _, err = os.Stat(mojosetupProductDir); err == nil {
+			if err := os.RemoveAll(mojosetupProductDir); err != nil {
+				return err
+			}
 		}
 	}
 

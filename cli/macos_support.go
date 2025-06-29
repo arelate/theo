@@ -18,33 +18,43 @@ import (
 )
 
 const (
-	catCmdPfx              = "cat "
-	appBundleExt           = ".app"
-	relMacOsGogGameInfoDir = "Contents/Resources"
+	catCmdPfx    = "cat "
+	appBundleExt = ".app"
 )
 
+const relMacOsGogGameInfoDir = "Contents/Resources"
+
+const pkgExt = ".pkg"
+
 func macOsInstallProduct(id string,
-	productDetails *vangogh_integration.ProductDetails,
-	link *vangogh_integration.ProductDownloadLink,
+	dls vangogh_integration.ProductDownloadLinks,
 	rdx redux.Writeable,
 	force bool) error {
 
-	mia := nod.Begin("installing %s version of %s...", vangogh_integration.MacOS, productDetails.Title)
+	mia := nod.Begin("installing %s for %s...", id, vangogh_integration.MacOS)
 	defer mia.Done()
 
-	if err := macOsExtractInstaller(id, link, force); err != nil {
-		return err
+	for _, link := range dls {
+
+		if filepath.Ext(link.LocalFilename) != pkgExt {
+			continue
+		}
+
+		if err := macOsExtractInstaller(id, &link, force); err != nil {
+			return err
+		}
+
+		if err := macOsPlaceExtracts(id, &link, rdx, force); err != nil {
+			return err
+		}
+
+		if err := macOsPostInstallActions(id, &link, rdx); err != nil {
+			return err
+		}
+
 	}
 
-	if err := macOsPlaceExtracts(id, link, rdx, force); err != nil {
-		return err
-	}
-
-	if err := macOsPostInstallActions(id, link, rdx); err != nil {
-		return err
-	}
-
-	if err := macOsRemoveProductExtracts(id, productDetails); err != nil {
+	if err := macOsRemoveProductExtracts(id, dls); err != nil {
 		return err
 	}
 
@@ -376,9 +386,9 @@ func macOsCatFiles(srcGlob string, dstPath string) error {
 	return nil
 }
 
-func macOsRemoveProductExtracts(id string, productDetails *vangogh_integration.ProductDetails) error {
+func macOsRemoveProductExtracts(id string, dls vangogh_integration.ProductDownloadLinks) error {
 
-	rela := nod.Begin(" removing extracts for %s...", productDetails.Title)
+	rela := nod.Begin(" removing extracts for %s...", id)
 	defer rela.Done()
 
 	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
@@ -391,9 +401,6 @@ func macOsRemoveProductExtracts(id string, productDetails *vangogh_integration.P
 		rela.EndWithResult("product extracts dir not present")
 		return nil
 	}
-
-	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(vangogh_integration.MacOS)
 
 	for _, dl := range dls {
 

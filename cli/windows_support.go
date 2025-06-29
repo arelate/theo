@@ -7,10 +7,12 @@ import (
 	"github.com/boggydigital/redux"
 )
 
+const exeExt = ".exe"
+
 func windowsInstallProduct(id string,
-	productDetails *vangogh_integration.ProductDetails,
-	link *vangogh_integration.ProductDownloadLink,
-	rdx redux.Writeable) error {
+	dls vangogh_integration.ProductDownloadLinks,
+	rdx redux.Writeable,
+	force bool) error {
 	return errors.New("support for Windows installation is not implemented")
 }
 

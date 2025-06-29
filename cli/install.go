@@ -9,17 +9,12 @@ import (
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"net/url"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 )
 
-const (
-	pkgExt = ".pkg"
-	exeExt = ".exe"
-	shExt  = ".sh"
-)
+const ()
 
 const (
 	relPayloadPath = "package.pkg/Scripts/payload"
@@ -223,58 +218,49 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		return err
 	}
 
-	installerExts := []string{pkgExt, shExt, exeExt}
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
 
-	for _, link := range dls {
-
-		if !slices.Contains(installerExts, filepath.Ext(link.LocalFilename)) {
-			continue
+		if err = macOsInstallProduct(id, dls, rdx, ii.force); err != nil {
+			return err
 		}
 
-		switch link.OperatingSystem {
-		case vangogh_integration.MacOS:
+	case vangogh_integration.Linux:
 
-			if err = macOsInstallProduct(id, productDetails, &link, rdx, ii.force); err != nil {
-				return err
-			}
+		if err = linuxInstallProduct(id, dls, rdx); err != nil {
+			return err
+		}
 
-		case vangogh_integration.Linux:
+	case vangogh_integration.Windows:
 
-			if err = linuxInstallProduct(id, productDetails, &link, rdx); err != nil {
-				return err
-			}
-
+		switch data.CurrentOs() {
 		case vangogh_integration.Windows:
 
-			switch data.CurrentOs() {
-			case vangogh_integration.Windows:
-
-				if err = windowsInstallProduct(id, productDetails, &link, rdx); err != nil {
-					return err
-				}
-
-			default:
-
-				if err = prefixInit(id, ii.LangCode, rdx, ii.verbose); err != nil {
-					return err
-				}
-
-				if err = prefixInstallProduct(id, ii.LangCode, rdx, ii.Env, ii.DownloadTypes, ii.verbose, ii.force); err != nil {
-					return err
-				}
-
-				if err = prefixCreateInventory(id, ii.LangCode, rdx, start); err != nil {
-					return err
-				}
-
-				if err = DefaultPrefixEnv(ii.LangCode, id); err != nil {
-					return err
-				}
-
+			if err = windowsInstallProduct(id, dls, rdx, ii.force); err != nil {
+				return err
 			}
+
 		default:
-			return link.OperatingSystem.ErrUnsupported()
+
+			if err = prefixInit(id, ii.LangCode, rdx, ii.verbose); err != nil {
+				return err
+			}
+
+			if err = prefixInstallProduct(id, dls, ii.LangCode, ii.DownloadTypes, rdx, ii.Env, ii.verbose, ii.force); err != nil {
+				return err
+			}
+
+			if err = prefixCreateInventory(id, ii.LangCode, rdx, start); err != nil {
+				return err
+			}
+
+			if err = DefaultPrefixEnv(ii.LangCode, id); err != nil {
+				return err
+			}
+
 		}
+	default:
+		return ii.OperatingSystem.ErrUnsupported()
 	}
 
 	return nil

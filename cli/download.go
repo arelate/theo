@@ -49,7 +49,7 @@ func Download(operatingSystems []vangogh_integration.OperatingSystem,
 	force bool,
 	ids ...string) error {
 
-	da := nod.NewProgress("downloading game data from the server...")
+	da := nod.NewProgress("downloading from the server...")
 	defer da.Done()
 
 	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)

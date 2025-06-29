@@ -159,11 +159,11 @@ func prefixInit(id string, langCode string, rdx redux.Readable, verbose bool) er
 	}
 }
 
-func prefixInstallProduct(id, langCode string, rdx redux.Writeable, env []string, downloadTypes []vangogh_integration.DownloadType, verbose, force bool) error {
+func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLinks, langCode string, downloadTypes []vangogh_integration.DownloadType, rdx redux.Writeable, env []string, verbose, force bool) error {
 
 	currentOs := data.CurrentOs()
 
-	wipa := nod.Begin("installing %s version on %s...", vangogh_integration.Windows, currentOs)
+	wipa := nod.Begin("installing %s for %s...", id, vangogh_integration.Windows)
 	defer wipa.Done()
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
@@ -185,11 +185,6 @@ func prefixInstallProduct(id, langCode string, rdx redux.Writeable, env []string
 		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows}, []string{langCode}, downloadTypes, nil, force); err != nil {
 		return err
 	}
-
-	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(vangogh_integration.Windows).
-		FilterLanguageCodes(langCode).
-		FilterDownloadTypes(downloadTypes...)
 
 	var currentOsWineRun wineRunFunc
 	switch currentOs {
