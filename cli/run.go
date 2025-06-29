@@ -38,8 +38,13 @@ func RunHandler(u *url.URL) error {
 		playTask:        q.Get("playtask"),
 		defaultLauncher: q.Has("default-launcher"),
 	}
+
 	if q.Has("env") {
 		et.env = strings.Split(q.Get("env"), ",")
+	}
+
+	if q.Has("arg") {
+		et.args = strings.Split(q.Get("arg"), ",")
 	}
 
 	force := q.Has("force")
@@ -168,6 +173,10 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 				et.exe = absExePath
 			}
 
+		}
+
+		if arg, ok := rdx.GetAllValues(data.PrefixArgProperty, langPrefixName); ok {
+			et.args = append(et.args, arg...)
 		}
 
 		var steamAppId string
