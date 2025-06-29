@@ -43,10 +43,6 @@ download
 get-product-details
     id^&*
 
-has-free-space
-    path
-    bytes*^
-
 install
     id^*
     os

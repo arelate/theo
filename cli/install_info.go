@@ -42,14 +42,13 @@ func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails)
 	dls := pd.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
-		FilterDownloadTypes(vangogh_integration.Installer)
-
-	if len(dls)>0 {
-		ii.Version = dls[0].Version
-	}
+		FilterDownloadTypes(ii.DownloadTypes...)
 
 	ii.EstimatedBytes = 0
 	for _, dl := range dls {
+		if ii.Version == "" && dl.Type == vangogh_integration.Installer {
+			ii.Version = dl.Version
+		}
 		ii.EstimatedBytes += dl.EstimatedBytes
 	}
 }

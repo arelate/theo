@@ -58,7 +58,6 @@ func main() {
 		"delete-prefix-exe-path":  cli.DeletePrefixExePathHandler,
 		"download":                cli.DownloadHandler,
 		"get-product-details":     cli.GetProductDetailsHandler,
-		"has-free-space":          cli.HasFreeSpaceHandler,
 		"install":                 cli.InstallHandler,
 		"list-installed":          cli.ListInstalledHandler,
 		"list-playtasks":          cli.ListPlayTasksHandler,

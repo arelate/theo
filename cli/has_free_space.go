@@ -5,39 +5,44 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"net/url"
 	"slices"
-	"strconv"
 )
 
 const preserveFreeSpacePercent = 1
 
-func HasFreeSpaceHandler(u *url.URL) error {
+func hasFreeSpaceForProduct(
+	productDetails *vangogh_integration.ProductDetails,
+	targetPath string,
+	operatingSystems []vangogh_integration.OperatingSystem,
+	langCodes []string,
+	downloadTypes []vangogh_integration.DownloadType,
+	manualUrlFilter []string,
+	force bool) error {
 
-	q := u.Query()
+	var totalEstimatedBytes int64
 
-	bs := q.Get("bytes")
+	dls := productDetails.DownloadLinks.
+		FilterOperatingSystems(operatingSystems...).
+		FilterLanguageCodes(langCodes...).
+		FilterDownloadTypes(downloadTypes...)
 
-	var bytes int64
-	if bi, err := strconv.ParseInt(bs, 10, 64); err == nil {
-		bytes = bi
+	for _, dl := range dls {
+		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
+			continue
+		}
+		totalEstimatedBytes += dl.EstimatedBytes
+	}
+
+	if ok, err := hasFreeSpaceForBytes(targetPath, totalEstimatedBytes); err != nil {
+		return err
+	} else if !ok && !force {
+		return fmt.Errorf("not enough space for %s at %s"+productDetails.Id, targetPath)
 	} else {
-		return err
+		return nil
 	}
-
-	path := q.Get("path")
-	if path == "" {
-		path = "/"
-	}
-
-	if _, err := HasFreeSpace(path, bytes); err != nil {
-		return err
-	}
-
-	return nil
 }
 
-func HasFreeSpace(path string, bytes int64) (bool, error) {
+func hasFreeSpaceForBytes(path string, bytes int64) (bool, error) {
 
 	var relPath string
 	if userHomeDataRel, err := data.RelToUserDataHome(path); err == nil {
@@ -87,36 +92,4 @@ func HasFreeSpace(path string, bytes int64) (bool, error) {
 	}
 
 	return availableBytes > bytes, nil
-}
-
-func hasFreeSpaceForProduct(
-	productDetails *vangogh_integration.ProductDetails,
-	targetPath string,
-	operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
-	manualUrlFilter []string,
-	force bool) error {
-
-	var totalEstimatedBytes int64
-
-	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(operatingSystems...).
-		FilterLanguageCodes(langCodes...).
-		FilterDownloadTypes(downloadTypes...)
-
-	for _, dl := range dls {
-		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
-			continue
-		}
-		totalEstimatedBytes += dl.EstimatedBytes
-	}
-
-	if ok, err := HasFreeSpace(targetPath, totalEstimatedBytes); err != nil {
-		return err
-	} else if !ok && !force {
-		return fmt.Errorf("not enough space for %s at %s"+productDetails.Id, targetPath)
-	} else {
-		return nil
-	}
 }
