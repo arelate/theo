@@ -1,9 +1,12 @@
 package cli
 
 import (
+	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"os"
 	"os/exec"
@@ -12,12 +15,11 @@ import (
 )
 
 const (
-	absDefaultApplicationsDir = "/Applications"
-	relCxAppDir               = "CrossOver.app"
-	relCxBinDir               = "Contents/SharedSupport/CrossOver/bin"
-	relCxBottleFilename       = "cxbottle"
-	relCxBottleConfFilename   = "cxbottle.conf"
-	relWineFilename           = "wine"
+	relCxAppDir             = "CrossOver.app"
+	relCxBinDir             = "Contents/SharedSupport/CrossOver/bin"
+	relCxBottleFilename     = "cxbottle"
+	relCxBottleConfFilename = "cxbottle.conf"
+	relWineFilename         = "wine"
 )
 
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
@@ -53,7 +55,7 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, et *execTask, force b
 		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
-	absCxBinDir, err := macOsGetAbsCxBinDir()
+	absCxBinDir, err := macOsGetAbsCxBinDir(rdx)
 	if err != nil {
 		return err
 	}
@@ -89,7 +91,7 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, et *execTask, force b
 	return cmd.Run()
 }
 
-func macOsWineRunExecTask(et *execTask) error {
+func macOsWineRunExecTask(et *execTask, rdx redux.Readable) error {
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", et.name)
 	defer mwra.Done()
@@ -99,7 +101,7 @@ func macOsWineRunExecTask(et *execTask) error {
 		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
-	absCxBinDir, err := macOsGetAbsCxBinDir()
+	absCxBinDir, err := macOsGetAbsCxBinDir(rdx)
 	if err != nil {
 		return err
 	}
@@ -134,16 +136,29 @@ func macOsWineRunExecTask(et *execTask) error {
 	return cmd.Run()
 }
 
-func macOsGetAbsCxBinDir(appDirs ...string) (string, error) {
-	if len(appDirs) == 0 {
-		appDirs = append(appDirs, absDefaultApplicationsDir)
+func macOsGetAbsCxBinDir(rdx redux.Readable) (string, error) {
+
+	if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
+		return "", err
 	}
 
-	for _, appDir := range appDirs {
-		absCrossOverBinDir := filepath.Join(appDir, relCxAppDir, relCxBinDir)
-		if _, err := os.Stat(absCrossOverBinDir); err == nil {
-			return absCrossOverBinDir, nil
-		}
+	var latestCxVersion string
+	if lcxv, ok := rdx.GetLastVal(data.WineBinariesVersionsProperty, vangogh_integration.CrossOver); ok {
+		latestCxVersion = lcxv
+	}
+
+	if latestCxVersion == "" {
+		return "", errors.New("CrossOver version not found, please run setup-wine")
+	}
+
+	wineBinaries, err := pathways.GetAbsRelDir(data.WineBinaries)
+	if err != nil {
+		return "", err
+	}
+
+	absCrossOverBinDir := filepath.Join(wineBinaries, busan.Sanitize(vangogh_integration.CrossOver), latestCxVersion, relCxAppDir, relCxBinDir)
+	if _, err = os.Stat(absCrossOverBinDir); err == nil {
+		return absCrossOverBinDir, nil
 	}
 
 	return "", os.ErrNotExist
@@ -159,7 +174,7 @@ func macOsCreateCxBottle(id, langCode string, rdx redux.Readable, template strin
 		template = defaultCxBottleTemplate
 	}
 
-	absCxBinDir, err := macOsGetAbsCxBinDir()
+	absCxBinDir, err := macOsGetAbsCxBinDir(rdx)
 	if err != nil {
 		return err
 	}

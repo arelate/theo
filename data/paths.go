@@ -2,14 +2,11 @@ package data
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/github_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/boggydigital/busan"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -58,71 +55,36 @@ const (
 	Backups       pathways.AbsDir = "backups"
 	Metadata      pathways.AbsDir = "metadata"
 	Downloads     pathways.AbsDir = "downloads"
-	Runtimes      pathways.AbsDir = "runtimes"
+	Wine          pathways.AbsDir = "wine"
 	InstalledApps pathways.AbsDir = "installed-apps"
 )
 
 const (
 	Redux          pathways.RelDir = "_redux"
-	ProductDetails pathways.RelDir = "product-details"
-	//InstalledDetails pathways.RelDir = "installed-details"
-	MacOsExtracts  pathways.RelDir = "_macos_extracts"
-	GitHubReleases pathways.RelDir = "github-releases"
-	Assets         pathways.RelDir = "assets"
-	Binaries       pathways.RelDir = "binaries"
-	PrefixArchive  pathways.RelDir = "prefix-archive"
-	UmuConfigs     pathways.RelDir = "umu-configs"
+	ProductDetails pathways.RelDir = "_product-details"
+	WineDownloads  pathways.RelDir = "_downloads"
+	WineBinaries   pathways.RelDir = "_binaries"
+	PrefixArchive  pathways.RelDir = "_prefix-archive"
+	UmuConfigs     pathways.RelDir = "_umu-configs"
 	Inventory      pathways.RelDir = "_inventory"
 )
 
 var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
 	Redux:          Metadata,
 	ProductDetails: Metadata,
-	//InstalledDetails: Metadata,
-	GitHubReleases: Metadata,
-	Assets:         Runtimes,
-	Binaries:       Runtimes,
-	PrefixArchive:  Backups,
-	MacOsExtracts:  Downloads,
-	UmuConfigs:     Runtimes,
 	Inventory:      InstalledApps,
+	PrefixArchive:  Backups,
+	WineDownloads:  Wine,
+	WineBinaries:   Wine,
+	UmuConfigs:     Wine,
 }
 
 var AllAbsDirs = []pathways.AbsDir{
 	Backups,
 	Metadata,
 	Downloads,
-	Runtimes,
+	Wine,
 	InstalledApps,
-}
-
-func GetAbsBinariesDir(repo string, release *github_integration.GitHubRelease) (string, error) {
-	binariesDir, err := pathways.GetAbsRelDir(Binaries)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(binariesDir, repo, busan.Sanitize(release.TagName)), nil
-}
-
-func GetAbsReleasesDir(repo string, release *github_integration.GitHubRelease) (string, error) {
-	assetsDir, err := pathways.GetAbsRelDir(Assets)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(assetsDir, repo, busan.Sanitize(release.TagName)), nil
-}
-
-func GetAbsReleaseAssetPath(repo string, release *github_integration.GitHubRelease, asset *github_integration.GitHubAsset) (string, error) {
-	relDir, err := GetAbsReleasesDir(repo, release)
-	if err != nil {
-		return "", err
-	}
-
-	_, fn := path.Split(asset.BrowserDownloadUrl)
-
-	return filepath.Join(relDir, fn), nil
 }
 
 func GetPrefixName(id string, rdx redux.Readable) (string, error) {

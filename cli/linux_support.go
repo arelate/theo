@@ -126,7 +126,7 @@ func linuxPostDownloadActions(id string, link *vangogh_integration.ProductDownlo
 	defer lpda.Done()
 
 	if data.CurrentOs() != vangogh_integration.Linux {
-		return errors.New("Linux post-download actions are only supported on Linux")
+		return errors.New("post-download Linux actions are only supported on Linux")
 	}
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)

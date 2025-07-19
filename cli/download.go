@@ -132,7 +132,7 @@ func downloadProductFiles(id string,
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 
 		fileUrl, err := data.ServerUrl(rdx,
-			data.ServerFilesPath, map[string]string{
+			data.HttpFilesPath, map[string]string{
 				"manual-url":    dl.ManualUrl,
 				"id":            id,
 				"download-type": dl.Type.String(),

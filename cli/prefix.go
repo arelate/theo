@@ -171,7 +171,7 @@ func Prefix(id string, langCode string,
 		et.name = program
 		et.exe = program
 
-		if err = osExec(id, "", vangogh_integration.Windows, et, false); err != nil {
+		if err = osExec(id, "", vangogh_integration.Windows, et, rdx, false); err != nil {
 			return err
 		}
 

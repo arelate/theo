@@ -2,61 +2,73 @@ package data
 
 import (
 	_ "embed"
-	"github.com/arelate/southern_light/github_integration"
-	"github.com/boggydigital/kevlar"
+	"errors"
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/boggydigital/busan"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
+	"os"
 	"path/filepath"
 )
 
 const relUmuRunPath = "umu/umu-run"
 
-func UmuRunLatestReleasePath() (string, error) {
+func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 
-	gitHubReleasesDir, err := pathways.GetAbsRelDir(GitHubReleases)
+	runtime := vangogh_integration.UmuLauncher
+
+	if err := rdx.MustHave(WineBinariesVersionsProperty); err != nil {
+		return "", err
+	}
+
+	var latestUmuLauncherVersion string
+	if lulv, ok := rdx.GetLastVal(WineBinariesVersionsProperty, runtime); ok {
+		latestUmuLauncherVersion = lulv
+	}
+
+	if latestUmuLauncherVersion == "" {
+		return "", errors.New("umu-launcher version not found, please run setup-wine")
+	}
+
+	wineBinaries, err := pathways.GetAbsRelDir(WineBinaries)
 	if err != nil {
 		return "", err
 	}
 
-	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
-	if err != nil {
-		return "", err
+	absUmuRunBinPath := filepath.Join(wineBinaries, busan.Sanitize(runtime), latestUmuLauncherVersion, relUmuRunPath)
+	if _, err = os.Stat(absUmuRunBinPath); err == nil {
+		return absUmuRunBinPath, nil
 	}
 
-	latestRelease, err := github_integration.GetLatestRelease(github_integration.UmuLauncherRepo, kvGitHubReleases)
-	if err != nil {
-		return "", err
-	}
-
-	absUmuBinDir, err := GetAbsBinariesDir(github_integration.UmuLauncherRepo, latestRelease)
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(absUmuBinDir, relUmuRunPath), nil
+	return "", os.ErrNotExist
 }
 
-func UmuProtonLatestReleasePath() (string, error) {
+func ProtonGeLatestReleasePath(rdx redux.Readable) (string, error) {
 
-	gitHubReleasesDir, err := pathways.GetAbsRelDir(GitHubReleases)
+	runtime := vangogh_integration.ProtonGe
+
+	if err := rdx.MustHave(WineBinariesVersionsProperty); err != nil {
+		return "", err
+	}
+
+	var latestProtonGeVersion string
+	if lpgv, ok := rdx.GetLastVal(WineBinariesVersionsProperty, runtime); ok {
+		latestProtonGeVersion = lpgv
+	}
+
+	if latestProtonGeVersion == "" {
+		return "", errors.New("proton-ge version not found, please run setup-wine")
+	}
+
+	wineBinaries, err := pathways.GetAbsRelDir(WineBinaries)
 	if err != nil {
 		return "", err
 	}
 
-	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
-	if err != nil {
-		return "", err
+	absProtonGePath := filepath.Join(wineBinaries, busan.Sanitize(runtime), latestProtonGeVersion, latestProtonGeVersion)
+	if _, err = os.Stat(absProtonGePath); err == nil {
+		return absProtonGePath, nil
 	}
 
-	latestRelease, err := github_integration.GetLatestRelease(github_integration.UmuProtonRepo, kvGitHubReleases)
-	if err != nil {
-		return "", err
-	}
-
-	umuProtonDir, err := GetAbsBinariesDir(github_integration.UmuProtonRepo, latestRelease)
-	if err != nil {
-		return "", err
-	}
-
-	// won't sanitize TagName here as it's coming from unpacked release (as provided by the repo owner)
-	return filepath.Join(umuProtonDir, latestRelease.TagName), nil
+	return "", os.ErrNotExist
 }

@@ -75,13 +75,10 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadL
 		return err
 	}
 
-	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
-	if err != nil {
-		return err
-	}
+	tempDir := os.TempDir()
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
-	productExtractsDir := filepath.Join(extractsDir, id)
+	productExtractsDir := filepath.Join(tempDir, id)
 
 	localFilenameExtractsDir := filepath.Join(productExtractsDir, link.LocalFilename)
 	// if the product extracts dir already exists - that would imply that the product
@@ -126,12 +123,9 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.ProductDownloadLink
 		return err
 	}
 
-	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
-	if err != nil {
-		return err
-	}
+	tempDir := os.TempDir()
 
-	productExtractsDir := filepath.Join(extractsDir, id)
+	productExtractsDir := filepath.Join(tempDir, id)
 
 	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
 	postInstallScript, err := ParsePostInstallScript(absPostInstallScriptPath)
@@ -257,12 +251,8 @@ func macOsPostInstallActions(id string,
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
-	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
-	if err != nil {
-		return err
-	}
-
-	productExtractsDir := filepath.Join(extractsDir, id)
+	tempDir := os.TempDir()
+	productExtractsDir := filepath.Join(tempDir, id)
 
 	absPostInstallScriptPath := PostInstallScriptPath(productExtractsDir, link)
 
@@ -391,12 +381,9 @@ func macOsRemoveProductExtracts(id string, dls vangogh_integration.ProductDownlo
 	rela := nod.Begin(" removing extracts for %s...", id)
 	defer rela.Done()
 
-	extractsDir, err := pathways.GetAbsRelDir(data.MacOsExtracts)
-	if err != nil {
-		return err
-	}
+	tempDir := os.TempDir()
 
-	idPath := filepath.Join(extractsDir, id)
+	idPath := filepath.Join(tempDir, id)
 	if _, err := os.Stat(idPath); os.IsNotExist(err) {
 		rela.EndWithResult("product extracts dir not present")
 		return nil
@@ -404,7 +391,7 @@ func macOsRemoveProductExtracts(id string, dls vangogh_integration.ProductDownlo
 
 	for _, dl := range dls {
 
-		path := filepath.Join(extractsDir, id, dl.LocalFilename)
+		path := filepath.Join(tempDir, id, dl.LocalFilename)
 
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 
@@ -421,8 +408,7 @@ func macOsRemoveProductExtracts(id string, dls vangogh_integration.ProductDownlo
 	}
 
 	rdda := nod.Begin(" removing empty product extracts directory...")
-	var empty bool
-	if empty, err = osIsDirEmpty(idPath); empty && err == nil {
+	if empty, err := osIsDirEmpty(idPath); empty && err == nil {
 		if err = os.RemoveAll(idPath); err != nil {
 			return err
 		}

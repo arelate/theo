@@ -5,27 +5,27 @@ import "github.com/arelate/southern_light/vangogh_integration"
 const (
 	ServerConnectionProperties = "server-connection"
 
-	ServerProtocolProperty = "server-protocol"
-	ServerAddressProperty  = "server-address"
-	ServerPortProperty     = "server-port"
-	ServerUsernameProperty = "server-username"
-	ServerPasswordProperty = "server-password"
+	InstallInfoProperty = "install-info"
+	InstallDateProperty = "install-date"
+	LastRunDateProperty = "last-run-date"
 
 	PrefixEnvProperty = "prefix-env"
 	PrefixExeProperty = "prefix-exe"
 	PrefixArgProperty = "prefix-arg"
 
-	GitHubReleasesUpdatedProperty = "github-releases-updated"
+	WineBinariesVersionsProperty = "wine-binaries-versions"
+)
 
-	InstallInfoProperty = "install-info"
-
-	InstallDateProperty = "install-date"
-	LastRunDateProperty = "last-run-date"
+const (
+	ServerProtocolProperty = "server-protocol"
+	ServerAddressProperty  = "server-address"
+	ServerPortProperty     = "server-port"
+	ServerUsernameProperty = "server-username"
+	ServerPasswordProperty = "server-password"
 )
 
 func AllProperties() []string {
 	return []string{
-		ServerConnectionProperties,
 		vangogh_integration.TitleProperty,
 		vangogh_integration.SlugProperty,
 		vangogh_integration.SteamAppIdProperty,
@@ -39,10 +39,13 @@ func AllProperties() []string {
 		vangogh_integration.IconProperty,
 		vangogh_integration.IconSquareProperty,
 		vangogh_integration.BackgroundProperty,
+		ServerConnectionProperties,
 		InstallInfoProperty,
-		PrefixEnvProperty,
-		PrefixExeProperty,
 		InstallDateProperty,
 		LastRunDateProperty,
+		PrefixEnvProperty,
+		PrefixExeProperty,
+		PrefixArgProperty,
+		WineBinariesVersionsProperty,
 	}
 }

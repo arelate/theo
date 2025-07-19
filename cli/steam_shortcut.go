@@ -279,7 +279,7 @@ func fetchSteamGridImages(loginUser string, shortcutId uint32, productImages *va
 	}
 
 	for ip, imageId := range imageProperties {
-		srcUrl, err := data.ServerUrl(rdx, data.ServerImagePath, map[string]string{"id": imageId})
+		srcUrl, err := data.ServerUrl(rdx, data.HttpImagePath, map[string]string{"id": imageId})
 		if err != nil {
 			return err
 		}

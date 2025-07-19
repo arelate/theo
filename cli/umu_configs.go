@@ -1,12 +1,14 @@
 package cli
 
 import (
-	"github.com/arelate/southern_light/github_integration"
+	"errors"
+	"fmt"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 	"io"
 	"os"
 	"path/filepath"
@@ -27,20 +29,21 @@ type UmuConfig struct {
 	Args       []string
 }
 
-func getLatestUmuConfigsDir() (string, error) {
-	gitHubReleasesDir, err := pathways.GetAbsRelDir(data.GitHubReleases)
-	if err != nil {
+func getLatestUmuConfigsDir(rdx redux.Readable) (string, error) {
+
+	runtime := vangogh_integration.UmuLauncher
+
+	if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
 		return "", err
 	}
 
-	kvGitHubReleases, err := kevlar.New(gitHubReleasesDir, kevlar.JsonExt)
-	if err != nil {
-		return "", err
+	var latestUmuLauncherVersion string
+	if lulv, ok := rdx.GetLastVal(data.WineBinariesVersionsProperty, runtime); ok {
+		latestUmuLauncherVersion = lulv
 	}
 
-	latestUmuLauncherRelease, err := github_integration.GetLatestRelease(github_integration.UmuLauncherRepo, kvGitHubReleases)
-	if err != nil {
-		return "", err
+	if latestUmuLauncherVersion == "" {
+		return "", errors.New("umu-launcher version not found, please run setup-wine")
 	}
 
 	umuConfigsDir, err := pathways.GetAbsRelDir(data.UmuConfigs)
@@ -48,15 +51,20 @@ func getLatestUmuConfigsDir() (string, error) {
 		return "", err
 	}
 
-	latestUmuConfigsDir := filepath.Join(umuConfigsDir, busan.Sanitize(latestUmuLauncherRelease.TagName))
+	latestUmuConfigsDir := filepath.Join(umuConfigsDir, latestUmuLauncherVersion)
 
-	return latestUmuConfigsDir, nil
+	fmt.Println(latestUmuConfigsDir)
 
+	if _, err = os.Stat(latestUmuConfigsDir); err == nil {
+		return latestUmuConfigsDir, nil
+	}
+
+	return "", os.ErrNotExist
 }
 
-func getAbsUmuConfigFilename(id, exePath string) (string, error) {
+func getAbsUmuConfigFilename(id, exePath string, rdx redux.Readable) (string, error) {
 
-	latestUmuConfigsDir, err := getLatestUmuConfigsDir()
+	latestUmuConfigsDir, err := getLatestUmuConfigsDir(rdx)
 	if err != nil {
 		return "", err
 	}
@@ -68,9 +76,9 @@ func getAbsUmuConfigFilename(id, exePath string) (string, error) {
 	return umuConfigPath, nil
 }
 
-func createUmuConfig(cfg *UmuConfig, force bool) (string, error) {
+func createUmuConfig(cfg *UmuConfig, rdx redux.Readable, force bool) (string, error) {
 
-	umuConfigPath, err := getAbsUmuConfigFilename(cfg.GogId, cfg.ExePath)
+	umuConfigPath, err := getAbsUmuConfigFilename(cfg.GogId, cfg.ExePath, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -147,12 +155,12 @@ func createUmuConfig(cfg *UmuConfig, force bool) (string, error) {
 	return umuConfigPath, nil
 }
 
-func removeAllUmuConfigs() error {
+func resetUmuConfigs(rdx redux.Readable) error {
 
-	rauca := nod.NewProgress("removing all umu-configs...")
+	rauca := nod.NewProgress("resetting umu-configs...")
 	defer rauca.Done()
 
-	latestUmuConfigsDir, err := getLatestUmuConfigsDir()
+	latestUmuConfigsDir, err := getLatestUmuConfigsDir(rdx)
 	if err != nil {
 		return err
 	}

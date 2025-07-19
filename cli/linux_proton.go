@@ -29,7 +29,7 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
-	absUmuRunPath, err := data.UmuRunLatestReleasePath()
+	absUmuRunPath, err := data.UmuRunLatestReleasePath(rdx)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 		return err
 	}
 
-	absProtonPath, err := data.UmuProtonLatestReleasePath()
+	absProtonPath, err := data.ProtonGeLatestReleasePath(rdx)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 		umuCfg.SteamAppId = steamAppId
 	}
 
-	absUmuConfigPath, err := createUmuConfig(umuCfg, force)
+	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx, force)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 	return cmd.Run()
 }
 
-func linuxProtonRunExecTask(gogId, steamAppId string, et *execTask, force bool) error {
+func linuxProtonRunExecTask(gogId, steamAppId string, et *execTask, rdx redux.Readable, force bool) error {
 
 	lwra := nod.Begin(" running %s with Proton, please wait...", et.name)
 	defer lwra.Done()
@@ -87,12 +87,12 @@ func linuxProtonRunExecTask(gogId, steamAppId string, et *execTask, force bool) 
 		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
-	absUmuRunPath, err := data.UmuRunLatestReleasePath()
+	absUmuRunPath, err := data.UmuRunLatestReleasePath(rdx)
 	if err != nil {
 		return err
 	}
 
-	absProtonPath, err := data.UmuProtonLatestReleasePath()
+	absProtonPath, err := data.ProtonGeLatestReleasePath(rdx)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func linuxProtonRunExecTask(gogId, steamAppId string, et *execTask, force bool) 
 		Args:       et.args,
 	}
 
-	absUmuConfigPath, err := createUmuConfig(umuCfg, force)
+	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx, force)
 	if err != nil {
 		return err
 	}
