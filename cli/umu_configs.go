@@ -16,17 +16,15 @@ import (
 )
 
 const (
-	umuGogStore   = "gog"
-	umuSteamStore = "steam"
+	umuGogStore = "gog"
 )
 
 type UmuConfig struct {
-	GogId      string
-	SteamAppId string
-	Prefix     string
-	Proton     string
-	ExePath    string
-	Args       []string
+	GogId   string
+	Prefix  string
+	Proton  string
+	ExePath string
+	Args    []string
 }
 
 func getLatestUmuConfigsDir(rdx redux.Readable) (string, error) {
@@ -135,20 +133,10 @@ func createUmuConfig(cfg *UmuConfig, rdx redux.Readable, force bool) (string, er
 		}
 	}
 
-	var id, store string
-
-	if cfg.SteamAppId != "" {
-		id = cfg.SteamAppId
-		store = umuSteamStore
-	} else {
-		id = cfg.GogId
-		store = umuGogStore
-	}
-
-	if _, err = io.WriteString(umuConfigFile, "game_id = \""+id+"\"\n"); err != nil {
+	if _, err = io.WriteString(umuConfigFile, "game_id = \""+cfg.GogId+"\"\n"); err != nil {
 		return "", err
 	}
-	if _, err = io.WriteString(umuConfigFile, "store = \""+store+"\"\n"); err != nil {
+	if _, err = io.WriteString(umuConfigFile, "store = \""+umuGogStore+"\"\n"); err != nil {
 		return "", err
 	}
 

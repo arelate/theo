@@ -52,10 +52,6 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 		Args:    et.args,
 	}
 
-	if steamAppId, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok && steamAppId != "" {
-		umuCfg.SteamAppId = steamAppId
-	}
-
 	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx, force)
 	if err != nil {
 		return err
@@ -77,7 +73,7 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 	return cmd.Run()
 }
 
-func linuxProtonRunExecTask(gogId, steamAppId string, et *execTask, rdx redux.Readable, force bool) error {
+func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable, force bool) error {
 
 	lwra := nod.Begin(" running %s with Proton, please wait...", et.name)
 	defer lwra.Done()
@@ -98,12 +94,11 @@ func linuxProtonRunExecTask(gogId, steamAppId string, et *execTask, rdx redux.Re
 	}
 
 	umuCfg := &UmuConfig{
-		GogId:      gogId,
-		SteamAppId: steamAppId,
-		Prefix:     et.prefix,
-		Proton:     absProtonPath,
-		ExePath:    et.exe,
-		Args:       et.args,
+		GogId:   id,
+		Prefix:  et.prefix,
+		Proton:  absProtonPath,
+		ExePath: et.exe,
+		Args:    et.args,
 	}
 
 	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx, force)

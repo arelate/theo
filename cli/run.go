@@ -179,13 +179,8 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 			et.args = append(et.args, arg...)
 		}
 
-		var steamAppId string
-		if sai, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok {
-			steamAppId = sai
-		}
-
 		if et.exe != "" {
-			return osExec(id, steamAppId, operatingSystem, et, rdx, force)
+			return osExec(id, operatingSystem, et, rdx, force)
 		}
 	}
 
@@ -215,12 +210,7 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 		}
 	}
 
-	var steamAppId string
-	if sai, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok {
-		steamAppId = sai
-	}
-
-	return osExec(id, steamAppId, operatingSystem, et, rdx, force)
+	return osExec(id, operatingSystem, et, rdx, force)
 }
 
 func osFindGogGameInfo(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
@@ -356,7 +346,7 @@ func osExecTaskDefaultLauncher(absDefaultLauncherPath string, operatingSystem va
 	return et, nil
 }
 
-func osExec(gogId, steamAppId string, operatingSystem vangogh_integration.OperatingSystem, et *execTask, rdx redux.Readable, force bool) error {
+func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask, rdx redux.Readable, force bool) error {
 
 	switch operatingSystem {
 	case vangogh_integration.MacOS:
@@ -369,7 +359,7 @@ func osExec(gogId, steamAppId string, operatingSystem vangogh_integration.Operat
 		case vangogh_integration.MacOS:
 			return macOsWineRunExecTask(et, rdx)
 		case vangogh_integration.Linux:
-			return linuxProtonRunExecTask(gogId, steamAppId, et, rdx, force)
+			return linuxProtonRunExecTask(id, et, rdx, force)
 		default:
 			return currentOs.ErrUnsupported()
 		}
