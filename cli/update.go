@@ -7,9 +7,7 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"maps"
 	"net/url"
-	"slices"
 	"strings"
 )
 
@@ -58,6 +56,7 @@ func Update(id string, all, verbose, force bool) error {
 		for _, installedInfo := range installedInfoSlice {
 
 			installedInfo.verbose = verbose
+			installedInfo.force = true
 
 			if err = Install(updatedId, installedInfo); err != nil {
 				return err
@@ -102,8 +101,13 @@ func checkProductsUpdates(id string, rdx redux.Writeable, all, force bool) (map[
 		cpua.Increment()
 	}
 
+	updatedIds := make([]string, 0, len(updatedIdInstalledInfo))
+	for uid := range updatedIdInstalledInfo {
+		updatedIds = append(updatedIds, uid)
+	}
+
 	if len(updatedIdInstalledInfo) > 0 {
-		cpua.EndWithResult("found updates for: %s", strings.Join(slices.Collect(maps.Keys(updatedIdInstalledInfo)), ","))
+		cpua.EndWithResult("found updates for: %s", strings.Join(updatedIds, ","))
 	} else {
 		cpua.EndWithResult("all products are up to date")
 	}
