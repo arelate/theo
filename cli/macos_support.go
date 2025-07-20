@@ -176,7 +176,7 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 
 	installationDir, _ := filepath.Split(absInstallationPath)
 	if _, err := os.Stat(installationDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(installationDir, 0755); err != nil {
+		if err = os.MkdirAll(installationDir, 0755); err != nil {
 			return err
 		}
 	}
@@ -261,7 +261,7 @@ func macOsPostInstallActions(id string,
 		return err
 	}
 
-	absBundlePath, err := macOsFindBundleApp(id, link.LanguageCode, rdx)
+	absBundlePath, err := osInstalledPath(id, vangogh_integration.MacOS, link.LanguageCode, rdx)
 	if err != nil {
 		return err
 	}
@@ -333,7 +333,7 @@ func macOsCatFiles(srcGlob string, dstPath string) error {
 	_, srcFileGlob := filepath.Split(srcGlob)
 	_, dstFilename := filepath.Split(dstPath)
 
-	ecfa := nod.NewProgress(" cat theo_downloads/%s into installed_app/%s...", srcFileGlob, dstFilename)
+	ecfa := nod.NewProgress(" cat downloads...%s into installed-apps...%s", srcFileGlob, dstFilename)
 	defer ecfa.Done()
 
 	dstDir, _ := filepath.Split(dstPath)
