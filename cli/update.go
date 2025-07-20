@@ -56,7 +56,8 @@ func Update(id string, all, verbose, force bool) error {
 		for _, installedInfo := range installedInfoSlice {
 
 			installedInfo.verbose = verbose
-			installedInfo.force = true
+			installedInfo.force = true // forcing installation to overwrite existing installation
+			installedInfo.Version = "" // reset Version, so that new one could be set during installation
 
 			if err = Install(updatedId, installedInfo); err != nil {
 				return err
@@ -93,7 +94,7 @@ func checkProductsUpdates(id string, rdx redux.Writeable, all, force bool) (map[
 
 	for _, checkId := range checkIds {
 		if uii, err := checkProductUpdates(checkId, rdx, force); err == nil && len(uii) > 0 {
-			updatedIdInstalledInfo[id] = uii
+			updatedIdInstalledInfo[checkId] = uii
 		} else if err != nil {
 			return nil, err
 		}
