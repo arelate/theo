@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
@@ -51,13 +50,7 @@ func getLatestUmuConfigsDir(rdx redux.Readable) (string, error) {
 
 	latestUmuConfigsDir := filepath.Join(umuConfigsDir, latestUmuLauncherVersion)
 
-	fmt.Println(latestUmuConfigsDir)
-
-	if _, err = os.Stat(latestUmuConfigsDir); err == nil {
-		return latestUmuConfigsDir, nil
-	}
-
-	return "", os.ErrNotExist
+	return latestUmuConfigsDir, nil
 }
 
 func getAbsUmuConfigFilename(id, exePath string, rdx redux.Readable) (string, error) {
