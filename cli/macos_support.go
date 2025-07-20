@@ -326,9 +326,14 @@ func macOsCatFiles(srcGlob string, dstPath string) error {
 		return errors.New("cat command destination path cannot be empty")
 	}
 
-	_, srcFileGlob := filepath.Split(srcGlob)
+	if matches, err := filepath.Glob(srcGlob); err == nil && len(matches) == 0 {
+		return errors.New("no files match pattern: " + srcGlob)
+	}
 
-	ecfa := nod.NewProgress(" cat %s into %s...", srcFileGlob, dstPath)
+	_, srcFileGlob := filepath.Split(srcGlob)
+	_, dstFilename := filepath.Split(dstPath)
+
+	ecfa := nod.NewProgress(" cat theo_downloads/%s into installed_app/%s...", srcFileGlob, dstFilename)
 	defer ecfa.Done()
 
 	dstDir, _ := filepath.Split(dstPath)
