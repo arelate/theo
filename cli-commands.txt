@@ -10,17 +10,17 @@ backup-metadata
 
 download
     id^&*
-    os&
-    lang-code&
-    download-type&
+    os&={operating-systems^}
+    lang-code&={language-codes^}
+    download-type&={download-types^}
     manual-url-filter&
     force
 
 install
     id^*
-    os
-    lang-code
-    download-type&
+    os={operating-systems^}
+    lang-code={language-codes^}
+    download-type&={download-types^}
     keep-downloads
     no-steam-shortcut
     env&
@@ -32,14 +32,14 @@ list
     installed
     playtasks
     steam-shortcuts
-    os
-    lang-code
+    os={operating-systems^}
+    lang-code={language-codes^}
     id
     all-key-values
 
 prefix
     id^*
-    lang-code
+    lang-code={language-codes^}
     env&
     arg&
     exe
@@ -57,22 +57,22 @@ prefix
 
 remove-downloads
     id^&*
-    os&
-    lang-code&
-    download-type&
+    os&={operating-systems^}
+    lang-code&={language-codes^}
+    download-type&={download-types^}
 
 reveal
     id^
-    os
-    lang-code
+    os={operating-systems^}
+    lang-code={language-codes^}
     installed
     downloads
     backups
 
 run
     id^
-    os
-    lang-code
+    os={operating-systems^}
+    lang-code={language-codes^}
     env&
     arg&
     playtask
@@ -95,14 +95,14 @@ setup-wine
 steam-shortcut
     add&
     remove&
-    os
-    lang-code
+    os={operating-systems^}
+    lang-code={language-codes^}
     force
 
 uninstall
     id^*
-    os
-    lang-code
+    os={operating-systems^}
+    lang-code={language-codes^}
     verbose
     force
 
@@ -114,8 +114,8 @@ update
 
 validate
     id^&*
-    os&
-    lang-code&
+    os&={operating-systems^}
+    lang-code&={language-codes^}
     manual-url-filter&
 
 version
