@@ -119,7 +119,8 @@ func Install(id string, ii *InstallInfo) error {
 
 	ii.AddProductDetails(productDetails)
 
-	if !ii.force {
+	// don't check existing installations for DLCs, Extras
+	if slices.Contains(ii.DownloadTypes, vangogh_integration.Installer) && !ii.force {
 
 		if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
