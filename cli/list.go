@@ -58,6 +58,12 @@ func List(installed, playTasks, steamShortcuts bool,
 	installInfo *InstallInfo,
 	id string, allKeyValues bool) error {
 
+	if installed || playTasks || steamShortcuts {
+		// do nothing
+	} else {
+		return errors.New("you need to specify at least one category to list")
+	}
+
 	if installed {
 		if err := listInstalled(installInfo); err != nil {
 			return err
