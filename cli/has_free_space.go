@@ -36,7 +36,7 @@ func hasFreeSpaceForProduct(
 	if ok, err := hasFreeSpaceForBytes(targetPath, totalEstimatedBytes); err != nil {
 		return err
 	} else if !ok && !force {
-		return fmt.Errorf("not enough space for %s at %s"+productDetails.Id, targetPath)
+		return fmt.Errorf("not enough space for %s at %s", productDetails.Id, targetPath)
 	} else {
 		return nil
 	}
