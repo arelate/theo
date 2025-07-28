@@ -2,7 +2,7 @@ package cli
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
@@ -28,7 +28,7 @@ type UmuConfig struct {
 
 func getLatestUmuConfigsDir(rdx redux.Readable) (string, error) {
 
-	runtime := vangogh_integration.UmuLauncher
+	runtime := wine_integration.UmuLauncher
 
 	if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
 		return "", err

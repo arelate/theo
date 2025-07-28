@@ -3,7 +3,7 @@ package data
 import (
 	_ "embed"
 	"errors"
-	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
@@ -15,7 +15,7 @@ const relUmuRunPath = "umu/umu-run"
 
 func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 
-	runtime := vangogh_integration.UmuLauncher
+	runtime := wine_integration.UmuLauncher
 
 	if err := rdx.MustHave(WineBinariesVersionsProperty); err != nil {
 		return "", err
@@ -45,7 +45,7 @@ func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 
 func ProtonGeLatestReleasePath(rdx redux.Readable) (string, error) {
 
-	runtime := vangogh_integration.ProtonGe
+	runtime := wine_integration.ProtonGe
 
 	if err := rdx.MustHave(WineBinariesVersionsProperty); err != nil {
 		return "", err

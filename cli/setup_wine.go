@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/dolo"
@@ -17,6 +18,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 )
 
 func SetupWineHandler(u *url.URL) error {
@@ -29,6 +31,8 @@ func SetupWineHandler(u *url.URL) error {
 }
 
 func SetupWine(force bool) error {
+
+	start := time.Now()
 
 	currentOs := data.CurrentOs()
 
@@ -61,11 +65,15 @@ func SetupWine(force bool) error {
 		return err
 	}
 
+	if err = validateWineBinaries(wbd, currentOs, start, force); err != nil {
+		return err
+	}
+
 	if err = pinWineBinariesVersions(wbd, rdx); err != nil {
 		return err
 	}
 
-	if err = cleanupDownloadedWineBinaries(wbd); err != nil {
+	if err = cleanupDownloadedWineBinaries(wbd, currentOs); err != nil {
 		return err
 	}
 
@@ -126,6 +134,24 @@ func downloadWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 	dwba := nod.Begin("downloading WINE binaries...")
 	defer dwba.Done()
 
+	for _, wineBinary := range wbd {
+		if wineBinary.OS != operatingSystem && wineBinary.OS != vangogh_integration.Windows {
+			continue
+		}
+
+		if err := downloadWineBinary(&wineBinary, rdx, force); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux.Readable, force bool) error {
+
+	dwba := nod.NewProgress(" - %s...", binary.Title)
+	defer dwba.Done()
+
 	if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
 		return err
 	}
@@ -135,35 +161,43 @@ func downloadWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 		return err
 	}
 
-	dc := dolo.DefaultClient
+	if currentVersion, ok := rdx.GetLastVal(data.WineBinariesVersionsProperty, binary.Title); ok && binary.Version == currentVersion && !force {
+		dwba.EndWithResult("latest version already available")
+		return nil
+	}
+
+	var wineBinaryUrl *url.URL
+	params := map[string]string{
+		"title": binary.Title,
+		"os":    binary.OS.String(),
+	}
+
+	wineBinaryUrl, err = data.ServerUrl(rdx, data.HttpWineBinaryFilePath, params)
+	if err != nil {
+		return err
+	}
+
+	return dolo.DefaultClient.Download(wineBinaryUrl, force, dwba, wineDownloads, binary.Filename)
+}
+
+func validateWineBinaries(wbd []vangogh_integration.WineBinaryDetails, operatingSystem vangogh_integration.OperatingSystem, since time.Time, force bool) error {
+
+	vwba := nod.NewProgress("validating WINE binaries...")
+	defer vwba.Done()
+
+	wineDownloads, err := pathways.GetAbsRelDir(data.WineDownloads)
+	if err != nil {
+		return err
+	}
 
 	for _, wineBinary := range wbd {
-
 		if wineBinary.OS != operatingSystem && wineBinary.OS != vangogh_integration.Windows {
 			continue
 		}
 
-		if currentVersion, ok := rdx.GetLastVal(data.WineBinariesVersionsProperty, wineBinary.Title); ok && wineBinary.Version == currentVersion && !force {
-			continue
-		}
-
-		wba := nod.NewProgress(" - %s", wineBinary.Title)
-
-		var wineBinaryUrl *url.URL
-		params := map[string]string{
-			"title": wineBinary.Title,
-			"os":    wineBinary.OS.String(),
-		}
-		wineBinaryUrl, err = data.ServerUrl(rdx, data.HttpWineBinaryFilePath, params)
-		if err != nil {
+		if err = wine_integration.ValidateWineBinary(&wineBinary, wineDownloads, since, force); err != nil {
 			return err
 		}
-
-		if err = dc.Download(wineBinaryUrl, force, wba, wineDownloads, wineBinary.Filename); err != nil {
-			return err
-		}
-
-		wba.Done()
 	}
 
 	return nil
@@ -187,13 +221,16 @@ func pinWineBinariesVersions(wbd []vangogh_integration.WineBinaryDetails, rdx re
 	return rdx.BatchReplaceValues(data.WineBinariesVersionsProperty, wineBinariesVersions)
 }
 
-func cleanupDownloadedWineBinaries(wbd []vangogh_integration.WineBinaryDetails) error {
+func cleanupDownloadedWineBinaries(wbd []vangogh_integration.WineBinaryDetails, operatingSystem vangogh_integration.OperatingSystem) error {
 
 	cdwba := nod.NewProgress("cleaning up downloaded WINE binaries...")
 	defer cdwba.Done()
 
 	expectedFiles := make([]string, 0, len(wbd))
 	for _, wineBinary := range wbd {
+		if wineBinary.OS != operatingSystem && wineBinary.OS != vangogh_integration.Windows {
+			continue
+		}
 		expectedFiles = append(expectedFiles, wineBinary.Filename)
 	}
 

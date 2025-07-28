@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/busan"
 	"github.com/boggydigital/nod"
@@ -143,7 +144,7 @@ func macOsGetAbsCxBinDir(rdx redux.Readable) (string, error) {
 	}
 
 	var latestCxVersion string
-	if lcxv, ok := rdx.GetLastVal(data.WineBinariesVersionsProperty, vangogh_integration.CrossOver); ok {
+	if lcxv, ok := rdx.GetLastVal(data.WineBinariesVersionsProperty, wine_integration.CrossOver); ok {
 		latestCxVersion = lcxv
 	}
 
@@ -156,7 +157,7 @@ func macOsGetAbsCxBinDir(rdx redux.Readable) (string, error) {
 		return "", err
 	}
 
-	absCrossOverBinDir := filepath.Join(wineBinaries, busan.Sanitize(vangogh_integration.CrossOver), latestCxVersion, relCxAppDir, relCxBinDir)
+	absCrossOverBinDir := filepath.Join(wineBinaries, busan.Sanitize(wine_integration.CrossOver), latestCxVersion, relCxAppDir, relCxBinDir)
 	if _, err = os.Stat(absCrossOverBinDir); err == nil {
 		return absCrossOverBinDir, nil
 	}
