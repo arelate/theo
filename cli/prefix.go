@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/backups"
 	"github.com/boggydigital/nod"
@@ -56,6 +57,7 @@ func PrefixHandler(u *url.URL) error {
 
 	mod := q.Get("mod")
 	program := q.Get("program")
+	installWineBinary := q.Get("install-wine-binary")
 
 	defaultEnv := q.Has("default-env")
 	deleteEnv := q.Has("delete-env")
@@ -70,14 +72,14 @@ func PrefixHandler(u *url.URL) error {
 	force := q.Has("force")
 
 	return Prefix(id, langCode,
-		mod, program,
+		mod, program, installWineBinary,
 		defaultEnv, deleteEnv, deleteExe, deleteArg,
 		info, archive, remove,
 		et, force)
 }
 
 func Prefix(id string, langCode string,
-	mod, program string,
+	mod, program, installWineBinary string,
 	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
 	info, archive, remove bool,
 	et *execTask, force bool) error {
@@ -164,12 +166,56 @@ func Prefix(id string, langCode string,
 
 	if program != "" {
 
-		if !slices.Contains(WinePrograms(), program) {
+		if !slices.Contains(wine_integration.WinePrograms(), program) {
 			return errors.New("unknown prefix WINE program " + program)
 		}
 
 		et.name = program
 		et.exe = program
+
+		if err = osExec(id, vangogh_integration.Windows, et, rdx, false); err != nil {
+			return err
+		}
+
+	}
+
+	if installWineBinary != "" {
+
+		if !slices.Contains(wine_integration.WineBinariesCodes(), installWineBinary) {
+			return errors.New("unknown WINE binary " + installWineBinary)
+		}
+
+		var requestedWineBinary *wine_integration.Binary
+		for _, binary := range wine_integration.OsWineBinaries {
+			if binary.OS == vangogh_integration.Windows && binary.Code == installWineBinary {
+				requestedWineBinary = &binary
+			}
+		}
+
+		if requestedWineBinary == nil {
+			return errors.New("no match for WINE binary code " + installWineBinary)
+		}
+
+		// TODO: this would only support direct download sources.
+		// Currently all coded WINE binaries are direct download sources, so this if fine for now.
+		wbFilename := path.Base(requestedWineBinary.DownloadUrl)
+
+		var wineDownloadsDir string
+		wineDownloadsDir, err = pathways.GetAbsRelDir(data.WineDownloads)
+		if err != nil {
+			return err
+		}
+
+		et.name = requestedWineBinary.String()
+		et.exe = filepath.Join(wineDownloadsDir, wbFilename)
+
+		if args, ok := wine_integration.WineBinariesCodesArgs[installWineBinary]; ok {
+			et.args = args
+		}
+
+		if _, err = os.Stat(et.exe); os.IsNotExist(err) {
+			return errors.New("matched WINE binary not found, use setup-wine to download")
+		}
 
 		if err = osExec(id, vangogh_integration.Windows, et, rdx, false); err != nil {
 			return err

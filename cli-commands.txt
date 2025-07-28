@@ -45,6 +45,7 @@ prefix
     exe
     program={wine-programs}
     mod={prefix-mods}
+    install-wine-binary={wine-binaries-codes}
     default-env
     delete-env
     delete-exe
