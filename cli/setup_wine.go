@@ -309,7 +309,7 @@ func unpackWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 			continue
 		}
 
-		wba := nod.Begin(" - %s", wineBinary.Title)
+		wba := nod.Begin(" - %s...", wineBinary.Title)
 
 		if err = untar(srcPath, dstPath); err != nil {
 			return err
