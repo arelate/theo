@@ -1,9 +1,9 @@
 module github.com/arelate/theo
 
-go 1.24.5
+go 1.25.0
 
 require (
-	github.com/arelate/southern_light v0.3.24
+	github.com/arelate/southern_light v0.3.30
 	github.com/boggydigital/backups v0.1.6
 	github.com/boggydigital/busan v0.1.1
 	github.com/boggydigital/clo v1.0.7
