@@ -3,14 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"errors"
-	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/arelate/southern_light/wine_integration"
-	"github.com/arelate/theo/data"
-	"github.com/boggydigital/busan"
-	"github.com/boggydigital/dolo"
-	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,6 +11,15 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
+	"github.com/arelate/theo/data"
+	"github.com/boggydigital/busan"
+	"github.com/boggydigital/dolo"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 func SetupWineHandler(u *url.URL) error {
@@ -149,7 +150,7 @@ func downloadWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 
 func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux.Readable, force bool) error {
 
-	dwba := nod.NewProgress(" - %s...", binary.Title)
+	dwba := nod.NewProgress(" - %s %s...", binary.Title, binary.Version)
 	defer dwba.Done()
 
 	if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
