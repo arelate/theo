@@ -3,15 +3,16 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"slices"
-	"strings"
-	"time"
 )
 
 const ()
@@ -66,6 +67,10 @@ func Install(id string, ii *InstallInfo) error {
 
 	ia := nod.Begin("installing %s...", id)
 	defer ia.Done()
+
+	if len(ii.DownloadTypes) == 1 && ii.DownloadTypes[0] == vangogh_integration.AnyDownloadType {
+		ii.DownloadTypes = []vangogh_integration.DownloadType{vangogh_integration.Installer, vangogh_integration.DLC}
+	}
 
 	operatingSystems := []vangogh_integration.OperatingSystem{ii.OperatingSystem}
 	langCodes := []string{ii.LangCode}

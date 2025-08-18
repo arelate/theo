@@ -3,15 +3,16 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"slices"
+	"strings"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"slices"
-	"strings"
 )
 
 func DownloadHandler(u *url.URL) error {
@@ -125,8 +126,7 @@ func downloadProductFiles(id string,
 		if dl.ValidationResult != vangogh_integration.ValidatedSuccessfully &&
 			dl.ValidationResult != vangogh_integration.ValidatedMissingChecksum {
 			errMsg := fmt.Sprintf("%s validation status %s prevented download", dl.Name, dl.ValidationResult)
-			nod.LogError(errors.New(errMsg))
-			continue
+			return errors.New(errMsg)
 		}
 
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
