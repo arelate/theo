@@ -3,6 +3,11 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
@@ -10,10 +15,6 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"slices"
-	"strings"
-	"time"
 )
 
 var steamShortcutPrintedKeys = []string{
@@ -147,7 +148,18 @@ func listInstalled(ii *InstallInfo) error {
 				installedInfo.LangCode == ii.LangCode {
 
 				infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
-				infoLines = append(infoLines, "lang: "+installedInfo.LangCode)
+				infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
+
+				pfxDt := "type: "
+				if len(installedInfo.DownloadTypes) > 1 {
+					pfxDt = "types: "
+				}
+				dts := make([]string, 0, len(installedInfo.DownloadTypes))
+				for _, dt := range installedInfo.DownloadTypes {
+					dts = append(dts, dt.String())
+				}
+				infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
+
 				infoLines = append(infoLines, "version: "+installedInfo.Version)
 				if installedInfo.EstimatedBytes > 0 {
 					infoLines = append(infoLines, "size: "+vangogh_integration.FormatBytes(installedInfo.EstimatedBytes))

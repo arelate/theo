@@ -2,12 +2,6 @@ package cli
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/gog_integration"
-	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/arelate/theo/data"
-	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"io"
 	"io/fs"
 	"os"
@@ -15,11 +9,23 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/arelate/southern_light/gog_integration"
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/theo/data"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 const (
 	catCmdPfx    = "cat "
 	appBundleExt = ".app"
+)
+
+const (
+	installerTypeGame = "game"
+	installerTypeDlc  = "dlc"
 )
 
 const relMacOsGogGameInfoDir = "Contents/Resources"
@@ -148,9 +154,9 @@ func macOsPlaceExtracts(id string, link *vangogh_integration.ProductDownloadLink
 	}
 
 	switch installerType {
-	case "game":
+	case installerTypeGame:
 		return macOsPlaceGame(absExtractPayloadPath, absBundlePath, force)
-	case "dlc":
+	case installerTypeDlc:
 		return macOsPlaceDlc(absExtractPayloadPath, absBundlePath, force)
 	default:
 		return errors.New("unknown postinstall script installer type: " + installerType)
