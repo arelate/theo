@@ -156,7 +156,7 @@ func listInstalled(ii *InstallInfo) error {
 				}
 				dts := make([]string, 0, len(installedInfo.DownloadTypes))
 				for _, dt := range installedInfo.DownloadTypes {
-					dts = append(dts, dt.String())
+					dts = append(dts, dt.HumanReadableString())
 				}
 				infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
 
