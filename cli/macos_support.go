@@ -32,6 +32,10 @@ const relMacOsGogGameInfoDir = "Contents/Resources"
 
 const pkgExt = ".pkg"
 
+const (
+	relPayloadPath = "package.pkg/Scripts/payload"
+)
+
 func macOsInstallProduct(id string,
 	dls vangogh_integration.ProductDownloadLinks,
 	rdx redux.Writeable,

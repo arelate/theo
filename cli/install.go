@@ -15,12 +15,6 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-const ()
-
-const (
-	relPayloadPath = "package.pkg/Scripts/payload"
-)
-
 func InstallHandler(u *url.URL) error {
 
 	q := u.Query()
