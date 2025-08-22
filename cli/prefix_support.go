@@ -2,16 +2,17 @@ package cli
 
 import (
 	"errors"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -159,7 +160,7 @@ func prefixInit(id string, langCode string, rdx redux.Readable, verbose bool) er
 	}
 }
 
-func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLinks, langCode string, downloadTypes []vangogh_integration.DownloadType, rdx redux.Writeable, env []string, verbose, force bool) error {
+func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLinks, ii *InstallInfo, rdx redux.Writeable) error {
 
 	currentOs := data.CurrentOs()
 
@@ -171,7 +172,7 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 		return err
 	}
 
-	productDetails, err := getProductDetails(id, rdx, force)
+	productDetails, err := getProductDetails(id, rdx, ii.force)
 	if err != nil {
 		return err
 	}
@@ -181,8 +182,7 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 		return err
 	}
 
-	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
-		[]vangogh_integration.OperatingSystem{vangogh_integration.Windows}, []string{langCode}, downloadTypes, nil, force); err != nil {
+	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir, ii, nil); err != nil {
 		return err
 	}
 
@@ -208,11 +208,11 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 			exe:     absInstallerPath,
 			workDir: downloadsDir,
 			args:    []string{innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg},
-			env:     env,
-			verbose: verbose,
+			env:     ii.Env,
+			verbose: ii.verbose,
 		}
 
-		if err = currentOsWineRun(id, langCode, rdx, et, force); err != nil {
+		if err = currentOsWineRun(id, ii.LangCode, rdx, et, ii.force); err != nil {
 			return err
 		}
 	}

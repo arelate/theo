@@ -2,10 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"slices"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"slices"
 )
 
 const preserveFreeSpacePercent = 1
@@ -13,18 +14,15 @@ const preserveFreeSpacePercent = 1
 func hasFreeSpaceForProduct(
 	productDetails *vangogh_integration.ProductDetails,
 	targetPath string,
-	operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
-	manualUrlFilter []string,
-	force bool) error {
+	ii *InstallInfo,
+	manualUrlFilter []string) error {
 
 	var totalEstimatedBytes int64
 
 	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(operatingSystems...).
-		FilterLanguageCodes(langCodes...).
-		FilterDownloadTypes(downloadTypes...)
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterLanguageCodes(ii.LangCode).
+		FilterDownloadTypes(ii.DownloadTypes...)
 
 	for _, dl := range dls {
 		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
@@ -35,7 +33,7 @@ func hasFreeSpaceForProduct(
 
 	if ok, err := hasFreeSpaceForBytes(targetPath, totalEstimatedBytes); err != nil {
 		return err
-	} else if !ok && !force {
+	} else if !ok && !ii.force {
 		return fmt.Errorf("not enough space for %s at %s", productDetails.Id, targetPath)
 	} else {
 		return nil

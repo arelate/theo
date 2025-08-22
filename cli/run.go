@@ -2,18 +2,19 @@ package cli
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/gog_integration"
-	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/arelate/theo/data"
-	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/arelate/southern_light/gog_integration"
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/theo/data"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 func RunHandler(u *url.URL) error {
@@ -27,9 +28,15 @@ func RunHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := "" // installed info language will be used instead of default
+	var langCode string
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        langCode,
+		force:           q.Has("force"),
 	}
 
 	et := &execTask{
@@ -47,12 +54,10 @@ func RunHandler(u *url.URL) error {
 		et.args = strings.Split(q.Get("arg"), ",")
 	}
 
-	force := q.Has("force")
-
-	return Run(id, operatingSystem, langCode, et, force)
+	return Run(id, ii, et)
 }
 
-func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, et *execTask, force bool) error {
+func Run(id string, ii *InstallInfo, et *execTask) error {
 
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.Done()
@@ -67,30 +72,13 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 		return err
 	}
 
-	if operatingSystem == vangogh_integration.AnyOperatingSystem {
-		iios, err := installedInfoOperatingSystem(id, rdx)
-		if err != nil {
-			return err
-		}
-
-		operatingSystem = iios
+	if err = resolveInstallInfo(id, ii, rdx, installedOperatingSystem, installedLangCode); err != nil {
+		return nil
 	}
 
-	if langCode == "" {
-		lc, err := installedInfoLangCode(id, operatingSystem, rdx)
-		if err != nil {
-			return err
-		}
+	printInstallInfoParams(ii, true, id)
 
-		langCode = lc
-	}
-
-	currentOs := []vangogh_integration.OperatingSystem{operatingSystem}
-	langCodes := []string{langCode}
-
-	vangogh_integration.PrintParams([]string{id}, currentOs, langCodes, nil, true)
-
-	if err = checkProductType(id, rdx, force); err != nil {
+	if err = checkProductType(id, rdx, ii.force); err != nil {
 		return err
 	}
 
@@ -98,7 +86,7 @@ func Run(id string, operatingSystem vangogh_integration.OperatingSystem, langCod
 		return err
 	}
 
-	return osRun(id, operatingSystem, langCode, rdx, et, force)
+	return osRun(id, ii, rdx, et)
 }
 
 func checkProductType(id string, rdx redux.Writeable, force bool) error {
@@ -138,17 +126,17 @@ func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) e
 	return nil
 }
 
-func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable, et *execTask, force bool) error {
+func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 
 	var err error
-	if err = osConfirmRunnability(operatingSystem); err != nil {
+	if err = osConfirmRunnability(ii.OperatingSystem); err != nil {
 		return err
 	}
 
-	if operatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
+	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
 
 		var absPrefixDir string
-		if absPrefixDir, err = data.GetAbsPrefixDir(id, langCode, rdx); err == nil {
+		if absPrefixDir, err = data.GetAbsPrefixDir(id, ii.LangCode, rdx); err == nil {
 			et.prefix = absPrefixDir
 		} else {
 			return err
@@ -159,7 +147,7 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 			return err
 		}
 
-		langPrefixName := path.Join(prefixName, langCode)
+		langPrefixName := path.Join(prefixName, ii.LangCode)
 
 		if env, ok := rdx.GetAllValues(data.PrefixEnvProperty, langPrefixName); ok {
 			et.env = mergeEnv(et.env, env)
@@ -180,14 +168,14 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 		}
 
 		if et.exe != "" {
-			return osExec(id, operatingSystem, et, rdx, force)
+			return osExec(id, ii.OperatingSystem, et, rdx, ii.force)
 		}
 	}
 
 	var absGogGameInfoPath string
 	switch et.defaultLauncher {
 	case false:
-		absGogGameInfoPath, err = osFindGogGameInfo(id, operatingSystem, langCode, rdx)
+		absGogGameInfoPath, err = osFindGogGameInfo(id, ii.OperatingSystem, ii.LangCode, rdx)
 		if err != nil {
 			return err
 		}
@@ -198,19 +186,19 @@ func osRun(id string, operatingSystem vangogh_integration.OperatingSystem, langC
 	switch absGogGameInfoPath {
 	case "":
 		var absDefaultLauncherPath string
-		if absDefaultLauncherPath, err = osFindDefaultLauncher(id, operatingSystem, langCode, rdx); err != nil {
+		if absDefaultLauncherPath, err = osFindDefaultLauncher(id, ii.OperatingSystem, ii.LangCode, rdx); err != nil {
 			return err
 		}
-		if et, err = osExecTaskDefaultLauncher(absDefaultLauncherPath, operatingSystem, et); err != nil {
+		if et, err = osExecTaskDefaultLauncher(absDefaultLauncherPath, ii.OperatingSystem, et); err != nil {
 			return err
 		}
 	default:
-		if et, err = osExecTaskGogGameInfo(absGogGameInfoPath, operatingSystem, et); err != nil {
+		if et, err = osExecTaskGogGameInfo(absGogGameInfoPath, ii.OperatingSystem, et); err != nil {
 			return err
 		}
 	}
 
-	return osExec(id, operatingSystem, et, rdx, force)
+	return osExec(id, ii.OperatingSystem, et, rdx, ii.force)
 }
 
 func osFindGogGameInfo(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {

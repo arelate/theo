@@ -1,21 +1,46 @@
 package cli
 
 import (
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"os"
-	"path/filepath"
 )
 
 func RemoveDownloadsHandler(u *url.URL) error {
 
-	ids := Ids(u)
-	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-	force := u.Query().Has("force")
+	q := u.Query()
+
+	id := q.Get(vangogh_integration.IdProperty)
+
+	operatingSystem := vangogh_integration.AnyOperatingSystem
+	if q.Has(vangogh_integration.OperatingSystemsProperty) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	}
+
+	var langCode string
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	var downloadTypes []vangogh_integration.DownloadType
+	if q.Has(vangogh_integration.DownloadTypeProperty) {
+		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
+		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        langCode,
+		DownloadTypes:   downloadTypes,
+		force:           q.Has("force"),
+	}
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -27,50 +52,38 @@ func RemoveDownloadsHandler(u *url.URL) error {
 		return err
 	}
 
-	return RemoveDownloads(operatingSystems, langCodes, downloadTypes, rdx, force, ids...)
+	return RemoveDownloads(id, ii, rdx)
 }
 
-func RemoveDownloads(operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
-	rdx redux.Writeable,
-	force bool,
-	ids ...string) error {
+func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	rda := nod.NewProgress("removing downloads...")
 	defer rda.Done()
 
-	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
-
-	rda.TotalInt(len(ids))
+	printInstallInfoParams(ii, true, id)
 
 	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
 	if err != nil {
 		return err
 	}
 
-	for _, id := range ids {
-
-		productDetails, err := getProductDetails(id, rdx, force)
-		if err != nil {
-			return err
-		}
-
-		if err = removeProductDownloadLinks(id, productDetails, operatingSystems, langCodes, downloadTypes, downloadsDir); err != nil {
-			return err
-		}
-
-		rda.Increment()
+	productDetails, err := getProductDetails(id, rdx, ii.force)
+	if err != nil {
+		return err
 	}
+
+	if err = removeProductDownloadLinks(id, productDetails, ii, downloadsDir); err != nil {
+		return err
+	}
+
+	rda.Increment()
 
 	return nil
 }
 
 func removeProductDownloadLinks(id string,
 	productDetails *vangogh_integration.ProductDetails,
-	operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
+	ii *InstallInfo,
 	downloadsDir string) error {
 
 	rdla := nod.Begin(" removing downloads for %s...", productDetails.Title)
@@ -83,9 +96,9 @@ func removeProductDownloadLinks(id string,
 	}
 
 	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(operatingSystems...).
-		FilterLanguageCodes(langCodes...).
-		FilterDownloadTypes(downloadTypes...)
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterLanguageCodes(ii.LangCode).
+		FilterDownloadTypes(ii.DownloadTypes...)
 
 	if len(dls) == 0 {
 		rdla.EndWithResult("no links are matching operating params")

@@ -9,7 +9,7 @@
 backup-metadata
 
 download
-    id^&*
+    id^*
     os&={operating-systems^}
     lang-code&={language-codes^}
     download-type&={download-types^}
@@ -57,7 +57,7 @@ prefix
     force
 
 remove-downloads
-    id^&*
+    id^*
     os&={operating-systems^}
     lang-code&={language-codes^}
     download-type&={download-types^}
@@ -114,7 +114,7 @@ update
     force
 
 validate
-    id^&*
+    id^*
     os&={operating-systems^}
     lang-code&={language-codes^}
     manual-url-filter&

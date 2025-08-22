@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"slices"
 	"strings"
@@ -26,7 +25,7 @@ func InstallHandler(u *url.URL) error {
 		os = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := defaultLangCode
+	var langCode string
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
@@ -35,8 +34,6 @@ func InstallHandler(u *url.URL) error {
 	if q.Has(vangogh_integration.DownloadTypeProperty) {
 		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
 		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
-	} else {
-		downloadTypes = append(downloadTypes, vangogh_integration.Installer, vangogh_integration.DLC)
 	}
 
 	ii := &InstallInfo{
@@ -66,9 +63,6 @@ func Install(id string, ii *InstallInfo) error {
 		ii.DownloadTypes = []vangogh_integration.DownloadType{vangogh_integration.Installer, vangogh_integration.DLC}
 	}
 
-	operatingSystems := []vangogh_integration.OperatingSystem{ii.OperatingSystem}
-	langCodes := []string{ii.LangCode}
-
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
 		return err
@@ -79,7 +73,7 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	vangogh_integration.PrintParams([]string{id}, operatingSystems, langCodes, ii.DownloadTypes, true)
+	printInstallInfoParams(ii, true, id)
 
 	productDetails, err := getProductDetails(id, rdx, ii.force)
 	if err != nil {
@@ -104,16 +98,8 @@ func Install(id string, ii *InstallInfo) error {
 		return errors.New("unknown product type " + productDetails.ProductType)
 	}
 
-	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-		if slices.Contains(productDetails.OperatingSystems, data.CurrentOs()) {
-			ii.OperatingSystem = data.CurrentOs()
-		} else if slices.Contains(productDetails.OperatingSystems, vangogh_integration.Windows) {
-			ii.OperatingSystem = vangogh_integration.Windows
-		} else {
-			unsupportedOsMsg := fmt.Sprintf("product doesn't support %s or %s, only %v",
-				data.CurrentOs(), vangogh_integration.Windows, productDetails.OperatingSystems)
-			return errors.New(unsupportedOsMsg)
-		}
+	if err = resolveInstallInfo(id, ii, rdx, currentOsThenWindows); err != nil {
+		return err
 	}
 
 	ii.AddProductDetails(productDetails)
@@ -143,13 +129,11 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	os := []vangogh_integration.OperatingSystem{ii.OperatingSystem}
-
-	if err = Download(os, langCodes, ii.DownloadTypes, nil, rdx, ii.force, id); err != nil {
+	if err = Download(id, ii, nil, rdx); err != nil {
 		return err
 	}
 
-	if err = Validate(os, langCodes, ii.DownloadTypes, nil, rdx, id); err != nil {
+	if err = Validate(id, ii, nil, rdx); err != nil {
 		return err
 	}
 
@@ -164,7 +148,7 @@ func Install(id string, ii *InstallInfo) error {
 	}
 
 	if !ii.KeepDownloads {
-		if err = RemoveDownloads(os, langCodes, ii.DownloadTypes, rdx, ii.force, id); err != nil {
+		if err = RemoveDownloads(id, ii, rdx); err != nil {
 			return err
 		}
 	}
@@ -213,8 +197,7 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		return err
 	}
 
-	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir,
-		[]vangogh_integration.OperatingSystem{ii.OperatingSystem}, []string{ii.LangCode}, ii.DownloadTypes, nil, ii.force); err != nil {
+	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir, ii, nil); err != nil {
 		return err
 	}
 
@@ -246,7 +229,7 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 				return err
 			}
 
-			if err = prefixInstallProduct(id, dls, ii.LangCode, ii.DownloadTypes, rdx, ii.Env, ii.verbose, ii.force); err != nil {
+			if err = prefixInstallProduct(id, dls, ii, rdx); err != nil {
 				return err
 			}
 

@@ -4,17 +4,18 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"os"
-	"path/filepath"
-	"slices"
-	"strings"
 )
 
 type ValidationResult string
@@ -44,10 +45,32 @@ var valResMessageTemplates = map[ValidationResult]string{
 }
 
 func ValidateHandler(u *url.URL) error {
-	ids := Ids(u)
-	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
 
 	q := u.Query()
+
+	id := q.Get(vangogh_integration.IdProperty)
+
+	os := vangogh_integration.AnyOperatingSystem
+	if q.Has(vangogh_integration.OperatingSystemsProperty) {
+		os = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	}
+
+	var langCode string
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	var downloadTypes []vangogh_integration.DownloadType
+	if q.Has(vangogh_integration.DownloadTypeProperty) {
+		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
+		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: os,
+		LangCode:        langCode,
+		DownloadTypes:   downloadTypes,
+	}
 
 	var manualUrlFilter []string
 	if q.Has("manual-url-filter") {
@@ -64,39 +87,36 @@ func ValidateHandler(u *url.URL) error {
 		return err
 	}
 
-	return Validate(operatingSystems, langCodes, downloadTypes, manualUrlFilter, rdx, ids...)
+	return Validate(id, ii, manualUrlFilter, rdx)
 }
 
-func Validate(operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
+func Validate(id string,
+	ii *InstallInfo,
 	manualUrlFilter []string,
-	rdx redux.Writeable,
-	ids ...string) error {
+	rdx redux.Writeable) error {
 
 	va := nod.NewProgress("validating downloads...")
 	defer va.Done()
 
-	for _, id := range ids {
+	productDetails, err := getProductDetails(id, rdx, false)
+	if err != nil {
+		return err
+	}
 
-		productDetails, err := getProductDetails(id, rdx, false)
-		if err != nil {
+	if mismatchedManualUrls, err := validateLinks(id, ii, manualUrlFilter, productDetails); err != nil {
+		return err
+	} else if len(mismatchedManualUrls) > 0 {
+
+		// redownload and revalidate any manual-urls that resulted in mismatched checksums
+
+		ii.force = true
+
+		if err = Download(id, ii, mismatchedManualUrls, rdx); err != nil {
 			return err
 		}
 
-		if mismatchedManualUrls, err := validateLinks(id, operatingSystems, langCodes, downloadTypes, manualUrlFilter, productDetails); err != nil {
+		if _, err = validateLinks(id, ii, manualUrlFilter, productDetails); err != nil {
 			return err
-		} else if len(mismatchedManualUrls) > 0 {
-
-			// redownload and revalidate any manual-urls that resulted in mismatched checksums
-
-			if err = Download(operatingSystems, langCodes, downloadTypes, mismatchedManualUrls, rdx, true, id); err != nil {
-				return err
-			}
-
-			if _, err = validateLinks(id, operatingSystems, langCodes, downloadTypes, manualUrlFilter, productDetails); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -104,9 +124,7 @@ func Validate(operatingSystems []vangogh_integration.OperatingSystem,
 }
 
 func validateLinks(id string,
-	operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
+	ii *InstallInfo,
 	manualUrlFilter []string,
 	productDetails *vangogh_integration.ProductDetails) ([]string, error) {
 
@@ -119,9 +137,9 @@ func validateLinks(id string,
 	}
 
 	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(operatingSystems...).
-		FilterLanguageCodes(langCodes...).
-		FilterDownloadTypes(downloadTypes...)
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterLanguageCodes(ii.LangCode).
+		FilterDownloadTypes(ii.DownloadTypes...)
 
 	if len(dls) == 0 {
 		return nil, errors.New("no links are matching operating params")

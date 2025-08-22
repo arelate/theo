@@ -17,17 +17,37 @@ import (
 
 func DownloadHandler(u *url.URL) error {
 
-	ids := Ids(u)
-	operatingSystems, langCodes, downloadTypes := OsLangCodeDownloadType(u)
-
 	q := u.Query()
+
+	id := q.Get(vangogh_integration.IdProperty)
+
+	operatingSystem := vangogh_integration.AnyOperatingSystem
+	if q.Has(vangogh_integration.OperatingSystemsProperty) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	}
+
+	var langCode string
+	if q.Has(vangogh_integration.LanguageCodeProperty) {
+		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	var downloadTypes []vangogh_integration.DownloadType
+	if q.Has(vangogh_integration.DownloadTypeProperty) {
+		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
+		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        langCode,
+		DownloadTypes:   downloadTypes,
+		force:           q.Has("force"),
+	}
 
 	var manualUrlFilter []string
 	if q.Has("manual-url-filter") {
 		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
 	}
-
-	force := q.Has("force")
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -39,49 +59,38 @@ func DownloadHandler(u *url.URL) error {
 		return err
 	}
 
-	return Download(operatingSystems, langCodes, downloadTypes, manualUrlFilter, rdx, force, ids...)
+	return Download(id, ii, manualUrlFilter, rdx)
 }
 
-func Download(operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
+func Download(id string,
+	ii *InstallInfo,
 	manualUrlFilter []string,
-	rdx redux.Writeable,
-	force bool,
-	ids ...string) error {
+	rdx redux.Writeable) error {
 
 	da := nod.NewProgress("downloading from the server...")
 	defer da.Done()
 
-	vangogh_integration.PrintParams(ids, operatingSystems, langCodes, downloadTypes, true)
+	printInstallInfoParams(ii, true, id)
 
-	da.TotalInt(len(ids))
-
-	for _, id := range ids {
-
-		productDetails, err := getProductDetails(id, rdx, force)
-		if err != nil {
-			return err
-		}
-
-		if err = downloadProductFiles(id, productDetails, operatingSystems, langCodes, downloadTypes, manualUrlFilter, rdx, force); err != nil {
-			return err
-		}
-
-		da.Increment()
+	productDetails, err := getProductDetails(id, rdx, ii.force)
+	if err != nil {
+		return err
 	}
+
+	if err = downloadProductFiles(id, productDetails, ii, manualUrlFilter, rdx); err != nil {
+		return err
+	}
+
+	da.Increment()
 
 	return nil
 }
 
 func downloadProductFiles(id string,
 	productDetails *vangogh_integration.ProductDetails,
-	operatingSystems []vangogh_integration.OperatingSystem,
-	langCodes []string,
-	downloadTypes []vangogh_integration.DownloadType,
+	ii *InstallInfo,
 	manualUrlFilter []string,
-	rdx redux.Readable,
-	force bool) error {
+	rdx redux.Readable) error {
 
 	gpdla := nod.Begin(" downloading %s...", productDetails.Title)
 	defer gpdla.Done()
@@ -95,8 +104,7 @@ func downloadProductFiles(id string,
 		return err
 	}
 
-	if err = hasFreeSpaceForProduct(productDetails, downloadsDir,
-		operatingSystems, langCodes, downloadTypes, manualUrlFilter, force); err != nil {
+	if err = hasFreeSpaceForProduct(productDetails, downloadsDir, ii, manualUrlFilter); err != nil {
 		return err
 	}
 
@@ -109,9 +117,9 @@ func downloadProductFiles(id string,
 	}
 
 	dls := productDetails.DownloadLinks.
-		FilterOperatingSystems(operatingSystems...).
-		FilterLanguageCodes(langCodes...).
-		FilterDownloadTypes(downloadTypes...)
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterLanguageCodes(ii.LangCode).
+		FilterDownloadTypes(ii.DownloadTypes...)
 
 	if len(dls) == 0 {
 		return errors.New("no links are matching operating params")
@@ -142,7 +150,7 @@ func downloadProductFiles(id string,
 			continue
 		}
 
-		if err = dc.Download(fileUrl, force, fa, downloadsDir, id, dl.LocalFilename); err != nil {
+		if err = dc.Download(fileUrl, ii.force, fa, downloadsDir, id, dl.LocalFilename); err != nil {
 			fa.EndWithResult(err.Error())
 			continue
 		}

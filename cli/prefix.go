@@ -4,13 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/arelate/southern_light/wine_integration"
-	"github.com/arelate/theo/data"
-	"github.com/boggydigital/backups"
-	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"io"
 	"net/url"
 	"os"
@@ -18,6 +11,14 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
+	"github.com/arelate/theo/data"
+	"github.com/boggydigital/backups"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 var osEnvDefaults = map[vangogh_integration.OperatingSystem][]string{
@@ -36,10 +37,15 @@ func PrefixHandler(u *url.URL) error {
 
 	id := q.Get(vangogh_integration.IdProperty)
 
-	// TODO: use installed lang-code for prefix
-	langCode := defaultLangCode
+	var langCode string
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	}
+
+	ii := &InstallInfo{
+		OperatingSystem: vangogh_integration.Windows,
+		LangCode:        langCode,
+		force:           q.Has("force"),
 	}
 
 	et := &execTask{
@@ -69,20 +75,19 @@ func PrefixHandler(u *url.URL) error {
 	info := q.Has("info")
 	archive := q.Has("archive")
 	remove := q.Has("remove")
-	force := q.Has("force")
 
-	return Prefix(id, langCode,
+	return Prefix(id, ii,
 		mod, program, installWineBinary,
 		defaultEnv, deleteEnv, deleteExe, deleteArg,
 		info, archive, remove,
-		et, force)
+		et)
 }
 
-func Prefix(id string, langCode string,
+func Prefix(id string, ii *InstallInfo,
 	mod, program, installWineBinary string,
 	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
 	info, archive, remove bool,
-	et *execTask, force bool) error {
+	et *execTask) error {
 
 	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
 	if err != nil {
@@ -94,7 +99,11 @@ func Prefix(id string, langCode string,
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	if err = resolveInstallInfo(id, ii, rdx, installedLangCode); err != nil {
+		return err
+	}
+
+	absPrefixDir, err := data.GetAbsPrefixDir(id, ii.LangCode, rdx)
 	if err != nil {
 		return err
 	}
@@ -102,49 +111,49 @@ func Prefix(id string, langCode string,
 	et.prefix = absPrefixDir
 
 	if deleteEnv {
-		if err = prefixDeleteProperty(id, langCode, data.PrefixEnvProperty, rdx, force); err != nil {
+		if err = prefixDeleteProperty(id, ii.LangCode, data.PrefixEnvProperty, rdx, ii.force); err != nil {
 			return err
 		}
 	}
 
 	if defaultEnv {
-		if err = prefixDefaultEnv(id, langCode, rdx); err != nil {
+		if err = prefixDefaultEnv(id, ii.LangCode, rdx); err != nil {
 			return err
 		}
 	}
 
 	if deleteExe {
-		if err = prefixDeleteProperty(id, langCode, data.PrefixExeProperty, rdx, force); err != nil {
+		if err = prefixDeleteProperty(id, ii.LangCode, data.PrefixExeProperty, rdx, ii.force); err != nil {
 			return err
 		}
 	}
 
 	if deleteArg {
-		if err = prefixDeleteProperty(id, langCode, data.PrefixArgProperty, rdx, force); err != nil {
+		if err = prefixDeleteProperty(id, ii.LangCode, data.PrefixArgProperty, rdx, ii.force); err != nil {
 			return err
 		}
 	}
 
 	if len(et.env) > 0 {
-		if err = prefixSetEnv(id, langCode, et.env, rdx); err != nil {
+		if err = prefixSetEnv(id, ii.LangCode, et.env, rdx); err != nil {
 			return err
 		}
 	}
 
 	if et.exe != "" {
-		if err = prefixSetExe(id, langCode, et.exe, rdx); err != nil {
+		if err = prefixSetExe(id, ii.LangCode, et.exe, rdx); err != nil {
 			return err
 		}
 	}
 
 	if len(et.args) > 0 {
-		if err = prefixSetArgs(id, langCode, et.args, rdx); err != nil {
+		if err = prefixSetArgs(id, ii.LangCode, et.args, rdx); err != nil {
 			return err
 		}
 	}
 
 	if info {
-		if err = prefixInfo(id, langCode, rdx); err != nil {
+		if err = prefixInfo(id, ii.LangCode, rdx); err != nil {
 			return err
 		}
 	}
@@ -153,11 +162,11 @@ func Prefix(id string, langCode string,
 
 		switch mod {
 		case prefixModEnableRetina:
-			if err = prefixModRetina(id, langCode, false, rdx, et.verbose, force); err != nil {
+			if err = prefixModRetina(id, ii.LangCode, false, rdx, et.verbose, ii.force); err != nil {
 				return err
 			}
 		case prefixModDisableRetina:
-			if err = prefixModRetina(id, langCode, true, rdx, et.verbose, force); err != nil {
+			if err = prefixModRetina(id, ii.LangCode, true, rdx, et.verbose, ii.force); err != nil {
 				return err
 			}
 		}
@@ -224,13 +233,13 @@ func Prefix(id string, langCode string,
 	}
 
 	if archive {
-		if err = archiveProductPrefix(id, langCode); err != nil {
+		if err = archiveProductPrefix(id, ii.LangCode); err != nil {
 			return err
 		}
 	}
 
 	if remove {
-		if err = removeProductPrefix(id, langCode, rdx, force); err != nil {
+		if err = removeProductPrefix(id, ii.LangCode, rdx, ii.force); err != nil {
 			return err
 		}
 	}

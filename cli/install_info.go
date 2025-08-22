@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -11,6 +12,16 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
+)
+
+const defaultLangCode = "en"
+
+type resolutionPolicy int
+
+const (
+	currentOsThenWindows resolutionPolicy = iota
+	installedOperatingSystem
+	installedLangCode
 )
 
 type InstallInfo struct {
@@ -215,4 +226,70 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 	} else {
 		return "", errors.New("no installation found for " + id)
 	}
+}
+
+func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable, policies ...resolutionPolicy) error {
+
+	productDetails, err := getProductDetails(id, rdx, installInfo.force)
+	if err != nil {
+		return err
+	}
+
+	if installInfo.OperatingSystem == vangogh_integration.AnyOperatingSystem {
+		if slices.Contains(policies, currentOsThenWindows) {
+
+			if slices.Contains(productDetails.OperatingSystems, data.CurrentOs()) {
+				installInfo.OperatingSystem = data.CurrentOs()
+			} else if slices.Contains(productDetails.OperatingSystems, vangogh_integration.Windows) {
+				installInfo.OperatingSystem = vangogh_integration.Windows
+			} else {
+				unsupportedOsMsg := fmt.Sprintf("product doesn't support %s or %s, only %v",
+					data.CurrentOs(), vangogh_integration.Windows, productDetails.OperatingSystems)
+				return errors.New(unsupportedOsMsg)
+			}
+
+		} else if slices.Contains(policies, installedOperatingSystem) {
+
+			var installedOs vangogh_integration.OperatingSystem
+			installedOs, err = installedInfoOperatingSystem(id, rdx)
+			if err != nil {
+				return err
+			}
+
+			installInfo.OperatingSystem = installedOs
+
+		}
+	}
+
+	if len(installInfo.DownloadTypes) == 0 {
+		installInfo.DownloadTypes = []vangogh_integration.DownloadType{
+			vangogh_integration.Installer,
+			vangogh_integration.DLC,
+		}
+	}
+
+	if installInfo.LangCode == "" {
+
+		if slices.Contains(policies, installedLangCode) {
+
+			if lc, err := installedInfoLangCode(id, installInfo.OperatingSystem, rdx); err == nil {
+				installInfo.LangCode = lc
+			} else {
+				return err
+			}
+
+		} else {
+			installInfo.LangCode = defaultLangCode
+		}
+	}
+
+	return nil
+}
+
+func printInstallInfoParams(ii *InstallInfo, noPatches bool, ids ...string) {
+	vangogh_integration.PrintParams(ids,
+		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
+		[]string{ii.LangCode},
+		ii.DownloadTypes,
+		noPatches)
 }
