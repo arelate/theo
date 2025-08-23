@@ -73,7 +73,7 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 	}
 
 	if err = resolveInstallInfo(id, ii, rdx, installedOperatingSystem, installedLangCode); err != nil {
-		return nil
+		return err
 	}
 
 	printInstallInfoParams(ii, true, id)

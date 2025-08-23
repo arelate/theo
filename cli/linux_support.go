@@ -192,7 +192,7 @@ func linuxReveal(path string) error {
 
 func nixRunExecTask(et *execTask) error {
 
-	nreta := nod.Begin("running %s...", et.name)
+	nreta := nod.Begin(" running %s...", et.name)
 	defer nreta.Done()
 
 	cmd := exec.Command(et.exe, et.args...)
