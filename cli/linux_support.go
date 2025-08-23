@@ -3,18 +3,19 @@ package cli
 import (
 	"bytes"
 	"errors"
-	"github.com/arelate/southern_light/gog_integration"
-	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/arelate/theo/data"
-	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/arelate/southern_light/gog_integration"
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/theo/data"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 const (
@@ -190,6 +191,9 @@ func linuxReveal(path string) error {
 }
 
 func nixRunExecTask(et *execTask) error {
+
+	nreta := nod.Begin("running %s...", et.name)
+	defer nreta.Done()
 
 	cmd := exec.Command(et.exe, et.args...)
 	cmd.Dir = et.workDir
