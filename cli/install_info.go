@@ -230,13 +230,13 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 
 func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable, policies ...resolutionPolicy) error {
 
-	productDetails, err := getProductDetails(id, rdx, installInfo.force)
-	if err != nil {
-		return err
-	}
-
 	if installInfo.OperatingSystem == vangogh_integration.AnyOperatingSystem {
 		if slices.Contains(policies, currentOsThenWindows) {
+
+			productDetails, err := getProductDetails(id, rdx, installInfo.force)
+			if err != nil {
+				return err
+			}
 
 			if slices.Contains(productDetails.OperatingSystems, data.CurrentOs()) {
 				installInfo.OperatingSystem = data.CurrentOs()
@@ -250,14 +250,12 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable
 
 		} else if slices.Contains(policies, installedOperatingSystem) {
 
-			var installedOs vangogh_integration.OperatingSystem
-			installedOs, err = installedInfoOperatingSystem(id, rdx)
+			installedOs, err := installedInfoOperatingSystem(id, rdx)
 			if err != nil {
 				return err
 			}
 
 			installInfo.OperatingSystem = installedOs
-
 		}
 	}
 

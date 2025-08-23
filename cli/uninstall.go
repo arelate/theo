@@ -1,12 +1,13 @@
 package cli
 
 import (
+	"net/url"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
 )
 
 func UninstallHandler(u *url.URL) error {
@@ -20,7 +21,7 @@ func UninstallHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := "" // installed info language will be used instead of default
+	var langCode string
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
@@ -55,22 +56,8 @@ func Uninstall(id string, ii *InstallInfo) error {
 		return nil
 	}
 
-	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-		iios, err := installedInfoOperatingSystem(id, rdx)
-		if err != nil {
-			return err
-		}
-
-		ii.OperatingSystem = iios
-	}
-
-	if ii.LangCode == "" {
-		lc, err := installedInfoLangCode(id, ii.OperatingSystem, rdx)
-		if err != nil {
-			return err
-		}
-
-		ii.LangCode = lc
+	if err = resolveInstallInfo(id, ii, rdx, installedOperatingSystem, installedLangCode); err != nil {
+		return err
 	}
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
