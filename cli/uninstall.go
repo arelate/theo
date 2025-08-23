@@ -52,7 +52,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 	}
 
 	if !ii.force {
-		ua.EndWithResult("uninstallation requires force parameter")
+		ua.EndWithResult("uninstall requires -force parameter")
 		return nil
 	}
 
