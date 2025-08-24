@@ -62,7 +62,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		installInfo, err := matchInstallInfo(ii, installedInfoLines...)
+		installInfo, _, err := matchInstallInfo(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}

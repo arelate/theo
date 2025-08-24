@@ -2,14 +2,15 @@ package cli
 
 import (
 	"errors"
+	"net/url"
+	"os"
+	"path/filepath"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"os"
-	"path/filepath"
 )
 
 func RevealHandler(u *url.URL) error {
@@ -100,7 +101,7 @@ func revealInstalled(id string, ii *InstallInfo) error {
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		installedInfo, err := matchInstallInfo(ii, installedInfoLines...)
+		installedInfo, _, err := matchInstallInfo(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}
@@ -108,7 +109,7 @@ func revealInstalled(id string, ii *InstallInfo) error {
 		if installedInfo != nil {
 			return currentOsRevealInstalled(id, ii, rdx)
 		} else {
-			ria.EndWithResult("no installation found for %s-%s", ii.OperatingSystem, ii.LangCode)
+			ria.EndWithResult("no install found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
 		}
 
 	}

@@ -39,17 +39,6 @@ type InstallInfo struct {
 	force               bool                                // won't be serialized
 }
 
-func (ii *InstallInfo) String() (string, error) {
-
-	buf := bytes.NewBuffer(nil)
-
-	if err := json.NewEncoder(buf).Encode(ii); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
 func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails) {
 
 	dls := pd.DownloadLinks.
@@ -66,18 +55,18 @@ func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails)
 	}
 }
 
-func matchInstallInfo(ii *InstallInfo, lines ...string) (*InstallInfo, error) {
+func matchInstallInfo(ii *InstallInfo, lines ...string) (*InstallInfo, string, error) {
 	for _, line := range lines {
 		var installedInfo InstallInfo
 		if err := json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		if installedInfo.OperatingSystem == ii.OperatingSystem && installedInfo.LangCode == ii.LangCode {
-			return &installedInfo, nil
+			return &installedInfo, line, nil
 		}
 	}
-	return nil, nil
+	return nil, "", nil
 }
 
 func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
@@ -93,12 +82,12 @@ func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 		return err
 	}
 
-	iis, err := ii.String()
-	if err != nil {
+	buf := bytes.NewBuffer(nil)
+	if err := json.NewEncoder(buf).Encode(ii); err != nil {
 		return err
 	}
 
-	return rdx.BatchAddValues(data.InstallInfoProperty, map[string][]string{id: {iis}})
+	return rdx.BatchAddValues(data.InstallInfoProperty, map[string][]string{id: {buf.String()}})
 }
 
 func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
@@ -112,22 +101,17 @@ func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		matchedInstalledInfo, err := matchInstallInfo(ii, installedInfoLines...)
+		_, installedInfoLine, err := matchInstallInfo(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}
 
-		iis, err := matchedInstalledInfo.String()
-		if err != nil {
-			return err
-		}
-
-		if err = rdx.CutValues(data.InstallInfoProperty, id, iis); err != nil {
+		if err = rdx.CutValues(data.InstallInfoProperty, id, installedInfoLine); err != nil {
 			return err
 		}
 
 	} else {
-		uiia.EndWithResult("install info not found for %s", id)
+		uiia.EndWithResult("install info not found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
 	}
 
 	return nil
