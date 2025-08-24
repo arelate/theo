@@ -25,17 +25,18 @@ const (
 )
 
 type InstallInfo struct {
-	OperatingSystem vangogh_integration.OperatingSystem `json:"os"`
-	LangCode        string                              `json:"lang-code"`
-	DownloadTypes   []vangogh_integration.DownloadType  `json:"download-types"`
-	Version         string                              `json:"version"`
-	EstimatedBytes  int64                               `json:"estimated-bytes"`
-	KeepDownloads   bool                                `json:"keep-downloads"`
-	NoSteamShortcut bool                                `json:"no-steam-shortcut"`
-	Env             []string                            `json:"env"`
-	reveal          bool                                // won't be serialized
-	verbose         bool                                // won't be serialized
-	force           bool                                // won't be serialized
+	OperatingSystem     vangogh_integration.OperatingSystem `json:"os"`
+	LangCode            string                              `json:"lang-code"`
+	DownloadTypes       []vangogh_integration.DownloadType  `json:"download-types"`
+	DownloadableContent []string                            `json:"dlc"`
+	Version             string                              `json:"version"`
+	EstimatedBytes      int64                               `json:"estimated-bytes"`
+	KeepDownloads       bool                                `json:"keep-downloads"`
+	NoSteamShortcut     bool                                `json:"no-steam-shortcut"`
+	Env                 []string                            `json:"env"`
+	reveal              bool                                // won't be serialized
+	verbose             bool                                // won't be serialized
+	force               bool                                // won't be serialized
 }
 
 func (ii *InstallInfo) String() (string, error) {
@@ -65,24 +66,15 @@ func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails)
 	}
 }
 
-func parseInstallInfo(line string) (*InstallInfo, error) {
-	var ii InstallInfo
-
-	if err := json.NewDecoder(strings.NewReader(line)).Decode(&ii); err != nil {
-		return nil, err
-	}
-
-	return &ii, nil
-}
-
 func matchInstallInfo(ii *InstallInfo, lines ...string) (*InstallInfo, error) {
 	for _, line := range lines {
-		installedInfo, err := parseInstallInfo(line)
-		if err != nil {
+		var installedInfo InstallInfo
+		if err := json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
 			return nil, err
 		}
+
 		if installedInfo.OperatingSystem == ii.OperatingSystem && installedInfo.LangCode == ii.LangCode {
-			return installedInfo, nil
+			return &installedInfo, nil
 		}
 	}
 	return nil, nil
@@ -157,8 +149,8 @@ func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integr
 
 			for _, line := range installedInfoLines {
 
-				ii, err := parseInstallInfo(line)
-				if err != nil {
+				var ii InstallInfo
+				if err := json.NewDecoder(strings.NewReader(line)).Decode(&ii); err != nil {
 					return vangogh_integration.AnyOperatingSystem, err
 				}
 
@@ -198,8 +190,8 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 
 			for _, line := range installedInfoLines {
 
-				ii, err := parseInstallInfo(line)
-				if err != nil {
+				var ii InstallInfo
+				if err := json.NewDecoder(strings.NewReader(line)).Decode(&ii); err != nil {
 					return "", err
 				}
 

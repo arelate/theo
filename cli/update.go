@@ -1,14 +1,16 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"strings"
 )
 
 func UpdateHandler(u *url.URL) error {
@@ -128,13 +130,13 @@ func checkProductUpdates(id string, rdx redux.Writeable, force bool) ([]*Install
 
 		for _, line := range installedInfoLines {
 
-			installedInfo, err := parseInstallInfo(line)
-			if err != nil {
+			var installedInfo InstallInfo
+			if err := json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
 				return nil, err
 			}
 
-			if updated, err := isInstalledInfoUpdated(id, installedInfo, rdx, force); updated && err == nil {
-				updatedInstalledInfo = append(updatedInstalledInfo, installedInfo)
+			if updated, err := isInstalledInfoUpdated(id, &installedInfo, rdx, force); updated && err == nil {
+				updatedInstalledInfo = append(updatedInstalledInfo, &installedInfo)
 			} else if err != nil {
 				return nil, err
 			}

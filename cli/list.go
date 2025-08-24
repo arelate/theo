@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -136,8 +137,8 @@ func listInstalled(ii *InstallInfo) error {
 
 		for _, line := range installedInfoLines {
 
-			installedInfo, err := parseInstallInfo(line)
-			if err != nil {
+			var installedInfo InstallInfo
+			if err = json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
 				return err
 			}
 
@@ -166,6 +167,11 @@ func listInstalled(ii *InstallInfo) error {
 				}
 
 				summary[title] = append(summary[title], strings.Join(infoLines, "; "))
+
+				if len(installedInfo.DownloadableContent) > 0 {
+					summary[title] = append(summary[title], "- dlc: "+strings.Join(installedInfo.DownloadableContent, ", "))
+				}
+
 				if installedDate != "" {
 					summary[title] = append(summary[title], "- installed: "+installedDate)
 				}

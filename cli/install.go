@@ -192,6 +192,12 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		return nil
 	}
 
+	for _, dl := range dls {
+		if dl.Type == vangogh_integration.DLC {
+			ii.DownloadableContent = append(ii.DownloadableContent, dl.Name)
+		}
+	}
+
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
 		return err
