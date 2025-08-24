@@ -68,7 +68,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 		}
 
 		if installInfo == nil {
-			ua.EndWithResult("on installation info found for %s-%s", id, ii.OperatingSystem, ii.LangCode)
+			ua.EndWithResult("no install info found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
 			return nil
 		}
 
@@ -92,7 +92,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 
 func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
-	oupa := nod.Begin(" uninstalling %s for %s...", id, ii.OperatingSystem)
+	oupa := nod.Begin(" uninstalling %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer oupa.Done()
 
 	switch ii.OperatingSystem {

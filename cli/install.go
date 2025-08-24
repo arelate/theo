@@ -175,7 +175,7 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 
 	start := time.Now().UTC().Unix()
 
-	coipa := nod.Begin("installing %s, %s, %s...", id, ii.OperatingSystem, ii.LangCode)
+	coipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer coipa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
