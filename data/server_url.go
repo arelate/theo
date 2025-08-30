@@ -2,8 +2,9 @@ package data
 
 import (
 	"errors"
-	"github.com/boggydigital/redux"
 	"net/url"
+
+	"github.com/boggydigital/redux"
 )
 
 func ServerUrl(rdx redux.Readable, path string, params map[string]string) (*url.URL, error) {
@@ -21,7 +22,7 @@ func ServerUrl(rdx redux.Readable, path string, params map[string]string) (*url.
 	if addrVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerAddressProperty); ok && addrVal != "" {
 		address = addrVal
 	} else {
-		return nil, errors.New("address cannot be empty")
+		return nil, errors.New("address is empty, check server connection setup")
 	}
 
 	if portVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerPortProperty); ok && portVal != "" {

@@ -2,13 +2,14 @@ package data
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 const theoDirname = "theo"
@@ -57,6 +58,7 @@ const (
 	Downloads     pathways.AbsDir = "downloads"
 	Wine          pathways.AbsDir = "wine"
 	InstalledApps pathways.AbsDir = "installed-apps"
+	Logs          pathways.AbsDir = "logs"
 )
 
 const (
@@ -85,6 +87,7 @@ var AllAbsDirs = []pathways.AbsDir{
 	Downloads,
 	Wine,
 	InstalledApps,
+	Logs,
 }
 
 func GetPrefixName(id string, rdx redux.Readable) (string, error) {

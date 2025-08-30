@@ -26,6 +26,7 @@ install
     env&
     reveal
     verbose
+    debug
     force
 
 list
@@ -54,6 +55,7 @@ prefix
     archive
     remove
     verbose
+    debug
     force
 
 remove-downloads
@@ -80,6 +82,7 @@ run
     default-launcher
     work-dir
     verbose
+    debug
     force
 
 setup-server
@@ -105,12 +108,14 @@ uninstall
     os={operating-systems^}
     lang-code={language-codes^}
     verbose
+    debug
     force
 
 update
     id^
     all
     verbose
+    debug
     force
 
 validate

@@ -206,7 +206,14 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 
 func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable, policies ...resolutionPolicy) error {
 
+	nod.Log("resolveInstallInfo: policies %v", policies)
+
 	if installInfo.OperatingSystem == vangogh_integration.AnyOperatingSystem {
+
+		nod.Log("resolveInstallInfo: resolving %s=%s...",
+			vangogh_integration.OperatingSystemsProperty,
+			installInfo.OperatingSystem)
+
 		if slices.Contains(policies, currentOsThenWindows) {
 
 			productDetails, err := getProductDetails(id, rdx, installInfo.force)
@@ -233,16 +240,30 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable
 
 			installInfo.OperatingSystem = installedOs
 		}
+
+		nod.Log("resolveInstallInfo: resolved %s=%s",
+			vangogh_integration.OperatingSystemsProperty,
+			installInfo.OperatingSystem)
 	}
 
 	if len(installInfo.DownloadTypes) == 0 {
-		installInfo.DownloadTypes = []vangogh_integration.DownloadType{
+
+		defaultDownloadTypes := []vangogh_integration.DownloadType{
 			vangogh_integration.Installer,
 			vangogh_integration.DLC,
 		}
+
+		nod.Log("resolveInstallInfo: resolved %s=%v",
+			vangogh_integration.DownloadTypeProperty,
+			defaultDownloadTypes)
+
+		installInfo.DownloadTypes = defaultDownloadTypes
 	}
 
 	if installInfo.LangCode == "" {
+
+		nod.Log("resolveInstallInfo: resolving %s...",
+			vangogh_integration.LanguageCodeProperty)
 
 		if slices.Contains(policies, installedLangCode) {
 
@@ -255,6 +276,10 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable
 		} else {
 			installInfo.LangCode = defaultLangCode
 		}
+
+		nod.Log("resolveInstallInfo: resolved %s=%s",
+			vangogh_integration.LanguageCodeProperty,
+			installInfo.LangCode)
 	}
 
 	return nil

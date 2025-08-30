@@ -3,14 +3,16 @@ package main
 import (
 	"bytes"
 	_ "embed"
+	"log"
+	"net/url"
+	"os"
+
 	"github.com/arelate/theo/cli"
 	"github.com/arelate/theo/clo_delegates"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/clo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
-	"log"
-	"os"
 )
 
 var (
@@ -20,23 +22,25 @@ var (
 	cliHelp []byte
 )
 
+const debugParam = "debug"
+
 func main() {
 
 	nod.EnableStdOutPresenter()
 
-	ns := nod.Begin("theo is complementing vangogh experience")
-	defer ns.Done()
+	tsa := nod.Begin("theo is complementing vangogh experience")
+	defer tsa.Done()
 
 	theoRootDir, err := data.InitRootDir()
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Fatalln(err)
 	}
 
 	if err = pathways.Setup("",
 		theoRootDir,
 		data.RelToAbsDirs,
 		data.AllAbsDirs...); err != nil {
-		log.Fatalln(err.Error())
+		log.Fatalln(err)
 	}
 
 	defs, err := clo.Load(
@@ -44,7 +48,7 @@ func main() {
 		bytes.NewBuffer(cliHelp),
 		clo_delegates.FuncMap)
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Fatalln(err)
 	}
 
 	clo.HandleFuncs(map[string]clo.Handler{
@@ -66,10 +70,28 @@ func main() {
 	})
 
 	if err = defs.AssertCommandsHaveHandlers(); err != nil {
-		log.Fatalln(err.Error())
+		log.Fatalln(err)
 	}
 
-	if err = defs.Serve(os.Args[1:]); err != nil {
-		log.Fatalln(err.Error())
+	var u *url.URL
+	if u, err = defs.Parse(os.Args[1:]); err != nil {
+		log.Fatalln(err)
+	}
+
+	if q := u.Query(); q.Has(debugParam) {
+		absLogsDir, err := pathways.GetAbsDir(data.Logs)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		logger, err := nod.EnableFileLogger(u.Path, absLogsDir)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer logger.Close()
+	}
+
+	if err = defs.Serve(u); err != nil {
+		tsa.Error(err)
+		log.Fatalln(err)
 	}
 }
