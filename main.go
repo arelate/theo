@@ -53,6 +53,7 @@ func main() {
 
 	clo.HandleFuncs(map[string]clo.Handler{
 		"backup-metadata":  cli.BackupMetadataHandler,
+		"connect":          cli.ConnectHandler,
 		"download":         cli.DownloadHandler,
 		"install":          cli.InstallHandler,
 		"list":             cli.ListHandler,
@@ -60,7 +61,6 @@ func main() {
 		"remove-downloads": cli.RemoveDownloadsHandler,
 		"reveal":           cli.RevealHandler,
 		"run":              cli.RunHandler,
-		"setup-server":     cli.SetupServerHandler,
 		"setup-wine":       cli.SetupWineHandler,
 		"steam-shortcut":   cli.SteamShortcutHandler,
 		"uninstall":        cli.UninstallHandler,

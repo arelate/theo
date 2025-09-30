@@ -21,7 +21,7 @@ const (
 	ServerAddressProperty  = "server-address"
 	ServerPortProperty     = "server-port"
 	ServerUsernameProperty = "server-username"
-	ServerPasswordProperty = "server-password"
+	ServerSessionToken     = "server-session-token"
 )
 
 func AllProperties() []string {

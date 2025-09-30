@@ -110,11 +110,12 @@ func downloadProductFiles(id string,
 
 	dc := dolo.DefaultClient
 
-	if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
-		if password, sure := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerPasswordProperty); sure && password != "" {
-			dc.SetBasicAuth(username, password)
-		}
-	}
+	//TODO: replace with proper auth
+	//if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
+	//	if password, sure := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerPasswordProperty); sure && password != "" {
+	//		dc.SetBasicAuth(username, password)
+	//	}
+	//}
 
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).

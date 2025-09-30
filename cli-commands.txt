@@ -8,6 +8,14 @@
 
 backup-metadata
 
+connect
+    protocol
+    address
+    port
+    username
+    password
+    reset
+
 download
     id^*
     os&={operating-systems^}
@@ -84,14 +92,6 @@ run
     verbose
     debug
     force
-
-setup-server
-    protocol
-    address
-    port
-    username
-    password
-    test
 
 setup-wine
     force
