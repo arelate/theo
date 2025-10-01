@@ -14,4 +14,8 @@ require (
 	github.com/boggydigital/redux v0.1.9
 )
 
-require github.com/boggydigital/wits v0.2.3 // indirect
+require (
+	github.com/boggydigital/author v0.1.13 // indirect
+	github.com/boggydigital/wits v0.2.3 // indirect
+	golang.org/x/crypto v0.42.0 // indirect
+)

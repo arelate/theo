@@ -1,7 +1,8 @@
 package data
 
 const (
-	ApiAuthPath             = "/api/auth"
+	ApiAuthUserPath         = "/api/auth-user"
+	ApiAuthSessionPath      = "/api/auth-session"
 	ApiHealthPath           = "/api/health"
 	ApiProductDetailsPath   = "/api/product-details"
 	ApiWineBinariesVersions = "/api/wine-binaries-versions"

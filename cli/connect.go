@@ -1,13 +1,13 @@
 package cli
 
 import (
-	"bytes"
+	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
 
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/author"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
@@ -129,55 +129,6 @@ func resetServerConnection(rdx redux.Writeable) error {
 //	return nil
 //}
 
-//func testServerConnectivity(rdx redux.Readable) error {
-//
-//	testUrl, err := data.ServerUrl(rdx, data.ApiHealthPath, nil)
-//	if err != nil {
-//		return err
-//	}
-//
-//	tvaa := nod.Begin(" testing auth for %s...", testUrl.String())
-//	defer tvaa.Done()
-//
-//	req, err := http.NewRequest(http.MethodGet, testUrl.String(), nil)
-//	if err != nil {
-//		return err
-//	}
-//
-//	if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
-//		if password, sure := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerPasswordProperty); sure && password != "" {
-//			req.SetBasicAuth(username, password)
-//		} else {
-//			return errors.New("password cannot be empty")
-//		}
-//	} else {
-//		return errors.New("username cannot be empty")
-//	}
-//
-//	resp, err := http.DefaultClient.Do(req)
-//	if err != nil {
-//		return err
-//	}
-//	defer resp.Body.Close()
-//
-//	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-//		return errors.New(resp.Status)
-//	}
-//
-//	bts, err := io.ReadAll(resp.Body)
-//	if err != nil {
-//		return err
-//	}
-//
-//	if string(bts) != "ok" {
-//		return errors.New("unexpected health-auth response")
-//	}
-//
-//	tvaa.EndWithResult("done, healthy")
-//
-//	return nil
-//}
-
 func updateSessionToken(password string, rdx redux.Writeable) error {
 	rsa := nod.Begin("updating session token...")
 	defer rsa.Done()
@@ -186,7 +137,7 @@ func updateSessionToken(password string, rdx redux.Writeable) error {
 		return err
 	}
 
-	authUrl, err := data.ServerUrl(rdx, data.ApiAuthPath, nil)
+	authUrl, err := data.ServerUrl(rdx, data.ApiAuthUserPath, nil)
 	if err != nil {
 		return err
 	}
@@ -213,10 +164,19 @@ func updateSessionToken(password string, rdx redux.Writeable) error {
 		return errors.New(resp.Status)
 	}
 
-	buf := bytes.NewBuffer(nil)
-	if _, err = io.Copy(buf, resp.Body); err != nil {
+	var ste author.SessionTokenExpires
+
+	if err = json.NewDecoder(resp.Body).Decode(&ste); err != nil {
 		return err
 	}
 
-	return rdx.ReplaceValues(data.ServerConnectionProperties, data.ServerSessionToken, buf.String())
+	if err = rdx.ReplaceValues(data.ServerConnectionProperties, data.ServerSessionToken, ste.Token); err != nil {
+		return err
+	}
+
+	if err = rdx.ReplaceValues(data.ServerConnectionProperties, data.ServerSessionExpires, ste.Expires.Format(http.TimeFormat)); err != nil {
+		return err
+	}
+
+	return nil
 }
