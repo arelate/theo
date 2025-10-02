@@ -15,7 +15,7 @@ require (
 )
 
 require (
-	github.com/boggydigital/author v0.1.13 // indirect
+	github.com/boggydigital/author v0.1.15 // indirect
 	github.com/boggydigital/wits v0.2.3 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 )

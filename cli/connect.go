@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/author"
@@ -81,6 +82,10 @@ func Connect(
 		return err
 	}
 
+	if err = validateSessionToken(rdx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -107,27 +112,46 @@ func resetServerConnection(rdx redux.Writeable) error {
 	return nil
 }
 
-//func testConnection(password string) error {
-//
-//	tsa := nod.Begin("testing server connection...")
-//	defer tsa.EndWithResult("success - server setup is valid")
-//
-//	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-//	if err != nil {
-//		return err
-//	}
-//
-//	rdx, err := redux.NewReader(reduxDir, data.ServerConnectionProperties)
-//	if err != nil {
-//		return err
-//	}
-//
-//	//if err = testServerConnectivity(rdx); err != nil {
-//	//	return err
-//	//}
-//
-//	return nil
-//}
+func validateSessionToken(rdx redux.Readable) error {
+
+	tsa := nod.Begin("validating session token...")
+	defer tsa.Done()
+
+	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+		return err
+	}
+
+	req, err := data.ServerRequest(http.MethodGet, data.ApiAuthSessionPath, nil, rdx)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.New(resp.Status)
+	}
+
+	var ste author.SessionTokenExpires
+
+	if err = json.NewDecoder(resp.Body).Decode(&ste); err != nil {
+		return err
+	}
+
+	utcNow := time.Now().UTC()
+
+	if utcNow.Before(ste.Expires.Add(-1 * time.Hour * 24)) {
+		tsa.EndWithResult("session is valid")
+		return nil
+	} else {
+		return errors.New("session expires soon, run connect to update")
+	}
+
+}
 
 func updateSessionToken(password string, rdx redux.Writeable) error {
 	rsa := nod.Begin("updating session token...")
