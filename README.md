@@ -22,7 +22,6 @@ At the moment `theo` doesn't provide binary distribution or other convenient way
 
 ### Longer term theo vision
 
-
 In the future `theo` hopes to provide a web GUI to perform all supported operations. Current idea is that this will be based (and share code with) on `vangogh` with additions related to `theo` operations.
 
 At the moment `theo` development efforts are focused on achieving reliability, functional correctness and robustness of all operations.
@@ -31,11 +30,9 @@ At the moment `theo` development efforts are focused on achieving reliability, f
 
 Before using any of the commands below, `theo` needs to be set up to connect to `vangogh`:
 
-`theo set-server-connection -protocol <protocol> -address <address> -port <port> -username <username> -password <password>` - you need to provide address (e.g. vangogh.example.com), username and password for users authorized to download from that `vangogh` instance (this is set in `vangogh` configuration). Other parameters are optional.
+`theo connect -protocol <protocol> -address <address> -port <port> -username <username> -password <password>` - you need to provide address (e.g. vangogh.example.com), username and password for users authorized to access API and download files from that `vangogh` instance (this is set in `vangogh` configuration). Other parameters are optional.
 
-`theo test-server-connection` - will perform a series of connectivity and authorization tests to validate your settings. You should see `healthy` if the test completes successfully.
-
-This is only needed to be done once and `theo` will use those settings from that moment and should work until `vangogh` configuration has changed (when different username/password are set). If you ever need to reset this configuration, `reset-server-connection` can help with that.
+This is only needed to be done once and `theo` will authorize, store session token and validate it as needed.  This should work until `vangogh` session is valid. If you ever need to reset this configuration, `connect -reset` can help with that.
 
 ## Installing games with theo (native versions and Windows versions on macOS, Linux)
 
@@ -49,9 +46,9 @@ Basic usage of `theo` comes down to the following commands:
 
 More helpful commands:
 
-`theo list-installed` - will print all currently installed games
+`theo list -installed` - will print all currently installed games
 
-`theo reveal-installed <gog-game-id>` - will open the directory containing game installation
+`theo reveal -installed <gog-game-id>` - will open the directory containing game installation
 
 ## macOS requirements for Windows games
 
