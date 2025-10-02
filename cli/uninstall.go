@@ -56,7 +56,7 @@ func Uninstall(id string, ii *InstallInfo) error {
 		return nil
 	}
 
-	if err = resolveInstallInfo(id, ii, rdx, installedOperatingSystem, installedLangCode); err != nil {
+	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode); err != nil {
 		return err
 	}
 

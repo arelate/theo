@@ -2,6 +2,12 @@ package cli
 
 import (
 	"errors"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/arelate/southern_light/steam_integration"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
@@ -10,11 +16,6 @@ import (
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -249,6 +250,10 @@ func fetchSteamGridImages(loginUser string, shortcutId uint32, productImages *va
 	dsgia := nod.Begin(" downloading Steam Grid images...")
 	defer dsgia.Done()
 
+	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+		return err
+	}
+
 	udhd, err := data.UserDataHomeDir()
 	if err != nil {
 		return err
@@ -256,6 +261,10 @@ func fetchSteamGridImages(loginUser string, shortcutId uint32, productImages *va
 
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 	dc := dolo.DefaultClient
+
+	if token, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerSessionToken); ok && token != "" {
+		dc.SetAuthorizationBearer(token)
+	}
 
 	imageProperties := make(map[vangogh_integration.ImageType]string)
 	if productImages.Image != "" {
@@ -279,7 +288,11 @@ func fetchSteamGridImages(loginUser string, shortcutId uint32, productImages *va
 	}
 
 	for ip, imageId := range imageProperties {
-		srcUrl, err := data.ServerUrl(rdx, data.HttpImagePath, map[string]string{"id": imageId})
+		imageQuery := url.Values{
+			"id": {imageId},
+		}
+
+		srcUrl, err := data.ServerUrl(data.HttpImagePath, imageQuery, rdx)
 		if err != nil {
 			return err
 		}

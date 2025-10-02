@@ -204,7 +204,7 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 	}
 }
 
-func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable, policies ...resolutionPolicy) error {
+func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable, policies ...resolutionPolicy) error {
 
 	nod.Log("resolveInstallInfo: policies %v", policies)
 
@@ -216,9 +216,8 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, rdx redux.Writeable
 
 		if slices.Contains(policies, currentOsThenWindows) {
 
-			productDetails, err := getProductDetails(id, rdx, installInfo.force)
-			if err != nil {
-				return err
+			if productDetails == nil {
+				return errors.New("product details are required to resolve install info")
 			}
 
 			if slices.Contains(productDetails.OperatingSystems, data.CurrentOs()) {

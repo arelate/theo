@@ -121,7 +121,7 @@ func validateSessionToken(rdx redux.Readable) error {
 		return err
 	}
 
-	req, err := data.ServerRequest(http.MethodGet, data.ApiAuthSessionPath, nil, rdx)
+	req, err := data.ServerRequest(http.MethodPost, data.ApiAuthSessionPath, nil, rdx)
 	if err != nil {
 		return err
 	}
@@ -161,11 +161,6 @@ func updateSessionToken(password string, rdx redux.Writeable) error {
 		return err
 	}
 
-	authUrl, err := data.ServerUrl(rdx, data.ApiAuthUserPath, nil)
-	if err != nil {
-		return err
-	}
-
 	var username string
 	if up, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && up != "" {
 		username = up
@@ -173,12 +168,16 @@ func updateSessionToken(password string, rdx redux.Writeable) error {
 		return errors.New("username not found")
 	}
 
-	postData := url.Values{
-		"username": {username},
-		"password": {password},
+	usernamePassword := url.Values{}
+	usernamePassword.Set(author.UsernameParam, username)
+	usernamePassword.Set(author.PasswordParam, password)
+
+	req, err := data.ServerRequest(http.MethodPost, data.ApiAuthUserPath, usernamePassword, rdx)
+	if err != nil {
+		return err
 	}
 
-	resp, err := http.PostForm(authUrl.String(), postData)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}

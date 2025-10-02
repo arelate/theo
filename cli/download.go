@@ -77,6 +77,10 @@ func Download(id string,
 		return err
 	}
 
+	if err = resolveInstallInfo(id, ii, productDetails, rdx, currentOsThenWindows); err != nil {
+		return err
+	}
+
 	if err = downloadProductFiles(id, productDetails, ii, manualUrlFilter, rdx); err != nil {
 		return err
 	}
@@ -110,12 +114,9 @@ func downloadProductFiles(id string,
 
 	dc := dolo.DefaultClient
 
-	//TODO: replace with proper auth
-	//if username, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && username != "" {
-	//	if password, sure := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerPasswordProperty); sure && password != "" {
-	//		dc.SetBasicAuth(username, password)
-	//	}
-	//}
+	if token, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerSessionToken); ok && token != "" {
+		dc.SetAuthorizationBearer(token)
+	}
 
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
@@ -140,12 +141,13 @@ func downloadProductFiles(id string,
 
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 
-		fileUrl, err := data.ServerUrl(rdx,
-			data.HttpFilesPath, map[string]string{
-				"manual-url":    dl.ManualUrl,
-				"id":            id,
-				"download-type": dl.Type.String(),
-			})
+		query := url.Values{
+			"manual-url":    {dl.ManualUrl},
+			"id":            {id},
+			"download-type": {dl.Type.String()},
+		}
+
+		fileUrl, err := data.ServerUrl(data.HttpFilesPath, query, rdx)
 		if err != nil {
 			fa.EndWithResult(err.Error())
 			continue

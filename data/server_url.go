@@ -10,7 +10,7 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-func ServerUrl(rdx redux.Readable, path string, params map[string]string) (*url.URL, error) {
+func ServerUrl(path string, data url.Values, rdx redux.Readable) (*url.URL, error) {
 	protocol := "https"
 	address := ""
 
@@ -32,39 +32,24 @@ func ServerUrl(rdx redux.Readable, path string, params map[string]string) (*url.
 		address += ":" + portVal
 	}
 
-	q := url.Values{}
-	for k, v := range params {
-		q.Set(k, v)
+	u := &url.URL{
+		Scheme: protocol,
+		Host:   address,
+		Path:   path,
 	}
 
-	return &url.URL{
-		Scheme:   protocol,
-		Host:     address,
-		Path:     path,
-		RawQuery: q.Encode(),
-	}, nil
+	if len(data) > 0 {
+		u.RawQuery = data.Encode()
+	}
+
+	return u, nil
 }
 
-func ServerRequest(method, path string, params map[string]string, rdx redux.Readable) (*http.Request, error) {
-	protocol := "https"
-	var address string
+func ServerRequest(method, path string, data url.Values, rdx redux.Readable) (*http.Request, error) {
 
-	if err := rdx.MustHave(ServerConnectionProperties); err != nil {
+	u, err := ServerUrl(path, data, rdx)
+	if err != nil {
 		return nil, err
-	}
-
-	if protoVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerProtocolProperty); ok && protoVal != "" {
-		protocol = protoVal
-	}
-
-	if addrVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerAddressProperty); ok && addrVal != "" {
-		address = addrVal
-	} else {
-		return nil, errors.New("address is empty, run connect to setup")
-	}
-
-	if portVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerPortProperty); ok && portVal != "" {
-		address += ":" + portVal
 	}
 
 	var sessionToken string
@@ -72,31 +57,10 @@ func ServerRequest(method, path string, params map[string]string, rdx redux.Read
 		sessionToken = st
 	}
 
-	u := &url.URL{
-		Scheme: protocol,
-		Host:   address,
-		Path:   path,
-	}
-
 	var bodyReader io.Reader
 
-	switch method {
-	case http.MethodGet:
-		q := url.Values{}
-		for k, v := range params {
-			q.Set(k, v)
-		}
-		u.RawQuery = q.Encode()
-	case http.MethodPost:
-		var bodyStrings []string
-		for k, v := range params {
-			bodyStrings = append(bodyStrings, k+"="+v)
-		}
-		if len(bodyStrings) > 0 {
-			bodyReader = strings.NewReader(strings.Join(bodyStrings, "\n"))
-		}
-	default:
-		return nil, errors.New("method not supported: " + method)
+	if method == http.MethodPost && len(data) > 0 {
+		bodyReader = strings.NewReader(data.Encode())
 	}
 
 	req, err := http.NewRequest(method, u.String(), bodyReader)
@@ -107,6 +71,8 @@ func ServerRequest(method, path string, params map[string]string, rdx redux.Read
 	if sessionToken != "" {
 		req.Header.Set("Authorization", "Bearer "+sessionToken)
 	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	return req, nil
 }

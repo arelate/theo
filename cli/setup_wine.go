@@ -102,12 +102,12 @@ func getWineBinariesVersions(rdx redux.Readable) ([]vangogh_integration.WineBina
 		return nil, err
 	}
 
-	awbvu, err := data.ServerUrl(rdx, data.ApiWineBinariesVersions, nil)
+	req, err := data.ServerRequest(http.MethodGet, data.ApiWineBinariesVersions, nil, rdx)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Get(awbvu.String())
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 	dwba := nod.NewProgress(" - %s %s...", binary.Title, binary.Version)
 	defer dwba.Done()
 
-	if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
+	if err := rdx.MustHave(data.WineBinariesVersionsProperty, data.ServerConnectionProperties); err != nil {
 		return err
 	}
 
@@ -168,17 +168,23 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 	}
 
 	var wineBinaryUrl *url.URL
-	params := map[string]string{
-		"title": binary.Title,
-		"os":    binary.OS.String(),
+	query := url.Values{
+		"title": {binary.Title},
+		"os":    {binary.OS.String()},
 	}
 
-	wineBinaryUrl, err = data.ServerUrl(rdx, data.HttpWineBinaryFilePath, params)
+	wineBinaryUrl, err = data.ServerUrl(data.HttpWineBinaryFilePath, query, rdx)
 	if err != nil {
 		return err
 	}
 
-	return dolo.DefaultClient.Download(wineBinaryUrl, force, dwba, wineDownloads, binary.Filename)
+	dc := dolo.DefaultClient
+
+	if token, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerSessionToken); ok && token != "" {
+		dc.SetAuthorizationBearer(token)
+	}
+
+	return dc.Download(wineBinaryUrl, force, dwba, wineDownloads, binary.Filename)
 }
 
 func validateWineBinaries(wbd []vangogh_integration.WineBinaryDetails, operatingSystem vangogh_integration.OperatingSystem, since time.Time, force bool) error {

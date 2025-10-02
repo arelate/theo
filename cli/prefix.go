@@ -99,7 +99,7 @@ func Prefix(id string, ii *InstallInfo,
 		return err
 	}
 
-	if err = resolveInstallInfo(id, ii, rdx, installedLangCode); err != nil {
+	if err = resolveInstallInfo(id, ii, nil, rdx, installedLangCode); err != nil {
 		return err
 	}
 

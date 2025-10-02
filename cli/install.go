@@ -98,7 +98,7 @@ func Install(id string, ii *InstallInfo) error {
 		return errors.New("unknown product type " + productDetails.ProductType)
 	}
 
-	if err = resolveInstallInfo(id, ii, rdx, currentOsThenWindows); err != nil {
+	if err = resolveInstallInfo(id, ii, productDetails, rdx, currentOsThenWindows); err != nil {
 		return err
 	}
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -73,14 +74,16 @@ func readLocalProductDetails(id string, kvProductDetails kevlar.KeyValues) (*van
 
 func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
 
-	vdmu, err := data.ServerUrl(rdx,
-		data.ApiProductDetailsPath,
-		map[string]string{vangogh_integration.IdProperty: id})
+	query := url.Values{
+		vangogh_integration.IdProperty: {id},
+	}
+
+	req, err := data.ServerRequest(http.MethodGet, data.ApiProductDetailsPath, query, rdx)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Get(vdmu.String())
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
