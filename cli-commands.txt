@@ -101,6 +101,9 @@ steam-shortcut
     remove&
     os={operating-systems^}
     lang-code={language-codes^}
+    pinned-position=BottomLeft,UpperCenter,CenterCenter,BottomCenter
+    width-pct
+    height-pct
     force
 
 uninstall

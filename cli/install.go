@@ -142,7 +142,7 @@ func Install(id string, ii *InstallInfo) error {
 	}
 
 	if !ii.NoSteamShortcut {
-		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, rdx, ii.force); err != nil {
+		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, defaultLogoPosition(), rdx, ii.force); err != nil {
 			return err
 		}
 	}

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"net/url"
 	"os"
@@ -28,6 +29,23 @@ const (
 	osTemplate       = "-os {operating-system}"
 	langCodeTemplate = "-lang-code {lang-code}"
 )
+
+const (
+	defaultPinnedPosition = "BottomLeft"
+	defaultWidthPct       = 100
+	defaultHeightPct      = 100
+)
+
+type gridLogoPosition struct {
+	Version      int           `json:"nVersion"`
+	LogoPosition *logoPosition `json:"logoPosition"`
+}
+
+type logoPosition struct {
+	PinnedPosition string `json:"pinnedPosition"`
+	WidthPct       int    `json:"nWidthPct"`
+	HeightPct      int    `json:"nHeightPct"`
+}
 
 func SteamShortcutHandler(u *url.URL) error {
 
@@ -58,13 +76,35 @@ func SteamShortcutHandler(u *url.URL) error {
 		LangCode:        langCode,
 	}
 
+	lp := defaultLogoPosition()
+
+	if q.Has("pinned-position") {
+		lp.PinnedPosition = q.Get("pinned-position")
+	}
+
+	if q.Has("width-pct") {
+		wpi, err := strconv.ParseInt(q.Get("width-pct"), 10, 32)
+		if err != nil {
+			return err
+		}
+		lp.WidthPct = int(wpi)
+	}
+
+	if q.Has("height-pct") {
+		hpi, err := strconv.ParseInt(q.Get("height-pct"), 10, 32)
+		if err != nil {
+			return err
+		}
+		lp.HeightPct = int(hpi)
+	}
+
 	force := q.Has("force")
 
-	return SteamShortcut(add, remove, ii, force)
+	return SteamShortcut(add, remove, ii, lp, force)
 
 }
 
-func SteamShortcut(add []string, remove []string, ii *InstallInfo, force bool) error {
+func SteamShortcut(add []string, remove []string, ii *InstallInfo, lp *logoPosition, force bool) error {
 
 	if len(add) == 0 && len(remove) == 0 {
 		return errors.New("steam-shortcut requires product ids to add or remove")
@@ -87,7 +127,7 @@ func SteamShortcut(add []string, remove []string, ii *InstallInfo, force bool) e
 	}
 
 	for _, id := range add {
-		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, rdx, force); err != nil {
+		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, lp, rdx, force); err != nil {
 			return err
 		}
 	}
@@ -95,7 +135,7 @@ func SteamShortcut(add []string, remove []string, ii *InstallInfo, force bool) e
 	return nil
 }
 
-func addSteamShortcut(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, force bool) error {
+func addSteamShortcut(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, lp *logoPosition, rdx redux.Writeable, force bool) error {
 	assa := nod.Begin("adding Steam shortcuts for %s...", id)
 	defer assa.Done()
 
@@ -133,7 +173,7 @@ func addSteamShortcut(id string, operatingSystem vangogh_integration.OperatingSy
 	}
 
 	for _, loginUser := range loginUsers {
-		if err = addSteamShortcutsForUser(loginUser, id, operatingSystem, langCode, rdx, force); err != nil {
+		if err = addSteamShortcutsForUser(loginUser, id, operatingSystem, langCode, lp, rdx, force); err != nil {
 			return err
 		}
 	}
@@ -141,7 +181,12 @@ func addSteamShortcut(id string, operatingSystem vangogh_integration.OperatingSy
 	return nil
 }
 
-func addSteamShortcutsForUser(loginUser string, id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Writeable, force bool) error {
+func addSteamShortcutsForUser(loginUser string,
+	id string,
+	operatingSystem vangogh_integration.OperatingSystem, langCode string,
+	lp *logoPosition,
+	rdx redux.Writeable,
+	force bool) error {
 
 	asfua := nod.Begin(" adding Steam user %s shortcuts for %s...", loginUser, id)
 	defer asfua.Done()
@@ -174,7 +219,11 @@ func addSteamShortcutsForUser(loginUser string, id string, operatingSystem vango
 		return err
 	}
 
-	if err := fetchSteamGridImages(loginUser, shortcut.AppId, &productDetails.Images, rdx, force); err != nil {
+	if err = fetchSteamGridImages(loginUser, shortcut.AppId, &productDetails.Images, rdx, force); err != nil {
+		return err
+	}
+
+	if err = setLogoPosition(loginUser, shortcut.AppId, lp); err != nil {
 		return err
 	}
 
@@ -297,12 +346,42 @@ func fetchSteamGridImages(loginUser string, shortcutId uint32, productImages *va
 			return err
 		}
 		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, ip)
-		if err := dc.Download(srcUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
+		if err = dc.Download(srcUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
 			dsgia.Error(err)
 		}
 	}
 
 	return nil
+}
+
+func setLogoPosition(loginUser string, shortcutId uint32, lp *logoPosition) error {
+
+	slpa := nod.Begin(" setting Steam Grid logo position...")
+	defer slpa.Done()
+
+	udhd, err := data.UserDataHomeDir()
+	if err != nil {
+		return err
+	}
+
+	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
+	relLogoPositionFilename := vangogh_integration.SteamGridLogoPositionFilename(shortcutId)
+
+	absLogoPositionFilename := filepath.Join(absSteamGridPath, relLogoPositionFilename)
+
+	lpFile, err := os.Create(absLogoPositionFilename)
+	if err != nil {
+		return err
+	}
+
+	defer lpFile.Close()
+
+	glp := gridLogoPosition{
+		Version:      1,
+		LogoPosition: lp,
+	}
+
+	return json.NewEncoder(lpFile).Encode(&glp)
 }
 
 func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcuts []*steam_vdf.KeyValues, force bool) (bool, error) {
@@ -565,6 +644,14 @@ func removeSteamGridImages(loginUser string, shortcutId uint32) error {
 	}
 
 	return nil
+}
+
+func defaultLogoPosition() *logoPosition {
+	return &logoPosition{
+		PinnedPosition: defaultPinnedPosition,
+		WidthPct:       defaultWidthPct,
+		HeightPct:      defaultHeightPct,
+	}
 }
 
 func removeNonSteamAppShortcut(
