@@ -31,6 +31,7 @@ install
     download-type&={download-types^}
     keep-downloads
     no-steam-shortcut
+    steam-assets
     env&
     reveal
     verbose
@@ -99,8 +100,10 @@ setup-wine
 steam-shortcut
     add&
     remove&
+    update-all-installed
     os={operating-systems^}
     lang-code={language-codes^}
+    steam-assets
     pinned-position=BottomLeft,BottomCenter,CenterCenter,UpperCenter
     width-pct
     height-pct

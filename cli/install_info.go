@@ -33,6 +33,7 @@ type InstallInfo struct {
 	EstimatedBytes      int64                               `json:"estimated-bytes"`
 	KeepDownloads       bool                                `json:"keep-downloads"`
 	NoSteamShortcut     bool                                `json:"no-steam-shortcut"`
+	UseSteamAssets      bool                                `json:"use-steam-assets"`
 	Env                 []string                            `json:"env"`
 	reveal              bool                                // won't be serialized
 	verbose             bool                                // won't be serialized

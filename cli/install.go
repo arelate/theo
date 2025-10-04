@@ -42,6 +42,7 @@ func InstallHandler(u *url.URL) error {
 		DownloadTypes:   downloadTypes,
 		KeepDownloads:   q.Has("keep-downloads"),
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
+		UseSteamAssets:  q.Has("steam-assets"),
 		reveal:          q.Has("reveal"),
 		verbose:         q.Has("verbose"),
 		force:           q.Has("force"),
@@ -142,7 +143,13 @@ func Install(id string, ii *InstallInfo) error {
 	}
 
 	if !ii.NoSteamShortcut {
-		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, defaultLogoPosition(), rdx, ii.force); err != nil {
+
+		sgo := &steamGridOptions{
+			useSteamAssets: ii.UseSteamAssets,
+			logoPosition:   defaultLogoPosition(),
+		}
+
+		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, sgo, rdx, ii.force); err != nil {
 			return err
 		}
 	}
