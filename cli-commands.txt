@@ -101,7 +101,7 @@ steam-shortcut
     remove&
     os={operating-systems^}
     lang-code={language-codes^}
-    pinned-position=CenterCenter,UpperCenter,BottomCenter,BottomLeft
+    pinned-position=BottomLeft,BottomCenter,CenterCenter,UpperCenter
     width-pct
     height-pct
     force
