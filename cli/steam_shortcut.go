@@ -31,7 +31,7 @@ const (
 )
 
 const (
-	defaultPinnedPosition = "BottomLeft"
+	defaultPinnedPosition = "CenterCenter"
 	defaultWidthPct       = 100
 	defaultHeightPct      = 100
 )
