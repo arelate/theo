@@ -38,6 +38,10 @@ func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_int
 		return dm, nil
 	}
 
+	if err = validateSessionToken(rdx); err != nil {
+		return nil, err
+	}
+
 	productDetails, err := fetchRemoteProductDetails(id, rdx, kvProductDetails)
 	if err != nil {
 		return nil, err

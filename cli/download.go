@@ -72,7 +72,8 @@ func Download(id string,
 
 	printInstallInfoParams(ii, true, id)
 
-	productDetails, err := getProductDetails(id, rdx, ii.force)
+	// always get the latest product details for download purposes
+	productDetails, err := getProductDetails(id, rdx, true)
 	if err != nil {
 		return err
 	}

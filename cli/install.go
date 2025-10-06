@@ -76,7 +76,8 @@ func Install(id string, ii *InstallInfo) error {
 
 	printInstallInfoParams(ii, true, id)
 
-	productDetails, err := getProductDetails(id, rdx, ii.force)
+	// always getting the latest product details for install purposes
+	productDetails, err := getProductDetails(id, rdx, true)
 	if err != nil {
 		return err
 	}
