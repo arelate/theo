@@ -132,6 +132,12 @@ func validateSessionToken(rdx redux.Readable) error {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 401 {
+		msg := "session is not valid, please connect again"
+		tsa.EndWithResult(msg)
+		return errors.New(msg)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		return errors.New(resp.Status)
 	}
