@@ -154,7 +154,9 @@ func validateSessionToken(rdx redux.Readable) error {
 		tsa.EndWithResult("session is valid")
 		return nil
 	} else {
-		return errors.New("session expires soon, run connect to update")
+		msg := "session expires soon, run connect to update"
+		tsa.EndWithResult(msg)
+		return errors.New(msg)
 	}
 
 }
