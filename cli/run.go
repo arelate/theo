@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -59,6 +60,8 @@ func RunHandler(u *url.URL) error {
 
 func Run(id string, ii *InstallInfo, et *execTask) error {
 
+	start := time.Now()
+
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.Done()
 
@@ -86,7 +89,13 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	return osRun(id, ii, rdx, et)
+	if err = osRun(id, ii, rdx, et); err != nil {
+		return err
+	}
+
+	playtime := time.Now().Sub(start)
+
+	return addPlaytime(rdx, id, playtime)
 }
 
 func checkProductType(id string, rdx redux.Writeable, force bool) error {
@@ -112,8 +121,24 @@ func checkProductType(id string, rdx redux.Writeable, force bool) error {
 }
 
 func setLastRunDate(rdx redux.Writeable, id string) error {
-	now := time.Now().UTC().Format(time.RFC3339)
-	return rdx.ReplaceValues(data.LastRunDateProperty, id, now)
+
+	if err := rdx.MustHave(data.LastRunDateProperty); err != nil {
+		return err
+	}
+
+	fmtUtcNow := time.Now().UTC().Format(time.RFC3339)
+	return rdx.ReplaceValues(data.LastRunDateProperty, id, fmtUtcNow)
+}
+
+func addPlaytime(rdx redux.Writeable, id string, dur time.Duration) error {
+
+	if err := rdx.MustHave(data.PlaytimeDurationsProperty); err != nil {
+		return err
+	}
+
+	fmtDur := strconv.FormatFloat(dur.Minutes(), 'f', 2, 64)
+
+	return rdx.AddValues(data.PlaytimeDurationsProperty, id, fmtDur)
 }
 
 func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) error {

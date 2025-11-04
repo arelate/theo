@@ -5,9 +5,10 @@ import "github.com/arelate/southern_light/vangogh_integration"
 const (
 	ServerConnectionProperties = "server-connection"
 
-	InstallInfoProperty = "install-info"
-	InstallDateProperty = "install-date"
-	LastRunDateProperty = "last-run-date"
+	InstallInfoProperty       = "install-info"
+	InstallDateProperty       = "install-date"
+	LastRunDateProperty       = "last-run-date"
+	PlaytimeDurationsProperty = "playtime-durations"
 
 	PrefixEnvProperty = "prefix-env"
 	PrefixExeProperty = "prefix-exe"
@@ -44,6 +45,7 @@ func AllProperties() []string {
 		InstallInfoProperty,
 		InstallDateProperty,
 		LastRunDateProperty,
+		PlaytimeDurationsProperty,
 		PrefixEnvProperty,
 		PrefixExeProperty,
 		PrefixArgProperty,

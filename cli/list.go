@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -103,7 +104,9 @@ func listInstalled(ii *InstallInfo) error {
 	rdx, err := redux.NewReader(reduxDir,
 		vangogh_integration.TitleProperty,
 		data.InstallInfoProperty,
-		data.InstallDateProperty)
+		data.InstallDateProperty,
+		data.LastRunDateProperty,
+		data.PlaytimeDurationsProperty)
 	if err != nil {
 		return err
 	}
@@ -175,9 +178,22 @@ func listInstalled(ii *InstallInfo) error {
 				if installedDate != "" {
 					summary[title] = append(summary[title], "- installed: "+installedDate)
 				}
-
 			}
+		}
 
+		// playtimes
+
+		if pts, sure := rdx.GetAllValues(data.PlaytimeDurationsProperty, id); sure && len(pts) > 0 {
+			if tpt, err := totalPlaytime(pts...); err == nil {
+				tpts := strconv.FormatFloat(tpt.Minutes(), 'f', 0, 64)
+				summary[title] = append(summary[title], "total playtime: "+tpts+" min(s)")
+			} else {
+				return err
+			}
+		}
+
+		if lrds, sure := rdx.GetLastVal(data.LastRunDateProperty, id); sure && lrds != "" {
+			summary[title] = append(summary[title], "last run date: "+lrds)
 		}
 
 	}
@@ -330,4 +346,19 @@ func listUserShortcuts(loginUser string, allKeyValues bool) error {
 	}
 
 	return nil
+}
+
+func totalPlaytime(playtimes ...string) (time.Duration, error) {
+
+	var dur time.Duration
+
+	for _, pts := range playtimes {
+		if ptf, err := strconv.ParseFloat(pts, 64); err == nil {
+			dur += time.Duration(ptf) * time.Minute
+		} else {
+			return -1, err
+		}
+	}
+
+	return dur, nil
 }
