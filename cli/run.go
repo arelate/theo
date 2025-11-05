@@ -60,7 +60,7 @@ func RunHandler(u *url.URL) error {
 
 func Run(id string, ii *InstallInfo, et *execTask) error {
 
-	start := time.Now()
+	playSessionStart := time.Now()
 
 	ra := nod.NewProgress("running product %s...", id)
 	defer ra.Done()
@@ -93,9 +93,13 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	playtime := time.Now().Sub(start)
+	playSessionDuration := time.Since(playSessionStart)
 
-	return addPlaytime(rdx, id, playtime)
+	if err := recordPlaytime(rdx, id, playSessionDuration); err != nil {
+		return err
+	}
+
+	return updateTotalPlaytime(rdx, id)
 }
 
 func checkProductType(id string, rdx redux.Writeable, force bool) error {
@@ -115,6 +119,8 @@ func checkProductType(id string, rdx redux.Writeable, force bool) error {
 	case vangogh_integration.DlcProductType:
 		return errors.New("cannot run a DLC product, please run required game(s): " +
 			strings.Join(productDetails.RequiresGames, ","))
+	default:
+		return errors.New("unsupported product type: " + productDetails.ProductType)
 	}
 
 	return nil
@@ -130,15 +136,35 @@ func setLastRunDate(rdx redux.Writeable, id string) error {
 	return rdx.ReplaceValues(data.LastRunDateProperty, id, fmtUtcNow)
 }
 
-func addPlaytime(rdx redux.Writeable, id string, dur time.Duration) error {
+func recordPlaytime(rdx redux.Writeable, id string, dur time.Duration) error {
 
-	if err := rdx.MustHave(data.PlaytimeDurationsProperty); err != nil {
+	if err := rdx.MustHave(data.PlaytimeMinutesProperty); err != nil {
 		return err
 	}
 
-	fmtDur := strconv.FormatFloat(dur.Minutes(), 'f', 2, 64)
+	// this will lose some seconds precision
+	fmtDur := strconv.FormatInt(int64(dur.Minutes()), 10)
 
-	return rdx.AddValues(data.PlaytimeDurationsProperty, id, fmtDur)
+	return rdx.AddValues(data.PlaytimeMinutesProperty, id, fmtDur)
+}
+
+func updateTotalPlaytime(rdx redux.Writeable, id string) error {
+	if err := rdx.MustHave(data.PlaytimeMinutesProperty, data.TotalPlaytimeMinutesProperty); err != nil {
+		return err
+	}
+
+	var totalPlaytimeMinutes int64
+	if tpms, ok := rdx.GetAllValues(data.PlaytimeMinutesProperty, id); ok && len(tpms) > 0 {
+		for _, mins := range tpms {
+			if mini, err := strconv.ParseInt(mins, 10, 64); err == nil {
+				totalPlaytimeMinutes += mini
+			} else {
+				return err
+			}
+		}
+	}
+
+	return rdx.ReplaceValues(data.TotalPlaytimeMinutesProperty, id, strconv.FormatInt(totalPlaytimeMinutes, 10))
 }
 
 func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) error {

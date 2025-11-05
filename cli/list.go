@@ -106,7 +106,7 @@ func listInstalled(ii *InstallInfo) error {
 		data.InstallInfoProperty,
 		data.InstallDateProperty,
 		data.LastRunDateProperty,
-		data.PlaytimeDurationsProperty)
+		data.TotalPlaytimeMinutesProperty)
 	if err != nil {
 		return err
 	}
@@ -183,10 +183,9 @@ func listInstalled(ii *InstallInfo) error {
 
 		// playtimes
 
-		if pts, sure := rdx.GetAllValues(data.PlaytimeDurationsProperty, id); sure && len(pts) > 0 {
-			if tpt, err := totalPlaytime(pts...); err == nil {
-				tpts := strconv.FormatFloat(tpt.Minutes(), 'f', 0, 64)
-				summary[title] = append(summary[title], "total playtime: "+tpts+" min(s)")
+		if tpms, sure := rdx.GetLastVal(data.TotalPlaytimeMinutesProperty, id); sure && tpms != "" {
+			if tpmi, err := strconv.ParseInt(tpms, 10, 64); err == nil && tpmi > 0 {
+				summary[title] = append(summary[title], "total playtime: "+fmtHoursMinutes(tpmi))
 			} else {
 				return err
 			}
@@ -348,17 +347,17 @@ func listUserShortcuts(loginUser string, allKeyValues bool) error {
 	return nil
 }
 
-func totalPlaytime(playtimes ...string) (time.Duration, error) {
+func fmtHoursMinutes(minutes int64) string {
+	hours := minutes / 60
+	remainingMinutes := minutes - 60*hours
 
-	var dur time.Duration
-
-	for _, pts := range playtimes {
-		if ptf, err := strconv.ParseFloat(pts, 64); err == nil {
-			dur += time.Duration(ptf) * time.Minute
-		} else {
-			return -1, err
-		}
+	var fmtHoursMinutes string
+	if remainingMinutes > 0 {
+		fmtHoursMinutes = strconv.FormatInt(remainingMinutes, 10) + " min(s)"
+	}
+	if hours > 0 {
+		fmtHoursMinutes = strconv.FormatInt(hours, 10) + "hr(s) " + fmtHoursMinutes
 	}
 
-	return dur, nil
+	return fmtHoursMinutes
 }
