@@ -41,7 +41,7 @@ func ListHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	langCode := defaultLangCode
+	var langCode string
 	if q.Has(vangogh_integration.LanguageCodeProperty) {
 		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
 	}
@@ -130,6 +130,8 @@ func listInstalled(ii *InstallInfo) error {
 		if ids, ok := rdx.GetLastVal(data.InstallDateProperty, id); ok && ids != "" {
 			if installDate, err := time.Parse(time.RFC3339, ids); err == nil {
 				installedDate = installDate.Local().Format(time.DateTime)
+			} else {
+				return err
 			}
 		}
 
@@ -185,14 +187,18 @@ func listInstalled(ii *InstallInfo) error {
 
 		if tpms, sure := rdx.GetLastVal(data.TotalPlaytimeMinutesProperty, id); sure && tpms != "" {
 			if tpmi, err := strconv.ParseInt(tpms, 10, 64); err == nil && tpmi > 0 {
-				summary[title] = append(summary[title], "total playtime: "+fmtHoursMinutes(tpmi))
+				summary[title] = append(summary[title], "- total playtime: "+fmtHoursMinutes(tpmi))
 			} else {
 				return err
 			}
 		}
 
 		if lrds, sure := rdx.GetLastVal(data.LastRunDateProperty, id); sure && lrds != "" {
-			summary[title] = append(summary[title], "last run date: "+lrds)
+			if lrdt, err := time.Parse(time.RFC3339, lrds); err == nil {
+				summary[title] = append(summary[title], "- last run date: "+lrdt.Format(time.DateTime))
+			} else {
+				return err
+			}
 		}
 
 	}
