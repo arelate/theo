@@ -186,8 +186,10 @@ func listInstalled(ii *InstallInfo) error {
 		// playtimes
 
 		if tpms, sure := rdx.GetLastVal(data.TotalPlaytimeMinutesProperty, id); sure && tpms != "" {
-			if tpmi, err := strconv.ParseInt(tpms, 10, 64); err == nil && tpmi > 0 {
-				summary[title] = append(summary[title], "- total playtime: "+fmtHoursMinutes(tpmi))
+			if tpmi, err := strconv.ParseInt(tpms, 10, 64); err == nil {
+				if tpmi > 0 {
+					summary[title] = append(summary[title], "- total playtime: "+fmtHoursMinutes(tpmi))
+				}
 			} else {
 				return err
 			}

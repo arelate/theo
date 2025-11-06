@@ -71,6 +71,7 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 	}
 
 	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 
 	playSessionDuration := time.Since(playSessionStart)
 
-	if err := recordPlaytime(rdx, id, playSessionDuration); err != nil {
+	if err = recordPlaytime(rdx, id, playSessionDuration); err != nil {
 		return err
 	}
 
@@ -122,8 +123,6 @@ func checkProductType(id string, rdx redux.Writeable, force bool) error {
 	default:
 		return errors.New("unsupported product type: " + productDetails.ProductType)
 	}
-
-	return nil
 }
 
 func setLastRunDate(rdx redux.Writeable, id string) error {
@@ -164,7 +163,11 @@ func updateTotalPlaytime(rdx redux.Writeable, id string) error {
 		}
 	}
 
-	return rdx.ReplaceValues(data.TotalPlaytimeMinutesProperty, id, strconv.FormatInt(totalPlaytimeMinutes, 10))
+	if totalPlaytimeMinutes > 0 {
+		return rdx.ReplaceValues(data.TotalPlaytimeMinutesProperty, id, strconv.FormatInt(totalPlaytimeMinutes, 10))
+	} else {
+		return nil
+	}
 }
 
 func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) error {

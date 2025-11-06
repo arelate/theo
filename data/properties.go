@@ -46,7 +46,7 @@ func AllProperties() []string {
 		InstallInfoProperty,
 		InstallDateProperty,
 		LastRunDateProperty,
-		// PlaytimeMinutesProperty, // not included in all properties intentionally
+		PlaytimeMinutesProperty,
 		TotalPlaytimeMinutesProperty,
 		PrefixEnvProperty,
 		PrefixExeProperty,

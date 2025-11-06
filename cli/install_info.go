@@ -123,6 +123,10 @@ func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integr
 	iiosa := nod.Begin(" checking installed operating system for %s...", id)
 	defer iiosa.Done()
 
+	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
+		return vangogh_integration.AnyOperatingSystem, err
+	}
+
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
 		switch len(installedInfoLines) {
