@@ -49,7 +49,7 @@ func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails)
 
 	ii.EstimatedBytes = 0
 	for _, dl := range dls {
-		if ii.Version == "" && dl.Type == vangogh_integration.Installer {
+		if ii.Version == "" && dl.DownloadType == vangogh_integration.Installer {
 			ii.Version = dl.Version
 		}
 		ii.EstimatedBytes += dl.EstimatedBytes

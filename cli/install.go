@@ -201,7 +201,7 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 	}
 
 	for _, dl := range dls {
-		if dl.Type == vangogh_integration.DLC {
+		if dl.DownloadType == vangogh_integration.DLC {
 			ii.DownloadableContent = append(ii.DownloadableContent, dl.Name)
 		}
 	}

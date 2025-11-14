@@ -145,7 +145,7 @@ func downloadProductFiles(id string,
 		query := url.Values{
 			"manual-url":    {dl.ManualUrl},
 			"id":            {id},
-			"download-type": {dl.Type.String()},
+			"download-type": {dl.DownloadType.String()},
 		}
 
 		fileUrl, err := data.ServerUrl(data.HttpFilesPath, query, rdx)
