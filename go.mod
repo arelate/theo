@@ -17,5 +17,5 @@ require (
 
 require (
 	github.com/boggydigital/wits v0.2.3 // indirect
-	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 )
