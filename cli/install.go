@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"maps"
 	"net/url"
 	"slices"
 	"strings"
@@ -200,10 +201,20 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		return nil
 	}
 
+	dlcNames := make(map[string]any)
+
 	for _, dl := range dls {
-		if dl.DownloadType == vangogh_integration.DLC {
-			ii.DownloadableContent = append(ii.DownloadableContent, dl.Name)
+		if ii.OperatingSystem != dl.OperatingSystem ||
+			ii.LangCode != dl.LanguageCode {
+			continue
 		}
+		if dl.DownloadType == vangogh_integration.DLC {
+			dlcNames[dl.Name] = nil
+		}
+	}
+
+	if len(dlcNames) > 0 {
+		ii.DownloadableContent = slices.Collect(maps.Keys(dlcNames))
 	}
 
 	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
