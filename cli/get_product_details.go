@@ -78,6 +78,9 @@ func readLocalProductDetails(id string, kvProductDetails kevlar.KeyValues) (*van
 
 func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
 
+	fra := nod.Begin(" fetching remote product details for %s...", id)
+	defer fra.Done()
+
 	query := url.Values{
 		vangogh_integration.IdProperty: {id},
 	}
@@ -101,7 +104,7 @@ func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails k
 	buf := bytes.NewBuffer(bts)
 	tr := io.TeeReader(resp.Body, buf)
 
-	if err := kvProductDetails.Set(id, tr); err != nil {
+	if err = kvProductDetails.Set(id, tr); err != nil {
 		return nil, err
 	}
 
