@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/arelate/southern_light v0.3.72
-	github.com/boggydigital/author v0.1.24
+	github.com/boggydigital/author v0.1.25
 	github.com/boggydigital/backups v0.1.7
 	github.com/boggydigital/clo v1.0.8
 	github.com/boggydigital/dolo v0.2.24
