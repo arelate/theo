@@ -14,7 +14,6 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -77,12 +76,7 @@ func ValidateHandler(u *url.URL) error {
 		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
@@ -131,10 +125,7 @@ func validateLinks(id string,
 	vla := nod.NewProgress("validating %s...", productDetails.Title)
 	defer vla.Done()
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return nil, err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).

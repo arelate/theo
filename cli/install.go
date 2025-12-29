@@ -11,7 +11,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -65,12 +64,7 @@ func Install(id string, ii *InstallInfo) error {
 		ii.DownloadTypes = []vangogh_integration.DownloadType{vangogh_integration.Installer, vangogh_integration.DLC}
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
@@ -217,25 +211,22 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		ii.DownloadableContent = slices.Collect(maps.Keys(dlcNames))
 	}
 
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
-	if err != nil {
-		return err
-	}
+	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
-	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir, ii, nil); err != nil {
+	if err := hasFreeSpaceForProduct(productDetails, installedAppsDir, ii, nil); err != nil {
 		return err
 	}
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 
-		if err = macOsInstallProduct(id, dls, rdx, ii.force); err != nil {
+		if err := macOsInstallProduct(id, dls, rdx, ii.force); err != nil {
 			return err
 		}
 
 	case vangogh_integration.Linux:
 
-		if err = linuxInstallProduct(id, dls, rdx); err != nil {
+		if err := linuxInstallProduct(id, dls, rdx); err != nil {
 			return err
 		}
 
@@ -244,25 +235,25 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		switch data.CurrentOs() {
 		case vangogh_integration.Windows:
 
-			if err = windowsInstallProduct(id, dls, rdx, ii.force); err != nil {
+			if err := windowsInstallProduct(id, dls, rdx, ii.force); err != nil {
 				return err
 			}
 
 		default:
 
-			if err = prefixInit(id, ii.LangCode, rdx, ii.verbose); err != nil {
+			if err := prefixInit(id, ii.LangCode, rdx, ii.verbose); err != nil {
 				return err
 			}
 
-			if err = prefixInstallProduct(id, dls, ii, rdx); err != nil {
+			if err := prefixInstallProduct(id, dls, ii, rdx); err != nil {
 				return err
 			}
 
-			if err = prefixCreateInventory(id, ii.LangCode, rdx, start); err != nil {
+			if err := prefixCreateInventory(id, ii.LangCode, rdx, start); err != nil {
 				return err
 			}
 
-			if err = prefixDefaultEnv(id, ii.LangCode, rdx); err != nil {
+			if err := prefixDefaultEnv(id, ii.LangCode, rdx); err != nil {
 				return err
 			}
 

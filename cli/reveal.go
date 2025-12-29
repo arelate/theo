@@ -9,7 +9,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -69,12 +68,7 @@ func revealInstalled(id string, ii *InstallInfo) error {
 	ria := nod.Begin("revealing installation for %s...", id)
 	defer ria.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewReader(reduxDir,
+	rdx, err := redux.NewReader(data.AbsReduxDir(),
 		data.InstallInfoProperty,
 		vangogh_integration.SlugProperty)
 	if err != nil {
@@ -132,12 +126,7 @@ func revealBackups() error {
 	rda := nod.Begin("revealing backups...")
 	defer rda.Done()
 
-	backupsDir, err := pathways.GetAbsDir(data.Backups)
-	if err != nil {
-		return err
-	}
-
-	return currentOsReveal(backupsDir)
+	return currentOsReveal(data.Pwd.AbsDirPath(data.Backups))
 }
 
 func revealDownloads(id string) error {
@@ -145,14 +134,11 @@ func revealDownloads(id string) error {
 	rda := nod.Begin("revealing downloads...")
 	defer rda.Done()
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
-	if _, err = os.Stat(productDownloadsDir); err == nil {
+	if _, err := os.Stat(productDownloadsDir); err == nil {
 		return currentOsReveal(productDownloadsDir)
 	} else {
 		return currentOsReveal(downloadsDir)

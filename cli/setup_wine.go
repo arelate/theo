@@ -15,7 +15,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/busan"
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
@@ -45,12 +44,7 @@ func SetupWine(force bool) error {
 	uwa := nod.Begin("setting up WINE for %s...", currentOs)
 	defer uwa.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir,
+	rdx, err := redux.NewWriter(data.AbsReduxDir(),
 		data.ServerConnectionProperties,
 		data.WineBinariesVersionsProperty)
 	if err != nil {
@@ -157,23 +151,19 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 		return err
 	}
 
-	wineDownloads, err := pathways.GetAbsRelDir(data.WineDownloads)
-	if err != nil {
-		return err
-	}
+	wineDownloads := data.Pwd.AbsRelDirPath(data.WineDownloads, data.Wine)
 
 	if currentVersion, ok := rdx.GetLastVal(data.WineBinariesVersionsProperty, binary.Title); ok && binary.Version == currentVersion && !force {
 		dwba.EndWithResult("latest version already available")
 		return nil
 	}
 
-	var wineBinaryUrl *url.URL
 	query := url.Values{
 		"title": {binary.Title},
 		"os":    {binary.OS.String()},
 	}
 
-	wineBinaryUrl, err = data.ServerUrl(data.HttpWineBinaryFilePath, query, rdx)
+	wineBinaryUrl, err := data.ServerUrl(data.HttpWineBinaryFilePath, query, rdx)
 	if err != nil {
 		return err
 	}
@@ -192,17 +182,14 @@ func validateWineBinaries(wbd []vangogh_integration.WineBinaryDetails, operating
 	vwba := nod.NewProgress("validating WINE binaries...")
 	defer vwba.Done()
 
-	wineDownloads, err := pathways.GetAbsRelDir(data.WineDownloads)
-	if err != nil {
-		return err
-	}
+	wineDownloads := data.Pwd.AbsRelDirPath(data.WineDownloads, data.Wine)
 
 	for _, wineBinary := range wbd {
 		if wineBinary.OS != operatingSystem && wineBinary.OS != vangogh_integration.Windows {
 			continue
 		}
 
-		if err = wine_integration.ValidateWineBinary(&wineBinary, wineDownloads, since, force); err != nil {
+		if err := wine_integration.ValidateWineBinary(&wineBinary, wineDownloads, since, force); err != nil {
 			return err
 		}
 	}
@@ -241,10 +228,7 @@ func cleanupDownloadedWineBinaries(wbd []vangogh_integration.WineBinaryDetails, 
 		expectedFiles = append(expectedFiles, wineBinary.Filename)
 	}
 
-	wineDownloads, err := pathways.GetAbsRelDir(data.WineDownloads)
-	if err != nil {
-		return err
-	}
+	wineDownloads := data.Pwd.AbsRelDirPath(data.WineDownloads, data.Wine)
 
 	wineDownloadsDir, err := os.Open(wineDownloads)
 	if err != nil {
@@ -294,15 +278,8 @@ func unpackWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 	uwba := nod.Begin("unpacking WINE binaries...")
 	defer uwba.Done()
 
-	wineDownloads, err := pathways.GetAbsRelDir(data.WineDownloads)
-	if err != nil {
-		return err
-	}
-
-	wineBinaries, err := pathways.GetAbsRelDir(data.WineBinaries)
-	if err != nil {
-		return err
-	}
+	wineDownloads := data.Pwd.AbsRelDirPath(data.WineDownloads, data.Wine)
+	wineBinaries := data.Pwd.AbsRelDirPath(data.WineBinaries, data.Wine)
 
 	for _, wineBinary := range wbd {
 		if wineBinary.OS != operatingSystem {
@@ -310,15 +287,15 @@ func unpackWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 		}
 
 		srcPath := filepath.Join(wineDownloads, wineBinary.Filename)
-		dstPath := filepath.Join(wineBinaries, busan.Sanitize(wineBinary.Title), wineBinary.Version)
+		dstPath := filepath.Join(wineBinaries, pathways.Sanitize(wineBinary.Title), wineBinary.Version)
 
-		if _, err = os.Stat(dstPath); err == nil && !force {
+		if _, err := os.Stat(dstPath); err == nil && !force {
 			continue
 		}
 
 		wba := nod.Begin(" - %s...", wineBinary.Title)
 
-		if err = untar(srcPath, dstPath); err != nil {
+		if err := untar(srcPath, dstPath); err != nil {
 			return err
 		}
 
@@ -334,10 +311,7 @@ func cleanupUnpackedWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 	cuwba := nod.NewProgress("cleaning up unpacked WINE binaries...")
 	defer cuwba.Done()
 
-	wineBinaries, err := pathways.GetAbsRelDir(data.WineBinaries)
-	if err != nil {
-		return err
-	}
+	wineBinaries := data.Pwd.AbsRelDirPath(data.WineBinaries, data.Wine)
 
 	absExpectedDirs := make([]string, 0)
 	absActualDirs := make([]string, 0)
@@ -347,13 +321,12 @@ func cleanupUnpackedWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 			continue
 		}
 
-		absTitleDir := filepath.Join(wineBinaries, busan.Sanitize(wineBinary.Title))
+		absTitleDir := filepath.Join(wineBinaries, pathways.Sanitize(wineBinary.Title))
 
 		absLatestVersionDir := filepath.Join(absTitleDir, wineBinary.Version)
 		absExpectedDirs = append(absExpectedDirs, absLatestVersionDir)
 
-		var titleDir *os.File
-		titleDir, err = os.Open(absTitleDir)
+		titleDir, err := os.Open(absTitleDir)
 		if err != nil {
 			return err
 		}
@@ -392,7 +365,7 @@ func cleanupUnpackedWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 	cuwba.TotalInt(len(absUnexpectedDirs))
 
 	for _, aud := range absUnexpectedDirs {
-		if err = os.RemoveAll(aud); err != nil {
+		if err := os.RemoveAll(aud); err != nil {
 			return err
 		}
 		cuwba.Increment()

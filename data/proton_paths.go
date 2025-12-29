@@ -3,12 +3,12 @@ package data
 import (
 	_ "embed"
 	"errors"
-	"github.com/arelate/southern_light/wine_integration"
-	"github.com/boggydigital/busan"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"os"
 	"path/filepath"
+
+	"github.com/arelate/southern_light/wine_integration"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 const relUmuRunPath = "umu/umu-run"
@@ -30,13 +30,8 @@ func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 		return "", errors.New("umu-launcher version not found, please run setup-wine")
 	}
 
-	wineBinaries, err := pathways.GetAbsRelDir(WineBinaries)
-	if err != nil {
-		return "", err
-	}
-
-	absUmuRunBinPath := filepath.Join(wineBinaries, busan.Sanitize(runtime), latestUmuLauncherVersion, relUmuRunPath)
-	if _, err = os.Stat(absUmuRunBinPath); err == nil {
+	absUmuRunBinPath := filepath.Join(Pwd.AbsRelDirPath(WineBinaries, Wine), pathways.Sanitize(runtime), latestUmuLauncherVersion, relUmuRunPath)
+	if _, err := os.Stat(absUmuRunBinPath); err == nil {
 		return absUmuRunBinPath, nil
 	}
 
@@ -60,15 +55,14 @@ func ProtonGeLatestReleasePath(rdx redux.Readable) (string, error) {
 		return "", errors.New("proton-ge version not found, please run setup-wine")
 	}
 
-	wineBinaries, err := pathways.GetAbsRelDir(WineBinaries)
-	if err != nil {
-		return "", err
-	}
-
-	absProtonGePath := filepath.Join(wineBinaries, busan.Sanitize(runtime), latestProtonGeVersion, latestProtonGeVersion)
-	if _, err = os.Stat(absProtonGePath); err == nil {
+	absProtonGePath := filepath.Join(Pwd.AbsRelDirPath(WineBinaries, Wine), pathways.Sanitize(runtime), latestProtonGeVersion, latestProtonGeVersion)
+	if _, err := os.Stat(absProtonGePath); err == nil {
 		return absProtonGePath, nil
 	}
 
 	return "", os.ErrNotExist
+}
+
+func AbsReduxDir() string {
+	return Pwd.AbsRelDirPath(Redux, Metadata)
 }

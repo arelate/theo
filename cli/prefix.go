@@ -17,7 +17,6 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/backups"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -89,12 +88,7 @@ func Prefix(id string, ii *InstallInfo,
 	info, archive, remove bool,
 	et *execTask) error {
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
@@ -210,10 +204,7 @@ func Prefix(id string, ii *InstallInfo,
 		wbFilename := path.Base(requestedWineBinary.DownloadUrl)
 
 		var wineDownloadsDir string
-		wineDownloadsDir, err = pathways.GetAbsRelDir(data.WineDownloads)
-		if err != nil {
-			return err
-		}
+		wineDownloadsDir = data.Pwd.AbsRelDirPath(data.WineDownloads, data.Wine)
 
 		et.name = requestedWineBinary.String()
 		et.exe = filepath.Join(wineDownloadsDir, wbFilename)
@@ -252,20 +243,12 @@ func archiveProductPrefix(id, langCode string) error {
 	appa := nod.Begin("archiving prefix for %s...", id)
 	defer appa.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
+	rdx, err := redux.NewReader(data.AbsReduxDir(), vangogh_integration.SlugProperty)
 	if err != nil {
 		return err
 	}
 
-	rdx, err := redux.NewReader(reduxDir, vangogh_integration.SlugProperty)
-	if err != nil {
-		return err
-	}
-
-	prefixArchiveDir, err := pathways.GetAbsRelDir(data.PrefixArchive)
-	if err != nil {
-		return err
-	}
+	prefixArchiveDir := data.Pwd.AbsRelDirPath(data.PrefixArchive, data.Backups)
 
 	prefixName, err := data.GetPrefixName(id, rdx)
 	if err != nil {

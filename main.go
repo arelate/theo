@@ -12,7 +12,6 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/clo"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 )
 
 var (
@@ -31,15 +30,7 @@ func main() {
 	tsa := nod.Begin("theo is complementing vangogh experience")
 	defer tsa.Done()
 
-	theoRootDir, err := data.InitRootDir()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	if err = pathways.Setup("",
-		theoRootDir,
-		data.RelToAbsDirs,
-		data.AllAbsDirs...); err != nil {
+	if err := data.InitPathways(); err != nil {
 		log.Fatalln(err)
 	}
 
@@ -79,11 +70,7 @@ func main() {
 	}
 
 	if q := u.Query(); q.Has(debugParam) {
-		absLogsDir, err := pathways.GetAbsDir(data.Logs)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		logger, err := nod.EnableFileLogger(u.Path, absLogsDir)
+		logger, err := nod.EnableFileLogger(u.Path, data.Pwd.AbsDirPath(data.Logs))
 		if err != nil {
 			log.Fatalln(err)
 		}

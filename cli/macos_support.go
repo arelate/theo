@@ -14,7 +14,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -80,10 +79,7 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadL
 		return errors.New("extracting .pkg installers is only supported on " + vangogh_integration.MacOS.String())
 	}
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	tempDir := os.TempDir()
 
@@ -94,7 +90,7 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadL
 	// if the product extracts dir already exists - that would imply that the product
 	// has been extracted already. Remove the directory with contents if forced
 	// Return early otherwise (if not forced).
-	if _, err = os.Stat(localFilenameExtractsDir); err == nil {
+	if _, err := os.Stat(localFilenameExtractsDir); err == nil {
 		if force {
 			if err = os.RemoveAll(localFilenameExtractsDir); err != nil {
 				return err
@@ -105,7 +101,7 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadL
 	}
 
 	productExtractDir, _ := filepath.Split(localFilenameExtractsDir)
-	if _, err = os.Stat(productExtractDir); os.IsNotExist(err) {
+	if _, err := os.Stat(productExtractDir); os.IsNotExist(err) {
 		if err = os.MkdirAll(productExtractDir, 0755); err != nil {
 			return err
 		}
@@ -254,10 +250,7 @@ func macOsPostInstallActions(id string,
 		return nil
 	}
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
@@ -543,14 +536,11 @@ func macOsExecTaskBundleApp(absBundleAppPath string, et *execTask) (*execTask, e
 
 func osInstalledPath(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
 
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
-	if err != nil {
-		return "", err
-	}
+	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
 	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(operatingSystem, langCode))
 
-	if err = rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", err
 	}
 

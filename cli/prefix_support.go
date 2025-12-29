@@ -11,7 +11,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -167,17 +166,10 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 	wipa := nod.Begin("installing %s for %s...", id, vangogh_integration.Windows)
 	defer wipa.Done()
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
 	productDetails, err := getProductDetails(id, rdx, ii.force)
-	if err != nil {
-		return err
-	}
-
-	installedAppsDir, err := pathways.GetAbsDir(data.InstalledApps)
 	if err != nil {
 		return err
 	}
@@ -238,12 +230,7 @@ func prefixReveal(id string, langCode string) error {
 	rpa := nod.Begin("revealing prefix for %s...", id)
 	defer rpa.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewReader(reduxDir, vangogh_integration.SlugProperty)
+	rdx, err := redux.NewReader(data.AbsReduxDir(), vangogh_integration.SlugProperty)
 	if err != nil {
 		return err
 	}

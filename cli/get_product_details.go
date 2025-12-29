@@ -12,7 +12,6 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -21,10 +20,7 @@ func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_int
 	gpda := nod.NewProgress(" getting product details for %s...", id)
 	defer gpda.Done()
 
-	productDetailsDir, err := pathways.GetAbsRelDir(data.ProductDetails)
-	if err != nil {
-		return nil, err
-	}
+	productDetailsDir := data.Pwd.AbsRelDirPath(data.ProductDetails, vangogh_integration.Metadata)
 
 	kvProductDetails, err := kevlar.New(productDetailsDir, kevlar.JsonExt)
 	if err != nil {

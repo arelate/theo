@@ -15,7 +15,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -96,12 +95,7 @@ func listInstalled(ii *InstallInfo) error {
 	lia := nod.Begin("listing installed products for %s, %s...", ii.OperatingSystem, ii.LangCode)
 	defer lia.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(vangogh_integration.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewReader(reduxDir,
+	rdx, err := redux.NewReader(data.AbsReduxDir(),
 		vangogh_integration.TitleProperty,
 		data.InstallInfoProperty,
 		data.InstallDateProperty,
@@ -219,12 +213,7 @@ func listPlayTasks(id string, langCode string) error {
 	lpta := nod.Begin("listing playTasks for %s...", id)
 	defer lpta.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}

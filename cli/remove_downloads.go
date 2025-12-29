@@ -9,7 +9,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -42,12 +41,7 @@ func RemoveDownloadsHandler(u *url.URL) error {
 		force:           q.Has("force"),
 	}
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.AllProperties()...)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
@@ -62,10 +56,7 @@ func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	printInstallInfoParams(ii, true, id)
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	productDetails, err := getProductDetails(id, rdx, ii.force)
 	if err != nil {

@@ -18,40 +18,6 @@ const (
 	inventoryExt = ".txt"
 )
 
-func InitRootDir() (string, error) {
-	udhd, err := UserDataHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	rootDir := filepath.Join(udhd, theoDirname)
-	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(rootDir, 0755); err != nil {
-			return "", err
-		}
-	}
-
-	for _, ad := range AllAbsDirs {
-		absDir := filepath.Join(rootDir, string(ad))
-		if _, err := os.Stat(absDir); os.IsNotExist(err) {
-			if err := os.MkdirAll(absDir, 0755); err != nil {
-				return "", err
-			}
-		}
-	}
-
-	for rd, ad := range RelToAbsDirs {
-		absRelDir := filepath.Join(rootDir, string(ad), string(rd))
-		if _, err := os.Stat(absRelDir); os.IsNotExist(err) {
-			if err := os.MkdirAll(absRelDir, 0755); err != nil {
-				return "", err
-			}
-		}
-	}
-
-	return filepath.Join(udhd, theoDirname), nil
-}
-
 const (
 	Backups       pathways.AbsDir = "backups"
 	Metadata      pathways.AbsDir = "metadata"
@@ -62,32 +28,62 @@ const (
 )
 
 const (
-	Redux          pathways.RelDir = "_redux"
-	ProductDetails pathways.RelDir = "_product-details"
-	WineDownloads  pathways.RelDir = "_downloads"
-	WineBinaries   pathways.RelDir = "_binaries"
-	PrefixArchive  pathways.RelDir = "_prefix-archive"
-	UmuConfigs     pathways.RelDir = "_umu-configs"
-	Inventory      pathways.RelDir = "_inventory"
+	Redux          pathways.RelDir = "_redux"           // Metadata
+	ProductDetails pathways.RelDir = "_product-details" // Metadata
+	Inventory      pathways.RelDir = "_inventory"       // InstalledApps
+	PrefixArchive  pathways.RelDir = "_prefix-archive"  // Backups
+	WineDownloads  pathways.RelDir = "_downloads"       // Wine
+	WineBinaries   pathways.RelDir = "_binaries"        // Wine
+	UmuConfigs     pathways.RelDir = "_umu-configs"     // Wine
 )
 
-var RelToAbsDirs = map[pathways.RelDir]pathways.AbsDir{
-	Redux:          Metadata,
-	ProductDetails: Metadata,
-	Inventory:      InstalledApps,
-	PrefixArchive:  Backups,
-	WineDownloads:  Wine,
-	WineBinaries:   Wine,
-	UmuConfigs:     Wine,
-}
+var Pwd pathways.Pathway
 
-var AllAbsDirs = []pathways.AbsDir{
-	Backups,
-	Metadata,
-	Downloads,
-	Wine,
-	InstalledApps,
-	Logs,
+func InitPathways() error {
+	udhd, err := UserDataHomeDir()
+	if err != nil {
+		return err
+	}
+
+	rootDir := filepath.Join(udhd, theoDirname)
+	if _, err = os.Stat(rootDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(rootDir, 0755); err != nil {
+			return err
+		}
+	}
+
+	Pwd, err = pathways.NewRoot(rootDir)
+	if err != nil {
+		return err
+	}
+
+	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, Wine, InstalledApps, Logs} {
+		absDir := filepath.Join(rootDir, string(ad))
+		if _, err = os.Stat(absDir); os.IsNotExist(err) {
+			if err = os.MkdirAll(absDir, 0755); err != nil {
+				return err
+			}
+		}
+	}
+
+	for rd, ad := range map[pathways.RelDir]pathways.AbsDir{
+		Redux:          Metadata,
+		ProductDetails: Metadata,
+		Inventory:      InstalledApps,
+		PrefixArchive:  Backups,
+		WineDownloads:  Wine,
+		WineBinaries:   Wine,
+		UmuConfigs:     Wine,
+	} {
+		absRelDir := filepath.Join(rootDir, string(ad), string(rd))
+		if _, err = os.Stat(absRelDir); os.IsNotExist(err) {
+			if err = os.MkdirAll(absRelDir, 0755); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func GetPrefixName(id string, rdx redux.Readable) (string, error) {
@@ -107,12 +103,7 @@ func GetAbsPrefixDir(id, langCode string, rdx redux.Readable) (string, error) {
 		return "", err
 	}
 
-	installedAppsDir, err := pathways.GetAbsDir(InstalledApps)
-	if err != nil {
-		return "", err
-	}
-
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, OsLangCode(vangogh_integration.Windows, langCode))
+	osLangInstalledAppsDir := filepath.Join(Pwd.AbsDirPath(InstalledApps), OsLangCode(vangogh_integration.Windows, langCode))
 
 	prefixName, err := GetPrefixName(id, rdx)
 	if err != nil {
@@ -127,12 +118,7 @@ func GetAbsInventoryFilename(id, langCode string, operatingSystem vangogh_integr
 		return "", err
 	}
 
-	inventoryDir, err := pathways.GetAbsRelDir(Inventory)
-	if err != nil {
-		return "", err
-	}
-
-	osLangInventoryDir := filepath.Join(inventoryDir, OsLangCode(operatingSystem, langCode))
+	osLangInventoryDir := filepath.Join(Pwd.AbsRelDirPath(Inventory, InstalledApps), OsLangCode(operatingSystem, langCode))
 
 	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
 		return filepath.Join(osLangInventoryDir, slug+inventoryExt), nil

@@ -14,7 +14,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -39,10 +38,7 @@ func linuxInstallProduct(id string,
 		return err
 	}
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	for _, link := range dls {
 
@@ -52,7 +48,7 @@ func linuxInstallProduct(id string,
 
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		if _, err = os.Stat(absInstallerPath); err != nil {
+		if _, err := os.Stat(absInstallerPath); err != nil {
 			return err
 		}
 
@@ -130,10 +126,7 @@ func linuxPostDownloadActions(id string, link *vangogh_integration.ProductDownlo
 		return errors.New("post-download Linux actions are only supported on Linux")
 	}
 
-	downloadsDir, err := pathways.GetAbsDir(data.Downloads)
-	if err != nil {
-		return err
-	}
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	productInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 

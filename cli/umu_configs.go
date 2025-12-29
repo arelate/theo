@@ -2,16 +2,16 @@ package cli
 
 import (
 	"errors"
-	"github.com/arelate/southern_light/wine_integration"
-	"github.com/arelate/theo/data"
-	"github.com/boggydigital/busan"
-	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
-	"github.com/boggydigital/redux"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/arelate/southern_light/wine_integration"
+	"github.com/arelate/theo/data"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
+	"github.com/boggydigital/redux"
 )
 
 const (
@@ -43,11 +43,7 @@ func getLatestUmuConfigsDir(rdx redux.Readable) (string, error) {
 		return "", errors.New("umu-launcher version not found, please run setup-wine")
 	}
 
-	umuConfigsDir, err := pathways.GetAbsRelDir(data.UmuConfigs)
-	if err != nil {
-		return "", err
-	}
-
+	umuConfigsDir := data.Pwd.AbsRelDirPath(data.UmuConfigs, data.Wine)
 	latestUmuConfigsDir := filepath.Join(umuConfigsDir, latestUmuLauncherVersion)
 
 	return latestUmuConfigsDir, nil
@@ -62,7 +58,7 @@ func getAbsUmuConfigFilename(id, exePath string, rdx redux.Readable) (string, er
 
 	_, exeFilename := filepath.Split(exePath)
 
-	umuConfigPath := filepath.Join(latestUmuConfigsDir, id+"-"+busan.Sanitize(exeFilename)+".toml")
+	umuConfigPath := filepath.Join(latestUmuConfigsDir, id+"-"+pathways.Sanitize(exeFilename)+".toml")
 
 	return umuConfigPath, nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/author"
 	"github.com/boggydigital/nod"
-	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -38,12 +37,7 @@ func Connect(
 	sa := nod.Begin("connecting to the server...")
 	defer sa.Done()
 
-	reduxDir, err := pathways.GetAbsRelDir(data.Redux)
-	if err != nil {
-		return err
-	}
-
-	rdx, err := redux.NewWriter(reduxDir, data.ServerConnectionProperties)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.ServerConnectionProperties)
 	if err != nil {
 		return err
 	}
