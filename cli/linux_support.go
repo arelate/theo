@@ -75,19 +75,13 @@ func linuxInstallProduct(id string,
 			return err
 		}
 
-		for _, pidf := range postInstallDesktopFiles {
-			if slices.Contains(preInstallDesktopFiles, pidf) {
-				continue
-			}
-
-			if err = os.Remove(pidf); err != nil {
-				return err
-			}
+		if err = removeNewFiles(preInstallDesktopFiles, postInstallDesktopFiles); err != nil {
+			return err
 		}
 
 		mojosetupProductDir := filepath.Join(absInstalledPath, mojosetupDir)
 		if _, err = os.Stat(mojosetupProductDir); err == nil {
-			if err := os.RemoveAll(mojosetupProductDir); err != nil {
+			if err = os.RemoveAll(mojosetupProductDir); err != nil {
 				return err
 			}
 		}
@@ -96,7 +90,21 @@ func linuxInstallProduct(id string,
 	return nil
 }
 
-func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) error {
+func removeNewFiles(initialSet, newSet []string) error {
+	for _, pidf := range newSet {
+		if slices.Contains(initialSet, pidf) {
+			continue
+		}
+
+		if err := os.Remove(pidf); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func linuxExecuteInstaller(absInstallerPath, destinationDir string) error {
 
 	_, fp := filepath.Split(absInstallerPath)
 
@@ -110,7 +118,7 @@ func linuxExecuteInstaller(absInstallerPath, productInstalledAppDir string) erro
 	// .desktop files created by the installer. This is notable because if those files are not
 	// removed and DLCs are installed they will attempt to create the same files and will ask
 	// to confirm to overwrite, interrupting automated installation.
-	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", productInstalledAppDir)
+	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", destinationDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
