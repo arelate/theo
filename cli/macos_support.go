@@ -70,6 +70,27 @@ func macOsInstallProduct(id string,
 	return nil
 }
 
+func removeExistingCreateMissing(path string, force bool) error {
+	if _, err := os.Stat(path); err == nil {
+		if force {
+			if err = os.RemoveAll(path); err != nil {
+				return err
+			}
+		} else {
+			return nil
+		}
+	}
+
+	pathDir, _ := filepath.Split(path)
+	if _, err := os.Stat(pathDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(pathDir, 0755); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadLink, force bool) error {
 
 	meia := nod.Begin(" extracting installer with pkgutil, please wait...")
@@ -90,21 +111,8 @@ func macOsExtractInstaller(id string, link *vangogh_integration.ProductDownloadL
 	// if the product extracts dir already exists - that would imply that the product
 	// has been extracted already. Remove the directory with contents if forced
 	// Return early otherwise (if not forced).
-	if _, err := os.Stat(localFilenameExtractsDir); err == nil {
-		if force {
-			if err = os.RemoveAll(localFilenameExtractsDir); err != nil {
-				return err
-			}
-		} else {
-			return nil
-		}
-	}
-
-	productExtractDir, _ := filepath.Split(localFilenameExtractsDir)
-	if _, err := os.Stat(productExtractDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(productExtractDir, 0755); err != nil {
-			return err
-		}
+	if err := removeExistingCreateMissing(localFilenameExtractsDir, force); err != nil {
+		return err
 	}
 
 	localDownload := filepath.Join(productDownloadsDir, link.LocalFilename)
@@ -169,22 +177,8 @@ func macOsPlaceGame(absExtractsPayloadPath, absInstallationPath string, force bo
 	defer mpga.Done()
 
 	// when installing a game
-	if _, err := os.Stat(absInstallationPath); err == nil {
-		if force {
-			if err = os.RemoveAll(absInstallationPath); err != nil {
-				return err
-			}
-		} else {
-			// already installed, overwrite won't be forced
-			return nil
-		}
-	}
-
-	installationDir, _ := filepath.Split(absInstallationPath)
-	if _, err := os.Stat(installationDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(installationDir, 0755); err != nil {
-			return err
-		}
+	if err := removeExistingCreateMissing(absInstallationPath, force); err != nil {
+		return err
 	}
 
 	return os.Rename(absExtractsPayloadPath, absInstallationPath)
