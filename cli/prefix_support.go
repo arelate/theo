@@ -18,6 +18,7 @@ const (
 	innoSetupVerySilentArg        = "/VERYSILENT"
 	innoSetupNoRestartArg         = "/NORESTART"
 	innoSetupCloseApplicationsArg = "/CLOSEAPPLICATIONS"
+	innoSetupDirArgTemplate       = "/DIR={dir}"
 )
 
 const relPrefixDriveCDir = "drive_c"
