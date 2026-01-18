@@ -151,21 +151,6 @@ func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadL
 	return nil
 }
 
-//func macOsPlaceUnpackedPayload()
-
-//func macOsPlaceGame(absUnpackedPayloadPath, absInstallationPath string, force bool) error {
-//
-//	mpga := nod.Begin(" placing game installation files...")
-//	defer mpga.Done()
-//
-//	// when installing a game
-//	if err := removeExistingCreateMissing(absInstallationPath, force); err != nil {
-//		return err
-//	}
-//
-//	return os.Rename(absUnpackedPayloadPath, absInstallationPath)
-//}
-
 func macOsPlaceUnpackedPayload(link *vangogh_integration.ProductDownloadLink, absUnpackedPayloadPath, absInstallationPath string) error {
 
 	mpda := nod.Begin(" placing unpacked files from %s...", link.LocalFilename)
@@ -414,14 +399,14 @@ func macOsReveal(path string) error {
 
 func macOsFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absBundleAppPath, err := macOsFindBundleApp(id, langCode, rdx)
+	absBundlePath, err := osInstalledPath(id, vangogh_integration.MacOS, langCode, rdx)
 	if err != nil {
 		return "", err
 	}
 
 	gogGameInfoFilename := strings.Replace(gog_integration.GogGameInfoFilenameTemplate, "{id}", id, 1)
 
-	absGogGameInfoPath := filepath.Join(absBundleAppPath, relMacOsGogGameInfoDir, gogGameInfoFilename)
+	absGogGameInfoPath := filepath.Join(absBundlePath, relMacOsGogGameInfoDir, gogGameInfoFilename)
 
 	if _, err = os.Stat(absGogGameInfoPath); err == nil {
 		return absGogGameInfoPath, nil
