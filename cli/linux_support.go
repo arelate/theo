@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -90,17 +89,24 @@ func linuxInstallProduct(id string,
 	return nil
 }
 
-func removeNewFiles(initialSet, newSet []string) error {
-	for _, pidf := range newSet {
-		if slices.Contains(initialSet, pidf) {
+func linuxPreInstallActions(id string, dls vangogh_integration.ProductDownloadLinks) error {
+
+	lpa := nod.Begin(" performing %s pre-install actions for %s...", vangogh_integration.Linux, id)
+	defer lpa.Done()
+
+	for _, link := range dls {
+
+		if filepath.Ext(link.LocalFilename) != shExt {
 			continue
 		}
+		downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-		if err := os.Remove(pidf); err != nil {
+		productInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+
+		if err := chmodExecutable(productInstallerPath); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -231,23 +237,45 @@ func linuxFindStartSh(id, langCode string, rdx redux.Readable) (string, error) {
 	return "", errors.New("cannot locate start.sh for " + id)
 }
 
-func nixUninstallProduct(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
+func removeInventoriesFiles(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
 
-	umpa := nod.Begin(" uninstalling %s version of %s...", operatingSystem, id)
+	umpa := nod.Begin(" removing inventoried files for %s %s-%s...", id, operatingSystem, langCode)
 	defer umpa.Done()
 
-	absBundlePath, err := osInstalledPath(id, operatingSystem, langCode, rdx)
+	absInstalledPath, err := osInstalledPath(id, operatingSystem, langCode, rdx)
 	if err != nil {
 		return err
 	}
 
-	if _, err := os.Stat(absBundlePath); os.IsNotExist(err) {
+	if _, err = os.Stat(absInstalledPath); os.IsNotExist(err) {
 		umpa.EndWithResult("not present")
 		return nil
 	}
 
-	if err = os.RemoveAll(absBundlePath); err != nil {
+	relInventory, err := readInventory(id, langCode, operatingSystem, rdx)
+	if err != nil {
 		return err
+	}
+
+	for _, rif := range relInventory {
+		absRif := filepath.Join(absInstalledPath, rif)
+		if _, err = os.Stat(absRif); os.IsNotExist(err) {
+			continue
+		}
+		if err = os.Remove(absRif); err != nil {
+			return err
+		}
+	}
+
+	relFiles, err := relWalkDir(absInstalledPath)
+	if err != nil {
+		return err
+	}
+
+	if len(relFiles) == 0 {
+		if err = os.RemoveAll(absInstalledPath); err != nil {
+			return err
+		}
 	}
 
 	return nil

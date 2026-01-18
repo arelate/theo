@@ -297,7 +297,7 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			installedPath, err = prefixFindGogGameInstallPath(id, langCode, rdx)
+			installedPath, err = prefixFindGogGameInstallPath(id, rdx)
 		case vangogh_integration.Windows:
 			installedPath, err = osInstalledPath(id, operatingSystem, langCode, rdx)
 		default:

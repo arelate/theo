@@ -184,7 +184,7 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
 
 		var absPrefixDir string
-		if absPrefixDir, err = data.GetAbsPrefixDir(id, ii.LangCode, rdx); err == nil {
+		if absPrefixDir, err = data.GetAbsPrefixDir(id, rdx); err == nil {
 			et.prefix = absPrefixDir
 		} else {
 			return err
@@ -265,7 +265,7 @@ func osFindGogGameInfo(id string, operatingSystem vangogh_integration.OperatingS
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			gogGameInfoPath, err = prefixFindGogGameInfo(id, langCode, rdx)
+			gogGameInfoPath, err = prefixFindGogGameInfo(id, rdx)
 		case vangogh_integration.Windows:
 			gogGameInfoPath, err = windowsFindGogGameInfo(id, langCode, rdx)
 		default:
@@ -332,7 +332,7 @@ func osFindDefaultLauncher(id string, operatingSystem vangogh_integration.Operat
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			defaultLauncherPath, err = prefixFindGogGamesLnk(id, langCode, rdx)
+			defaultLauncherPath, err = prefixFindGogGamesLnk(id, rdx)
 		case vangogh_integration.Windows:
 			defaultLauncherPath, err = windowsFindGogGamesLnk(id, langCode, rdx)
 		default:

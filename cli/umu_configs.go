@@ -172,14 +172,15 @@ func resetUmuConfigs(rdx redux.Readable) error {
 		rauca.Increment()
 	}
 
-	var empty bool
-	if empty, err = osIsDirEmpty(latestUmuConfigsDir); empty && err == nil {
-		if err = os.RemoveAll(latestUmuConfigsDir); err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
+	// TODO: replace with walkers
+	//var empty bool
+	//if empty, err = osIsDirEmpty(latestUmuConfigsDir); empty && err == nil {
+	//	if err = os.RemoveAll(latestUmuConfigsDir); err != nil {
+	//		return err
+	//	}
+	//} else if err != nil {
+	//	return err
+	//}
 
 	return nil
 }

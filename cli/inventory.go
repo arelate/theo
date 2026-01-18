@@ -1,27 +1,18 @@
 package cli
 
 import (
-	"bufio"
+	"encoding/json"
+	"os"
+	"path/filepath"
+
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/redux"
-	"io"
-	"os"
-	"path/filepath"
-	"slices"
 )
 
-func createInventory(absRootDir string, id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable, utcTime int64) error {
-	relFiles, err := data.GetRelFilesModifiedAfter(absRootDir, utcTime)
-	if err != nil {
-		return err
-	}
-
-	return appendInventory(id, langCode, operatingSystem, rdx, relFiles...)
-}
-
 func readInventory(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) ([]string, error) {
-	absInventoryFilename, err := data.GetAbsInventoryFilename(id, langCode, operatingSystem, rdx)
+
+	absInventoryFilename, err := data.AbsInventoryFilename(id, langCode, operatingSystem, rdx)
 	if err != nil {
 		return nil, err
 	}
@@ -35,45 +26,28 @@ func readInventory(id, langCode string, operatingSystem vangogh_integration.Oper
 		return nil, err
 	}
 
-	relFiles := make([]string, 0)
-	inventoryScanner := bufio.NewScanner(inventoryFile)
-	for inventoryScanner.Scan() {
-		relFiles = append(relFiles, inventoryScanner.Text())
-	}
-
-	if err = inventoryScanner.Err(); err != nil {
+	var relFiles []string
+	if err = json.NewDecoder(inventoryFile).Decode(&relFiles); err != nil {
 		return nil, err
 	}
 
 	return relFiles, nil
 }
 
-func appendInventory(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable, newRelFiles ...string) error {
+func writeInventory(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable, inventory ...string) error {
 
-	absInventoryFilename, err := data.GetAbsInventoryFilename(id, langCode, operatingSystem, rdx)
+	absInventoryFilename, err := data.AbsInventoryFilename(id, langCode, operatingSystem, rdx)
 	if err != nil {
 		return err
-	}
-
-	relFiles, err := readInventory(id, langCode, operatingSystem, rdx)
-	if err != nil {
-		return err
-	}
-
-	for _, nrf := range newRelFiles {
-		if slices.Contains(relFiles, nrf) {
-			continue
-		}
-		relFiles = append(relFiles, nrf)
 	}
 
 	absInventoryDir, _ := filepath.Split(absInventoryFilename)
-	if _, err = os.Stat(absInventoryDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(absInventoryDir, 0755); err != nil {
+
+	pathDir, _ := filepath.Split(absInventoryDir)
+	if _, err = os.Stat(pathDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(pathDir, 0755); err != nil {
 			return err
 		}
-	} else if err != nil {
-		return err
 	}
 
 	inventoryFile, err := os.Create(absInventoryFilename)
@@ -82,11 +56,5 @@ func appendInventory(id, langCode string, operatingSystem vangogh_integration.Op
 	}
 	defer inventoryFile.Close()
 
-	for _, relFile := range relFiles {
-		if _, err = io.WriteString(inventoryFile, relFile+"\n"); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return json.NewEncoder(inventoryFile).Encode(inventory)
 }

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"net/url"
+	"os"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -56,7 +57,8 @@ func Uninstall(id string, ii *InstallInfo) error {
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		installInfo, _, err := matchInstallInfo(ii, installedInfoLines...)
+		var installInfo *InstallInfo
+		installInfo, _, err = matchInstallInfo(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}
@@ -70,6 +72,17 @@ func Uninstall(id string, ii *InstallInfo) error {
 
 	if err = osUninstallProduct(id, ii, rdx); err != nil {
 		return err
+	}
+
+	absInventoryFilename, err := data.AbsInventoryFilename(id, ii.LangCode, ii.OperatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(absInventoryFilename); err == nil {
+		if err = os.Remove(absInventoryFilename); err != nil {
+			return err
+		}
 	}
 
 	if err = unpinInstallInfo(id, ii, rdx); err != nil {
@@ -93,7 +106,7 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	case vangogh_integration.MacOS:
 		fallthrough
 	case vangogh_integration.Linux:
-		if err := nixUninstallProduct(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
+		if err := removeInventoriesFiles(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
 			return err
 		}
 	case vangogh_integration.Windows:

@@ -97,7 +97,7 @@ func Prefix(id string, ii *InstallInfo,
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, ii.LangCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func Prefix(id string, ii *InstallInfo,
 	}
 
 	if et.exe != "" {
-		if err = prefixSetExe(id, ii.LangCode, et.exe, rdx); err != nil {
+		if err = prefixSetExe(id, et.exe, rdx); err != nil {
 			return err
 		}
 	}
@@ -156,11 +156,11 @@ func Prefix(id string, ii *InstallInfo,
 
 		switch mod {
 		case prefixModEnableRetina:
-			if err = prefixModRetina(id, ii.LangCode, false, rdx, et.verbose, ii.force); err != nil {
+			if err = prefixModRetina(id, false, rdx, et.verbose, ii.force); err != nil {
 				return err
 			}
 		case prefixModDisableRetina:
-			if err = prefixModRetina(id, ii.LangCode, true, rdx, et.verbose, ii.force); err != nil {
+			if err = prefixModRetina(id, true, rdx, et.verbose, ii.force); err != nil {
 				return err
 			}
 		}
@@ -224,7 +224,7 @@ func Prefix(id string, ii *InstallInfo,
 	}
 
 	if archive {
-		if err = archiveProductPrefix(id, ii.LangCode); err != nil {
+		if err = archiveProductPrefix(id); err != nil {
 			return err
 		}
 	}
@@ -238,7 +238,7 @@ func Prefix(id string, ii *InstallInfo,
 	return nil
 }
 
-func archiveProductPrefix(id, langCode string) error {
+func archiveProductPrefix(id string) error {
 
 	appa := nod.Begin("archiving prefix for %s...", id)
 	defer appa.Done()
@@ -257,7 +257,7 @@ func archiveProductPrefix(id, langCode string) error {
 
 	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, prefixName)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func cleanupProductPrefixArchive(absPrefixNameArchiveDir string) error {
 	return backups.Cleanup(absPrefixNameArchiveDir, true, cppa)
 }
 
-func prefixModRetina(id, langCode string, revert bool, rdx redux.Writeable, verbose, force bool) error {
+func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force bool) error {
 
 	mpa := nod.Begin("modding retina in prefix for %s...", id)
 	defer mpa.Done()
@@ -296,7 +296,7 @@ func prefixModRetina(id, langCode string, revert bool, rdx redux.Writeable, verb
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func prefixModRetina(id, langCode string, revert bool, rdx redux.Writeable, verb
 
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		if err := macOsWineRun(id, langCode, rdx, et, force); err != nil {
+		if err = macOsWineRun(id, rdx, et, force); err != nil {
 			return err
 		}
 	default:
@@ -361,7 +361,7 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, force bool) er
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -430,14 +430,15 @@ func removePrefixDirs(absPrefixDir string, relFiles ...string) error {
 
 		absDir := filepath.Join(absPrefixDir, relFile)
 		if stat, err := os.Stat(absDir); err == nil && stat.IsDir() {
-			var empty bool
-			if empty, err = osIsDirEmpty(absDir); empty && err == nil {
-				if err = os.RemoveAll(absDir); err != nil {
-					return err
-				}
-			} else if err != nil {
-				return err
-			}
+			// TODO: replace with walker
+			//var empty bool
+			//if empty, err = osIsDirEmpty(absDir); empty && err == nil {
+			//	if err = os.RemoveAll(absDir); err != nil {
+			//		return err
+			//	}
+			//} else if err != nil {
+			//	return err
+			//}
 		}
 
 		rpda.Increment()
@@ -498,7 +499,7 @@ func encodeEnv(de map[string]string) []string {
 	return ee
 }
 
-func prefixSetExe(id, langCode string, exe string, rdx redux.Writeable) error {
+func prefixSetExe(id string, exe string, rdx redux.Writeable) error {
 
 	spepa := nod.Begin("setting %s...", data.PrefixExeProperty)
 	defer spepa.Done()
@@ -513,7 +514,7 @@ func prefixSetExe(id, langCode string, exe string, rdx redux.Writeable) error {
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -528,9 +529,7 @@ func prefixSetExe(id, langCode string, exe string, rdx redux.Writeable) error {
 		return err
 	}
 
-	langPrefixName := path.Join(prefixName, langCode)
-
-	return rdx.ReplaceValues(data.PrefixExeProperty, langPrefixName, exe)
+	return rdx.ReplaceValues(data.PrefixExeProperty, prefixName, exe)
 }
 
 func prefixSetArgs(id, langCode string, args []string, rdx redux.Writeable) error {

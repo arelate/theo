@@ -1,17 +1,18 @@
 package cli
 
 import (
-	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/arelate/theo/data"
-	"github.com/boggydigital/nod"
-	"github.com/boggydigital/redux"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/theo/data"
+	"github.com/boggydigital/nod"
+	"github.com/boggydigital/redux"
 )
 
-func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force bool) error {
+func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
@@ -34,7 +35,7 @@ func linuxProtonRun(id, langCode string, rdx redux.Readable, et *execTask, force
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable, force b
 	return cmd.Run()
 }
 
-func linuxInitPrefix(id, langCode string, rdx redux.Readable, _ bool) error {
+func linuxInitPrefix(id string, rdx redux.Readable, _ bool) error {
 	lipa := nod.Begin(" initializing prefix...")
 	defer lipa.Done()
 
@@ -130,7 +131,7 @@ func linuxInitPrefix(id, langCode string, rdx redux.Readable, _ bool) error {
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}

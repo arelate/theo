@@ -26,10 +26,10 @@ const (
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
 type (
-	wineRunFunc func(id, langCode string, rdx redux.Readable, et *execTask, force bool) error
+	wineRunFunc func(id string, rdx redux.Readable, et *execTask, force bool) error
 )
 
-func macOsInitPrefix(id, langCode string, rdx redux.Readable, verbose bool) error {
+func macOsInitPrefix(id string, rdx redux.Readable, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
 	defer mipa.Done()
 
@@ -37,10 +37,10 @@ func macOsInitPrefix(id, langCode string, rdx redux.Readable, verbose bool) erro
 		return err
 	}
 
-	return macOsCreateCxBottle(id, langCode, rdx, defaultCxBottleTemplate, verbose)
+	return macOsCreateCxBottle(id, rdx, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id, langCode string, rdx redux.Readable, et *execTask, force bool) error {
+func macOsWineRun(id string, rdx redux.Readable, et *execTask, force bool) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
@@ -63,7 +63,7 @@ func macOsWineRun(id, langCode string, rdx redux.Readable, et *execTask, force b
 
 	absWineBinPath := filepath.Join(absCxBinDir, relWineFilename)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func macOsGetAbsCxBinDir(rdx redux.Readable) (string, error) {
 	return "", os.ErrNotExist
 }
 
-func macOsCreateCxBottle(id, langCode string, rdx redux.Readable, template string, verbose bool) error {
+func macOsCreateCxBottle(id string, rdx redux.Readable, template string, verbose bool) error {
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
@@ -179,7 +179,7 @@ func macOsCreateCxBottle(id, langCode string, rdx redux.Readable, template strin
 
 	absCxBottlePath := filepath.Join(absCxBinDir, relCxBottleFilename)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}

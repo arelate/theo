@@ -4,6 +4,8 @@ import (
 	"errors"
 	"maps"
 	"net/url"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -134,7 +136,7 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if err = osInstallProduct(id, ii, productDetails, rdx); err != nil {
+	if err = installProduct(id, ii, productDetails, rdx); err != nil {
 		return err
 	}
 
@@ -174,12 +176,10 @@ func Install(id string, ii *InstallInfo) error {
 	return nil
 }
 
-func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
+func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
 
-	start := time.Now().UTC().Unix()
-
-	coipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
-	defer coipa.Done()
+	ipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
+	defer ipa.Done()
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return err
@@ -191,7 +191,7 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		FilterDownloadTypes(ii.DownloadTypes...)
 
 	if len(dls) == 0 {
-		coipa.EndWithResult("no links are matching install params")
+		ipa.EndWithResult("no links are matching install params")
 		return nil
 	}
 
@@ -211,56 +211,231 @@ func osInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integr
 		ii.DownloadableContent = slices.Collect(maps.Keys(dlcNames))
 	}
 
+	// installation:
+	// 1. check available space
+	// 2. perform pre-install actions (e.g. make setup executable on Linux)
+	// 3. get protected locations files (e.g. Desktop shortcuts on Linux)
+	// 4. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
+	// 5. uninstall if installed directory exists and forcing install
+	// 6. create inventory of unpacked files
+	// 7. place (move unpacked to install folder)
+	// 8. perform post-install actions (e.g. run post-install script and remove xattrs on macOS)
+	// 9. cleanup protected locations
+	// 10. cleanup unpack directory
+
+	// 1
 	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
 	if err := hasFreeSpaceForProduct(productDetails, installedAppsDir, ii, nil); err != nil {
 		return err
 	}
 
+	// 2
+	if err := osPreInstallActions(id, ii, dls, rdx); err != nil {
+		return err
+	}
+
+	// 3
+	preInstallFiles, err := osGetProtectedLocationsFiles(ii)
+	if err != nil {
+		return err
+	}
+
+	// 4
+	unpackDir := osGetUnpackDir(id, ii)
+
+	if err = osUnpackInstallers(id, ii, dls, unpackDir); err != nil {
+		return err
+	}
+
+	// 5
+	absInstalledDir, err := osInstalledPath(id, ii.OperatingSystem, ii.LangCode, rdx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(absInstalledDir); err == nil && ii.force {
+		if err = osUninstallProduct(id, ii, rdx); err != nil {
+			return err
+		}
+	}
+
+	// 6
+	unpackedInventory, err := osGetInventory(ii, dls, unpackDir)
+	if err != nil {
+		return err
+	}
+
+	if err = writeInventory(id, ii.LangCode, ii.OperatingSystem, rdx, unpackedInventory...); err != nil {
+		return err
+	}
+
+	// 7
+	if err = osPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir); err != nil {
+		return err
+	}
+
+	// 8
+	if err = osPostInstallActions(id, ii, dls, rdx, unpackDir); err != nil {
+		return err
+	}
+
+	// 9
+	postInstallFiles, err := osGetProtectedLocationsFiles(ii)
+	if err != nil {
+		return err
+	}
+
+	if err = removeNewFiles(preInstallFiles, postInstallFiles); err != nil {
+		return err
+	}
+
+	// 10
+	if err = os.RemoveAll(unpackDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func osPreInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable) error {
+
 	switch ii.OperatingSystem {
-	case vangogh_integration.MacOS:
-
-		if err := macOsInstallProduct(id, dls, rdx, ii.force); err != nil {
-			return err
-		}
-
 	case vangogh_integration.Linux:
-
-		if err := linuxInstallProduct(id, dls, rdx); err != nil {
-			return err
-		}
-
+		return linuxPreInstallActions(id, dls)
 	case vangogh_integration.Windows:
+		switch data.CurrentOs() {
+		case vangogh_integration.MacOS:
+			fallthrough
+		case vangogh_integration.Linux:
+			return prefixInit(id, rdx, ii.verbose)
+		default:
+			return nil
+		}
+	default:
+		return nil
+	}
+}
 
+func osGetProtectedLocationsFiles(ii *InstallInfo) ([]string, error) {
+
+	switch ii.OperatingSystem {
+	case vangogh_integration.Linux:
+		return linuxSnapshotDesktopFiles()
+	default:
+		return nil, nil
+	}
+}
+
+func osGetUnpackDir(id string, ii *InstallInfo) string {
+
+	unpackDir := filepath.Join(os.TempDir(), id)
+
+	switch ii.OperatingSystem {
+	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.Windows:
-
-			if err := windowsInstallProduct(id, dls, rdx, ii.force); err != nil {
-				return err
-			}
-
+			return unpackDir
 		default:
+			return "" // prefix + c:\Temp
+		}
+	default:
+		return unpackDir
+	}
+}
 
-			if err := prefixInit(id, ii.LangCode, rdx, ii.verbose); err != nil {
+func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, dstDir string) error {
+
+	if _, err := os.Stat(dstDir); err == nil {
+		if ii.force {
+			if err = os.RemoveAll(dstDir); err != nil {
 				return err
 			}
+		} else {
+			return nil
+		}
+	}
 
-			if err := prefixInstallProduct(id, dls, ii, rdx); err != nil {
-				return err
-			}
+	pathDir, _ := filepath.Split(dstDir)
+	if _, err := os.Stat(pathDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(pathDir, 0755); err != nil {
+			return err
+		}
+	}
 
-			if err := prefixCreateInventory(id, ii.LangCode, rdx, start); err != nil {
-				return err
-			}
-
-			if err := prefixDefaultEnv(id, ii.LangCode, rdx); err != nil {
-				return err
-			}
-
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsUnpackInstallers(id, dls, dstDir, ii.force)
+	case vangogh_integration.Windows:
+		switch data.CurrentOs() {
+		default:
+			return ii.OperatingSystem.ErrUnsupported()
 		}
 	default:
 		return ii.OperatingSystem.ErrUnsupported()
 	}
+}
+
+func osGetInventory(ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string) ([]string, error) {
+
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsGetInventory(dls, unpackDir)
+	default:
+		return nil, ii.OperatingSystem.ErrUnsupported()
+	}
+}
+
+func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsPlaceUnpackedFiles(id, dls, rdx, unpackDir)
+	default:
+		return ii.OperatingSystem.ErrUnsupported()
+	}
+}
+
+func osPostInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsPostInstallActions(id, dls, rdx, unpackDir)
+	default:
+		return nil
+	}
+}
+
+func removeNewFiles(srcSet, newSet []string) error {
+
+	for _, pidf := range newSet {
+
+		if slices.Contains(srcSet, pidf) {
+			continue
+		}
+
+		if err := os.Remove(pidf); err != nil {
+			return err
+		}
+	}
 
 	return nil
+}
+
+func osInstalledPath(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
+
+	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
+
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(operatingSystem, langCode))
+
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return "", err
+	}
+
+	var appBundle string
+	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
+		appBundle = slug
+	} else {
+		return "", errors.New("slug is not defined for product " + id)
+	}
+
+	return filepath.Join(osLangInstalledAppsDir, appBundle), nil
 }

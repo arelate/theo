@@ -2,7 +2,6 @@ package data
 
 import (
 	"errors"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,16 +14,16 @@ import (
 const theoDirname = "theo"
 
 const (
-	inventoryExt = ".txt"
+	inventoryExt = ".json"
 )
 
 const (
 	Backups       pathways.AbsDir = "backups"
-	Metadata      pathways.AbsDir = "metadata"
 	Downloads     pathways.AbsDir = "downloads"
-	Wine          pathways.AbsDir = "wine"
 	InstalledApps pathways.AbsDir = "installed-apps"
 	Logs          pathways.AbsDir = "logs"
+	Metadata      pathways.AbsDir = "metadata"
+	Wine          pathways.AbsDir = "wine"
 )
 
 const (
@@ -32,9 +31,10 @@ const (
 	ProductDetails pathways.RelDir = "_product-details" // Metadata
 	Inventory      pathways.RelDir = "_inventory"       // InstalledApps
 	PrefixArchive  pathways.RelDir = "_prefix-archive"  // Backups
-	WineDownloads  pathways.RelDir = "_downloads"       // Wine
 	WineBinaries   pathways.RelDir = "_binaries"        // Wine
-	UmuConfigs     pathways.RelDir = "_umu-configs"     // Wine
+	WineDownloads  pathways.RelDir = "_downloads"       // Wine
+	Prefixes       pathways.RelDir = "_prefixes"
+	UmuConfigs     pathways.RelDir = "_umu-configs" // Wine
 )
 
 var Pwd pathways.Pathway
@@ -71,8 +71,9 @@ func InitPathways() error {
 		ProductDetails: Metadata,
 		Inventory:      InstalledApps,
 		PrefixArchive:  Backups,
-		WineDownloads:  Wine,
 		WineBinaries:   Wine,
+		WineDownloads:  Wine,
+		Prefixes:       Wine,
 		UmuConfigs:     Wine,
 	} {
 		absRelDir := filepath.Join(rootDir, string(ad), string(rd))
@@ -98,22 +99,22 @@ func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode st
 	return strings.Join([]string{operatingSystem.String(), langCode}, "-")
 }
 
-func GetAbsPrefixDir(id, langCode string, rdx redux.Readable) (string, error) {
+func GetAbsPrefixDir(id string, rdx redux.Readable) (string, error) {
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", err
 	}
 
-	osLangInstalledAppsDir := filepath.Join(Pwd.AbsDirPath(InstalledApps), OsLangCode(vangogh_integration.Windows, langCode))
+	prefixesDir := Pwd.AbsRelDirPath(Prefixes, Wine)
 
 	prefixName, err := GetPrefixName(id, rdx)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(osLangInstalledAppsDir, prefixName), nil
+	return filepath.Join(prefixesDir, prefixName), nil
 }
 
-func GetAbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+func AbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", err
 	}
@@ -125,32 +126,6 @@ func GetAbsInventoryFilename(id, langCode string, operatingSystem vangogh_integr
 	} else {
 		return "", errors.New("product slug is undefined: " + id)
 	}
-}
-
-func GetRelFilesModifiedAfter(absDir string, utcTime int64) ([]string, error) {
-	files := make([]string, 0)
-
-	if err := filepath.Walk(absDir, func(path string, info fs.FileInfo, err error) error {
-
-		if err != nil {
-			return err
-		}
-
-		if info.ModTime().UTC().Unix() >= utcTime {
-			relPath, err := filepath.Rel(absDir, path)
-			if err != nil {
-				return err
-			}
-
-			files = append(files, relPath)
-		}
-
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	return files, nil
 }
 
 func RelToUserDataHome(path string) (string, error) {

@@ -31,7 +31,7 @@ func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 	}
 
 	if ep, ok := rdx.GetLastVal(data.PrefixExeProperty, path.Join(prefixName, langCode)); ok && ep != "" {
-		absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+		absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 		if err != nil {
 			return "", err
 		}
@@ -39,13 +39,13 @@ func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 		return filepath.Join(absPrefixDir, relPrefixDriveCDir, ep), nil
 	}
 
-	exePath, err := prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode, rdx)
+	exePath, err := prefixFindGogGameInfoPrimaryPlayTaskExe(id, rdx)
 	if err != nil {
 		return "", err
 	}
 
 	if exePath == "" {
-		exePath, err = prefixFindGogGamesLnk(id, langCode, rdx)
+		exePath, err = prefixFindGogGamesLnk(id, rdx)
 		if err != nil {
 			return "", err
 		}
@@ -54,13 +54,13 @@ func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 	return exePath, nil
 }
 
-func prefixFindGlobFile(id, langCode string, rdx redux.Readable, globPattern string) (string, error) {
+func prefixFindGlobFile(id string, rdx redux.Readable, globPattern string) (string, error) {
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -95,30 +95,30 @@ func prefixFindGlobFile(id, langCode string, rdx redux.Readable, globPattern str
 	return "", nil
 }
 
-func prefixFindGogGameInstallPath(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixFindGogGameInstallPath(id string, rdx redux.Readable) (string, error) {
 	fi := nod.Begin(" finding install path...")
 	defer fi.Done()
 
-	return prefixFindGlobFile(id, langCode, rdx, gogGameInstallDir)
+	return prefixFindGlobFile(id, rdx, gogGameInstallDir)
 }
 
-func prefixFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixFindGogGameInfo(id string, rdx redux.Readable) (string, error) {
 	fpggi := nod.Begin(" finding goggame-%s.info...", id)
 	defer fpggi.Done()
 
-	return prefixFindGlobFile(id, langCode, rdx, strings.Replace(gogGameInfoGlobTemplate, "{id}", id, -1))
+	return prefixFindGlobFile(id, rdx, strings.Replace(gogGameInfoGlobTemplate, "{id}", id, -1))
 }
 
-func prefixFindGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixFindGogGamesLnk(id string, rdx redux.Readable) (string, error) {
 	fpl := nod.Begin(" finding .lnk...")
 	defer fpl.Done()
 
-	return prefixFindGlobFile(id, langCode, rdx, gogGameLnkGlob)
+	return prefixFindGlobFile(id, rdx, gogGameLnkGlob)
 }
 
-func prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixFindGogGameInfoPrimaryPlayTaskExe(id string, rdx redux.Readable) (string, error) {
 
-	absGogGameInfoPath, err := prefixFindGogGameInfo(id, langCode, rdx)
+	absGogGameInfoPath, err := prefixFindGogGameInfo(id, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -145,16 +145,16 @@ func prefixFindGogGameInfoPrimaryPlayTaskExe(id, langCode string, rdx redux.Read
 	return filepath.Join(absExeDir, relExePath), nil
 }
 
-func prefixInit(id string, langCode string, rdx redux.Readable, verbose bool) error {
+func prefixInit(id string, rdx redux.Readable, verbose bool) error {
 
 	cpa := nod.Begin("initializing prefix for %s...", id)
 	defer cpa.Done()
 
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		return macOsInitPrefix(id, langCode, rdx, verbose)
+		return macOsInitPrefix(id, rdx, verbose)
 	case vangogh_integration.Linux:
-		return linuxInitPrefix(id, langCode, rdx, verbose)
+		return linuxInitPrefix(id, rdx, verbose)
 	default:
 		return data.CurrentOs().ErrUnsupported()
 	}
@@ -205,7 +205,7 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 			verbose: ii.verbose,
 		}
 
-		if err = currentOsWineRun(id, ii.LangCode, rdx, et, ii.force); err != nil {
+		if err = currentOsWineRun(id, rdx, et, ii.force); err != nil {
 			return err
 		}
 	}
@@ -213,18 +213,23 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 	return nil
 }
 
-func prefixCreateInventory(id, langCode string, rdx redux.Readable, utcTime int64) error {
-
-	cpifma := nod.Begin(" creating installed files inventory...")
-	defer cpifma.Done()
-
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
-	if err != nil {
-		return err
-	}
-
-	return createInventory(absPrefixDir, id, langCode, vangogh_integration.Windows, rdx, utcTime)
-}
+//func prefixCreateInventory(id, langCode string, rdx redux.Readable, utcTime int64) error {
+//
+//	cpifma := nod.Begin(" creating installed files inventory...")
+//	defer cpifma.Done()
+//
+//	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+//	if err != nil {
+//		return err
+//	}
+//
+//	inventory, err := createInventory(absPrefixDir)
+//	if err != nil {
+//		return err
+//	}
+//
+//	return writeInventory(id, langCode, vangogh_integration.Windows, rdx, inventory...)
+//}
 
 func prefixReveal(id string, langCode string) error {
 
@@ -236,7 +241,7 @@ func prefixReveal(id string, langCode string) error {
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, langCode, rdx)
+	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
