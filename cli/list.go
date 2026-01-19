@@ -76,7 +76,7 @@ func List(installed, playTasks, steamShortcuts bool,
 		if id == "" {
 			return errors.New("listing playTasks requires product id")
 		}
-		if err := listPlayTasks(id); err != nil {
+		if err := listPlayTasks(id, installInfo.LangCode); err != nil {
 			return err
 		}
 	}
@@ -208,7 +208,7 @@ func listInstalled(ii *InstallInfo) error {
 	return nil
 }
 
-func listPlayTasks(id string) error {
+func listPlayTasks(id, langCode string) error {
 
 	lpta := nod.Begin("listing playTasks for %s...", id)
 	defer lpta.Done()
@@ -218,7 +218,7 @@ func listPlayTasks(id string) error {
 		return err
 	}
 
-	absGogGameInfoPath, err := prefixFindGogGameInfo(id, rdx)
+	absGogGameInfoPath, err := prefixFindGogGameInfo(id, langCode, rdx)
 	if err != nil {
 		return err
 	}

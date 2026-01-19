@@ -266,7 +266,7 @@ func osFindGogGameInfo(id string, operatingSystem vangogh_integration.OperatingS
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			gogGameInfoPath, err = prefixFindGogGameInfo(id, rdx)
+			gogGameInfoPath, err = prefixFindGogGameInfo(id, langCode, rdx)
 		case vangogh_integration.Windows:
 			gogGameInfoPath, err = windowsFindGogGameInfo(id, langCode, rdx)
 		default:
@@ -333,7 +333,7 @@ func osFindDefaultLauncher(id string, operatingSystem vangogh_integration.Operat
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			defaultLauncherPath, err = prefixFindGogGamesLnk(id, rdx)
+			defaultLauncherPath, err = prefixFindGogGamesLnk(id, langCode, rdx)
 		case vangogh_integration.Windows:
 			defaultLauncherPath, err = windowsFindGogGamesLnk(id, langCode, rdx)
 		default:

@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"errors"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -20,6 +18,8 @@ const (
 	innoSetupCloseApplicationsArg = "/CLOSEAPPLICATIONS"
 	innoSetupDirArgTemplate       = "/DIR={dir}"
 )
+
+const lnkGlob = "*.lnk"
 
 const prefixRelDriveCDir = "drive_c"
 
@@ -104,7 +104,7 @@ func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownload
 			return ErrMissingExtractedPayload
 		}
 
-		installedAppPath, err := osInstalledPath(id, vangogh_integration.Windows, link.LanguageCode, rdx)
+		installedAppPath, err := osInstalledPath(id, link.LanguageCode, vangogh_integration.Windows, rdx)
 
 		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
 			return err
@@ -114,51 +114,18 @@ func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownload
 	return nil
 }
 
-func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return "", err
-	}
-
-	if ep, ok := rdx.GetLastVal(data.PrefixExeProperty, path.Join(prefixName, langCode)); ok && ep != "" {
-		absPrefixDir, err := data.AbsPrefixDir(id, rdx)
-		if err != nil {
-			return "", err
-		}
-
-		return filepath.Join(absPrefixDir, prefixRelDriveCDir, ep), nil
-	}
-
-	exePath, err := prefixFindGogGameInfoPrimaryPlayTaskExe(id, rdx)
-	if err != nil {
-		return "", err
-	}
-
-	if exePath == "" {
-		exePath, err = prefixFindGogGamesLnk(id, rdx)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	return exePath, nil
-}
-
-func prefixFindGlobFile(id string, rdx redux.Readable, globPattern string) (string, error) {
+func prefixFindGlobFile(id, langCode string, rdx redux.Readable, globPattern string) (string, error) {
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil
 	}
 
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	installedAppDir, err := osInstalledPath(id, langCode, vangogh_integration.Windows, rdx)
 	if err != nil {
 		return "", err
 	}
 
-	absPrefixDriveCDir := filepath.Join(absPrefixDir, prefixRelDriveCDir)
-
-	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, globPattern))
+	matches, err := filepath.Glob(filepath.Join(installedAppDir, globPattern))
 	if err != nil {
 		return "", err
 	}
@@ -186,77 +153,16 @@ func prefixFindGlobFile(id string, rdx redux.Readable, globPattern string) (stri
 	return "", nil
 }
 
-func prefixFindGogGameInstallPath(id string, rdx redux.Readable) (string, error) {
-	fi := nod.Begin(" finding install path...")
-	defer fi.Done()
-
-	return prefixFindGlobFile(id, rdx, gogGameInstallDir)
-}
-
-func prefixFindGogGameInfo(id string, rdx redux.Readable) (string, error) {
+func prefixFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
 	fpggi := nod.Begin(" finding goggame-%s.info...", id)
 	defer fpggi.Done()
 
-	return prefixFindGlobFile(id, rdx, strings.Replace(gogGameInfoGlobTemplate, "{id}", id, -1))
+	return prefixFindGlobFile(id, langCode, rdx, strings.Replace(gog_integration.GogGameInfoFilenameTemplate, "{id}", id, -1))
 }
 
-func prefixFindGogGamesLnk(id string, rdx redux.Readable) (string, error) {
+func prefixFindGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
 	fpl := nod.Begin(" finding .lnk...")
 	defer fpl.Done()
 
-	return prefixFindGlobFile(id, rdx, gogGameLnkGlob)
-}
-
-func prefixFindGogGameInfoPrimaryPlayTaskExe(id string, rdx redux.Readable) (string, error) {
-
-	absGogGameInfoPath, err := prefixFindGogGameInfo(id, rdx)
-	if err != nil {
-		return "", err
-	}
-
-	gogGameInfo, err := gog_integration.GetGogGameInfo(absGogGameInfoPath)
-	if err != nil {
-		return "", err
-	}
-
-	var relExePath string
-	ppt, err := gogGameInfo.GetPlayTask("")
-	if err != nil {
-		return "", err
-	}
-
-	relExePath = ppt.Path
-
-	if relExePath == "" {
-		return "", errors.New("cannot determine primary or first playTask for " + id)
-	}
-
-	absExeDir, _ := filepath.Split(absGogGameInfoPath)
-
-	return filepath.Join(absExeDir, relExePath), nil
-}
-
-func prefixReveal(id string, langCode string) error {
-
-	rpa := nod.Begin("revealing prefix for %s...", id)
-	defer rpa.Done()
-
-	rdx, err := redux.NewReader(data.AbsReduxDir(), vangogh_integration.SlugProperty)
-	if err != nil {
-		return err
-	}
-
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(absPrefixDir); os.IsNotExist(err) {
-		rpa.EndWithResult("not found")
-		return nil
-	}
-
-	absPrefixDriveCPath := filepath.Join(absPrefixDir, prefixRelDriveCDir, gogGamesDir)
-
-	return currentOsReveal(absPrefixDriveCPath)
+	return prefixFindGlobFile(id, langCode, rdx, lnkGlob)
 }

@@ -285,28 +285,7 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 	launchOptions = append(launchOptions, strings.Replace(langCodeTemplate, "{lang-code}", langCode, 1))
 
 	var installedPath string
-
-	switch operatingSystem {
-	case vangogh_integration.MacOS:
-		fallthrough
-	case vangogh_integration.Linux:
-		installedPath, err = osInstalledPath(id, operatingSystem, langCode, rdx)
-	case vangogh_integration.Windows:
-		currentOs := data.CurrentOs()
-		switch currentOs {
-		case vangogh_integration.MacOS:
-			fallthrough
-		case vangogh_integration.Linux:
-			installedPath, err = prefixFindGogGameInstallPath(id, rdx)
-		case vangogh_integration.Windows:
-			installedPath, err = osInstalledPath(id, operatingSystem, langCode, rdx)
-		default:
-			return nil, operatingSystem.ErrUnsupported()
-		}
-	default:
-		return nil, operatingSystem.ErrUnsupported()
-	}
-
+	installedPath, err = osInstalledPath(id, langCode, operatingSystem, rdx)
 	if err != nil {
 		return nil, err
 	}

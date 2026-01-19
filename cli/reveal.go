@@ -85,7 +85,8 @@ func revealInstalled(id string, ii *InstallInfo) error {
 	}
 
 	if ii.LangCode == "" {
-		lc, err := installedInfoLangCode(id, ii.OperatingSystem, rdx)
+		var lc string
+		lc, err = installedInfoLangCode(id, ii.OperatingSystem, rdx)
 		if err != nil {
 			return err
 		}
@@ -95,7 +96,8 @@ func revealInstalled(id string, ii *InstallInfo) error {
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		installedInfo, _, err := matchInstallInfo(ii, installedInfoLines...)
+		var installedInfo *InstallInfo
+		installedInfo, _, err = matchInstallInfo(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}
@@ -113,7 +115,7 @@ func revealInstalled(id string, ii *InstallInfo) error {
 
 func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) error {
 
-	revealPath, err := osInstalledPath(id, ii.OperatingSystem, ii.LangCode, rdx)
+	revealPath, err := osInstalledPath(id, ii.LangCode, ii.OperatingSystem, rdx)
 	if err != nil {
 		return err
 	}

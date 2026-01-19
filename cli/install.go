@@ -257,7 +257,7 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 	}
 
 	// 6
-	absInstalledDir, err := osInstalledPath(id, ii.OperatingSystem, ii.LangCode, rdx)
+	absInstalledDir, err := osInstalledPath(id, ii.LangCode, ii.OperatingSystem, rdx)
 	if err != nil {
 		return err
 	}
@@ -491,7 +491,7 @@ func removeNewFiles(srcSet, newSet []string) error {
 	return nil
 }
 
-func osInstalledPath(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
+func osInstalledPath(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
 
 	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
