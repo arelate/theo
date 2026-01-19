@@ -102,30 +102,18 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	oupa := nod.Begin(" uninstalling %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer oupa.Done()
 
+	if err := removeInventoriedFiles(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
+		return err
+	}
+
 	switch ii.OperatingSystem {
-	case vangogh_integration.MacOS:
-		fallthrough
-	case vangogh_integration.Linux:
-		if err := removeInventoriedFiles(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
-			return err
-		}
 	case vangogh_integration.Windows:
 		currentOs := data.CurrentOs()
 		switch currentOs {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-
-			if err := removeProductPrefix(id, ii.LangCode, rdx, ii.force); err != nil {
-				return err
-			}
-
 			if err := prefixDeleteProperty(id, ii.LangCode, data.PrefixEnvProperty, rdx, ii.force); err != nil {
-				return err
-			}
-
-		case vangogh_integration.Windows:
-			if err := windowsUninstallProduct(id, ii.LangCode, rdx); err != nil {
 				return err
 			}
 		default:
