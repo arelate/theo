@@ -20,6 +20,12 @@ import (
 const (
 	catCmdPfx    = "cat "
 	appBundleExt = ".app"
+	pkgExt       = ".pkg"
+)
+
+const (
+	relPayloadPath         = "package.pkg/Scripts/payload"
+	relMacOsGogGameInfoDir = "Contents/Resources"
 )
 
 const (
@@ -27,36 +33,16 @@ const (
 	installerTypeDlc  = "dlc"
 )
 
-const relMacOsGogGameInfoDir = "Contents/Resources"
-
-const pkgExt = ".pkg"
-
-const (
-	relPayloadPath = "package.pkg/Scripts/payload"
+var (
+	ErrMissingExtractedPayload       = errors.New("cannot locate extracted payload")
+	ErrUnknownPostInstallCommand     = errors.New("unknown postinstall command")
+	ErrCatCommandSourceIsEmpty       = errors.New("cat command source glob is empty")
+	ErrCatCommandDstPathIsEmpty      = errors.New("cat command destination path is empty")
+	ErrNoFilesMatchSourceGlobPattern = errors.New("no files match source glob pattern")
+	ErrNoMacOsAppBundle              = errors.New("cannot locate macOS app bundle")
 )
 
-//func removeExistingCreateMissing(path string, force bool) error {
-//	if _, err := os.Stat(path); err == nil {
-//		if force {
-//			if err = os.RemoveAll(path); err != nil {
-//				return err
-//			}
-//		} else {
-//			return nil
-//		}
-//	}
-//
-//	pathDir, _ := filepath.Split(path)
-//	if _, err := os.Stat(pathDir); os.IsNotExist(err) {
-//		if err = os.MkdirAll(pathDir, 0755); err != nil {
-//			return err
-//		}
-//	}
-//
-//	return nil
-//}
-
-func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLinks, dstDir string, force bool) error {
+func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
 
 	mui := nod.Begin(" unpacking %s installers with pkgutil, please wait...", id)
 	defer mui.Done()
@@ -72,42 +58,42 @@ func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 
 		absInstallerPath := filepath.Join(productDownloadsDir, link.LocalFilename)
 
-		if err := macOsPkgUtilExtractAll(&link, absInstallerPath, dstDir, force); err != nil {
+		if err := macOsUnpackLink(&link, absInstallerPath, unpackDir); err != nil {
 			return err
 		}
-
 	}
 
 	return nil
 }
 
-func macOsPkgUtilExtractAll(link *vangogh_integration.ProductDownloadLink, srcPath, dstPath string, force bool) error {
+func macOsUnpackLink(link *vangogh_integration.ProductDownloadLink, linkPath, unpackDir string) error {
 
 	mpuea := nod.Begin(" unpacking %s with pkgutil, please wait...", link.LocalFilename)
 	defer mpuea.Done()
 
-	localFilenameDstDir := filepath.Join(dstPath, link.LocalFilename)
+	unpackLinkDir := filepath.Join(unpackDir, link.LocalFilename)
 
-	pathDir, _ := filepath.Split(localFilenameDstDir)
-	if _, err := os.Stat(pathDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(pathDir, 0755); err != nil {
+	unpackLinkParentDir, _ := filepath.Split(unpackLinkDir)
+
+	if _, err := os.Stat(unpackLinkParentDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(unpackLinkParentDir, 0755); err != nil {
 			return err
 		}
 	}
 
-	cmd := exec.Command("pkgutil", "--expand-full", srcPath, localFilenameDstDir)
+	cmd := exec.Command("pkgutil", "--verbose", "--expand-full", linkPath, unpackLinkDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }
 
-func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+func macOsReduceBundleNameProperty(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string, rdx redux.Writeable) error {
 
-	mpufa := nod.Begin(" placing product installation files for %s...", id)
-	defer mpufa.Done()
+	mrbna := nod.Begin(" reducing %s bundle names...", id)
+	defer mrbna.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
 		return err
 	}
 
@@ -123,65 +109,39 @@ func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadL
 			return err
 		}
 
-		absUnpackedPayloadPath := filepath.Join(unpackDir, link.LocalFilename, relPayloadPath)
-		if _, err = os.Stat(absUnpackedPayloadPath); os.IsNotExist(err) {
-			return errors.New("cannot locate extracted payload")
+		if postInstallScript.installerType != installerTypeGame {
+			continue
 		}
 
-		installerType := postInstallScript.InstallerType()
-
-		absBundlePath, err := osInstalledPath(id, vangogh_integration.MacOS, link.LanguageCode, rdx)
-		if strings.HasSuffix(postInstallScript.bundleName, appBundleExt) {
-			absBundlePath = filepath.Join(absBundlePath, postInstallScript.bundleName)
-		}
-
-		switch installerType {
-		case installerTypeGame:
-			fallthrough
-		case installerTypeDlc:
-			if err = macOsPlaceUnpackedPayload(&link, absUnpackedPayloadPath, absBundlePath); err != nil {
-				return err
-			}
-		default:
-			return errors.New("unknown postinstall script installer type: " + installerType)
-		}
-
+		return rdx.ReplaceValues(data.BundleNameProperty, id, postInstallScript.bundleName)
 	}
 
 	return nil
 }
 
-func macOsPlaceUnpackedPayload(link *vangogh_integration.ProductDownloadLink, absUnpackedPayloadPath, absInstallationPath string) error {
+func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
-	mpda := nod.Begin(" placing unpacked files from %s...", link.LocalFilename)
-	defer mpda.Done()
+	mpufa := nod.Begin(" placing product installation files for %s...", id)
+	defer mpufa.Done()
 
-	if _, err := os.Stat(absInstallationPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(absInstallationPath, 0755); err != nil {
-			return err
-		}
-	}
-
-	// enumerate all DLC files in the payload directory
-	relDlcFiles, err := relWalkDir(absUnpackedPayloadPath)
-	if err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
 		return err
 	}
 
-	for _, dlcFile := range relDlcFiles {
+	for _, link := range dls {
 
-		absDstPath := filepath.Join(absInstallationPath, dlcFile)
-		absDstDir, _ := filepath.Split(absDstPath)
-
-		if _, err = os.Stat(absDstDir); os.IsNotExist(err) {
-			if err = os.MkdirAll(absDstDir, 0755); err != nil {
-				return err
-			}
+		if filepath.Ext(link.LocalFilename) != pkgExt {
+			continue
 		}
 
-		absSrcPath := filepath.Join(absUnpackedPayloadPath, dlcFile)
+		absUnpackedPayloadPath := filepath.Join(unpackDir, link.LocalFilename, relPayloadPath)
+		if _, err := os.Stat(absUnpackedPayloadPath); os.IsNotExist(err) {
+			return ErrMissingExtractedPayload
+		}
 
-		if err = os.Rename(absSrcPath, absDstPath); err != nil {
+		absBundlePath, err := osInstalledPath(id, vangogh_integration.MacOS, link.LanguageCode, rdx)
+
+		if err = placeUnpackedLinkPayload(&link, absUnpackedPayloadPath, absBundlePath); err != nil {
 			return err
 		}
 	}
@@ -189,10 +149,14 @@ func macOsPlaceUnpackedPayload(link *vangogh_integration.ProductDownloadLink, ab
 	return nil
 }
 
-func macOsGetInventory(dls vangogh_integration.ProductDownloadLinks, unpackDir string) ([]string, error) {
+func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) ([]string, error) {
 
 	mgia := nod.Begin(" creating inventory of unpacked files...")
 	defer mgia.Done()
+
+	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
+		return nil, err
+	}
 
 	filesMap := make(map[string]any)
 
@@ -204,7 +168,7 @@ func macOsGetInventory(dls vangogh_integration.ProductDownloadLinks, unpackDir s
 
 		absUnpackedPayloadPath := filepath.Join(unpackDir, link.LocalFilename, relPayloadPath)
 		if _, err := os.Stat(absUnpackedPayloadPath); os.IsNotExist(err) {
-			return nil, errors.New("cannot locate extracted payload")
+			return nil, ErrMissingExtractedPayload
 		}
 
 		relUnpackedFiles, err := relWalkDir(absUnpackedPayloadPath)
@@ -212,15 +176,9 @@ func macOsGetInventory(dls vangogh_integration.ProductDownloadLinks, unpackDir s
 			return nil, err
 		}
 
-		absPostInstallScriptPath := PostInstallScriptPath(unpackDir, &link)
-		postInstallScript, err := ParsePostInstallScript(absPostInstallScriptPath)
-		if err != nil {
-			return nil, err
-		}
-
 		var appBundleName string
-		if strings.HasSuffix(postInstallScript.bundleName, appBundleExt) {
-			appBundleName = postInstallScript.bundleName
+		if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok {
+			appBundleName = bundleName
 		}
 
 		for _, ruf := range relUnpackedFiles {
@@ -240,7 +198,7 @@ func macOsPostInstallActions(id string,
 	rdx redux.Readable,
 	unpackDir string) error {
 
-	mpia := nod.Begin(" performing post-install %s actions for %s...", vangogh_integration.MacOS, id)
+	mpia := nod.Begin(" performing %s post-install actions for %s...", vangogh_integration.MacOS, id)
 	defer mpia.Done()
 
 	absBundlePaths := make(map[string]any)
@@ -295,7 +253,6 @@ func macOsRemoveXattrs(path string) error {
 	mrxa := nod.Begin(" removing xattrs...")
 	defer mrxa.Done()
 
-	// xattr -cr /Applications/Bundle Name.app
 	cmd := exec.Command("xattr", "-cr", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -305,7 +262,7 @@ func macOsRemoveXattrs(path string) error {
 
 func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundleAppPath string) error {
 
-	pcca := nod.NewProgress(" processing post-install commands...")
+	pcca := nod.NewProgress(" processing post-install script...")
 	defer pcca.Done()
 
 	pcca.TotalInt(len(commands))
@@ -323,7 +280,7 @@ func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundl
 			continue
 		}
 		// at this point we've handled all known commands, so anything here would be unknown
-		return errors.New("cannot process unknown custom command: " + cmd)
+		return ErrUnknownPostInstallCommand
 	}
 	return nil
 }
@@ -331,14 +288,14 @@ func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundl
 func macOsCatFiles(srcGlob string, dstPath string) error {
 
 	if srcGlob == "" {
-		return errors.New("cat command source glob cannot be empty")
+		return ErrCatCommandSourceIsEmpty
 	}
 	if dstPath == "" {
-		return errors.New("cat command destination path cannot be empty")
+		return ErrCatCommandDstPathIsEmpty
 	}
 
 	if matches, err := filepath.Glob(srcGlob); err == nil && len(matches) == 0 {
-		return errors.New("no files match pattern: " + srcGlob)
+		return ErrNoFilesMatchSourceGlobPattern
 	}
 
 	_, srcFileGlob := filepath.Split(srcGlob)
@@ -371,12 +328,13 @@ func macOsCatFiles(srcGlob string, dstPath string) error {
 
 	for _, match := range matches {
 
-		srcFile, err := os.Open(match)
+		var srcFile *os.File
+		srcFile, err = os.Open(match)
 		if err != nil {
 			return err
 		}
 
-		if _, err := io.Copy(dstFile, srcFile); err != nil {
+		if _, err = io.Copy(dstFile, srcFile); err != nil {
 			_ = srcFile.Close()
 			return err
 		}
@@ -384,7 +342,7 @@ func macOsCatFiles(srcGlob string, dstPath string) error {
 		ecfa.Increment()
 		_ = srcFile.Close()
 
-		if err := os.Remove(match); err != nil {
+		if err = os.Remove(match); err != nil {
 			return err
 		}
 	}
@@ -448,7 +406,7 @@ func macOsFindBundleApp(id, langCode string, rdx redux.Readable) (string, error)
 		}
 	}
 
-	return "", errors.New("cannot locate macOS bundle.app for " + id)
+	return "", ErrNoMacOsAppBundle
 }
 
 func macOsExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integration.GogGameInfo, et *execTask) (*execTask, error) {
@@ -460,6 +418,8 @@ func macOsExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integr
 
 	absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
 	absExeRootDir := strings.TrimSuffix(absGogGameInfoDir, relMacOsGogGameInfoDir+"/")
+
+	// TODO: DRY
 
 	exePath := pt.Path
 	// account for Windows-style relative paths, e.g. DOSBOX\DOSBOX.exe

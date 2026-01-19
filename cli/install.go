@@ -108,7 +108,8 @@ func Install(id string, ii *InstallInfo) error {
 
 		if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-			installInfo, _, err := matchInstallInfo(ii, installedInfoLines...)
+			var installInfo *InstallInfo
+			installInfo, _, err = matchInstallInfo(ii, installedInfoLines...)
 			if err != nil {
 				return err
 			}
@@ -216,7 +217,8 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 	// 2. perform pre-install actions (e.g. make setup executable on Linux)
 	// 3. get protected locations files (e.g. Desktop shortcuts on Linux)
 	// 4. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
-	// 5. uninstall if installed directory exists and forcing install
+	// 5. perform post-unpack actions (e.g. reduce bundleName on macOS)
+	// 5. uninstall if installed directory exists and forcing install (will be used for updates)
 	// 6. create inventory of unpacked files
 	// 7. place (move unpacked to install folder)
 	// 8. perform post-install actions (e.g. run post-install script and remove xattrs on macOS)
@@ -242,13 +244,21 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 	}
 
 	// 4
-	unpackDir := osGetUnpackDir(id, ii)
+	unpackDir, err := osGetUnpackDir(id, ii, rdx)
+	if err != nil {
+		return err
+	}
 
-	if err = osUnpackInstallers(id, ii, dls, unpackDir); err != nil {
+	if err = osUnpackInstallers(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
 	// 5
+	if err = osPostUnpackActions(id, ii, dls, unpackDir, rdx); err != nil {
+		return err
+	}
+
+	// 6
 	absInstalledDir, err := osInstalledPath(id, ii.OperatingSystem, ii.LangCode, rdx)
 	if err != nil {
 		return err
@@ -260,8 +270,8 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 		}
 	}
 
-	// 6
-	unpackedInventory, err := osGetInventory(ii, dls, unpackDir)
+	// 7
+	unpackedInventory, err := osGetInventory(id, ii, dls, rdx, unpackDir)
 	if err != nil {
 		return err
 	}
@@ -270,17 +280,17 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 		return err
 	}
 
-	// 7
+	// 8
 	if err = osPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
-	// 8
+	// 9
 	if err = osPostInstallActions(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
-	// 9
+	// 10
 	postInstallFiles, err := osGetProtectedLocationsFiles(ii)
 	if err != nil {
 		return err
@@ -290,7 +300,7 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 		return err
 	}
 
-	// 10
+	// 11
 	if err = os.RemoveAll(unpackDir); err != nil {
 		return err
 	}
@@ -327,7 +337,7 @@ func osGetProtectedLocationsFiles(ii *InstallInfo) ([]string, error) {
 	}
 }
 
-func osGetUnpackDir(id string, ii *InstallInfo) string {
+func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
 	unpackDir := filepath.Join(os.TempDir(), id)
 
@@ -335,16 +345,20 @@ func osGetUnpackDir(id string, ii *InstallInfo) string {
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.Windows:
-			return unpackDir
+			return unpackDir, nil
 		default:
-			return "" // prefix + c:\Temp
+			absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+			if err != nil {
+				return "", err
+			}
+			return filepath.Join(absPrefixDir, relPrefixDriveCDir, "Temp", id), nil
 		}
 	default:
-		return unpackDir
+		return unpackDir, nil
 	}
 }
 
-func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, dstDir string) error {
+func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, dstDir string) error {
 
 	if _, err := os.Stat(dstDir); err == nil {
 		if ii.force {
@@ -356,16 +370,52 @@ func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.Prod
 		}
 	}
 
-	pathDir, _ := filepath.Split(dstDir)
-	if _, err := os.Stat(pathDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(pathDir, 0755); err != nil {
+	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(dstDir, 0755); err != nil {
 			return err
 		}
 	}
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsUnpackInstallers(id, dls, dstDir, ii.force)
+		return macOsUnpackInstallers(id, dls, dstDir)
+	case vangogh_integration.Windows:
+		switch data.CurrentOs() {
+		case vangogh_integration.MacOS:
+			fallthrough
+		case vangogh_integration.Linux:
+			return prefixUnpackInstaller(id, ii, dls, rdx)
+		default:
+			return ii.OperatingSystem.ErrUnsupported()
+		}
+	default:
+		return ii.OperatingSystem.ErrUnsupported()
+	}
+}
+
+func osPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string, rdx redux.Writeable) error {
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsReduceBundleNameProperty(id, dls, unpackDir, rdx)
+	default:
+		return ii.OperatingSystem.ErrUnsupported()
+	}
+}
+
+func osGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) ([]string, error) {
+
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsGetInventory(id, dls, rdx, unpackDir)
+	default:
+		return getInventory(dls, unpackDir)
+	}
+}
+
+func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		return macOsPlaceUnpackedFiles(id, dls, rdx, unpackDir)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		default:
@@ -376,23 +426,42 @@ func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.Prod
 	}
 }
 
-func osGetInventory(ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string) ([]string, error) {
+func placeUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLink, absUnpackedPath, absInstallationPath string) error {
 
-	switch ii.OperatingSystem {
-	case vangogh_integration.MacOS:
-		return macOsGetInventory(dls, unpackDir)
-	default:
-		return nil, ii.OperatingSystem.ErrUnsupported()
-	}
-}
+	mpda := nod.Begin(" placing unpacked %s files...", link.LocalFilename)
+	defer mpda.Done()
 
-func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
-	switch ii.OperatingSystem {
-	case vangogh_integration.MacOS:
-		return macOsPlaceUnpackedFiles(id, dls, rdx, unpackDir)
-	default:
-		return ii.OperatingSystem.ErrUnsupported()
+	if _, err := os.Stat(absInstallationPath); os.IsNotExist(err) {
+		if err = os.MkdirAll(absInstallationPath, 0755); err != nil {
+			return err
+		}
 	}
+
+	// enumerate all files in the payload directory
+	relFiles, err := relWalkDir(absUnpackedPath)
+	if err != nil {
+		return err
+	}
+
+	for _, relFile := range relFiles {
+
+		absSrcPath := filepath.Join(absUnpackedPath, relFile)
+
+		absDstPath := filepath.Join(absInstallationPath, relFile)
+		absDstDir, _ := filepath.Split(absDstPath)
+
+		if _, err = os.Stat(absDstDir); os.IsNotExist(err) {
+			if err = os.MkdirAll(absDstDir, 0755); err != nil {
+				return err
+			}
+		}
+
+		if err = os.Rename(absSrcPath, absDstPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func osPostInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
@@ -426,13 +495,16 @@ func osInstalledPath(id string, operatingSystem vangogh_integration.OperatingSys
 
 	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(operatingSystem, langCode))
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
 		return "", err
 	}
 
 	var appBundle string
 	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
 		appBundle = slug
+		if bundleName, sure := rdx.GetLastVal(data.BundleNameProperty, id); sure && bundleName != "" {
+			appBundle = filepath.Join(appBundle, bundleName)
+		}
 	} else {
 		return "", errors.New("slug is not defined for product " + id)
 	}

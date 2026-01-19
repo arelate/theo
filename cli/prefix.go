@@ -97,7 +97,7 @@ func Prefix(id string, ii *InstallInfo,
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -257,7 +257,7 @@ func archiveProductPrefix(id string) error {
 
 	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, prefixName)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -361,7 +361,7 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, force bool) er
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -514,7 +514,7 @@ func prefixSetExe(id string, exe string, rdx redux.Writeable) error {
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}

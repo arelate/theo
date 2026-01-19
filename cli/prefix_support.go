@@ -31,7 +31,7 @@ func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 	}
 
 	if ep, ok := rdx.GetLastVal(data.PrefixExeProperty, path.Join(prefixName, langCode)); ok && ep != "" {
-		absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+		absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 		if err != nil {
 			return "", err
 		}
@@ -60,7 +60,7 @@ func prefixFindGlobFile(id string, rdx redux.Readable, globPattern string) (stri
 		return "", nil
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -160,7 +160,7 @@ func prefixInit(id string, rdx redux.Readable, verbose bool) error {
 	}
 }
 
-func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLinks, ii *InstallInfo, rdx redux.Writeable) error {
+func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable) error {
 
 	currentOs := data.CurrentOs()
 
@@ -168,16 +168,6 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 	defer wipa.Done()
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
-	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
-
-	productDetails, err := getProductDetails(id, rdx, ii.force)
-	if err != nil {
-		return err
-	}
-
-	if err = hasFreeSpaceForProduct(productDetails, installedAppsDir, ii, nil); err != nil {
-		return err
-	}
 
 	var currentOsWineRun wineRunFunc
 	switch currentOs {
@@ -197,15 +187,18 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
+		dstDir := filepath.Join("C:\\Temp", id, link.LocalFilename)
+		innoSetupDirArg := strings.Replace(innoSetupDirArgTemplate, "{dir}", dstDir, 1)
+
 		et := &execTask{
 			exe:     absInstallerPath,
 			workDir: downloadsDir,
-			args:    []string{innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg},
+			args:    []string{innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg, innoSetupDirArg},
 			env:     ii.Env,
 			verbose: ii.verbose,
 		}
 
-		if err = currentOsWineRun(id, rdx, et, ii.force); err != nil {
+		if err := currentOsWineRun(id, rdx, et, ii.force); err != nil {
 			return err
 		}
 	}
@@ -218,7 +211,7 @@ func prefixInstallProduct(id string, dls vangogh_integration.ProductDownloadLink
 //	cpifma := nod.Begin(" creating installed files inventory...")
 //	defer cpifma.Done()
 //
-//	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+//	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 //	if err != nil {
 //		return err
 //	}
@@ -241,7 +234,7 @@ func prefixReveal(id string, langCode string) error {
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}

@@ -63,7 +63,7 @@ func macOsWineRun(id string, rdx redux.Readable, et *execTask, force bool) error
 
 	absWineBinPath := filepath.Join(absCxBinDir, relWineFilename)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func macOsCreateCxBottle(id string, rdx redux.Readable, template string, verbose
 
 	absCxBottlePath := filepath.Join(absCxBinDir, relCxBottleFilename)
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}

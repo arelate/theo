@@ -35,7 +35,7 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) err
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func linuxInitPrefix(id string, rdx redux.Readable, _ bool) error {
 		return err
 	}
 
-	absPrefixDir, err := data.GetAbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 	if err != nil {
 		return err
 	}

@@ -99,7 +99,7 @@ func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode st
 	return strings.Join([]string{operatingSystem.String(), langCode}, "-")
 }
 
-func GetAbsPrefixDir(id string, rdx redux.Readable) (string, error) {
+func AbsPrefixDir(id string, rdx redux.Readable) (string, error) {
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", err
 	}

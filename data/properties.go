@@ -5,6 +5,8 @@ import "github.com/arelate/southern_light/vangogh_integration"
 const (
 	ServerConnectionProperties = "server-connection"
 
+	BundleNameProperty = "bundle-name"
+
 	InstallInfoProperty          = "install-info"
 	InstallDateProperty          = "install-date"
 	LastRunDateProperty          = "last-run-date"
@@ -43,6 +45,7 @@ func AllProperties() []string {
 		vangogh_integration.IconSquareProperty,
 		vangogh_integration.BackgroundProperty,
 		ServerConnectionProperties,
+		BundleNameProperty,
 		InstallInfoProperty,
 		InstallDateProperty,
 		LastRunDateProperty,

@@ -2,13 +2,45 @@ package cli
 
 import (
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
 )
+
+func getInventory(dls vangogh_integration.ProductDownloadLinks, unpackDir string) ([]string, error) {
+
+	gia := nod.Begin(" creating inventory of unpacked files...")
+	defer gia.Done()
+
+	filesMap := make(map[string]any)
+
+	for _, link := range dls {
+
+		if linkExt := filepath.Ext(link.LocalFilename); linkExt != exeExt {
+			continue
+		}
+
+		absUnpackedPath := filepath.Join(unpackDir, link.LocalFilename)
+
+		relUnpackedFiles, err := relWalkDir(absUnpackedPath)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, ruf := range relUnpackedFiles {
+			filesMap[ruf] = nil
+		}
+
+	}
+
+	return slices.Sorted(maps.Keys(filesMap)), nil
+}
 
 func readInventory(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) ([]string, error) {
 

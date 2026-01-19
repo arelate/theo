@@ -184,13 +184,14 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
 
 		var absPrefixDir string
-		if absPrefixDir, err = data.GetAbsPrefixDir(id, rdx); err == nil {
+		if absPrefixDir, err = data.AbsPrefixDir(id, rdx); err == nil {
 			et.prefix = absPrefixDir
 		} else {
 			return err
 		}
 
-		prefixName, err := data.GetPrefixName(id, rdx)
+		var prefixName string
+		prefixName, err = data.GetPrefixName(id, rdx)
 		if err != nil {
 			return err
 		}
