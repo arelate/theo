@@ -301,7 +301,7 @@ func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force
 		return err
 	}
 
-	absDriveCroot := filepath.Join(absPrefixDir, relPrefixDriveCDir)
+	absDriveCroot := filepath.Join(absPrefixDir, prefixRelDriveCDir)
 
 	regFilename := retinaOnFilename
 	regContent := retinaOnReg
@@ -519,7 +519,7 @@ func prefixSetExe(id string, exe string, rdx redux.Writeable) error {
 		return err
 	}
 
-	absExePath := filepath.Join(absPrefixDir, relPrefixDriveCDir, exe)
+	absExePath := filepath.Join(absPrefixDir, prefixRelDriveCDir, exe)
 	if _, err = os.Stat(absExePath); err != nil {
 		return err
 	}

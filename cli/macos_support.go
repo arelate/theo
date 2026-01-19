@@ -121,12 +121,8 @@ func macOsReduceBundleNameProperty(id string, dls vangogh_integration.ProductDow
 
 func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
-	mpufa := nod.Begin(" placing product installation files for %s...", id)
+	mpufa := nod.Begin(" placing unpacked files for %s...", id)
 	defer mpufa.Done()
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
-		return err
-	}
 
 	for _, link := range dls {
 

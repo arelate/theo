@@ -21,7 +21,98 @@ const (
 	innoSetupDirArgTemplate       = "/DIR={dir}"
 )
 
-const relPrefixDriveCDir = "drive_c"
+const prefixRelDriveCDir = "drive_c"
+
+func prefixInit(id string, rdx redux.Readable, verbose bool) error {
+
+	cpa := nod.Begin("initializing prefix for %s...", id)
+	defer cpa.Done()
+
+	switch data.CurrentOs() {
+	case vangogh_integration.MacOS:
+		return macOsInitPrefix(id, rdx, verbose)
+	case vangogh_integration.Linux:
+		return linuxInitPrefix(id, rdx, verbose)
+	default:
+		return data.CurrentOs().ErrUnsupported()
+	}
+}
+
+func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable) error {
+
+	currentOs := data.CurrentOs()
+
+	puia := nod.Begin(" unpacking %s installers for %s-%s...", id, vangogh_integration.Windows, ii.LangCode)
+	defer puia.Done()
+
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+
+	var currentOsWineRun wineRunFunc
+	switch currentOs {
+	case vangogh_integration.MacOS:
+		currentOsWineRun = macOsWineRun
+	case vangogh_integration.Linux:
+		currentOsWineRun = linuxProtonRun
+	default:
+		return currentOs.ErrUnsupported()
+	}
+
+	for _, link := range dls {
+
+		if linkExt := filepath.Ext(link.LocalFilename); linkExt != exeExt {
+			continue
+		}
+
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+
+		dstDir := filepath.Join("C:\\Temp", id, link.LocalFilename)
+		innoSetupDirArg := strings.Replace(innoSetupDirArgTemplate, "{dir}", dstDir, 1)
+
+		et := &execTask{
+			exe:     absInstallerPath,
+			workDir: downloadsDir,
+			args: []string{
+				innoSetupVerySilentArg,
+				innoSetupNoRestartArg,
+				innoSetupCloseApplicationsArg,
+				innoSetupDirArg},
+			env:     ii.Env,
+			verbose: ii.verbose,
+		}
+
+		if err := currentOsWineRun(id, rdx, et, ii.force); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+
+	pufa := nod.Begin(" placing unpacked files for %s...", id)
+	defer pufa.Done()
+
+	for _, link := range dls {
+
+		if filepath.Ext(link.LocalFilename) != exeExt {
+			continue
+		}
+
+		absUnpackedPath := filepath.Join(unpackDir, link.LocalFilename)
+		if _, err := os.Stat(absUnpackedPath); os.IsNotExist(err) {
+			return ErrMissingExtractedPayload
+		}
+
+		installedAppPath, err := osInstalledPath(id, vangogh_integration.Windows, link.LanguageCode, rdx)
+
+		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 
@@ -36,7 +127,7 @@ func prefixGetExePath(id, langCode string, rdx redux.Readable) (string, error) {
 			return "", err
 		}
 
-		return filepath.Join(absPrefixDir, relPrefixDriveCDir, ep), nil
+		return filepath.Join(absPrefixDir, prefixRelDriveCDir, ep), nil
 	}
 
 	exePath, err := prefixFindGogGameInfoPrimaryPlayTaskExe(id, rdx)
@@ -65,7 +156,7 @@ func prefixFindGlobFile(id string, rdx redux.Readable, globPattern string) (stri
 		return "", err
 	}
 
-	absPrefixDriveCDir := filepath.Join(absPrefixDir, relPrefixDriveCDir)
+	absPrefixDriveCDir := filepath.Join(absPrefixDir, prefixRelDriveCDir)
 
 	matches, err := filepath.Glob(filepath.Join(absPrefixDriveCDir, globPattern))
 	if err != nil {
@@ -145,85 +236,6 @@ func prefixFindGogGameInfoPrimaryPlayTaskExe(id string, rdx redux.Readable) (str
 	return filepath.Join(absExeDir, relExePath), nil
 }
 
-func prefixInit(id string, rdx redux.Readable, verbose bool) error {
-
-	cpa := nod.Begin("initializing prefix for %s...", id)
-	defer cpa.Done()
-
-	switch data.CurrentOs() {
-	case vangogh_integration.MacOS:
-		return macOsInitPrefix(id, rdx, verbose)
-	case vangogh_integration.Linux:
-		return linuxInitPrefix(id, rdx, verbose)
-	default:
-		return data.CurrentOs().ErrUnsupported()
-	}
-}
-
-func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable) error {
-
-	currentOs := data.CurrentOs()
-
-	wipa := nod.Begin("installing %s for %s...", id, vangogh_integration.Windows)
-	defer wipa.Done()
-
-	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
-
-	var currentOsWineRun wineRunFunc
-	switch currentOs {
-	case vangogh_integration.MacOS:
-		currentOsWineRun = macOsWineRun
-	case vangogh_integration.Linux:
-		currentOsWineRun = linuxProtonRun
-	default:
-		return currentOs.ErrUnsupported()
-	}
-
-	for _, link := range dls {
-
-		if linkExt := filepath.Ext(link.LocalFilename); linkExt != exeExt {
-			continue
-		}
-
-		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
-
-		dstDir := filepath.Join("C:\\Temp", id, link.LocalFilename)
-		innoSetupDirArg := strings.Replace(innoSetupDirArgTemplate, "{dir}", dstDir, 1)
-
-		et := &execTask{
-			exe:     absInstallerPath,
-			workDir: downloadsDir,
-			args:    []string{innoSetupVerySilentArg, innoSetupNoRestartArg, innoSetupCloseApplicationsArg, innoSetupDirArg},
-			env:     ii.Env,
-			verbose: ii.verbose,
-		}
-
-		if err := currentOsWineRun(id, rdx, et, ii.force); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-//func prefixCreateInventory(id, langCode string, rdx redux.Readable, utcTime int64) error {
-//
-//	cpifma := nod.Begin(" creating installed files inventory...")
-//	defer cpifma.Done()
-//
-//	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
-//	if err != nil {
-//		return err
-//	}
-//
-//	inventory, err := createInventory(absPrefixDir)
-//	if err != nil {
-//		return err
-//	}
-//
-//	return writeInventory(id, langCode, vangogh_integration.Windows, rdx, inventory...)
-//}
-
 func prefixReveal(id string, langCode string) error {
 
 	rpa := nod.Begin("revealing prefix for %s...", id)
@@ -244,7 +256,7 @@ func prefixReveal(id string, langCode string) error {
 		return nil
 	}
 
-	absPrefixDriveCPath := filepath.Join(absPrefixDir, relPrefixDriveCDir, gogGamesDir)
+	absPrefixDriveCPath := filepath.Join(absPrefixDir, prefixRelDriveCDir, gogGamesDir)
 
 	return currentOsReveal(absPrefixDriveCPath)
 }

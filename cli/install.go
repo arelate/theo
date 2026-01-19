@@ -117,8 +117,6 @@ func Install(id string, ii *InstallInfo) error {
 			if installInfo != nil {
 				ia.EndWithResult("product %s is already installed", id)
 				return nil
-			} else {
-				return err
 			}
 
 		}
@@ -351,7 +349,7 @@ func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, err
 			if err != nil {
 				return "", err
 			}
-			return filepath.Join(absPrefixDir, relPrefixDriveCDir, "Temp", id), nil
+			return filepath.Join(absPrefixDir, prefixRelDriveCDir, "Temp", id), nil
 		}
 	default:
 		return unpackDir, nil
@@ -398,7 +396,7 @@ func osPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integration.Pro
 	case vangogh_integration.MacOS:
 		return macOsReduceBundleNameProperty(id, dls, unpackDir, rdx)
 	default:
-		return ii.OperatingSystem.ErrUnsupported()
+		return nil
 	}
 }
 
@@ -418,6 +416,10 @@ func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.Pr
 		return macOsPlaceUnpackedFiles(id, dls, rdx, unpackDir)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
+		case vangogh_integration.MacOS:
+			fallthrough
+		case vangogh_integration.Linux:
+			return prefixPlaceUnpackedFiles(id, dls, rdx, unpackDir)
 		default:
 			return ii.OperatingSystem.ErrUnsupported()
 		}
@@ -499,15 +501,21 @@ func osInstalledPath(id string, operatingSystem vangogh_integration.OperatingSys
 		return "", err
 	}
 
-	var appBundle string
+	var installedPath string
 	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
-		appBundle = slug
-		if bundleName, sure := rdx.GetLastVal(data.BundleNameProperty, id); sure && bundleName != "" {
-			appBundle = filepath.Join(appBundle, bundleName)
-		}
+		installedPath = slug
 	} else {
 		return "", errors.New("slug is not defined for product " + id)
 	}
 
-	return filepath.Join(osLangInstalledAppsDir, appBundle), nil
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		if bundleName, sure := rdx.GetLastVal(data.BundleNameProperty, id); sure && bundleName != "" {
+			installedPath = filepath.Join(installedPath, bundleName)
+		}
+	default:
+		// do nothing
+	}
+
+	return filepath.Join(osLangInstalledAppsDir, installedPath), nil
 }
