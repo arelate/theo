@@ -108,8 +108,7 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.Windows:
-		currentOs := data.CurrentOs()
-		switch currentOs {
+		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
@@ -117,10 +116,10 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 				return err
 			}
 		default:
-			return currentOs.ErrUnsupported()
+			return data.CurrentOs().ErrUnsupported()
 		}
 	default:
-		return ii.OperatingSystem.ErrUnsupported()
+		// do nothing
 	}
 
 	return nil
