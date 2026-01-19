@@ -24,6 +24,7 @@ const (
 	Logs          pathways.AbsDir = "logs"
 	Metadata      pathways.AbsDir = "metadata"
 	Wine          pathways.AbsDir = "wine"
+	Temp          pathways.AbsDir = "_temp"
 )
 
 const (
@@ -57,7 +58,7 @@ func InitPathways() error {
 		return err
 	}
 
-	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, Wine, InstalledApps, Logs} {
+	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, Wine, InstalledApps, Logs, Temp} {
 		absDir := filepath.Join(rootDir, string(ad))
 		if _, err = os.Stat(absDir); os.IsNotExist(err) {
 			if err = os.MkdirAll(absDir, 0755); err != nil {

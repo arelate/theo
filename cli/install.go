@@ -335,7 +335,7 @@ func osGetProtectedLocationsFiles(ii *InstallInfo) ([]string, error) {
 
 func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
-	unpackDir := filepath.Join(os.TempDir(), id)
+	unpackDir := filepath.Join(data.Pwd.AbsDirPath(data.Temp), id)
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.Windows:
