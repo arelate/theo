@@ -482,11 +482,11 @@ func osPostInstallActions(id string, ii *InstallInfo, dls vangogh_integration.Pr
 	}
 }
 
-func removeNewFiles(srcSet, newSet []string) error {
+func removeNewFiles(oldSet, newSet []string) error {
 
 	for _, pidf := range newSet {
 
-		if slices.Contains(srcSet, pidf) {
+		if slices.Contains(oldSet, pidf) {
 			continue
 		}
 
