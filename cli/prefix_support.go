@@ -38,7 +38,7 @@ func prefixInit(id string, rdx redux.Readable, verbose bool) error {
 	}
 }
 
-func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable) error {
+func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
 
 	currentOs := data.CurrentOs()
 
@@ -63,10 +63,17 @@ func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.P
 			continue
 		}
 
-		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		absDstDir := filepath.Join(unpackDir, link.LocalFilename)
+		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
+			if err = os.MkdirAll(absDstDir, 0755); err != nil {
+				return err
+			}
+		}
 
-		dstDir := filepath.Join("C:\\Temp", id, link.LocalFilename)
-		innoSetupDirArg := strings.Replace(innoSetupDirArgTemplate, "{dir}", dstDir, 1)
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		prefixDstDir := filepath.Join("C:\\Temp", id, link.LocalFilename)
+
+		innoSetupDirArg := strings.Replace(innoSetupDirArgTemplate, "{dir}", prefixDstDir, 1)
 
 		et := &execTask{
 			exe:     absInstallerPath,

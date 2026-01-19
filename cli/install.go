@@ -356,11 +356,11 @@ func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, err
 	}
 }
 
-func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, dstDir string) error {
+func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
 
-	if _, err := os.Stat(dstDir); err == nil {
+	if _, err := os.Stat(unpackDir); err == nil {
 		if ii.force {
-			if err = os.RemoveAll(dstDir); err != nil {
+			if err = os.RemoveAll(unpackDir); err != nil {
 				return err
 			}
 		} else {
@@ -368,21 +368,21 @@ func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.Prod
 		}
 	}
 
-	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(dstDir, 0755); err != nil {
+	if _, err := os.Stat(unpackDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(unpackDir, 0755); err != nil {
 			return err
 		}
 	}
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsUnpackInstallers(id, dls, dstDir)
+		return macOsUnpackInstallers(id, dls, unpackDir)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			return prefixUnpackInstaller(id, ii, dls, rdx)
+			return prefixUnpackInstaller(id, ii, dls, rdx, unpackDir)
 		default:
 			return ii.OperatingSystem.ErrUnsupported()
 		}
