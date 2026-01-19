@@ -106,7 +106,7 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	case vangogh_integration.MacOS:
 		fallthrough
 	case vangogh_integration.Linux:
-		if err := removeInventoriesFiles(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
+		if err := removeInventoriedFiles(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
 			return err
 		}
 	case vangogh_integration.Windows:

@@ -194,7 +194,7 @@ func macOsPostInstallActions(id string,
 	rdx redux.Readable,
 	unpackDir string) error {
 
-	mpia := nod.Begin(" performing %s post-install actions for %s...", vangogh_integration.MacOS, id)
+	mpia := nod.Begin(" running %s post-install actions for %s...", vangogh_integration.MacOS, id)
 	defer mpia.Done()
 
 	absBundlePaths := make(map[string]any)

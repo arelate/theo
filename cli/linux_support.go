@@ -26,18 +26,10 @@ const linuxStartShFilename = "start.sh"
 
 const shExt = ".sh"
 
-func linuxInstallProduct(id string,
-	dls vangogh_integration.ProductDownloadLinks,
-	rdx redux.Writeable) error {
+func linuxExecuteInstallers(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
 
-	lia := nod.Begin("installing %s for %s...", id, vangogh_integration.Linux)
-	defer lia.Done()
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return err
-	}
-
-	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+	leia := nod.Begin(" executing %s installers for %s...", vangogh_integration.Linux, id)
+	defer leia.Done()
 
 	for _, link := range dls {
 
@@ -45,72 +37,24 @@ func linuxInstallProduct(id string,
 			continue
 		}
 
-		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
-
-		if _, err := os.Stat(absInstallerPath); err != nil {
-			return err
-		}
-
-		absInstalledPath, err := osInstalledPath(id, link.LanguageCode, vangogh_integration.Linux, rdx)
-		if err != nil {
-			return err
-		}
-
-		if err = linuxPostDownloadActions(id, &link); err != nil {
-			return err
-		}
-
-		preInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
-		if err != nil {
-			return err
-		}
-
-		if err = linuxExecuteInstaller(absInstallerPath, absInstalledPath); err != nil {
-			return err
-		}
-
-		postInstallDesktopFiles, err := linuxSnapshotDesktopFiles()
-		if err != nil {
-			return err
-		}
-
-		if err = removeNewFiles(preInstallDesktopFiles, postInstallDesktopFiles); err != nil {
-			return err
-		}
-
-		mojosetupProductDir := filepath.Join(absInstalledPath, mojosetupDir)
-		if _, err = os.Stat(mojosetupProductDir); err == nil {
-			if err = os.RemoveAll(mojosetupProductDir); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func linuxPreInstallActions(id string, dls vangogh_integration.ProductDownloadLinks) error {
-
-	lpa := nod.Begin(" performing %s pre-install actions for %s...", vangogh_integration.Linux, id)
-	defer lpa.Done()
-
-	for _, link := range dls {
-
-		if filepath.Ext(link.LocalFilename) != shExt {
-			continue
-		}
 		downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+		linkInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		productInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		if err := chmodExecutable(linkInstallerPath); err != nil {
+			return err
+		}
 
-		if err := chmodExecutable(productInstallerPath); err != nil {
+		absUnpackDir := filepath.Join(unpackDir, link.LocalFilename)
+
+		if err := linuxExecuteLinkInstaller(linkInstallerPath, absUnpackDir); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
-func linuxExecuteInstaller(absInstallerPath, destinationDir string) error {
+func linuxExecuteLinkInstaller(absInstallerPath, unpackDir string) error {
 
 	_, fp := filepath.Split(absInstallerPath)
 
@@ -124,27 +68,68 @@ func linuxExecuteInstaller(absInstallerPath, destinationDir string) error {
 	// .desktop files created by the installer. This is notable because if those files are not
 	// removed and DLCs are installed they will attempt to create the same files and will ask
 	// to confirm to overwrite, interrupting automated installation.
-	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", destinationDir)
+	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", unpackDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
 }
 
-func linuxPostDownloadActions(id string, link *vangogh_integration.ProductDownloadLink) error {
+func linuxRemoveMojoSetupDirs(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
 
-	lpda := nod.Begin(" performing %s post-download actions for %s...", vangogh_integration.Linux, id)
-	defer lpda.Done()
+	lrmda := nod.Begin(" removing .mojosetup dirs for %s...", id)
+	defer lrmda.Done()
 
-	if data.CurrentOs() != vangogh_integration.Linux {
-		return errors.New("post-download Linux actions are only supported on Linux")
+	for _, link := range dls {
+
+		if filepath.Ext(link.LocalFilename) != shExt {
+			continue
+		}
+
+		if err := linuxRemoveLinkMojoSetupDir(&link, unpackDir); err != nil {
+			return err
+		}
 	}
 
-	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+	return nil
+}
 
-	productInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+func linuxRemoveLinkMojoSetupDir(link *vangogh_integration.ProductDownloadLink, unpackDir string) error {
 
-	return chmodExecutable(productInstallerPath)
+	mojosetupProductDir := filepath.Join(unpackDir, link.LocalFilename, mojosetupDir)
+	if _, err := os.Stat(mojosetupProductDir); err == nil {
+		if err = os.RemoveAll(mojosetupProductDir); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func linuxPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+
+	lufa := nod.Begin(" placing unpacked files for %s...", id)
+	defer lufa.Done()
+
+	for _, link := range dls {
+
+		if filepath.Ext(link.LocalFilename) != shExt {
+			continue
+		}
+
+		absUnpackedPath := filepath.Join(unpackDir, link.LocalFilename)
+		if _, err := os.Stat(absUnpackedPath); os.IsNotExist(err) {
+			return ErrMissingExtractedPayload
+		}
+
+		installedAppPath, err := osInstalledPath(id, link.LanguageCode, vangogh_integration.Linux, rdx)
+
+		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func chmodExecutable(path string) error {
@@ -235,50 +220,6 @@ func linuxFindStartSh(id, langCode string, rdx redux.Readable) (string, error) {
 	}
 
 	return "", errors.New("cannot locate start.sh for " + id)
-}
-
-func removeInventoriesFiles(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
-
-	umpa := nod.Begin(" removing inventoried files for %s %s-%s...", id, operatingSystem, langCode)
-	defer umpa.Done()
-
-	absInstalledPath, err := osInstalledPath(id, langCode, operatingSystem, rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(absInstalledPath); os.IsNotExist(err) {
-		umpa.EndWithResult("not present")
-		return nil
-	}
-
-	relInventory, err := readInventory(id, langCode, operatingSystem, rdx)
-	if err != nil {
-		return err
-	}
-
-	for _, rif := range relInventory {
-		absRif := filepath.Join(absInstalledPath, rif)
-		if _, err = os.Stat(absRif); os.IsNotExist(err) {
-			continue
-		}
-		if err = os.Remove(absRif); err != nil {
-			return err
-		}
-	}
-
-	relFiles, err := relWalkDir(absInstalledPath)
-	if err != nil {
-		return err
-	}
-
-	if len(relFiles) == 0 {
-		if err = os.RemoveAll(absInstalledPath); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func nixFreeSpace(path string) (int64, error) {

@@ -231,7 +231,7 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 	}
 
 	// 2
-	if err := osPreInstallActions(id, ii, dls, rdx); err != nil {
+	if err := osPreInstallActions(id, ii, rdx); err != nil {
 		return err
 	}
 
@@ -306,11 +306,9 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 	return nil
 }
 
-func osPreInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable) error {
+func osPreInstallActions(id string, ii *InstallInfo, rdx redux.Readable) error {
 
 	switch ii.OperatingSystem {
-	case vangogh_integration.Linux:
-		return linuxPreInstallActions(id, dls)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
@@ -342,18 +340,21 @@ func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, err
 	switch ii.OperatingSystem {
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
-		case vangogh_integration.Windows:
-			return unpackDir, nil
-		default:
+		case vangogh_integration.MacOS:
+			fallthrough
+		case vangogh_integration.Linux:
 			absPrefixDir, err := data.AbsPrefixDir(id, rdx)
 			if err != nil {
 				return "", err
 			}
 			return filepath.Join(absPrefixDir, prefixRelDriveCDir, "Temp", id), nil
+		default:
+			// do nothing
 		}
 	default:
-		return unpackDir, nil
+		// do nothing
 	}
+	return unpackDir, nil
 }
 
 func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
@@ -377,12 +378,14 @@ func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.Prod
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		return macOsUnpackInstallers(id, dls, unpackDir)
+	case vangogh_integration.Linux:
+		return linuxExecuteInstallers(id, dls, unpackDir)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			return prefixUnpackInstaller(id, ii, dls, rdx, unpackDir)
+			return prefixUnpackInstallers(id, ii, dls, rdx, unpackDir)
 		default:
 			return ii.OperatingSystem.ErrUnsupported()
 		}
@@ -395,6 +398,8 @@ func osPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integration.Pro
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		return macOsReduceBundleNameProperty(id, dls, unpackDir, rdx)
+	case vangogh_integration.Linux:
+		return linuxRemoveMojoSetupDirs(id, dls, unpackDir)
 	default:
 		return nil
 	}
@@ -414,6 +419,8 @@ func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.Pr
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		return macOsPlaceUnpackedFiles(id, dls, rdx, unpackDir)
+	case vangogh_integration.Linux:
+		return linuxPlaceUnpackedFiles(id, dls, rdx, unpackDir)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:

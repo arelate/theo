@@ -90,3 +90,47 @@ func writeInventory(id, langCode string, operatingSystem vangogh_integration.Ope
 
 	return json.NewEncoder(inventoryFile).Encode(inventory)
 }
+
+func removeInventoriedFiles(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
+
+	umpa := nod.Begin(" removing inventoried files for %s %s-%s...", id, operatingSystem, langCode)
+	defer umpa.Done()
+
+	absInstalledPath, err := osInstalledPath(id, langCode, operatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(absInstalledPath); os.IsNotExist(err) {
+		umpa.EndWithResult("not present")
+		return nil
+	}
+
+	relInventory, err := readInventory(id, langCode, operatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	for _, rif := range relInventory {
+		absRif := filepath.Join(absInstalledPath, rif)
+		if _, err = os.Stat(absRif); os.IsNotExist(err) {
+			continue
+		}
+		if err = os.Remove(absRif); err != nil {
+			return err
+		}
+	}
+
+	relFiles, err := relWalkDir(absInstalledPath)
+	if err != nil {
+		return err
+	}
+
+	if len(relFiles) == 0 {
+		if err = os.RemoveAll(absInstalledPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

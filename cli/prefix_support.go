@@ -38,7 +38,7 @@ func prefixInit(id string, rdx redux.Readable, verbose bool) error {
 	}
 }
 
-func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
+func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
 
 	currentOs := data.CurrentOs()
 
@@ -59,7 +59,7 @@ func prefixUnpackInstaller(id string, ii *InstallInfo, dls vangogh_integration.P
 
 	for _, link := range dls {
 
-		if linkExt := filepath.Ext(link.LocalFilename); linkExt != exeExt {
+		if filepath.Ext(link.LocalFilename) != exeExt {
 			continue
 		}
 
