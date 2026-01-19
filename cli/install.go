@@ -411,7 +411,7 @@ func osGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductD
 	case vangogh_integration.MacOS:
 		return macOsGetInventory(id, dls, rdx, unpackDir)
 	default:
-		return getInventory(dls, unpackDir)
+		return getInventory(ii.OperatingSystem, dls, unpackDir)
 	}
 }
 

@@ -59,7 +59,7 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != exeExt {
+		if !isLinkExecutable(&link, vangogh_integration.Windows) {
 			continue
 		}
 
@@ -102,7 +102,7 @@ func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownload
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != exeExt {
+		if !isLinkExecutable(&link, vangogh_integration.Windows) {
 			continue
 		}
 

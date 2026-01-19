@@ -52,7 +52,7 @@ func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != pkgExt {
+		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
 			continue
 		}
 
@@ -99,7 +99,7 @@ func macOsReduceBundleNameProperty(id string, dls vangogh_integration.ProductDow
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != pkgExt {
+		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
 			continue
 		}
 
@@ -126,7 +126,7 @@ func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadL
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != pkgExt {
+		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
 			continue
 		}
 
@@ -158,7 +158,7 @@ func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, 
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != pkgExt {
+		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
 			continue
 		}
 
@@ -201,13 +201,8 @@ func macOsPostInstallActions(id string,
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != pkgExt {
+		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
 			continue
-		}
-
-		if filepath.Ext(link.LocalFilename) != pkgExt {
-			// for macOS - there's nothing to be done for additional files (that are not .pkg installers)
-			return nil
 		}
 
 		downloadsDir := data.Pwd.AbsDirPath(data.Downloads)

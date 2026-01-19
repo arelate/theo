@@ -33,7 +33,7 @@ func linuxExecuteInstallers(id string, dls vangogh_integration.ProductDownloadLi
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != shExt {
+		if !isLinkExecutable(&link, vangogh_integration.Linux) {
 			continue
 		}
 
@@ -82,7 +82,7 @@ func linuxRemoveMojoSetupDirs(id string, dls vangogh_integration.ProductDownload
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != shExt {
+		if !isLinkExecutable(&link, vangogh_integration.Linux) {
 			continue
 		}
 
@@ -113,7 +113,7 @@ func linuxPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadL
 
 	for _, link := range dls {
 
-		if filepath.Ext(link.LocalFilename) != shExt {
+		if !isLinkExecutable(&link, vangogh_integration.Linux) {
 			continue
 		}
 
@@ -166,7 +166,8 @@ func linuxSnapshotDesktopFiles() ([]string, error) {
 	for _, dir := range []string{desktopDir, applicationsDir} {
 
 		globPath := filepath.Join(dir, desktopGlob)
-		matches, err := filepath.Glob(globPath)
+		var matches []string
+		matches, err = filepath.Glob(globPath)
 		if err != nil {
 			return nil, err
 		}

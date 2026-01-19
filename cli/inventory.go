@@ -13,7 +13,21 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-func getInventory(dls vangogh_integration.ProductDownloadLinks, unpackDir string) ([]string, error) {
+func isLinkExecutable(link *vangogh_integration.ProductDownloadLink, operatingSystem vangogh_integration.OperatingSystem) bool {
+	ext := filepath.Ext(link.LocalFilename)
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		return ext == pkgExt
+	case vangogh_integration.Linux:
+		return ext == shExt
+	case vangogh_integration.Windows:
+		return ext == exeExt
+	default:
+		return false
+	}
+}
+
+func getInventory(operatingSystem vangogh_integration.OperatingSystem, dls vangogh_integration.ProductDownloadLinks, unpackDir string) ([]string, error) {
 
 	gia := nod.Begin(" creating inventory of unpacked files...")
 	defer gia.Done()
@@ -22,7 +36,7 @@ func getInventory(dls vangogh_integration.ProductDownloadLinks, unpackDir string
 
 	for _, link := range dls {
 
-		if linkExt := filepath.Ext(link.LocalFilename); linkExt != exeExt {
+		if !isLinkExecutable(&link, operatingSystem) {
 			continue
 		}
 
