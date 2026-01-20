@@ -3,6 +3,7 @@ package cli
 import (
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -86,6 +87,18 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 		if _, err = os.Stat(installedAppDir); err == nil {
 			if err = os.RemoveAll(installedAppDir); err != nil {
 				return err
+			}
+		}
+
+		// account for macOS bundle name
+		if ii.OperatingSystem == vangogh_integration.MacOS {
+			if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" && !strings.Contains(bundleName, "/") {
+				installedAppParentDir := strings.TrimSuffix(installedAppDir, bundleName)
+				if _, err = os.Stat(installedAppParentDir); err == nil {
+					if err = os.RemoveAll(installedAppParentDir); err != nil {
+						return err
+					}
+				}
 			}
 		}
 	}
