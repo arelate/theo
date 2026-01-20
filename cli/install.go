@@ -22,9 +22,9 @@ func InstallHandler(u *url.URL) error {
 
 	id := q.Get(vangogh_integration.IdProperty)
 
-	os := vangogh_integration.AnyOperatingSystem
+	operatingSystem := vangogh_integration.AnyOperatingSystem
 	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		os = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
 	var langCode string
@@ -39,7 +39,7 @@ func InstallHandler(u *url.URL) error {
 	}
 
 	ii := &InstallInfo{
-		OperatingSystem: os,
+		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
 		KeepDownloads:   q.Has("keep-downloads"),
