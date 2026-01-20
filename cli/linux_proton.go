@@ -28,7 +28,7 @@ var protonOptionsEnv = map[string]string{
 	ProtonNoSteamInput:  "PROTON_NO_STEAMINPUT",
 }
 
-func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) error {
+func linuxProtonRun(id string, rdx redux.Readable, et *execTask) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
@@ -69,7 +69,7 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) err
 		Args:    et.args,
 	}
 
-	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx, force)
+	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) err
 	return cmd.Run()
 }
 
-func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable, force bool) error {
+func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable) error {
 
 	lwra := nod.Begin(" running %s with Proton, please wait...", et.name)
 	defer lwra.Done()
@@ -124,7 +124,7 @@ func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable, force b
 		Args:    et.args,
 	}
 
-	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx, force)
+	absUmuConfigPath, err := createUmuConfig(umuCfg, rdx)
 	if err != nil {
 		return err
 	}

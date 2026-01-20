@@ -87,7 +87,7 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 			verbose: ii.verbose,
 		}
 
-		if err := currentOsWineRun(id, rdx, et, ii.force); err != nil {
+		if err := currentOsWineRun(id, rdx, et); err != nil {
 			return err
 		}
 	}

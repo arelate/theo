@@ -26,7 +26,7 @@ const (
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
 type (
-	wineRunFunc func(id string, rdx redux.Readable, et *execTask, force bool) error
+	wineRunFunc func(id string, rdx redux.Readable, et *execTask) error
 )
 
 func macOsInitPrefix(id string, rdx redux.Readable, verbose bool) error {
@@ -40,7 +40,7 @@ func macOsInitPrefix(id string, rdx redux.Readable, verbose bool) error {
 	return macOsCreateCxBottle(id, rdx, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id string, rdx redux.Readable, et *execTask, force bool) error {
+func macOsWineRun(id string, rdx redux.Readable, et *execTask) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
