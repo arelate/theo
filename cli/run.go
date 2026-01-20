@@ -54,6 +54,10 @@ func RunHandler(u *url.URL) error {
 		et.args = strings.Split(q.Get("arg"), ",")
 	}
 
+	if q.Has("proton-options") {
+		et.protonOptions = strings.Split(q.Get("proton-options"), ",")
+	}
+
 	return Run(id, ii, et)
 }
 

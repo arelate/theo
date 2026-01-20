@@ -12,6 +12,22 @@ import (
 	"github.com/boggydigital/redux"
 )
 
+const (
+	ProtonEnableWayland = "enable-wayland"
+	ProtonPreferSdl     = "prefer-sdl"
+	ProtonDisableHidRaw = "disable-hidraw"
+	ProtonEnableHdr     = "enable-hdr"
+	ProtonNoSteamInput  = "no-steaminput"
+)
+
+var protonOptionsEnv = map[string]string{
+	ProtonEnableWayland: "PROTON_ENABLE_WAYLAND",
+	ProtonPreferSdl:     "PROTON_PREFER_SDL",
+	ProtonDisableHidRaw: "PROTON_DISABLE_HIDRAW",
+	ProtonEnableHdr:     "PROTON_ENABLE_HDR",
+	ProtonNoSteamInput:  "PROTON_NO_STEAMINPUT",
+}
+
 func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) error {
 
 	_, exeFilename := filepath.Split(et.exe)
@@ -65,6 +81,12 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) err
 	}
 
 	cmd.Env = append(os.Environ(), et.env...)
+
+	for _, po := range et.protonOptions {
+		if poEnv, ok := protonOptionsEnv[po]; ok {
+			cmd.Env = append(cmd.Env, poEnv+"=1")
+		}
+	}
 
 	if et.verbose {
 		cmd.Stdout = os.Stdout
