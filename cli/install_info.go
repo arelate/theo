@@ -79,7 +79,11 @@ func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 		return err
 	}
 
-	if err := unpinInstallInfo(id, ii, rdx); err != nil {
+	if exists, err := hasInstallInfo(id, ii, rdx); err == nil && exists {
+		if err = unpinInstallInfo(id, ii, rdx); err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
 	}
 
@@ -116,6 +120,26 @@ func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	}
 
 	return nil
+}
+
+func hasInstallInfo(id string, ii *InstallInfo, rdx redux.Readable) (bool, error) {
+
+	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
+		return false, err
+	}
+
+	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+		installInfo, _, err := matchInstallInfo(ii, installedInfoLines...)
+		if err != nil {
+			return false, err
+		}
+
+		return installInfo != nil, nil
+
+	} else {
+		return false, nil
+	}
 }
 
 func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integration.OperatingSystem, error) {
