@@ -30,7 +30,7 @@ At the moment `theo` development efforts are focused on achieving reliability, f
 
 Before using any of the commands below, `theo` needs to be set up to connect to `vangogh`:
 
-`theo connect -protocol <protocol> -address <address> -port <port> -username <username> -password <password>` - you need to provide address (e.g. vangogh.example.com), username and password for users authorized to access API and download files from that `vangogh` instance (this is set in `vangogh` configuration). Other parameters are optional.
+`theo connect -service vangogh -url <vangogh address> -username <username> -password <password>` - you need to provide url (e.g. https://vangogh.example.com), username and password for users authorized to access API and download files from that `vangogh` instance (this is set in `vangogh` configuration). Other parameters are optional.
 
 This is only needed to be done once and `theo` will authorize, store session token and validate it as needed.  This should work until `vangogh` session is valid. If you ever need to reset this configuration, `connect -reset` can help with that.
 
@@ -52,11 +52,11 @@ More helpful commands:
 
 ## macOS requirements for Windows games
 
-On macOS this functionality **requires** a version of [CrossOver](https://www.codeweavers.com/crossover) purchased and licensed for the current user. `theo` assumes CrossOver bundle is located in `/Applications`. Please note that `theo` uses CrossOver 25 environment variables that won't work in version 24 or earlier. At the moment I'm planning to maintain support for the latest version of CrossOver only. In the future alternatives will be considered (e.g. Kegworks, binary WINE distributions, etc).
+On macOS this functionality **requires** a version of [CrossOver](https://www.codeweavers.com/crossover) purchased and licensed for the current user. `theo` assumes CrossOver bundle is located in `/Applications`. Please note that `theo` uses CrossOver 25 environment variables that won't work in version 24 or earlier. At the moment I'm planning to maintain support for the latest version of CrossOver only. In the future I'm planning to switch to macOS WINE and DXMT.
 
 ## Linux requirements for Windows games
 
-On Linux `theo` will use [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) and [umu-proton](https://github.com/Open-Wine-Components/umu-proton). You don't need to do anything, theo will download the latest versions for you automatically from `vangogh`, as needed. Those will be installed under `theo` state folder, not globally and won't interfere with other apps.
+On Linux `theo` will use [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) and [proton-ge-custom](https://github.com/GloriousEggroll/proton-ge-custom) or, optionally, [umu-proton](https://github.com/Open-Wine-Components/umu-proton). You don't need to do anything, theo will download the latest versions for you automatically from `vangogh`, as needed. Those will be installed under `theo` state folder, not globally and won't interfere with other apps.
 
 ## Advanced usage scenarios
 
@@ -69,22 +69,6 @@ theo allows you to specify [language](https://en.wikipedia.org/wiki/List_of_ISO_
 `theo run <gog-game-id> -lang-code ja` - will run Japanese version of a game (if it's installed)
 
 You need to specify language code for every command (e.g. `run`, `uninstall`, `reveal-installed`). With this functionality you can have multiple version of the same game in different languages installed at the same time (applies to native and Windows versions).
-
-### Environment variables for Windows versions on another operating systems
-
-theo helps you manage Windows versions installations and [WINE](http://winehq.org) options with environmental variables:
-    
-`theo set-prefix-env <gog-game-id> -env VAR1=VAL1 VAR2=VAL2` - will set VAR1 and VAR2 environmental variables for this game installation and those values (VAL1 and VAL2) will be used for any commands under those installations (e.g. `wine-run`)
-
-More helpful commands:
-
-`theo default-prefix-env <gog-game-id>` - will reset all environment variables to default values for the current operating system
-
-`theo delete-prefix-env <gog-game-id>` - will completely removed all environment variables (even default ones) for this game installation
-
-`theo list-prefix-env` - will print all environment variables for every game installed with theo
-
-NOTE: Default environment variables set for each operating systems are listed here: [cli/default_prefix_env.go](https://github.com/arelate/theo/blob/main/cli/default_prefix_env.go#L12).
 
 ### Steam shortcuts
 
@@ -104,9 +88,9 @@ Additionally you can use the following commands to manage Steam shortcuts:
 
 ### Retina mode for Windows versions on macOS
 
-theo provides `mod-prefix-retina` command to set Retina mode. See more information [here](https://gitlab.winehq.org/wine/wine/-/wikis/Commands/winecfg#screen-resolution-dpi-setting). To revert this change use the command with a `revert` flag, e.g.:
+theo provides `prefix mod retina` command to set Retina mode. See more information [here](https://gitlab.winehq.org/wine/wine/-/wikis/Commands/winecfg#screen-resolution-dpi-setting). To revert this change use the command with a `revert` flag, e.g.:
     
-`theo mod-prefix-retina <gog-game-id> -revert`
+`theo prefix mod retina <gog-game-id> -revert`
 
 ### Where is theo data stored?
 
