@@ -129,6 +129,8 @@ func listInstalled(ii *InstallInfo) error {
 			}
 		}
 
+		filteredIds := make(map[string]any)
+
 		installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id)
 		if !ok {
 			return errors.New("install info not found for " + id)
@@ -139,6 +141,16 @@ func listInstalled(ii *InstallInfo) error {
 			var installedInfo InstallInfo
 			if err = json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
 				return err
+			}
+
+			if ii.OperatingSystem != vangogh_integration.AnyOperatingSystem && ii.OperatingSystem != installedInfo.OperatingSystem {
+				filteredIds[id] = nil
+				continue
+			}
+
+			if ii.LangCode != "" && ii.LangCode != installedInfo.LangCode {
+				filteredIds[id] = nil
+				continue
 			}
 
 			infoLines := make([]string, 0)
@@ -178,6 +190,10 @@ func listInstalled(ii *InstallInfo) error {
 		}
 
 		// playtimes
+
+		if _, filtered := filteredIds[id]; filtered {
+			continue
+		}
 
 		if tpms, sure := rdx.GetLastVal(data.TotalPlaytimeMinutesProperty, id); sure && tpms != "" {
 			if tpmi, err := strconv.ParseInt(tpms, 10, 64); err == nil {
