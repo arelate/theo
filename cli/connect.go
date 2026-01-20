@@ -17,27 +17,32 @@ func ConnectHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	protocol := q.Get("protocol")
-	address := q.Get("address")
-	port := q.Get("port")
+	service := q.Get("service")
+
+	urlStr := q.Get("url")
 
 	username := q.Get("username")
 	password := q.Get("password")
 
 	reset := q.Has("reset")
 
-	return Connect(protocol, address, port, username, password, reset)
+	switch service {
+	case "vangogh":
+		return VangoghConnect(urlStr, username, password, reset)
+	default:
+		return errors.New("unsupported service: " + service)
+	}
 }
 
-func Connect(
-	protocol, address, port string,
+func VangoghConnect(
+	urlStr string,
 	username, password string,
 	reset bool) error {
 
-	sa := nod.Begin("connecting to the server...")
+	sa := nod.Begin("connecting to vangogh...")
 	defer sa.Done()
 
-	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.ServerConnectionProperties)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.VangoghProperties()...)
 	if err != nil {
 		return err
 	}
@@ -48,35 +53,19 @@ func Connect(
 		}
 	}
 
-	connectionProperties := make(map[string][]string)
-
-	if protocol != "" {
-		connectionProperties[data.ServerProtocolProperty] = []string{protocol}
-	}
-
-	if address != "" {
-		connectionProperties[data.ServerAddressProperty] = []string{address}
-	}
-
-	if port != "" {
-		connectionProperties[data.ServerPortProperty] = []string{port}
-	}
-
-	if username != "" {
-		connectionProperties[data.ServerUsernameProperty] = []string{username}
-	}
-
-	if len(connectionProperties) > 0 {
-		if err = rdx.BatchReplaceValues(data.ServerConnectionProperties, connectionProperties); err != nil {
-			return err
-		}
-	}
-
-	if err = updateSessionToken(password, rdx); err != nil {
+	if err = rdx.ReplaceValues(data.VangoghUrlProperty, data.VangoghUrlProperty, urlStr); err != nil {
 		return err
 	}
 
-	if err = validateSessionToken(rdx); err != nil {
+	if err = rdx.ReplaceValues(data.VangoghUsernameProperty, data.VangoghUsernameProperty, username); err != nil {
+		return err
+	}
+
+	if err = vangoghUpdateSessionToken(password, rdx); err != nil {
+		return err
+	}
+
+	if err = vangoghValidateSessionToken(rdx); err != nil {
 		return err
 	}
 
@@ -84,38 +73,32 @@ func Connect(
 }
 
 func resetServerConnection(rdx redux.Writeable) error {
-	rsa := nod.Begin("resetting server connection...")
+	rsa := nod.Begin("resetting vangogh connection...")
 	defer rsa.Done()
 
-	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return err
 	}
 
-	setupProperties := []string{
-		data.ServerProtocolProperty,
-		data.ServerAddressProperty,
-		data.ServerPortProperty,
-		data.ServerUsernameProperty,
-		data.ServerSessionToken,
-	}
-
-	if err := rdx.CutKeys(data.ServerConnectionProperties, setupProperties...); err != nil {
-		return err
+	for _, vp := range data.VangoghProperties() {
+		if err := rdx.CutKeys(vp, vp); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func validateSessionToken(rdx redux.Readable) error {
+func vangoghValidateSessionToken(rdx redux.Readable) error {
 
-	tsa := nod.Begin("validating session token...")
+	tsa := nod.Begin("validating vangogh session token...")
 	defer tsa.Done()
 
-	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return err
 	}
 
-	req, err := data.ServerRequest(http.MethodPost, data.ApiAuthSessionPath, nil, rdx)
+	req, err := data.VangoghRequest(http.MethodPost, data.ApiAuthSessionPath, nil, rdx)
 	if err != nil {
 		return err
 	}
@@ -148,23 +131,23 @@ func validateSessionToken(rdx redux.Readable) error {
 		tsa.EndWithResult("session is valid")
 		return nil
 	} else {
-		msg := "session expires soon, run connect to update"
+		msg := "vangogh session expires soon, connect to update"
 		tsa.EndWithResult(msg)
 		return errors.New(msg)
 	}
 
 }
 
-func updateSessionToken(password string, rdx redux.Writeable) error {
-	rsa := nod.Begin("updating session token...")
+func vangoghUpdateSessionToken(password string, rdx redux.Writeable) error {
+	rsa := nod.Begin("updating vangogh session token...")
 	defer rsa.Done()
 
-	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return err
 	}
 
 	var username string
-	if up, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerUsernameProperty); ok && up != "" {
+	if up, ok := rdx.GetLastVal(data.VangoghUsernameProperty, data.VangoghUsernameProperty); ok && up != "" {
 		username = up
 	} else {
 		return errors.New("username not found")
@@ -174,7 +157,7 @@ func updateSessionToken(password string, rdx redux.Writeable) error {
 	usernamePassword.Set(author.UsernameParam, username)
 	usernamePassword.Set(author.PasswordParam, password)
 
-	req, err := data.ServerRequest(http.MethodPost, data.ApiAuthUserPath, usernamePassword, rdx)
+	req, err := data.VangoghRequest(http.MethodPost, data.ApiAuthUserPath, usernamePassword, rdx)
 	if err != nil {
 		return err
 	}
@@ -195,11 +178,11 @@ func updateSessionToken(password string, rdx redux.Writeable) error {
 		return err
 	}
 
-	if err = rdx.ReplaceValues(data.ServerConnectionProperties, data.ServerSessionToken, ste.Token); err != nil {
+	if err = rdx.ReplaceValues(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty, ste.Token); err != nil {
 		return err
 	}
 
-	if err = rdx.ReplaceValues(data.ServerConnectionProperties, data.ServerSessionExpires, ste.Expires.Format(http.TimeFormat)); err != nil {
+	if err = rdx.ReplaceValues(data.VangoghSessionExpiresProperty, data.VangoghSessionExpiresProperty, ste.Expires.Format(http.TimeFormat)); err != nil {
 		return err
 	}
 

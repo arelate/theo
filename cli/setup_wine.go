@@ -44,9 +44,9 @@ func SetupWine(force bool) error {
 	uwa := nod.Begin("setting up WINE for %s...", currentOs)
 	defer uwa.Done()
 
-	rdx, err := redux.NewWriter(data.AbsReduxDir(),
-		data.ServerConnectionProperties,
-		data.WineBinariesVersionsProperty)
+	properties := append(data.VangoghProperties(), data.WineBinariesVersionsProperty)
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), properties...)
 	if err != nil {
 		return err
 	}
@@ -92,11 +92,11 @@ func getWineBinariesVersions(rdx redux.Readable) ([]vangogh_integration.WineBina
 	gwbva := nod.Begin("getting WINE binaries versions...")
 	defer gwbva.Done()
 
-	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return nil, err
 	}
 
-	req, err := data.ServerRequest(http.MethodGet, data.ApiWineBinariesVersions, nil, rdx)
+	req, err := data.VangoghRequest(http.MethodGet, data.ApiWineBinariesVersions, nil, rdx)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,9 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 	dwba := nod.NewProgress(" - %s %s...", binary.Title, binary.Version)
 	defer dwba.Done()
 
-	if err := rdx.MustHave(data.WineBinariesVersionsProperty, data.ServerConnectionProperties); err != nil {
+	properties := append(data.VangoghProperties(), data.WineBinariesVersionsProperty)
+
+	if err := rdx.MustHave(properties...); err != nil {
 		return err
 	}
 
@@ -170,7 +172,7 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 
 	dc := dolo.DefaultClient
 
-	if token, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerSessionToken); ok && token != "" {
+	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
 		dc.SetAuthorizationBearer(token)
 	}
 

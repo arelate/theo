@@ -307,7 +307,7 @@ func downloadGogGridImages(loginUser string, shortcutId uint32, productImages *v
 	dga := nod.Begin(" downloading GOG.com grid images...")
 	defer dga.Done()
 
-	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return err
 	}
 
@@ -319,7 +319,7 @@ func downloadGogGridImages(loginUser string, shortcutId uint32, productImages *v
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 	dc := dolo.DefaultClient
 
-	if token, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerSessionToken); ok && token != "" {
+	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
 		dc.SetAuthorizationBearer(token)
 	}
 

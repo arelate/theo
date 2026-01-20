@@ -34,7 +34,7 @@ func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_int
 		return dm, nil
 	}
 
-	if err = validateSessionToken(rdx); err != nil {
+	if err = vangoghValidateSessionToken(rdx); err != nil {
 		return nil, err
 	}
 
@@ -81,7 +81,7 @@ func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails k
 		vangogh_integration.IdProperty: {id},
 	}
 
-	req, err := data.ServerRequest(http.MethodGet, data.ApiProductDetailsPath, query, rdx)
+	req, err := data.VangoghRequest(http.MethodGet, data.ApiProductDetailsPath, query, rdx)
 	if err != nil {
 		return nil, err
 	}

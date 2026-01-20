@@ -9,9 +9,8 @@
 backup-metadata
 
 connect
-    protocol
-    address
-    port
+    service=^vangogh
+    url
     username
     password
     reset

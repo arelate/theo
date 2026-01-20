@@ -11,32 +11,24 @@ import (
 )
 
 func ServerUrl(path string, data url.Values, rdx redux.Readable) (*url.URL, error) {
-	protocol := "https"
-	address := ""
 
-	if err := rdx.MustHave(ServerConnectionProperties); err != nil {
+	if err := rdx.MustHave(VangoghProperties()...); err != nil {
 		return nil, err
 	}
 
-	if protoVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerProtocolProperty); ok && protoVal != "" {
-		protocol = protoVal
-	}
-
-	if addrVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerAddressProperty); ok && addrVal != "" {
-		address = addrVal
+	var vangoghUrlStr string
+	if vus, ok := rdx.GetLastVal(VangoghUrlProperty, VangoghUrlProperty); ok && vus != "" {
+		vangoghUrlStr = vus
 	} else {
-		return nil, errors.New("address is empty, check server connection setup")
+		return nil, errors.New("vangogh url not set")
 	}
 
-	if portVal, ok := rdx.GetLastVal(ServerConnectionProperties, ServerPortProperty); ok && portVal != "" {
-		address += ":" + portVal
+	u, err := url.Parse(vangoghUrlStr)
+	if err != nil {
+		return nil, err
 	}
 
-	u := &url.URL{
-		Scheme: protocol,
-		Host:   address,
-		Path:   path,
-	}
+	u.Path = path
 
 	if len(data) > 0 {
 		u.RawQuery = data.Encode()
@@ -45,7 +37,7 @@ func ServerUrl(path string, data url.Values, rdx redux.Readable) (*url.URL, erro
 	return u, nil
 }
 
-func ServerRequest(method, path string, data url.Values, rdx redux.Readable) (*http.Request, error) {
+func VangoghRequest(method, path string, data url.Values, rdx redux.Readable) (*http.Request, error) {
 
 	u, err := ServerUrl(path, data, rdx)
 	if err != nil {
@@ -53,7 +45,7 @@ func ServerRequest(method, path string, data url.Values, rdx redux.Readable) (*h
 	}
 
 	var sessionToken string
-	if st, ok := rdx.GetLastVal(ServerConnectionProperties, ServerSessionToken); ok && st != "" {
+	if st, ok := rdx.GetLastVal(VangoghSessionTokenProperty, VangoghSessionTokenProperty); ok && st != "" {
 		sessionToken = st
 	}
 

@@ -94,7 +94,7 @@ func downloadProductFiles(id string,
 	gpdla := nod.Begin(" downloading %s...", productDetails.Title)
 	defer gpdla.Done()
 
-	if err := rdx.MustHave(data.ServerConnectionProperties); err != nil {
+	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return err
 	}
 
@@ -106,7 +106,7 @@ func downloadProductFiles(id string,
 
 	dc := dolo.DefaultClient
 
-	if token, ok := rdx.GetLastVal(data.ServerConnectionProperties, data.ServerSessionToken); ok && token != "" {
+	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
 		dc.SetAuthorizationBearer(token)
 	}
 
