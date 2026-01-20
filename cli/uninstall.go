@@ -83,8 +83,10 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 			return err
 		}
 
-		if err = os.RemoveAll(installedAppDir); err != nil {
-			return err
+		if _, err = os.Stat(installedAppDir); err == nil {
+			if err = os.RemoveAll(installedAppDir); err != nil {
+				return err
+			}
 		}
 	}
 
