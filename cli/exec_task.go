@@ -7,6 +7,7 @@ type execTask struct {
 	args            []string
 	env             []string
 	protonOptions   []string
+	protonRuntime   string
 	prefix          string
 	playTask        string
 	defaultLauncher bool

@@ -38,26 +38,28 @@ func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 	return "", os.ErrNotExist
 }
 
-func ProtonGeLatestReleasePath(rdx redux.Readable) (string, error) {
+func ProtonLatestReleasePath(runtime string, rdx redux.Readable) (string, error) {
 
-	runtime := wine_integration.ProtonGe
+	if runtime == "" {
+		runtime = wine_integration.ProtonGe
+	}
 
 	if err := rdx.MustHave(WineBinariesVersionsProperty); err != nil {
 		return "", err
 	}
 
-	var latestProtonGeVersion string
-	if lpgv, ok := rdx.GetLastVal(WineBinariesVersionsProperty, runtime); ok {
-		latestProtonGeVersion = lpgv
+	var latestProtonVersion string
+	if lpv, ok := rdx.GetLastVal(WineBinariesVersionsProperty, runtime); ok {
+		latestProtonVersion = lpv
 	}
 
-	if latestProtonGeVersion == "" {
+	if latestProtonVersion == "" {
 		return "", errors.New("proton-ge version not found, please run setup-wine")
 	}
 
-	absProtonGePath := filepath.Join(Pwd.AbsRelDirPath(WineBinaries, Wine), pathways.Sanitize(runtime), latestProtonGeVersion, latestProtonGeVersion)
-	if _, err := os.Stat(absProtonGePath); err == nil {
-		return absProtonGePath, nil
+	absProtonPath := filepath.Join(Pwd.AbsRelDirPath(WineBinaries, Wine), pathways.Sanitize(runtime), latestProtonVersion, latestProtonVersion)
+	if _, err := os.Stat(absProtonPath); err == nil {
+		return absProtonPath, nil
 	}
 
 	return "", os.ErrNotExist

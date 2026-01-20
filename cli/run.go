@@ -12,6 +12,7 @@ import (
 
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
@@ -52,6 +53,19 @@ func RunHandler(u *url.URL) error {
 
 	if q.Has("arg") {
 		et.args = strings.Split(q.Get("arg"), ",")
+	}
+
+	if q.Has("proton-runtime") {
+		switch q.Get("proton-runtime") {
+		case "umu-proton":
+			et.protonRuntime = wine_integration.UmuProton
+		case "proton-ge":
+			et.protonRuntime = wine_integration.ProtonGe
+		}
+	}
+
+	if et.protonRuntime == "" {
+		et.protonRuntime = wine_integration.ProtonGe
 	}
 
 	if q.Has("proton-options") {

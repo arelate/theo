@@ -90,6 +90,7 @@ run
     playtask
     default-launcher
     work-dir
+    proton-runtime=proton-ge,umu-proton
     proton-options&=enable-wayland,prefer-sdl,disable-hidraw,enable-hdr,no-steaminput
     verbose
     debug

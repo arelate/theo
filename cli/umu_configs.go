@@ -86,6 +86,8 @@ func createUmuConfig(cfg *UmuConfig, rdx redux.Readable, force bool) (string, er
 		return "", err
 	}
 
+	defer umuConfigFile.Close()
+
 	escapedArgs := make([]string, 0, len(cfg.Args))
 	for _, arg := range cfg.Args {
 		//ea := strings.Replace(a, "\"", "\\\"", -1)

@@ -56,7 +56,7 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask, force bool) err
 		return err
 	}
 
-	absProtonPath, err := data.ProtonGeLatestReleasePath(rdx)
+	absProtonPath, err := data.ProtonLatestReleasePath(et.protonRuntime, rdx)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable, force b
 		return err
 	}
 
-	absProtonPath, err := data.ProtonGeLatestReleasePath(rdx)
+	absProtonPath, err := data.ProtonLatestReleasePath(et.protonRuntime, rdx)
 	if err != nil {
 		return err
 	}
