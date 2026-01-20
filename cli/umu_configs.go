@@ -63,16 +63,18 @@ func getAbsUmuConfigFilename(id, exePath string, rdx redux.Readable) (string, er
 	return umuConfigPath, nil
 }
 
-func createUmuConfig(cfg *UmuConfig, rdx redux.Readable, force bool) (string, error) {
+func createUmuConfig(cfg *UmuConfig, rdx redux.Readable) (string, error) {
 
 	umuConfigPath, err := getAbsUmuConfigFilename(cfg.GogId, cfg.ExePath, rdx)
 	if err != nil {
 		return "", err
 	}
 
-	if _, err = os.Stat(umuConfigPath); err == nil && !force {
-		return umuConfigPath, nil
-	}
+	// umu-config should always be recreated to avoid any stale misconfiguration errors, like
+	// proton-runtime, prefix, etc.
+	//if _, err = os.Stat(umuConfigPath); err == nil && !force {
+	//	return umuConfigPath, nil
+	//}
 
 	umuConfigDir, _ := filepath.Split(umuConfigPath)
 	if _, err = os.Stat(umuConfigDir); os.IsNotExist(err) {
