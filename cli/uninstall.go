@@ -33,10 +33,12 @@ func UninstallHandler(u *url.URL) error {
 		force:           q.Has("force"),
 	}
 
-	return Uninstall(id, ii)
+	purge := q.Has("purge")
+
+	return Uninstall(id, ii, purge)
 }
 
-func Uninstall(id string, ii *InstallInfo) error {
+func Uninstall(id string, ii *InstallInfo, purge bool) error {
 
 	ua := nod.Begin("uninstalling %s...", id)
 	defer ua.Done()
@@ -72,6 +74,18 @@ func Uninstall(id string, ii *InstallInfo) error {
 
 	if err = osUninstallProduct(id, ii, rdx); err != nil {
 		return err
+	}
+
+	if purge {
+		var installedAppDir string
+		installedAppDir, err = osInstalledPath(id, ii.LangCode, ii.OperatingSystem, rdx)
+		if err != nil {
+			return err
+		}
+
+		if err = os.RemoveAll(installedAppDir); err != nil {
+			return err
+		}
 	}
 
 	absInventoryFilename, err := data.AbsInventoryFilename(id, ii.LangCode, ii.OperatingSystem, rdx)

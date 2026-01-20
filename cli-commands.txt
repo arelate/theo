@@ -115,6 +115,7 @@ uninstall
     id^*
     os={operating-systems^}
     lang-code={language-codes^}
+    purge
     verbose
     debug
     force
