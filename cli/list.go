@@ -155,38 +155,34 @@ func listInstalled(ii *InstallInfo) error {
 
 			infoLines := make([]string, 0)
 
-			if (ii.OperatingSystem == vangogh_integration.AnyOperatingSystem ||
-				installedInfo.OperatingSystem == ii.OperatingSystem) &&
-				installedInfo.LangCode == ii.LangCode {
+			infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
+			infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
 
-				infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
-				infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
-
-				pfxDt := "type: "
-				if len(installedInfo.DownloadTypes) > 1 {
-					pfxDt = "types: "
-				}
-				dts := make([]string, 0, len(installedInfo.DownloadTypes))
-				for _, dt := range installedInfo.DownloadTypes {
-					dts = append(dts, dt.HumanReadableString())
-				}
-				infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
-
-				infoLines = append(infoLines, "version: "+installedInfo.Version)
-				if installedInfo.EstimatedBytes > 0 {
-					infoLines = append(infoLines, "size: "+vangogh_integration.FormatBytes(installedInfo.EstimatedBytes))
-				}
-
-				summary[title] = append(summary[title], strings.Join(infoLines, "; "))
-
-				if len(installedInfo.DownloadableContent) > 0 {
-					summary[title] = append(summary[title], "- dlc: "+strings.Join(installedInfo.DownloadableContent, ", "))
-				}
-
-				if installedDate != "" {
-					summary[title] = append(summary[title], "- installed: "+installedDate)
-				}
+			pfxDt := "type: "
+			if len(installedInfo.DownloadTypes) > 1 {
+				pfxDt = "types: "
 			}
+			dts := make([]string, 0, len(installedInfo.DownloadTypes))
+			for _, dt := range installedInfo.DownloadTypes {
+				dts = append(dts, dt.HumanReadableString())
+			}
+			infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
+
+			infoLines = append(infoLines, "version: "+installedInfo.Version)
+			if installedInfo.EstimatedBytes > 0 {
+				infoLines = append(infoLines, "size: "+vangogh_integration.FormatBytes(installedInfo.EstimatedBytes))
+			}
+
+			summary[title] = append(summary[title], strings.Join(infoLines, "; "))
+
+			if len(installedInfo.DownloadableContent) > 0 {
+				summary[title] = append(summary[title], "- dlc: "+strings.Join(installedInfo.DownloadableContent, ", "))
+			}
+
+			if installedDate != "" {
+				summary[title] = append(summary[title], "- installed: "+installedDate)
+			}
+
 		}
 
 		// playtimes
