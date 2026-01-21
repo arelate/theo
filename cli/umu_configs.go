@@ -9,7 +9,6 @@ import (
 
 	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
@@ -134,57 +133,4 @@ func createUmuConfig(cfg *UmuConfig, rdx redux.Readable) (string, error) {
 	}
 
 	return umuConfigPath, nil
-}
-
-func resetUmuConfigs(rdx redux.Readable) error {
-
-	rauca := nod.NewProgress("resetting umu-configs...")
-	defer rauca.Done()
-
-	latestUmuConfigsDir, err := getLatestUmuConfigsDir(rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(latestUmuConfigsDir); os.IsNotExist(err) {
-		return nil
-	}
-
-	lucd, err := os.Open(latestUmuConfigsDir)
-	if err != nil {
-		return err
-	}
-
-	relFilenames, err := lucd.Readdirnames(-1)
-	if err != nil {
-		return err
-	}
-
-	rauca.TotalInt(len(relFilenames))
-
-	for _, rfn := range relFilenames {
-		if strings.HasPrefix(rfn, ".") {
-			rauca.Increment()
-			continue
-		}
-
-		afn := filepath.Join(latestUmuConfigsDir, rfn)
-		if err = os.Remove(afn); err != nil {
-			return err
-		}
-
-		rauca.Increment()
-	}
-
-	// TODO: replace with walkers
-	//var empty bool
-	//if empty, err = osIsDirEmpty(latestUmuConfigsDir); empty && err == nil {
-	//	if err = os.RemoveAll(latestUmuConfigsDir); err != nil {
-	//		return err
-	//	}
-	//} else if err != nil {
-	//	return err
-	//}
-
-	return nil
 }

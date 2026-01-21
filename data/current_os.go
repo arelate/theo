@@ -1,20 +1,20 @@
 package data
 
 import (
-	"github.com/arelate/southern_light/vangogh_integration"
 	"runtime"
+
+	"github.com/arelate/southern_light/vangogh_integration"
 )
 
-var goOperatingSystems = map[string]vangogh_integration.OperatingSystem{
-	"windows": vangogh_integration.Windows,
-	"darwin":  vangogh_integration.MacOS,
-	"linux":   vangogh_integration.Linux,
-}
-
 func CurrentOs() vangogh_integration.OperatingSystem {
-	if os, ok := goOperatingSystems[runtime.GOOS]; ok {
-		return os
-	} else {
-		panic(os.ErrUnsupported())
+	switch runtime.GOOS {
+	case "windows":
+		return vangogh_integration.Windows
+	case "darwin":
+		return vangogh_integration.MacOS
+	case "linux":
+		return vangogh_integration.Linux
+	default:
+		panic("current os is not supported")
 	}
 }

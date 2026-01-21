@@ -80,10 +80,6 @@ func SetupWine(force bool) error {
 		return err
 	}
 
-	if err = resetUmuConfigs(rdx); err != nil {
-		return err
-	}
-
 	return nil
 }
 
