@@ -30,7 +30,7 @@ func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 		return "", errors.New("umu-launcher version not found, please run setup-wine")
 	}
 
-	absUmuRunBinPath := filepath.Join(Pwd.AbsRelDirPath(WineBinaries, Wine), pathways.Sanitize(runtime), latestUmuLauncherVersion, relUmuRunPath)
+	absUmuRunBinPath := filepath.Join(Pwd.AbsRelDirPath(BinUnpacks, Wine), pathways.Sanitize(runtime), latestUmuLauncherVersion, relUmuRunPath)
 	if _, err := os.Stat(absUmuRunBinPath); err == nil {
 		return absUmuRunBinPath, nil
 	}
@@ -57,7 +57,7 @@ func ProtonLatestReleasePath(runtime string, rdx redux.Readable) (string, error)
 		return "", errors.New("proton-ge version not found, please run setup-wine")
 	}
 
-	absProtonPath := filepath.Join(Pwd.AbsRelDirPath(WineBinaries, Wine), pathways.Sanitize(runtime), latestProtonVersion, latestProtonVersion)
+	absProtonPath := filepath.Join(Pwd.AbsRelDirPath(BinUnpacks, Wine), pathways.Sanitize(runtime), latestProtonVersion, latestProtonVersion)
 	if _, err := os.Stat(absProtonPath); err == nil {
 		return absProtonPath, nil
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-func ServerUrl(path string, data url.Values, rdx redux.Readable) (*url.URL, error) {
+func VangoghUrl(path string, data url.Values, rdx redux.Readable) (*url.URL, error) {
 
 	if err := rdx.MustHave(VangoghProperties()...); err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func ServerUrl(path string, data url.Values, rdx redux.Readable) (*url.URL, erro
 
 func VangoghRequest(method, path string, data url.Values, rdx redux.Readable) (*http.Request, error) {
 
-	u, err := ServerUrl(path, data, rdx)
+	u, err := VangoghUrl(path, data, rdx)
 	if err != nil {
 		return nil, err
 	}

@@ -95,8 +95,15 @@ run
     debug
     force
 
+setup-steamcmd
+    verbose
+    force
+
 setup-wine
     force
+
+steam-login
+    username*
 
 steam-shortcut
     add&

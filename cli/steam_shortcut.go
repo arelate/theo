@@ -349,7 +349,7 @@ func downloadGogGridImages(loginUser string, shortcutId uint32, productImages *v
 			"id": {imageId},
 		}
 
-		srcUrl, err := data.ServerUrl(data.HttpImagePath, imageQuery, rdx)
+		srcUrl, err := data.VangoghUrl(data.HttpImagePath, imageQuery, rdx)
 		if err != nil {
 			return err
 		}

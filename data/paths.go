@@ -24,6 +24,7 @@ const (
 	Logs          pathways.AbsDir = "logs"
 	Metadata      pathways.AbsDir = "metadata"
 	Wine          pathways.AbsDir = "wine"
+	SteamCmd      pathways.AbsDir = "steamcmd"
 	Temp          pathways.AbsDir = "_temp"
 )
 
@@ -32,10 +33,10 @@ const (
 	ProductDetails pathways.RelDir = "_product-details" // Metadata
 	Inventory      pathways.RelDir = "_inventory"       // InstalledApps
 	PrefixArchive  pathways.RelDir = "_prefix-archive"  // Backups
-	WineBinaries   pathways.RelDir = "_binaries"        // Wine
-	WineDownloads  pathways.RelDir = "_downloads"       // Wine
-	Prefixes       pathways.RelDir = "_prefixes"
-	UmuConfigs     pathways.RelDir = "_umu-configs" // Wine
+	BinDownloads   pathways.RelDir = "_downloads"       // Wine, SteamCmd
+	BinUnpacks     pathways.RelDir = "_binaries"        // Wine, SteamCmd
+	Prefixes       pathways.RelDir = "_prefixes"        // Wine
+	UmuConfigs     pathways.RelDir = "_umu-configs"     // Wine
 )
 
 var Pwd pathways.Pathway
@@ -58,7 +59,7 @@ func InitPathways() error {
 		return err
 	}
 
-	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, Wine, InstalledApps, Logs, Temp} {
+	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, InstalledApps, Wine, SteamCmd, Logs, Temp} {
 		absDir := filepath.Join(rootDir, string(ad))
 		if _, err = os.Stat(absDir); os.IsNotExist(err) {
 			if err = os.MkdirAll(absDir, 0755); err != nil {
@@ -67,20 +68,22 @@ func InitPathways() error {
 		}
 	}
 
-	for rd, ad := range map[pathways.RelDir]pathways.AbsDir{
-		Redux:          Metadata,
-		ProductDetails: Metadata,
-		Inventory:      InstalledApps,
-		PrefixArchive:  Backups,
-		WineBinaries:   Wine,
-		WineDownloads:  Wine,
-		Prefixes:       Wine,
-		UmuConfigs:     Wine,
+	for rd, ads := range map[pathways.RelDir][]pathways.AbsDir{
+		PrefixArchive:  {Backups},
+		Redux:          {Metadata},
+		ProductDetails: {Metadata},
+		Inventory:      {InstalledApps},
+		BinUnpacks:     {Wine, SteamCmd},
+		BinDownloads:   {Wine, SteamCmd},
+		Prefixes:       {Wine},
+		UmuConfigs:     {Wine},
 	} {
-		absRelDir := filepath.Join(rootDir, string(ad), string(rd))
-		if _, err = os.Stat(absRelDir); os.IsNotExist(err) {
-			if err = os.MkdirAll(absRelDir, 0755); err != nil {
-				return err
+		for _, ad := range ads {
+			absRelDir := filepath.Join(rootDir, string(ad), string(rd))
+			if _, err = os.Stat(absRelDir); os.IsNotExist(err) {
+				if err = os.MkdirAll(absRelDir, 0755); err != nil {
+					return err
+				}
 			}
 		}
 	}

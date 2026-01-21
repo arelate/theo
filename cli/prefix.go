@@ -204,7 +204,7 @@ func Prefix(id string, ii *InstallInfo,
 		wbFilename := path.Base(requestedWineBinary.DownloadUrl)
 
 		var wineDownloadsDir string
-		wineDownloadsDir = data.Pwd.AbsRelDirPath(data.WineDownloads, data.Wine)
+		wineDownloadsDir = data.Pwd.AbsRelDirPath(data.BinDownloads, data.Wine)
 
 		et.name = requestedWineBinary.String()
 		et.exe = filepath.Join(wineDownloadsDir, wbFilename)

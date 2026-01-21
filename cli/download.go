@@ -139,7 +139,7 @@ func downloadProductFiles(id string,
 			"download-type": {dl.DownloadType.String()},
 		}
 
-		fileUrl, err := data.ServerUrl(data.HttpFilesPath, query, rdx)
+		fileUrl, err := data.VangoghUrl(data.HttpFilesPath, query, rdx)
 		if err != nil {
 			fa.EndWithResult(err.Error())
 			continue

@@ -152,7 +152,7 @@ func macOsGetAbsCxBinDir(rdx redux.Readable) (string, error) {
 		return "", errors.New("CrossOver version not found, please run setup-wine")
 	}
 
-	wineBinaries := data.Pwd.AbsRelDirPath(data.WineBinaries, data.Wine)
+	wineBinaries := data.Pwd.AbsRelDirPath(data.BinUnpacks, data.Wine)
 
 	absCrossOverBinDir := filepath.Join(wineBinaries, pathways.Sanitize(wine_integration.CrossOver), latestCxVersion, relCxAppDir, relCxBinDir)
 	if _, err := os.Stat(absCrossOverBinDir); err == nil {
