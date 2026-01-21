@@ -69,6 +69,7 @@ func ValidateHandler(u *url.URL) error {
 		OperatingSystem: os,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
+		force:           q.Has("force"),
 	}
 
 	var manualUrlFilter []string
@@ -92,12 +93,18 @@ func Validate(id string,
 	va := nod.NewProgress("validating downloads...")
 	defer va.Done()
 
-	productDetails, err := getProductDetails(id, rdx, false)
+	productDetails, err := getProductDetails(id, rdx, ii.force)
 	if err != nil {
 		return err
 	}
 
-	if mismatchedManualUrls, err := validateLinks(id, ii, manualUrlFilter, productDetails); err != nil {
+	manualUrlChecksums, err := getManualUrlChecksums(id, rdx, ii.force)
+	if err != nil {
+		return err
+	}
+
+	var mismatchedManualUrls []string
+	if mismatchedManualUrls, err = validateLinks(id, ii, manualUrlFilter, productDetails, manualUrlChecksums); err != nil {
 		return err
 	} else if len(mismatchedManualUrls) > 0 {
 
@@ -109,7 +116,7 @@ func Validate(id string,
 			return err
 		}
 
-		if _, err = validateLinks(id, ii, manualUrlFilter, productDetails); err != nil {
+		if _, err = validateLinks(id, ii, manualUrlFilter, productDetails, manualUrlChecksums); err != nil {
 			return err
 		}
 	}
@@ -120,7 +127,8 @@ func Validate(id string,
 func validateLinks(id string,
 	ii *InstallInfo,
 	manualUrlFilter []string,
-	productDetails *vangogh_integration.ProductDetails) ([]string, error) {
+	productDetails *vangogh_integration.ProductDetails,
+	manualUrlChecksums map[string]string) ([]string, error) {
 
 	vla := nod.NewProgress("validating %s...", productDetails.Title)
 	defer vla.Done()
@@ -147,7 +155,7 @@ func validateLinks(id string,
 			continue
 		}
 
-		vr, err := validateLink(id, &dl, downloadsDir)
+		vr, err := validateLink(id, &dl, manualUrlChecksums[dl.ManualUrl], downloadsDir)
 		if err != nil {
 			vla.Error(err)
 		}
@@ -164,7 +172,7 @@ func validateLinks(id string,
 	return mismatchedManualUrls, nil
 }
 
-func validateLink(id string, link *vangogh_integration.ProductDownloadLink, downloadsDir string) (ValidationResult, error) {
+func validateLink(id string, link *vangogh_integration.ProductDownloadLink, manualUrlMd5 string, downloadsDir string) (ValidationResult, error) {
 
 	dla := nod.NewProgress(" - %s...", link.LocalFilename)
 	defer dla.Done()
@@ -179,7 +187,7 @@ func validateLink(id string, link *vangogh_integration.ProductDownloadLink, down
 		return ValResFileNotFound, nil
 	}
 
-	if link.Md5 == "" {
+	if manualUrlMd5 == "" {
 		dla.EndWithResult(ValResMissingChecksum)
 		return ValResMissingChecksum, nil
 	}
@@ -197,7 +205,7 @@ func validateLink(id string, link *vangogh_integration.ProductDownloadLink, down
 	}
 
 	computedMd5 := fmt.Sprintf("%x", h.Sum(nil))
-	if link.Md5 == computedMd5 {
+	if manualUrlMd5 == computedMd5 {
 		dla.EndWithResult(ValResValid)
 		return ValResValid, nil
 	} else {

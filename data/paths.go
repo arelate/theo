@@ -29,14 +29,15 @@ const (
 )
 
 const (
-	Redux          pathways.RelDir = "_redux"           // Metadata
-	ProductDetails pathways.RelDir = "_product-details" // Metadata
-	Inventory      pathways.RelDir = "_inventory"       // InstalledApps
-	PrefixArchive  pathways.RelDir = "_prefix-archive"  // Backups
-	BinDownloads   pathways.RelDir = "_downloads"       // Wine, SteamCmd
-	BinUnpacks     pathways.RelDir = "_binaries"        // Wine, SteamCmd
-	Prefixes       pathways.RelDir = "_prefixes"        // Wine
-	UmuConfigs     pathways.RelDir = "_umu-configs"     // Wine
+	Redux              pathways.RelDir = "_redux"               // Metadata
+	ProductDetails     pathways.RelDir = "product-details"      // Metadata
+	ManualUrlChecksums pathways.RelDir = "manual-url-checksums" // Metadata
+	Inventory          pathways.RelDir = "_inventory"           // InstalledApps
+	PrefixArchive      pathways.RelDir = "_prefix-archive"      // Backups
+	BinDownloads       pathways.RelDir = "_downloads"           // Wine, SteamCmd
+	BinUnpacks         pathways.RelDir = "_binaries"            // Wine, SteamCmd
+	Prefixes           pathways.RelDir = "_prefixes"            // Wine
+	UmuConfigs         pathways.RelDir = "_umu-configs"         // Wine
 )
 
 var Pwd pathways.Pathway
@@ -69,14 +70,15 @@ func InitPathways() error {
 	}
 
 	for rd, ads := range map[pathways.RelDir][]pathways.AbsDir{
-		PrefixArchive:  {Backups},
-		Redux:          {Metadata},
-		ProductDetails: {Metadata},
-		Inventory:      {InstalledApps},
-		BinUnpacks:     {Wine, SteamCmd},
-		BinDownloads:   {Wine, SteamCmd},
-		Prefixes:       {Wine},
-		UmuConfigs:     {Wine},
+		PrefixArchive:      {Backups},
+		Redux:              {Metadata},
+		ProductDetails:     {Metadata},
+		ManualUrlChecksums: {Metadata},
+		Inventory:          {InstalledApps},
+		BinUnpacks:         {Wine, SteamCmd},
+		BinDownloads:       {Wine, SteamCmd},
+		Prefixes:           {Wine},
+		UmuConfigs:         {Wine},
 	} {
 		for _, ad := range ads {
 			absRelDir := filepath.Join(rootDir, string(ad), string(rd))

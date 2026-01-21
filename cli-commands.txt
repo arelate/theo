@@ -135,5 +135,6 @@ validate
     os&={operating-systems^}
     lang-code&={language-codes^}
     manual-url-filter&
+    force
 
 version

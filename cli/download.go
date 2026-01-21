@@ -121,6 +121,10 @@ func downloadProductFiles(id string,
 
 	for _, dl := range dls {
 
+		if dl.LocalFilename == "" {
+			return errors.New("unresolved local filename for manual-url " + dl.ManualUrl)
+		}
+
 		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
 			continue
 		}
