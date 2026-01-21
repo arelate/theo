@@ -96,14 +96,11 @@ run
     force
 
 setup-steamcmd
-    verbose
+    username*
     force
 
 setup-wine
     force
-
-steam-login
-    username*
 
 steam-shortcut
     add&

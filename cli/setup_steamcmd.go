@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"os/exec"
@@ -23,13 +24,14 @@ func SetupSteamCmdHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	verbose := q.Has("verbose")
+	username := q.Get("username")
+
 	force := q.Has("force")
 
-	return SetupSteamCmd(verbose, force)
+	return SetupSteamCmd(username, force)
 }
 
-func SetupSteamCmd(verbose, force bool) error {
+func SetupSteamCmd(username string, force bool) error {
 
 	currentOs := data.CurrentOs()
 
@@ -53,7 +55,7 @@ func SetupSteamCmd(verbose, force bool) error {
 		return err
 	}
 
-	if err = updateSteamCmdRuntime(currentOs, verbose); err != nil {
+	if err = steamCmdLogin(username, currentOs); err != nil {
 		return err
 	}
 
@@ -111,22 +113,25 @@ func unpackSteamCmdBinaries(operatingSystem vangogh_integration.OperatingSystem,
 	return untar(absSteamCmdDownload, osSteamCmdBinariesDir)
 }
 
-func updateSteamCmdRuntime(operatingSystem vangogh_integration.OperatingSystem, verbose bool) error {
+func steamCmdLogin(username string, operatingSystem vangogh_integration.OperatingSystem) error {
 
-	uscra := nod.Begin(" updating SteamCMD runtime for %s, please wait...", operatingSystem)
-	defer uscra.Done()
+	scla := nod.Begin(" logging %s to Steam...", username)
+	defer scla.Done()
 
 	absSteamCmdBinaryPath, err := steamCmdBinaryPath(operatingSystem)
 	if err != nil {
 		return err
 	}
 
-	cmd := exec.Command(absSteamCmdBinaryPath, "+quit")
+	cmd := exec.Command(absSteamCmdBinaryPath, "+login", username, "+quit")
 
-	if verbose {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
+	// always enable i/o to be able to input Steam password for a given username
+	// and see Steam Guard prompt
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	fmt.Println()
 
 	return cmd.Run()
 }
