@@ -21,6 +21,7 @@ const (
 	Backups       pathways.AbsDir = "backups"
 	Downloads     pathways.AbsDir = "downloads"
 	InstalledApps pathways.AbsDir = "installed-apps"
+	SteamApps     pathways.AbsDir = "steam-apps" // InstalledApps
 	Logs          pathways.AbsDir = "logs"
 	Metadata      pathways.AbsDir = "metadata"
 	Wine          pathways.AbsDir = "wine"
@@ -32,6 +33,7 @@ const (
 	Redux              pathways.RelDir = "_redux"               // Metadata
 	ProductDetails     pathways.RelDir = "product-details"      // Metadata
 	ManualUrlChecksums pathways.RelDir = "manual-url-checksums" // Metadata
+	SteamAppInfo       pathways.RelDir = "steam-appinfo"        // Metadata
 	Inventory          pathways.RelDir = "_inventory"           // InstalledApps
 	PrefixArchive      pathways.RelDir = "_prefix-archive"      // Backups
 	BinDownloads       pathways.RelDir = "_downloads"           // Wine, SteamCmd
@@ -60,7 +62,7 @@ func InitPathways() error {
 		return err
 	}
 
-	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, InstalledApps, Wine, SteamCmd, Logs, Temp} {
+	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, InstalledApps, SteamApps, Wine, SteamCmd, Logs, Temp} {
 		absDir := filepath.Join(rootDir, string(ad))
 		if _, err = os.Stat(absDir); os.IsNotExist(err) {
 			if err = os.MkdirAll(absDir, 0755); err != nil {

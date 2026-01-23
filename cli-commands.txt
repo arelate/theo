@@ -102,6 +102,12 @@ setup-steamcmd
 setup-wine
     force
 
+steam-install
+    id*^
+    os*={operating-systems^}
+    username*
+    force
+
 steam-shortcut
     add&
     remove&

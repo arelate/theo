@@ -113,17 +113,14 @@ func unpackSteamCmdBinaries(operatingSystem vangogh_integration.OperatingSystem,
 	return untar(absSteamCmdDownload, osSteamCmdBinariesDir)
 }
 
-func steamCmdLogin(username string, operatingSystem vangogh_integration.OperatingSystem) error {
-
-	scla := nod.Begin(" logging %s to Steam...", username)
-	defer scla.Done()
+func steamCmdCommand(operatingSystem vangogh_integration.OperatingSystem, params ...string) (*exec.Cmd, error) {
 
 	absSteamCmdBinaryPath, err := steamCmdBinaryPath(operatingSystem)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	cmd := exec.Command(absSteamCmdBinaryPath, "+login", username, "+quit")
+	cmd := exec.Command(absSteamCmdBinaryPath, params...)
 
 	// always enable i/o to be able to input Steam password for a given username
 	// and see Steam Guard prompt
@@ -131,7 +128,20 @@ func steamCmdLogin(username string, operatingSystem vangogh_integration.Operatin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	return cmd, nil
+}
+
+func steamCmdLogin(username string, operatingSystem vangogh_integration.OperatingSystem) error {
+
+	scla := nod.Begin(" logging %s to Steam...", username)
+	defer scla.Done()
+
 	fmt.Println()
+
+	cmd, err := steamCmdCommand(operatingSystem, "+login", username, "+quit")
+	if err != nil {
+		return err
+	}
 
 	return cmd.Run()
 }
