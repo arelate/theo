@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"net/url"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -99,7 +100,7 @@ func steamCmdAppInfo(id string, operatingSystem vangogh_integration.OperatingSys
 		return nil
 	}
 
-	appInfoPrintCmd, err := steamCmdCommand(operatingSystem, "+app_info_print", id, "+quit")
+	appInfoPrintCmd, err := steamCmdCommand(data.CurrentOs(), "+app_info_print", id, "+quit")
 	if err != nil {
 		return err
 	}
@@ -153,9 +154,15 @@ func steamCmdAppUpdate(id, name string, username string, operatingSystem vangogh
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
 	absInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), installDir)
 
+	if _, err := os.Stat(absInstallDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(absInstallDir, 0755); err != nil {
+			return err
+		}
+	}
+
 	steamOs := strings.ToLower(operatingSystem.String())
 
-	steamAppUpdateCmd, err := steamCmdCommand(operatingSystem,
+	steamAppUpdateCmd, err := steamCmdCommand(data.CurrentOs(),
 		"@sSteamCmdForcePlatformType", steamOs,
 		"+force_install_dir", absInstallDir,
 		"+login", username,

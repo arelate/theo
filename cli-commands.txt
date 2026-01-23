@@ -108,6 +108,10 @@ steam-install
     username*
     force
 
+steam-run
+    id*^
+    os*={operating-systems^}
+
 steam-shortcut
     add&
     remove&
