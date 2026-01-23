@@ -163,7 +163,7 @@ func steamCmdAppUpdate(id, name string, username string, operatingSystem vangogh
 	steamOs := strings.ToLower(operatingSystem.String())
 
 	steamAppUpdateCmd, err := steamCmdCommand(data.CurrentOs(),
-		"@sSteamCmdForcePlatformType", steamOs,
+		"+@sSteamCmdForcePlatformType", steamOs,
 		"+force_install_dir", absInstallDir,
 		"+login", username,
 		"+app_update", id,
