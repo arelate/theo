@@ -102,11 +102,14 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		force:           force,
 	}
 
+	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
+	absInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), installDir)
+
 	sgo := &steamGridOptions{
 		useSteamAssets: true,
 		steamRun:       true,
 		name:           name,
-		installDir:     installDir,
+		installDir:     absInstallDir,
 		logoPosition:   nil,
 	}
 

@@ -306,7 +306,9 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 
 	launchOptions = append(launchOptions, strings.Replace(runTemplate, "{id}", id, 1))
 	launchOptions = append(launchOptions, strings.Replace(osTemplate, "{operating-system}", operatingSystem.String(), 1))
-	launchOptions = append(launchOptions, strings.Replace(langCodeTemplate, "{lang-code}", langCode, 1))
+	if !sgo.steamRun {
+		launchOptions = append(launchOptions, strings.Replace(langCodeTemplate, "{lang-code}", langCode, 1))
+	}
 
 	var installedPath string
 	if sgo.installDir != "" {
