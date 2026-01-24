@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -16,6 +17,8 @@ import (
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 )
+
+const steamAppIdTxt = "steam_appid.txt"
 
 func SteamInstallHandler(u *url.URL) error {
 
@@ -115,6 +118,21 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 
 	if err = SteamShortcut([]string{id}, nil, false, ii, sgo); err != nil {
 		return err
+	}
+
+	// https://partner.steamgames.com/doc/sdk/api
+	absSteamAppIdTxtPath := filepath.Join(absInstallDir, steamAppIdTxt)
+	if _, err = os.Stat(absSteamAppIdTxtPath); err != nil {
+		var sait *os.File
+		sait, err = os.Create(absSteamAppIdTxtPath)
+		if err != nil {
+			return err
+		}
+		defer sait.Close()
+
+		if _, err = io.WriteString(sait, id); err != nil {
+			return err
+		}
 	}
 
 	return nil
