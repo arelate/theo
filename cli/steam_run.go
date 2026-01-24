@@ -63,6 +63,7 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 	prefixesDir := data.Pwd.AbsRelDirPath(data.Prefixes, data.Wine)
 	absPrefixDir := filepath.Join(prefixesDir, name)
 
+	// TODO: better detect default launch task
 	for _, slc := range slcs {
 		if slices.Contains(slc.osList, operatingSystem) {
 
@@ -86,11 +87,15 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 				return data.CurrentOs().ErrUnsupported()
 			}
 
+			absExePath := filepath.Join(appInstallDir, exe)
+
+			absWorkingDir := filepath.Join(appInstallDir, strings.Replace(slc.workingDir, "\\", "/", -1))
+
 			et := &execTask{
 				name:            name,
-				exe:             filepath.Join(appInstallDir, exe),
+				exe:             absExePath,
 				prefix:          absPrefixDir,
-				workDir:         slc.workingDir,
+				workDir:         absWorkingDir,
 				args:            strings.Split(slc.arguments, " "),
 				defaultLauncher: false,
 				verbose:         false,
