@@ -82,7 +82,7 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 				defaultLauncher: false,
 				verbose:         false,
 			}
-			return osExec(id, operatingSystem, et, nil)
+			return osExec(id, operatingSystem, et)
 		}
 	}
 

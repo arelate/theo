@@ -176,7 +176,7 @@ func Prefix(id string, ii *InstallInfo,
 		et.name = program
 		et.exe = program
 
-		if err = osExec(id, vangogh_integration.Windows, et, rdx); err != nil {
+		if err = osExec(id, vangogh_integration.Windows, et); err != nil {
 			return err
 		}
 
@@ -217,7 +217,7 @@ func Prefix(id string, ii *InstallInfo,
 			return errors.New("matched WINE binary not found, use setup-wine to download")
 		}
 
-		if err = osExec(id, vangogh_integration.Windows, et, rdx); err != nil {
+		if err = osExec(id, vangogh_integration.Windows, et); err != nil {
 			return err
 		}
 
@@ -328,7 +328,7 @@ func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force
 
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		if err = macOsWineRun(id, rdx, et); err != nil {
+		if err = macOsWineRun(id, et); err != nil {
 			return err
 		}
 	default:

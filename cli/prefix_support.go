@@ -28,17 +28,26 @@ func prefixInit(id string, rdx redux.Readable, verbose bool) error {
 	cpa := nod.Begin("initializing prefix for %s...", id)
 	defer cpa.Done()
 
+	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+		return err
+	}
+
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	if err != nil {
+		return err
+	}
+
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		return macOsInitPrefix(id, rdx, verbose)
+		return macOsInitPrefix(id, verbose)
 	case vangogh_integration.Linux:
-		return linuxInitPrefix(id, rdx, verbose)
+		return linuxInitPrefix(absPrefixDir, verbose)
 	default:
 		return data.CurrentOs().ErrUnsupported()
 	}
 }
 
-func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
+func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
 
 	currentOs := data.CurrentOs()
 
@@ -87,7 +96,7 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 			verbose: ii.verbose,
 		}
 
-		if err := currentOsWineRun(id, rdx, et); err != nil {
+		if err := currentOsWineRun(id, et); err != nil {
 			return err
 		}
 	}

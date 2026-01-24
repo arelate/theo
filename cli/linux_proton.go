@@ -28,16 +28,19 @@ var protonOptionsEnv = map[string]string{
 	ProtonNoSteamInput:  "PROTON_NO_STEAMINPUT",
 }
 
-func linuxProtonRun(id string, rdx redux.Readable, et *execTask) error {
+func linuxProtonRun(id string, et *execTask) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
 	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer lwra.Done()
 
-	if err := rdx.MustHave(
+	reduxDir := data.Pwd.AbsRelDirPath(data.Redux, data.Metadata)
+	rdx, err := redux.NewReader(reduxDir,
+		data.WineBinariesVersionsProperty,
 		vangogh_integration.SlugProperty,
-		vangogh_integration.SteamAppIdProperty); err != nil {
+		vangogh_integration.SteamAppIdProperty)
+	if err != nil {
 		return err
 	}
 
@@ -96,7 +99,7 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask) error {
 	return cmd.Run()
 }
 
-func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable) error {
+func linuxProtonRunExecTask(id string, et *execTask) error {
 
 	lwra := nod.Begin(" running %s with Proton, please wait...", et.name)
 	defer lwra.Done()
@@ -104,6 +107,12 @@ func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable) error {
 	if et.verbose && len(et.env) > 0 {
 		pea := nod.Begin(" env:")
 		pea.EndWithResult(strings.Join(et.env, " "))
+	}
+
+	reduxDir := data.Pwd.AbsRelDirPath(data.Redux, data.Metadata)
+	rdx, err := redux.NewReader(reduxDir, data.WineBinariesVersionsProperty)
+	if err != nil {
+		return err
 	}
 
 	absUmuRunPath, err := data.UmuRunLatestReleasePath(rdx)
@@ -145,18 +154,15 @@ func linuxProtonRunExecTask(id string, et *execTask, rdx redux.Readable) error {
 	return cmd.Run()
 }
 
-func linuxInitPrefix(id string, rdx redux.Readable, _ bool) error {
+func linuxInitPrefix(absPrefixDir string, _ bool) error {
 	lipa := nod.Begin(" initializing prefix...")
 	defer lipa.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return err
+	if _, err := os.Stat(absPrefixDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(absPrefixDir, 0755); err != nil {
+			return err
+		}
 	}
 
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	return os.MkdirAll(absPrefixDir, 0755)
+	return nil
 }

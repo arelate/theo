@@ -235,7 +235,7 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 		}
 
 		if et.exe != "" {
-			return osExec(id, ii.OperatingSystem, et, rdx)
+			return osExec(id, ii.OperatingSystem, et)
 		}
 	}
 
@@ -265,7 +265,7 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 		}
 	}
 
-	return osExec(id, ii.OperatingSystem, et, rdx)
+	return osExec(id, ii.OperatingSystem, et)
 }
 
 func osFindGogGameInfo(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
@@ -401,7 +401,7 @@ func osExecTaskDefaultLauncher(absDefaultLauncherPath string, operatingSystem va
 	return et, nil
 }
 
-func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask, rdx redux.Readable) error {
+func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
 
 	switch operatingSystem {
 	case vangogh_integration.MacOS:
@@ -412,9 +412,9 @@ func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *
 		currentOs := data.CurrentOs()
 		switch currentOs {
 		case vangogh_integration.MacOS:
-			return macOsWineRunExecTask(et, rdx)
+			return macOsWineRunExecTask(et)
 		case vangogh_integration.Linux:
-			return linuxProtonRunExecTask(id, et, rdx)
+			return linuxProtonRunExecTask(id, et)
 		default:
 			return currentOs.ErrUnsupported()
 		}

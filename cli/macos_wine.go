@@ -26,47 +26,34 @@ const (
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
 type (
-	wineRunFunc func(id string, rdx redux.Readable, et *execTask) error
+	wineRunFunc func(id string, et *execTask) error
 )
 
-func macOsInitPrefix(id string, rdx redux.Readable, verbose bool) error {
+func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
 	defer mipa.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return err
-	}
-
-	return macOsCreateCxBottle(id, rdx, defaultCxBottleTemplate, verbose)
+	return macOsCreateCxBottle(absPrefixDir, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id string, rdx redux.Readable, et *execTask) error {
+func macOsWineRun(absPrefixDir string, et *execTask) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer mwra.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return err
-	}
-
 	if et.verbose && len(et.env) > 0 {
 		pea := nod.Begin(" env:")
 		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
-	absCxBinDir, err := macOsGetAbsCxBinDir(rdx)
+	absCxBinDir, err := macOsGetAbsCxBinDir(nil)
 	if err != nil {
 		return err
 	}
 
 	absWineBinPath := filepath.Join(absCxBinDir, relWineFilename)
-
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
-	if err != nil {
-		return err
-	}
 
 	if strings.HasSuffix(et.exe, ".lnk") {
 		et.args = append([]string{"--start", et.exe}, et.args...)
@@ -92,7 +79,7 @@ func macOsWineRun(id string, rdx redux.Readable, et *execTask) error {
 	return cmd.Run()
 }
 
-func macOsWineRunExecTask(et *execTask, rdx redux.Readable) error {
+func macOsWineRunExecTask(et *execTask) error {
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", et.name)
 	defer mwra.Done()
@@ -102,7 +89,7 @@ func macOsWineRunExecTask(et *execTask, rdx redux.Readable) error {
 		pea.EndWithResult(strings.Join(et.env, " "))
 	}
 
-	absCxBinDir, err := macOsGetAbsCxBinDir(rdx)
+	absCxBinDir, err := macOsGetAbsCxBinDir(nil)
 	if err != nil {
 		return err
 	}
@@ -139,8 +126,17 @@ func macOsWineRunExecTask(et *execTask, rdx redux.Readable) error {
 
 func macOsGetAbsCxBinDir(rdx redux.Readable) (string, error) {
 
-	if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
-		return "", err
+	if rdx == nil {
+		reduxDir := data.Pwd.AbsRelDirPath(data.Redux, data.Metadata)
+		var err error
+		rdx, err = redux.NewReader(reduxDir, data.WineBinariesVersionsProperty)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		if err := rdx.MustHave(data.WineBinariesVersionsProperty); err != nil {
+			return "", err
+		}
 	}
 
 	var latestCxVersion string
@@ -162,27 +158,18 @@ func macOsGetAbsCxBinDir(rdx redux.Readable) (string, error) {
 	return "", os.ErrNotExist
 }
 
-func macOsCreateCxBottle(id string, rdx redux.Readable, template string, verbose bool) error {
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return err
-	}
+func macOsCreateCxBottle(absPrefixDir string, template string, verbose bool) error {
 
 	if template == "" {
 		template = defaultCxBottleTemplate
 	}
 
-	absCxBinDir, err := macOsGetAbsCxBinDir(rdx)
+	absCxBinDir, err := macOsGetAbsCxBinDir(nil)
 	if err != nil {
 		return err
 	}
 
 	absCxBottlePath := filepath.Join(absCxBinDir, relCxBottleFilename)
-
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
-	if err != nil {
-		return err
-	}
 
 	// cxbottle --create returns error when bottle already exists
 	if _, err = os.Stat(absPrefixDir); err == nil {
