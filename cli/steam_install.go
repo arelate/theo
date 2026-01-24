@@ -94,6 +94,26 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        defaultLangCode,
+		UseSteamAssets:  true,
+		verbose:         verbose,
+		force:           force,
+	}
+
+	sgo := &steamGridOptions{
+		useSteamAssets: true,
+		steamRun:       true,
+		name:           name,
+		installDir:     installDir,
+		logoPosition:   nil,
+	}
+
+	if err = SteamShortcut([]string{id}, nil, false, ii, sgo); err != nil {
+		return err
+	}
+
 	return nil
 }
 

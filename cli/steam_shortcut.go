@@ -24,9 +24,10 @@ const (
 )
 
 const (
-	runTemplate      = "run {id}"
-	osTemplate       = "-os {operating-system}"
-	langCodeTemplate = "-lang-code {lang-code}"
+	vangoghRunTemplate = "run {id}"
+	steamRunTemplate   = "steam-run {id}"
+	osTemplate         = "-os {operating-system}"
+	langCodeTemplate   = "-lang-code {lang-code}"
 )
 
 const (
@@ -42,6 +43,9 @@ type gridLogoPosition struct {
 
 type steamGridOptions struct {
 	useSteamAssets bool
+	steamRun       bool
+	name           string
+	installDir     string
 	logoPosition   *logoPosition
 }
 
@@ -78,6 +82,7 @@ func SteamShortcutHandler(u *url.URL) error {
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
+		force:           q.Has("force"),
 	}
 
 	sgo := &steamGridOptions{
@@ -106,13 +111,12 @@ func SteamShortcutHandler(u *url.URL) error {
 	}
 
 	updateAllInstalled := q.Has("update-all-installed")
-	force := q.Has("force")
 
-	return SteamShortcut(add, remove, updateAllInstalled, ii, sgo, force)
+	return SteamShortcut(add, remove, updateAllInstalled, ii, sgo)
 
 }
 
-func SteamShortcut(add []string, remove []string, updateAllInstalled bool, ii *InstallInfo, sgo *steamGridOptions, force bool) error {
+func SteamShortcut(add []string, remove []string, updateAllInstalled bool, ii *InstallInfo, sgo *steamGridOptions) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
@@ -136,7 +140,7 @@ func SteamShortcut(add []string, remove []string, updateAllInstalled bool, ii *I
 	}
 
 	for _, id := range add {
-		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, sgo, rdx, force); err != nil {
+		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, sgo, rdx, ii.force); err != nil {
 			return err
 		}
 	}
@@ -164,7 +168,8 @@ func addSteamShortcut(id string, operatingSystem vangogh_integration.OperatingSy
 	}
 
 	if operatingSystem == vangogh_integration.AnyOperatingSystem {
-		iios, err := installedInfoOperatingSystem(id, rdx)
+		var iios vangogh_integration.OperatingSystem
+		iios, err = installedInfoOperatingSystem(id, rdx)
 		if err != nil {
 			return err
 		}
@@ -173,7 +178,8 @@ func addSteamShortcut(id string, operatingSystem vangogh_integration.OperatingSy
 	}
 
 	if langCode == "" {
-		lc, err := installedInfoLangCode(id, operatingSystem, rdx)
+		var lc string
+		lc, err = installedInfoLangCode(id, operatingSystem, rdx)
 		if err != nil {
 			return err
 		}
@@ -216,15 +222,16 @@ func addSteamShortcutsForUser(loginUser string,
 		return nil
 	}
 
-	shortcut, err := createSteamShortcut(loginUser, id, operatingSystem, langCode, rdx)
+	shortcut, err := createSteamShortcut(loginUser, id, operatingSystem, langCode, rdx, sgo)
 	if err != nil {
 		return err
 	}
 
-	if changed, err := addNonSteamAppShortcut(shortcut, kvUserShortcuts, force); err != nil {
+	var changed bool
+	if changed, err = addNonSteamAppShortcut(shortcut, kvUserShortcuts, force); err != nil {
 		return err
 	} else if changed {
-		if err := writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
+		if err = writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
 			return err
 		}
 	}
@@ -235,17 +242,22 @@ func addSteamShortcutsForUser(loginUser string,
 	}
 
 	var steamAppId string
-	if sai, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok && sai != "" {
-		steamAppId = sai
+
+	if sgo.steamRun {
+		steamAppId = id
 	} else {
-		sgo.useSteamAssets = false
+		if sai, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok && sai != "" {
+			steamAppId = sai
+		} else {
+			sgo.useSteamAssets = false
+		}
 	}
 
 	switch sgo.useSteamAssets {
 	case true:
 		err = fetchSteamGridImages(loginUser, steamAppId, shortcut.AppId, force)
 	case false:
-		err = downloadGogGridImages(loginUser, shortcut.AppId, &productDetails.Images, rdx, force)
+		err = downloadVangoghGridImages(loginUser, shortcut.AppId, &productDetails.Images, rdx, force)
 	}
 
 	if err != nil {
@@ -259,17 +271,21 @@ func addSteamShortcutsForUser(loginUser string,
 	return nil
 }
 
-func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (*steam_integration.Shortcut, error) {
+func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable, sgo *steamGridOptions) (*steam_integration.Shortcut, error) {
 
 	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return nil, err
 	}
 
 	var title string
-	if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
-		title = tp
+	if sgo.name != "" {
+		title = sgo.name
 	} else {
-		return nil, errors.New("add-steam-shortcut: product is missing title")
+		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
+			title = tp
+		} else {
+			return nil, errors.New("add-steam-shortcut: product is missing title")
+		}
 	}
 
 	shortcutId := steam_integration.ShortcutAppId(title)
@@ -280,14 +296,26 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 	}
 
 	launchOptions := make([]string, 0, 3)
+
+	var runTemplate string
+	if sgo.steamRun {
+		runTemplate = steamRunTemplate
+	} else {
+		runTemplate = vangoghRunTemplate
+	}
+
 	launchOptions = append(launchOptions, strings.Replace(runTemplate, "{id}", id, 1))
 	launchOptions = append(launchOptions, strings.Replace(osTemplate, "{operating-system}", operatingSystem.String(), 1))
 	launchOptions = append(launchOptions, strings.Replace(langCodeTemplate, "{lang-code}", langCode, 1))
 
 	var installedPath string
-	installedPath, err = osInstalledPath(id, langCode, operatingSystem, rdx)
-	if err != nil {
-		return nil, err
+	if sgo.installDir != "" {
+		installedPath = sgo.installDir
+	} else {
+		installedPath, err = osInstalledPath(id, langCode, operatingSystem, rdx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	shortcut := steam_integration.NewShortcut()
@@ -302,7 +330,7 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 	return shortcut, nil
 }
 
-func downloadGogGridImages(loginUser string, shortcutId uint32, productImages *vangogh_integration.ProductImages, rdx redux.Readable, force bool) error {
+func downloadVangoghGridImages(loginUser string, shortcutId uint32, productImages *vangogh_integration.ProductImages, rdx redux.Readable, force bool) error {
 
 	dga := nod.Begin(" downloading GOG.com grid images...")
 	defer dga.Done()
@@ -349,7 +377,8 @@ func downloadGogGridImages(loginUser string, shortcutId uint32, productImages *v
 			"id": {imageId},
 		}
 
-		srcUrl, err := data.VangoghUrl(data.HttpImagePath, imageQuery, rdx)
+		var srcUrl *url.URL
+		srcUrl, err = data.VangoghUrl(data.HttpImagePath, imageQuery, rdx)
 		if err != nil {
 			return err
 		}
@@ -624,6 +653,7 @@ func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...st
 
 	for _, id := range ids {
 
+		// TODO: steam-install created shortcuts can't be deleted since they don't have title
 		var title string
 		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
 			title = tp
@@ -635,7 +665,7 @@ func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...st
 
 		removeShortcutAppIds = append(removeShortcutAppIds, shortcutId)
 
-		if err := removeSteamGridImages(loginUser, shortcutId); err != nil {
+		if err = removeSteamGridImages(loginUser, shortcutId); err != nil {
 			return err
 		}
 	}
