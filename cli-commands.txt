@@ -106,6 +106,7 @@ steam-install
     id*^
     os*={operating-systems^}
     username*
+    verbose
     force
 
 steam-run

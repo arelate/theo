@@ -60,6 +60,9 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
 	appInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), installDir)
 
+	prefixesDir := data.Pwd.AbsRelDirPath(data.Prefixes, data.Wine)
+	absPrefixDir := filepath.Join(prefixesDir, name)
+
 	for _, slc := range slcs {
 		if slices.Contains(slc.osList, operatingSystem) {
 
@@ -70,13 +73,23 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 				fallthrough
 			case vangogh_integration.Linux:
 				exe = strings.Replace(exe, "\\", "/", -1)
+			case vangogh_integration.Windows:
+				switch data.CurrentOs() {
+				case vangogh_integration.MacOS:
+					fallthrough
+				case vangogh_integration.Linux:
+					exe = strings.Replace(exe, "\\", "/", -1)
+				default:
+					return data.CurrentOs().ErrUnsupported()
+				}
 			default:
-				// do nothin
+				return data.CurrentOs().ErrUnsupported()
 			}
 
 			et := &execTask{
 				name:            name,
 				exe:             filepath.Join(appInstallDir, exe),
+				prefix:          absPrefixDir,
 				workDir:         slc.workingDir,
 				args:            strings.Split(slc.arguments, " "),
 				defaultLauncher: false,

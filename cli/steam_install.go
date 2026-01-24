@@ -30,12 +30,13 @@ func SteamInstallHandler(u *url.URL) error {
 
 	username := q.Get("username")
 
+	verbose := q.Has("verbose")
 	force := q.Has("force")
 
-	return SteamInstall(id, username, operatingSystem, force)
+	return SteamInstall(id, username, operatingSystem, verbose, force)
 }
 
-func SteamInstall(id, username string, operatingSystem vangogh_integration.OperatingSystem, force bool) error {
+func SteamInstall(id, username string, operatingSystem vangogh_integration.OperatingSystem, verbose, force bool) error {
 
 	sia := nod.Begin("installing Steam %s for %s...", id, operatingSystem)
 	defer sia.Done()
@@ -46,7 +47,7 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
-	if err = steamCmdAppInfo(id, operatingSystem, kvSteamAppInfo, force); err != nil {
+	if err = steamCmdAppInfo(id, kvSteamAppInfo, force); err != nil {
 		return err
 	}
 
@@ -83,6 +84,12 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		}
 	}
 
+	if operatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
+		if err = steamPrefixInit(name, verbose); err != nil {
+			return err
+		}
+	}
+
 	if err = steamCmdAppUpdate(id, name, username, operatingSystem, installDir); err != nil {
 		return err
 	}
@@ -90,7 +97,7 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 	return nil
 }
 
-func steamCmdAppInfo(id string, operatingSystem vangogh_integration.OperatingSystem, kvSteamAppInfo kevlar.KeyValues, force bool) error {
+func steamCmdAppInfo(id string, kvSteamAppInfo kevlar.KeyValues, force bool) error {
 
 	scaia := nod.Begin(" getting Steam appinfo for %s...", id)
 	defer scaia.Done()
