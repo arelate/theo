@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -32,13 +33,15 @@ func SteamInstallHandler(u *url.URL) error {
 
 	username := q.Get("username")
 
+	createSteamAppId := q.Has("create-steam-appid")
+
 	verbose := q.Has("verbose")
 	force := q.Has("force")
 
-	return SteamInstall(id, username, operatingSystem, verbose, force)
+	return SteamInstall(id, username, operatingSystem, createSteamAppId, verbose, force)
 }
 
-func SteamInstall(id, username string, operatingSystem vangogh_integration.OperatingSystem, verbose, force bool) error {
+func SteamInstall(id, username string, operatingSystem vangogh_integration.OperatingSystem, createSteamAppId, verbose, force bool) error {
 
 	sia := nod.Begin("installing Steam %s for %s...", id, operatingSystem)
 	defer sia.Done()
@@ -119,20 +122,22 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
-	// https://partner.steamgames.com/doc/sdk/api
-	//absSteamAppIdTxtPath := filepath.Join(absInstallDir, steamAppIdTxt)
-	//if _, err = os.Stat(absSteamAppIdTxtPath); err != nil {
-	//	var sait *os.File
-	//	sait, err = os.Create(absSteamAppIdTxtPath)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	defer sait.Close()
-	//
-	//	if _, err = io.WriteString(sait, id); err != nil {
-	//		return err
-	//	}
-	//}
+	if createSteamAppId {
+		// https://partner.steamgames.com/doc/sdk/api
+		absSteamAppIdTxtPath := filepath.Join(absInstallDir, steamAppIdTxt)
+		if _, err = os.Stat(absSteamAppIdTxtPath); err != nil {
+			var sait *os.File
+			sait, err = os.Create(absSteamAppIdTxtPath)
+			if err != nil {
+				return err
+			}
+			defer sait.Close()
+
+			if _, err = io.WriteString(sait, id); err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }

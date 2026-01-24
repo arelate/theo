@@ -106,6 +106,7 @@ steam-install
     id*^
     os*={operating-systems^}
     username*
+    create-steam-appid
     verbose
     force
 
