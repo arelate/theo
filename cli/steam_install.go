@@ -47,7 +47,7 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 	defer sia.Done()
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
-	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, ".vdf")
+	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
 	if err != nil {
 		return err
 	}
@@ -56,9 +56,14 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
-	// TODO: Replace with proper KeyValues.Get
 	// TODO: Parse into proper structure
-	appInfoKeyValues, err := steam_vdf.ParseText(filepath.Join(steamAppInfoDir, id+".vdf"))
+	appInfo, err := kvSteamAppInfo.Get(id)
+	if err != nil {
+		return err
+	}
+	defer appInfo.Close()
+
+	appInfoKeyValues, err := steam_vdf.ReadText(appInfo)
 	if err != nil {
 		return err
 	}

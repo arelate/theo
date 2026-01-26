@@ -9,6 +9,7 @@ import (
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 )
 
@@ -32,8 +33,18 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 	defer sra.Done()
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
+	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
+	if err != nil {
+		return err
+	}
 
-	appInfoKeyValues, err := steam_vdf.ParseText(filepath.Join(steamAppInfoDir, id+".vdf"))
+	appInfo, err := kvSteamAppInfo.Get(id)
+	if err != nil {
+		return err
+	}
+	defer appInfo.Close()
+
+	appInfoKeyValues, err := steam_vdf.ReadText(appInfo)
 	if err != nil {
 		return err
 	}

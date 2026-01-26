@@ -507,7 +507,13 @@ func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
 		return nil, err
 	}
 
-	return steam_vdf.ParseBinary(absUserShortcutsPath)
+	userShortcutsFile, err := os.Open(absUserShortcutsPath)
+	if err != nil {
+		return nil, err
+	}
+	defer userShortcutsFile.Close()
+
+	return steam_vdf.ReadBinary(userShortcutsFile)
 }
 
 func emptyUserShortcuts() []*steam_vdf.KeyValues {
@@ -539,7 +545,7 @@ func writeUserShortcuts(loginUser string, kvUserShortcuts []*steam_vdf.KeyValues
 
 	absUserShortcutsPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", shortcutsFilename)
 
-	return steam_vdf.WriteBinary(absUserShortcutsPath, kvUserShortcuts)
+	return steam_vdf.CreateBinary(absUserShortcutsPath, kvUserShortcuts, steam_vdf.VdfBackupExisting)
 }
 
 func getSteamLoginUsers() ([]string, error) {
@@ -557,7 +563,13 @@ func getSteamLoginUsers() ([]string, error) {
 		return nil, err
 	}
 
-	kvLoginUsers, err := steam_vdf.ParseText(absLoginUsersPath)
+	loginUsersFile, err := os.Open(absLoginUsersPath)
+	if err != nil {
+		return nil, err
+	}
+	defer loginUsersFile.Close()
+
+	kvLoginUsers, err := steam_vdf.ReadText(loginUsersFile)
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +580,8 @@ func getSteamLoginUsers() ([]string, error) {
 
 		for _, userId := range users.Values {
 
-			steamId, err := steam_integration.SteamIdFromUserId(userId.Key)
+			var steamId int64
+			steamId, err = steam_integration.SteamIdFromUserId(userId.Key)
 			if err != nil {
 				return nil, err
 			}
