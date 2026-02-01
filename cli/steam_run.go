@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -38,59 +39,46 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 		return err
 	}
 
-	appInfo, err := kvSteamAppInfo.Get(id)
+	appInfoRc, err := kvSteamAppInfo.Get(id)
 	if err != nil {
 		return err
 	}
-	defer appInfo.Close()
+	defer appInfoRc.Close()
 
-	appInfoKeyValues, err := steam_vdf.ReadText(appInfo)
+	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
 	if err != nil {
 		return err
 	}
 
-	var slcs []*steamLaunchConfig
-	if launchKv := steam_vdf.GetKevValuesByKey(appInfoKeyValues, "launch"); launchKv != nil {
-		slcs = parseLaunchOptions(launchKv)
-	}
-
-	var installDir string
-	if installDirKv := steam_vdf.GetKevValuesByKey(appInfoKeyValues, "installdir"); installDirKv != nil {
-		if idv := installDirKv.Value; idv != nil {
-			installDir = *idv
-		}
-	}
-
-	var name string
-	if nameKv := steam_vdf.GetKevValuesByKey(appInfoKeyValues, "name"); nameKv != nil {
-		if nkv := nameKv.Value; nkv != nil {
-			name = *nkv
-		}
+	appInfo, err := steam_appinfo.AppInfoVdf(appInfoKeyValues)
+	if err != nil {
+		return err
 	}
 
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-	appInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), installDir)
+	appInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), appInfo.Config.InstallDir)
 
 	prefixesDir := data.Pwd.AbsRelDirPath(data.Prefixes, data.Wine)
-	absPrefixDir := filepath.Join(prefixesDir, name)
+	absPrefixDir := filepath.Join(prefixesDir, appInfo.Common.Name)
 
 	// TODO: better detect default launch task
-	for _, slc := range slcs {
-		if slices.Contains(slc.osList, operatingSystem) {
+	for _, slc := range appInfo.Config.Launch {
+		osList := vangogh_integration.ParseManyOperatingSystems(strings.Split(slc.Config.OsList, ","))
+		if slices.Contains(osList, operatingSystem) {
 
-			exe := slc.executable
+			exe := slc.Executable
 
 			switch operatingSystem {
 			case vangogh_integration.MacOS:
 				fallthrough
 			case vangogh_integration.Linux:
-				exe = strings.Replace(exe, "\\", "/", -1)
+				exe = windowsToNixPath(exe)
 			case vangogh_integration.Windows:
 				switch data.CurrentOs() {
 				case vangogh_integration.MacOS:
 					fallthrough
 				case vangogh_integration.Linux:
-					exe = strings.Replace(exe, "\\", "/", -1)
+					exe = windowsToNixPath(exe)
 				default:
 					return data.CurrentOs().ErrUnsupported()
 				}
@@ -100,14 +88,14 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 
 			absExePath := filepath.Join(appInstallDir, exe)
 
-			absWorkingDir := filepath.Join(appInstallDir, strings.Replace(slc.workingDir, "\\", "/", -1))
+			absWorkingDir := filepath.Join(appInstallDir, windowsToNixPath(slc.WorkingDir))
 
 			et := &execTask{
-				name:            name,
+				name:            appInfo.Common.Name,
 				exe:             absExePath,
 				prefix:          absPrefixDir,
 				workDir:         absWorkingDir,
-				args:            strings.Split(slc.arguments, " "),
+				args:            strings.Split(slc.Arguments, " "),
 				defaultLauncher: false,
 				verbose:         false,
 			}
@@ -118,51 +106,6 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 	return nil
 }
 
-type steamLaunchConfig struct {
-	executable  string
-	arguments   string
-	workingDir  string
-	typeStr     string
-	osList      []vangogh_integration.OperatingSystem
-	osArch      string
-	description string
-}
-
-func parseLaunchOptions(launchKv *steam_vdf.KeyValues) []*steamLaunchConfig {
-	slcs := make([]*steamLaunchConfig, 0, len(launchKv.Values))
-	for _, launchValueKey := range launchKv.Values {
-		slc := &steamLaunchConfig{}
-		for _, launchValue := range launchValueKey.Values {
-			value := launchValue.Value
-			switch launchValue.Key {
-			case "executable":
-				slc.executable = *value
-			case "arguments":
-				slc.arguments = *value
-			case "workingdir":
-				slc.workingDir = *value
-			case "type":
-				slc.typeStr = *value
-			case "config":
-				for _, configValue := range launchValue.Values {
-					cv := configValue.Value
-					if cv == nil {
-						continue
-					}
-					switch configValue.Key {
-					case "oslist":
-						slc.osList = vangogh_integration.ParseManyOperatingSystems(strings.Split(*cv, ","))
-					case "osarch":
-						slc.osArch = *cv
-					}
-				}
-			//
-			case "description":
-				slc.description = *value
-
-			}
-		}
-		slcs = append(slcs, slc)
-	}
-	return slcs
+func windowsToNixPath(wp string) string {
+	return strings.Replace(wp, "\\", "/", -1)
 }

@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -56,51 +57,34 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
-	// TODO: Parse into proper structure
-	appInfo, err := kvSteamAppInfo.Get(id)
+	appInfoRc, err := kvSteamAppInfo.Get(id)
 	if err != nil {
 		return err
 	}
-	defer appInfo.Close()
+	defer appInfoRc.Close()
 
-	appInfoKeyValues, err := steam_vdf.ReadText(appInfo)
+	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
 	if err != nil {
 		return err
 	}
 
-	var name string
-	if nameKv := steam_vdf.GetKevValuesByKey(appInfoKeyValues, "name"); nameKv != nil {
-		if nkv := nameKv.Value; nkv != nil {
-			name = *nkv
-		}
+	appInfo, err := steam_appinfo.AppInfoVdf(appInfoKeyValues)
+	if err != nil {
+		return err
 	}
 
-	var operatingSystems []vangogh_integration.OperatingSystem
-	if osListKv := steam_vdf.GetKevValuesByKey(appInfoKeyValues, "oslist"); osListKv != nil {
-		if oslv := osListKv.Value; oslv != nil {
-			if osList := strings.Split(*oslv, ","); len(osList) > 0 {
-				operatingSystems = vangogh_integration.ParseManyOperatingSystems(osList)
-				if !slices.Contains(operatingSystems, operatingSystem) {
-					return errors.New(name + " is not available for " + operatingSystem.String())
-				}
-			}
-		}
-	}
-
-	var installDir string
-	if installDirKv := steam_vdf.GetKevValuesByKey(appInfoKeyValues, "installdir"); installDirKv != nil {
-		if idv := installDirKv.Value; idv != nil {
-			installDir = *idv
-		}
+	operatingSystems := vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
+	if !slices.Contains(operatingSystems, operatingSystem) {
+		return errors.New(appInfo.Common.Name + " is not available for " + operatingSystem.String())
 	}
 
 	if operatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
-		if err = steamPrefixInit(name, verbose); err != nil {
+		if err = steamPrefixInit(appInfo.Common.Name, verbose); err != nil {
 			return err
 		}
 	}
 
-	if err = steamCmdAppUpdate(id, name, username, operatingSystem, installDir); err != nil {
+	if err = steamCmdAppUpdate(id, appInfo.Common.Name, username, operatingSystem, appInfo.Config.InstallDir); err != nil {
 		return err
 	}
 
@@ -113,12 +97,12 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 	}
 
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-	absInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), installDir)
+	absInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), appInfo.Config.InstallDir)
 
 	sgo := &steamGridOptions{
 		useSteamAssets: true,
 		steamRun:       true,
-		name:           name,
+		name:           appInfo.Common.Name,
 		installDir:     absInstallDir,
 		logoPosition:   nil,
 	}
