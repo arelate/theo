@@ -25,10 +25,12 @@ func SteamRunHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	return SteamRun(id, operatingSystem)
+	verbose := q.Has("verbose")
+
+	return SteamRun(id, operatingSystem, verbose)
 }
 
-func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) error {
+func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, verbose bool) error {
 
 	sra := nod.Begin("running %s for %s...", id, operatingSystem)
 	defer sra.Done()
@@ -97,7 +99,7 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem) er
 				workDir:         absWorkingDir,
 				args:            strings.Split(slc.Arguments, " "),
 				defaultLauncher: false,
-				verbose:         false,
+				verbose:         verbose,
 			}
 			return osExec(id, operatingSystem, et)
 		}

@@ -53,7 +53,7 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
-	if err = steamCmdAppInfo(id, kvSteamAppInfo, force); err != nil {
+	if err = steamCmdAppInfo(id, username, kvSteamAppInfo, force); err != nil {
 		return err
 	}
 
@@ -131,7 +131,7 @@ func SteamInstall(id, username string, operatingSystem vangogh_integration.Opera
 	return nil
 }
 
-func steamCmdAppInfo(id string, kvSteamAppInfo kevlar.KeyValues, force bool) error {
+func steamCmdAppInfo(id string, username string, kvSteamAppInfo kevlar.KeyValues, force bool) error {
 
 	scaia := nod.Begin(" getting Steam appinfo for %s...", id)
 	defer scaia.Done()
@@ -141,7 +141,9 @@ func steamCmdAppInfo(id string, kvSteamAppInfo kevlar.KeyValues, force bool) err
 		return nil
 	}
 
-	appInfoPrintCmd, err := steamCmdCommand(data.CurrentOs(), "+app_info_print", id, "+quit")
+	appInfoPrintCmd, err := steamCmdCommand(data.CurrentOs(),
+		"+login", username,
+		"+app_info_print", id, "+quit")
 	if err != nil {
 		return err
 	}

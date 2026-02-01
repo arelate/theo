@@ -113,6 +113,7 @@ steam-install
 steam-run
     id*^
     os*={operating-systems^}
+    verbose
 
 steam-shortcut
     add&
