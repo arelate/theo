@@ -25,9 +25,7 @@ const (
 
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
-type (
-	wineRunFunc func(id string, et *execTask) error
-)
+type wineRunFunc func(id string, rdx redux.Readable, et *execTask) error
 
 func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
@@ -36,7 +34,7 @@ func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 	return macOsCreateCxBottle(absPrefixDir, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(absPrefixDir string, et *execTask) error {
+func macOsWineRun(id string, rdx redux.Readable, et *execTask) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
@@ -59,6 +57,11 @@ func macOsWineRun(absPrefixDir string, et *execTask) error {
 		et.args = append([]string{"--start", et.exe}, et.args...)
 	} else {
 		et.args = append([]string{et.exe}, et.args...)
+	}
+
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	if err != nil {
+		return err
 	}
 
 	et.args = append([]string{"--bottle", absPrefixDir}, et.args...)

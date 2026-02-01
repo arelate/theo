@@ -385,7 +385,7 @@ func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.Prod
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			return prefixUnpackInstallers(id, ii, dls, unpackDir)
+			return prefixUnpackInstallers(id, ii, dls, rdx, unpackDir)
 		default:
 			return ii.OperatingSystem.ErrUnsupported()
 		}

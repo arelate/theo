@@ -28,19 +28,16 @@ var protonOptionsEnv = map[string]string{
 	ProtonNoSteamInput:  "PROTON_NO_STEAMINPUT",
 }
 
-func linuxProtonRun(id string, et *execTask) error {
+func linuxProtonRun(id string, rdx redux.Readable, et *execTask) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
 	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
 	defer lwra.Done()
 
-	reduxDir := data.Pwd.AbsRelDirPath(data.Redux, data.Metadata)
-	rdx, err := redux.NewReader(reduxDir,
-		data.WineBinariesVersionsProperty,
+	if err := rdx.MustHave(data.WineBinariesVersionsProperty,
 		vangogh_integration.SlugProperty,
-		vangogh_integration.SteamAppIdProperty)
-	if err != nil {
+		vangogh_integration.SteamAppIdProperty); err != nil {
 		return err
 	}
 

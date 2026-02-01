@@ -65,7 +65,7 @@ func steamPrefixInit(name string, verbose bool) error {
 	}
 }
 
-func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
+func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
 	currentOs := data.CurrentOs()
 
@@ -114,7 +114,7 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 			verbose: ii.verbose,
 		}
 
-		if err := currentOsWineRun(id, et); err != nil {
+		if err := currentOsWineRun(id, rdx, et); err != nil {
 			return err
 		}
 	}

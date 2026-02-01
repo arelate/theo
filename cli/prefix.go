@@ -328,7 +328,7 @@ func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force
 
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		if err = macOsWineRun(id, et); err != nil {
+		if err = macOsWineRun(absPrefixDir, rdx, et); err != nil {
 			return err
 		}
 	default:
