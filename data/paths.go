@@ -6,7 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/arelate/southern_light/steam_appinfo"
+	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
@@ -39,6 +42,7 @@ const (
 	BinDownloads       pathways.RelDir = "_downloads"           // Wine, SteamCmd
 	BinUnpacks         pathways.RelDir = "_binaries"            // Wine, SteamCmd
 	Prefixes           pathways.RelDir = "_prefixes"            // Wine
+	SteamPrefixes      pathways.RelDir = "_steam-prefixes"      // Wine
 	UmuConfigs         pathways.RelDir = "_umu-configs"         // Wine
 )
 
@@ -80,6 +84,7 @@ func InitPathways() error {
 		BinUnpacks:         {Wine, SteamCmd},
 		BinDownloads:       {Wine, SteamCmd},
 		Prefixes:           {Wine},
+		SteamPrefixes:      {Wine},
 		UmuConfigs:         {Wine},
 	} {
 		for _, ad := range ads {
@@ -120,6 +125,37 @@ func AbsPrefixDir(id string, rdx redux.Readable) (string, error) {
 	}
 
 	return filepath.Join(prefixesDir, prefixName), nil
+}
+
+func AbsSteamPrefixDir(steamAppId string) (string, error) {
+
+	appInfoDir := Pwd.AbsRelDirPath(SteamAppInfo, Metadata)
+
+	kvAppInfo, err := kevlar.New(appInfoDir, steam_vdf.Ext)
+	if err != nil {
+		return "", err
+	}
+
+	appInfoRc, err := kvAppInfo.Get(steamAppId)
+	if err != nil {
+		return "", err
+	}
+
+	defer appInfoRc.Close()
+
+	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
+	if err != nil {
+		return "", err
+	}
+
+	appInfo, err := steam_appinfo.AppInfoVdf(appInfoKeyValues)
+	if err != nil {
+		return "", err
+	}
+
+	steamPrefixesDir := Pwd.AbsRelDirPath(SteamPrefixes, Wine)
+
+	return filepath.Join(steamPrefixesDir, appInfo.Common.Name), nil
 }
 
 func AbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {

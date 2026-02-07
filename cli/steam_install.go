@@ -41,9 +41,9 @@ func SteamInstallHandler(u *url.URL) error {
 	return SteamInstall(id, operatingSystem, createSteamAppId, verbose, force)
 }
 
-func SteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem, createSteamAppId, verbose, force bool) error {
+func SteamInstall(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, createSteamAppId, verbose, force bool) error {
 
-	sia := nod.Begin("installing Steam %s for %s...", id, operatingSystem)
+	sia := nod.Begin("installing Steam %s for %s...", steamAppId, operatingSystem)
 	defer sia.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.SteamProperties()...)
@@ -62,11 +62,11 @@ func SteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem
 		username = un
 	}
 
-	if err = steamCmdAppInfo(id, username, kvSteamAppInfo, force); err != nil {
+	if err = steamCmdAppInfo(steamAppId, username, kvSteamAppInfo, force); err != nil {
 		return err
 	}
 
-	appInfoRc, err := kvSteamAppInfo.Get(id)
+	appInfoRc, err := kvSteamAppInfo.Get(steamAppId)
 	if err != nil {
 		return err
 	}
@@ -96,12 +96,12 @@ func SteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem
 	}
 
 	if operatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
-		if err = steamPrefixInit(appInfo.Common.Name, verbose); err != nil {
+		if err = steamPrefixInit(steamAppId, verbose); err != nil {
 			return err
 		}
 	}
 
-	if err = steamCmdAppUpdate(id, appInfo.Common.Name, username, operatingSystem, appInfo.Config.InstallDir); err != nil {
+	if err = steamCmdAppUpdate(steamAppId, appInfo.Common.Name, username, operatingSystem, appInfo.Config.InstallDir); err != nil {
 		return err
 	}
 
@@ -124,7 +124,7 @@ func SteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem
 		logoPosition:   nil,
 	}
 
-	if err = SteamShortcut([]string{id}, nil, false, ii, sgo); err != nil {
+	if err = SteamShortcut([]string{steamAppId}, nil, false, ii, sgo); err != nil {
 		return err
 	}
 
@@ -139,7 +139,7 @@ func SteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem
 			}
 			defer sait.Close()
 
-			if _, err = io.WriteString(sait, id); err != nil {
+			if _, err = io.WriteString(sait, steamAppId); err != nil {
 				return err
 			}
 		}

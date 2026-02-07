@@ -53,9 +53,9 @@ func SteamRunHandler(u *url.URL) error {
 	return SteamRun(id, operatingSystem, et)
 }
 
-func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
+func SteamRun(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
 
-	sra := nod.Begin("running %s for %s...", id, operatingSystem)
+	sra := nod.Begin("running %s for %s...", steamAppId, operatingSystem)
 	defer sra.Done()
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
@@ -64,7 +64,7 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, et
 		return err
 	}
 
-	appInfoRc, err := kvSteamAppInfo.Get(id)
+	appInfoRc, err := kvSteamAppInfo.Get(steamAppId)
 	if err != nil {
 		return err
 	}
@@ -83,8 +83,12 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, et
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
 	appInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), appInfo.Config.InstallDir)
 
-	prefixesDir := data.Pwd.AbsRelDirPath(data.Prefixes, data.Wine)
-	et.prefix = filepath.Join(prefixesDir, appInfo.Common.Name)
+	absSteamPrefixDir, err := data.AbsSteamPrefixDir(steamAppId)
+	if err != nil {
+		return err
+	}
+
+	et.prefix = absSteamPrefixDir
 
 	// TODO: better detect default launch task
 	for _, slc := range appInfo.Config.Launch {
@@ -116,7 +120,7 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, et
 			et.name = appInfo.Common.Name
 			et.args = append(et.args, strings.Split(slc.Arguments, " ")...)
 
-			return osExec(id, operatingSystem, et)
+			return osExec(steamAppId, operatingSystem, et)
 		}
 	}
 

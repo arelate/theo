@@ -47,19 +47,21 @@ func prefixInit(id string, rdx redux.Readable, verbose bool) error {
 	}
 }
 
-func steamPrefixInit(name string, verbose bool) error {
+func steamPrefixInit(steamAppId string, verbose bool) error {
 
-	cpa := nod.Begin("initializing Steam prefix for %s...", name)
+	cpa := nod.Begin("initializing Steam prefix for %s...", steamAppId)
 	defer cpa.Done()
 
-	prefixesDir := data.Pwd.AbsRelDirPath(data.Prefixes, data.Wine)
-	absPrefixDir := filepath.Join(prefixesDir, name)
+	absSteamPrefixDir, err := data.AbsSteamPrefixDir(steamAppId)
+	if err != nil {
+		return err
+	}
 
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		return macOsInitPrefix(absPrefixDir, verbose)
+		return macOsInitPrefix(absSteamPrefixDir, verbose)
 	case vangogh_integration.Linux:
-		return linuxInitPrefix(absPrefixDir, verbose)
+		return linuxInitPrefix(absSteamPrefixDir, verbose)
 	default:
 		return data.CurrentOs().ErrUnsupported()
 	}
