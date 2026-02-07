@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
@@ -27,6 +29,11 @@ var protonOptionsEnv = map[string]string{
 	ProtonEnableHdr:     "PROTON_ENABLE_HDR",
 	ProtonNoSteamInput:  "PROTON_NO_STEAMINPUT",
 }
+
+const (
+	relSteamAppsCommonPath        = "Steam/steamapps/common"
+	relSteamCompatibilityToolPath = "Steam/compatibilitytools.d"
+)
 
 func linuxProtonRun(id string, rdx redux.Readable, et *execTask) error {
 
@@ -56,7 +63,7 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask) error {
 		return err
 	}
 
-	absProtonPath, err := data.ProtonLatestReleasePath(et.protonRuntime, rdx)
+	absProtonPath, err := getProtonRuntimePath(et, rdx)
 	if err != nil {
 		return err
 	}
@@ -162,4 +169,29 @@ func linuxInitPrefix(absPrefixDir string, _ bool) error {
 	}
 
 	return nil
+}
+
+func getProtonRuntimePath(et *execTask, rdx redux.Readable) (string, error) {
+
+	if et.steamProtonRuntime != "" {
+
+		udhd, err := data.UserDataHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		absCompatibilityToolPath := filepath.Join(udhd, relSteamCompatibilityToolPath, wine_integration.SteamProtonDirectories[et.steamProtonRuntime])
+		if _, err = os.Stat(absCompatibilityToolPath); err == nil {
+			return absCompatibilityToolPath, nil
+		}
+
+		absSteamAppsCommonPath := filepath.Join(udhd, relSteamAppsCommonPath, wine_integration.SteamProtonDirectories[et.steamProtonRuntime])
+		if _, err = os.Stat(absSteamAppsCommonPath); err == nil {
+			return absSteamAppsCommonPath, nil
+		}
+
+		return "", errors.New("steam proton runtime not found")
+	} else {
+		return data.ProtonLatestReleasePath(et.protonRuntime, rdx)
+	}
 }

@@ -56,7 +56,8 @@ func RunHandler(u *url.URL) error {
 	}
 
 	if q.Has("proton-runtime") {
-		switch q.Get("proton-runtime") {
+		protonRuntime := q.Get("proton-runtime")
+		switch protonRuntime {
 		case "umu-proton":
 			et.protonRuntime = wine_integration.UmuProton
 		case "proton-ge":
@@ -67,6 +68,8 @@ func RunHandler(u *url.URL) error {
 	if et.protonRuntime == "" {
 		et.protonRuntime = wine_integration.ProtonGe
 	}
+
+	et.steamProtonRuntime = q.Get("steam-proton-runtime")
 
 	if q.Has("proton-options") {
 		et.protonOptions = strings.Split(q.Get("proton-options"), ",")
