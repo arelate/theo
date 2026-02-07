@@ -9,6 +9,7 @@ import (
 	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
+	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
@@ -25,12 +26,42 @@ func SteamRunHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	verbose := q.Has("verbose")
+	et := &execTask{
+		verbose: q.Has("verbose"),
+	}
 
-	return SteamRun(id, operatingSystem, verbose)
+	if q.Has("env") {
+		et.env = strings.Split(q.Get("env"), ",")
+	}
+
+	if q.Has("arg") {
+		et.args = strings.Split(q.Get("arg"), ",")
+	}
+
+	if q.Has("proton-runtime") {
+		protonRuntime := q.Get("proton-runtime")
+		switch protonRuntime {
+		case "umu-proton":
+			et.protonRuntime = wine_integration.UmuProton
+		case "proton-ge":
+			et.protonRuntime = wine_integration.ProtonGe
+		}
+	}
+
+	if et.protonRuntime == "" {
+		et.protonRuntime = wine_integration.ProtonGe
+	}
+
+	et.steamProtonRuntime = q.Get("steam-proton-runtime")
+
+	if q.Has("proton-options") {
+		et.protonOptions = strings.Split(q.Get("proton-options"), ",")
+	}
+
+	return SteamRun(id, operatingSystem, et)
 }
 
-func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, verbose bool) error {
+func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
 
 	sra := nod.Begin("running %s for %s...", id, operatingSystem)
 	defer sra.Done()
@@ -61,7 +92,7 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, ve
 	appInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), appInfo.Config.InstallDir)
 
 	prefixesDir := data.Pwd.AbsRelDirPath(data.Prefixes, data.Wine)
-	absPrefixDir := filepath.Join(prefixesDir, appInfo.Common.Name)
+	et.prefix = filepath.Join(prefixesDir, appInfo.Common.Name)
 
 	// TODO: better detect default launch task
 	for _, slc := range appInfo.Config.Launch {
@@ -88,19 +119,11 @@ func SteamRun(id string, operatingSystem vangogh_integration.OperatingSystem, ve
 				return data.CurrentOs().ErrUnsupported()
 			}
 
-			absExePath := filepath.Join(appInstallDir, exe)
+			et.exe = filepath.Join(appInstallDir, exe)
+			et.workDir = filepath.Join(appInstallDir, windowsToNixPath(slc.WorkingDir))
+			et.name = appInfo.Common.Name
+			et.args = append(et.args, strings.Split(slc.Arguments, " ")...)
 
-			absWorkingDir := filepath.Join(appInstallDir, windowsToNixPath(slc.WorkingDir))
-
-			et := &execTask{
-				name:            appInfo.Common.Name,
-				exe:             absExePath,
-				prefix:          absPrefixDir,
-				workDir:         absWorkingDir,
-				args:            strings.Split(slc.Arguments, " "),
-				defaultLauncher: false,
-				verbose:         verbose,
-			}
 			return osExec(id, operatingSystem, et)
 		}
 	}
