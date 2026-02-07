@@ -188,6 +188,12 @@ func nixRunExecTask(et *execTask) error {
 	nreta := nod.Begin(" running %s...", et.name)
 	defer nreta.Done()
 
+	if data.CurrentOs() == vangogh_integration.MacOS &&
+		strings.HasSuffix(et.exe, appBundleExt) {
+		et.args = append([]string{et.exe, "--args"}, et.args...)
+		et.exe = "open"
+	}
+
 	cmd := exec.Command(et.exe, et.args...)
 	cmd.Dir = et.workDir
 
