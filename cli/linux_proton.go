@@ -39,7 +39,7 @@ func linuxProtonRun(id string, rdx redux.Readable, et *execTask) error {
 
 	_, exeFilename := filepath.Split(et.exe)
 
-	lwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
+	lwra := nod.Begin(" running %s with Proton, please wait...", exeFilename)
 	defer lwra.Done()
 
 	if err := rdx.MustHave(data.WineBinariesVersionsProperty,
@@ -124,7 +124,7 @@ func linuxProtonRunExecTask(id string, et *execTask) error {
 		return err
 	}
 
-	absProtonPath, err := data.ProtonLatestReleasePath(et.protonRuntime, rdx)
+	absProtonPath, err := getProtonRuntimePath(et, rdx)
 	if err != nil {
 		return err
 	}

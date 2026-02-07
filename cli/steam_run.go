@@ -30,14 +30,6 @@ func SteamRunHandler(u *url.URL) error {
 		verbose: q.Has("verbose"),
 	}
 
-	if q.Has("env") {
-		et.env = strings.Split(q.Get("env"), ",")
-	}
-
-	if q.Has("arg") {
-		et.args = strings.Split(q.Get("arg"), ",")
-	}
-
 	if q.Has("proton-runtime") {
 		protonRuntime := q.Get("proton-runtime")
 		switch protonRuntime {
