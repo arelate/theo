@@ -83,8 +83,12 @@ func SteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem
 	}
 
 	operatingSystems := vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
-	if !slices.Contains(operatingSystems, operatingSystem) {
+	if len(operatingSystems) > 0 && !slices.Contains(operatingSystems, operatingSystem) {
 		return errors.New(appInfo.Common.Name + " is not available for " + operatingSystem.String())
+	} else if len(operatingSystems) == 0 && operatingSystem == vangogh_integration.Windows {
+		// do nothing, try to install the default Windows version
+	} else if len(operatingSystems) == 0 {
+		return errors.New(appInfo.Common.Name + " has no operating systems listed")
 	}
 
 	if operatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
