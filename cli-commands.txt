@@ -9,7 +9,7 @@
 backup-metadata
 
 connect
-    service=^vangogh
+    service=^vangogh,steam
     url
     username
     password
@@ -106,7 +106,6 @@ setup-wine
 steam-install
     id*^
     os*={operating-systems^}
-    username*
     create-steam-appid
     verbose
     force

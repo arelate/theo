@@ -17,6 +17,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/redux"
 )
 
 const steamAppIdTxt = "steam_appid.txt"
@@ -32,25 +33,33 @@ func SteamInstallHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	username := q.Get("username")
-
 	createSteamAppId := q.Has("create-steam-appid")
 
 	verbose := q.Has("verbose")
 	force := q.Has("force")
 
-	return SteamInstall(id, username, operatingSystem, createSteamAppId, verbose, force)
+	return SteamInstall(id, operatingSystem, createSteamAppId, verbose, force)
 }
 
-func SteamInstall(id, username string, operatingSystem vangogh_integration.OperatingSystem, createSteamAppId, verbose, force bool) error {
+func SteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem, createSteamAppId, verbose, force bool) error {
 
 	sia := nod.Begin("installing Steam %s for %s...", id, operatingSystem)
 	defer sia.Done()
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.SteamProperties()...)
+	if err != nil {
+		return err
+	}
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
 	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
 	if err != nil {
 		return err
+	}
+
+	var username string
+	if un, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && un != "" {
+		username = un
 	}
 
 	if err = steamCmdAppInfo(id, username, kvSteamAppInfo, force); err != nil {
@@ -142,8 +151,11 @@ func steamCmdAppInfo(id string, username string, kvSteamAppInfo kevlar.KeyValues
 	}
 
 	appInfoPrintCmd, err := steamCmdCommand(data.CurrentOs(),
+		"+@ShutdownOnFailedCommand", "1",
+		"+@NoPromptForPassword", "1",
 		"+login", username,
-		"+app_info_print", id, "+quit")
+		"+app_info_print", id,
+		"+quit")
 	if err != nil {
 		return err
 	}
@@ -206,6 +218,8 @@ func steamCmdAppUpdate(id, name string, username string, operatingSystem vangogh
 	steamOs := strings.ToLower(operatingSystem.String())
 
 	steamAppUpdateCmd, err := steamCmdCommand(data.CurrentOs(),
+		"+@ShutdownOnFailedCommand", "1",
+		"+@NoPromptForPassword", "1",
 		"+@sSteamCmdForcePlatformType", steamOs,
 		"+force_install_dir", absInstallDir,
 		"+login", username,

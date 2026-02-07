@@ -8,6 +8,8 @@ const (
 	VangoghSessionTokenProperty   = "vangogh-session-token"
 	VangoghSessionExpiresProperty = "vangogh-session-expires"
 
+	SteamUsernameProperty = "steam-username"
+
 	BundleNameProperty = "bundle-name"
 
 	InstallInfoProperty          = "install-info"
@@ -32,9 +34,16 @@ func VangoghProperties() []string {
 	}
 }
 
+func SteamProperties() []string {
+	return []string{
+		SteamUsernameProperty,
+	}
+}
+
 func AllProperties() []string {
-	return append(
-		VangoghProperties(),
+	ap := VangoghProperties()
+	ap = append(ap, SteamProperties()...)
+	ap = append(ap,
 		[]string{
 			vangogh_integration.TitleProperty,
 			vangogh_integration.SlugProperty,
@@ -60,4 +69,6 @@ func AllProperties() []string {
 			PrefixArgProperty,
 			WineBinariesVersionsProperty,
 		}...)
+
+	return ap
 }
