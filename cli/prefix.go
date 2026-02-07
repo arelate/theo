@@ -75,10 +75,13 @@ func PrefixHandler(u *url.URL) error {
 	archive := q.Has("archive")
 	remove := q.Has("remove")
 
+	steam := q.Has("steam")
+
 	return Prefix(id, ii,
 		mod, program, installWineBinary,
 		defaultEnv, deleteEnv, deleteExe, deleteArg,
 		info, archive, remove,
+		steam,
 		et)
 }
 
@@ -86,6 +89,7 @@ func Prefix(id string, ii *InstallInfo,
 	mod, program, installWineBinary string,
 	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
 	info, archive, remove bool,
+	steam bool,
 	et *execTask) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -97,7 +101,15 @@ func Prefix(id string, ii *InstallInfo,
 		return err
 	}
 
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	var absPrefixDir string
+
+	switch steam {
+	case true:
+		absPrefixDir, err = data.AbsSteamPrefixDir(id)
+	default:
+		absPrefixDir, err = data.AbsPrefixDir(id, rdx)
+	}
+
 	if err != nil {
 		return err
 	}
