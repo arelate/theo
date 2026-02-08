@@ -9,7 +9,6 @@
 backup-metadata
 
 connect
-    service=^vangogh,steam
     url
     username
     password
@@ -98,11 +97,14 @@ run
     force
 
 setup-steamcmd
-    username*
     force
 
 setup-wine
     force
+
+steam-connect
+    username*^
+    reset
 
 steam-install
     id*^

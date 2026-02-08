@@ -46,6 +46,11 @@ const (
 	UmuConfigs         pathways.RelDir = "_umu-configs"         // Wine
 )
 
+var steamCmdBinary = map[vangogh_integration.OperatingSystem]string{
+	vangogh_integration.MacOS: "steamcmd.sh",
+	vangogh_integration.Linux: "steamcmd.sh",
+}
+
 var Pwd pathways.Pathway
 
 func InitPathways() error {
@@ -182,5 +187,18 @@ func RelToUserDataHome(path string) (string, error) {
 		return strings.Replace(path, udhd, "~Data", 1), nil
 	} else {
 		return path, nil
+	}
+}
+
+func AbsSteamCmdBinPath(operatingSystem vangogh_integration.OperatingSystem) (string, error) {
+	switch operatingSystem {
+	case vangogh_integration.MacOS:
+		fallthrough
+	case vangogh_integration.Linux:
+		steamCmdBinariesDir := Pwd.AbsRelDirPath(BinUnpacks, SteamCmd)
+		osSteamCmdBinariesDir := filepath.Join(steamCmdBinariesDir, operatingSystem.String())
+		return filepath.Join(osSteamCmdBinariesDir, steamCmdBinary[operatingSystem]), nil
+	default:
+		return "", operatingSystem.ErrUnsupported()
 	}
 }

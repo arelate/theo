@@ -1,10 +1,8 @@
 package cli
 
 import (
-	"fmt"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/arelate/southern_light/steamcmd"
@@ -15,23 +13,16 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-var steamCmdBinary = map[vangogh_integration.OperatingSystem]string{
-	vangogh_integration.MacOS: "steamcmd.sh",
-	vangogh_integration.Linux: "steamcmd.sh",
-}
-
 func SetupSteamCmdHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	username := q.Get("username")
-
 	force := q.Has("force")
 
-	return SetupSteamCmd(username, force)
+	return SetupSteamCmd(force)
 }
 
-func SetupSteamCmd(username string, force bool) error {
+func SetupSteamCmd(force bool) error {
 
 	currentOs := data.CurrentOs()
 
@@ -52,10 +43,6 @@ func SetupSteamCmd(username string, force bool) error {
 	}
 
 	if err = unpackSteamCmdBinaries(currentOs, force); err != nil {
-		return err
-	}
-
-	if err = steamCmdLogin(username, currentOs); err != nil {
 		return err
 	}
 
@@ -94,7 +81,7 @@ func unpackSteamCmdBinaries(operatingSystem vangogh_integration.OperatingSystem,
 	uscba := nod.Begin(" unpacking SteamCMD for %s...", operatingSystem)
 	defer uscba.Done()
 
-	absSteamCmdBinaryPath, err := steamCmdBinaryPath(operatingSystem)
+	absSteamCmdBinaryPath, err := data.AbsSteamCmdBinPath(operatingSystem)
 	if err != nil {
 		return err
 	}
@@ -111,50 +98,4 @@ func unpackSteamCmdBinaries(operatingSystem vangogh_integration.OperatingSystem,
 	osSteamCmdBinariesDir := filepath.Join(steamCmdBinariesDir, operatingSystem.String())
 
 	return untar(absSteamCmdDownload, osSteamCmdBinariesDir)
-}
-
-func steamCmdCommand(operatingSystem vangogh_integration.OperatingSystem, params ...string) (*exec.Cmd, error) {
-
-	absSteamCmdBinaryPath, err := steamCmdBinaryPath(operatingSystem)
-	if err != nil {
-		return nil, err
-	}
-
-	cmd := exec.Command(absSteamCmdBinaryPath, params...)
-
-	// always enable i/o to be able to input Steam password for a given username
-	// and see Steam Guard prompt
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd, nil
-}
-
-func steamCmdLogin(username string, operatingSystem vangogh_integration.OperatingSystem) error {
-
-	scla := nod.Begin(" logging %s to Steam...", username)
-	defer scla.Done()
-
-	fmt.Println()
-
-	cmd, err := steamCmdCommand(operatingSystem, "+login", username, "+quit")
-	if err != nil {
-		return err
-	}
-
-	return cmd.Run()
-}
-
-func steamCmdBinaryPath(operatingSystem vangogh_integration.OperatingSystem) (string, error) {
-	switch operatingSystem {
-	case vangogh_integration.MacOS:
-		fallthrough
-	case vangogh_integration.Linux:
-		steamCmdBinariesDir := data.Pwd.AbsRelDirPath(data.BinUnpacks, data.SteamCmd)
-		osSteamCmdBinariesDir := filepath.Join(steamCmdBinariesDir, operatingSystem.String())
-		return filepath.Join(osSteamCmdBinariesDir, steamCmdBinary[operatingSystem]), nil
-	default:
-		return "", operatingSystem.ErrUnsupported()
-	}
 }

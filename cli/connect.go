@@ -17,8 +17,6 @@ func ConnectHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	service := q.Get("service")
-
 	urlStr := q.Get("url")
 
 	username := q.Get("username")
@@ -26,14 +24,7 @@ func ConnectHandler(u *url.URL) error {
 
 	reset := q.Has("reset")
 
-	switch service {
-	case "vangogh":
-		return VangoghConnect(urlStr, username, password, reset)
-	case "steam":
-		return SteamConnect(username, reset)
-	default:
-		return errors.New("unsupported service: " + service)
-	}
+	return VangoghConnect(urlStr, username, password, reset)
 }
 
 func VangoghConnect(
@@ -74,28 +65,6 @@ func VangoghConnect(
 	return nil
 }
 
-func SteamConnect(username string, reset bool) error {
-	sca := nod.Begin("connecting to Steam...")
-	defer sca.Done()
-
-	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.SteamProperties()...)
-	if err != nil {
-		return err
-	}
-
-	if reset {
-		if err = resetSteamConnection(rdx); err != nil {
-			return err
-		}
-	}
-
-	if err = rdx.ReplaceValues(data.SteamUsernameProperty, data.SteamUsernameProperty, username); err != nil {
-		return err
-	}
-
-	return steamCmdLogin(username, data.CurrentOs())
-}
-
 func resetVangoghConnection(rdx redux.Writeable) error {
 	rvca := nod.Begin("resetting vangogh connection...")
 	defer rvca.Done()
@@ -111,26 +80,6 @@ func resetVangoghConnection(rdx redux.Writeable) error {
 	}
 
 	return nil
-}
-
-func resetSteamConnection(rdx redux.Writeable) error {
-	rsca := nod.Begin("resetting Steam connection...")
-	defer rsca.Done()
-
-	if err := rdx.MustHave(data.SteamProperties()...); err != nil {
-		return err
-	}
-
-	if err := rdx.CutKeys(data.SteamUsernameProperty, data.SteamUsernameProperty); err != nil {
-		return err
-	}
-
-	steamCmd, err := steamCmdCommand(data.CurrentOs(), "+logout", "+quit")
-	if err != nil {
-		return err
-	}
-
-	return steamCmd.Run()
 }
 
 func vangoghValidateSessionToken(rdx redux.Readable) error {

@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"bufio"
-	"bytes"
 	"errors"
 	"io"
 	"net/url"
@@ -62,7 +60,7 @@ func SteamInstall(steamAppId string, operatingSystem vangogh_integration.Operati
 		username = un
 	}
 
-	if err = steamCmdAppInfo(steamAppId, username, kvSteamAppInfo, force); err != nil {
+	if err = getSteamAppInfo(steamAppId, username, kvSteamAppInfo, force); err != nil {
 		return err
 	}
 
@@ -101,7 +99,7 @@ func SteamInstall(steamAppId string, operatingSystem vangogh_integration.Operati
 		}
 	}
 
-	if err = steamCmdAppUpdate(steamAppId, appInfo.Common.Name, username, operatingSystem, appInfo.Config.InstallDir); err != nil {
+	if err = steamUpdateApp(steamAppId, appInfo.Common.Name, username, operatingSystem, appInfo.Config.InstallDir); err != nil {
 		return err
 	}
 
@@ -148,7 +146,7 @@ func SteamInstall(steamAppId string, operatingSystem vangogh_integration.Operati
 	return nil
 }
 
-func steamCmdAppInfo(id string, username string, kvSteamAppInfo kevlar.KeyValues, force bool) error {
+func getSteamAppInfo(id string, username string, kvSteamAppInfo kevlar.KeyValues, force bool) error {
 
 	scaia := nod.Begin(" getting Steam appinfo for %s...", id)
 	defer scaia.Done()
@@ -158,60 +156,21 @@ func steamCmdAppInfo(id string, username string, kvSteamAppInfo kevlar.KeyValues
 		return nil
 	}
 
-	appInfoPrintCmd, err := steamCmdCommand(data.CurrentOs(),
-		"+@ShutdownOnFailedCommand", "1",
-		"+@NoPromptForPassword", "1",
-		"+login", username,
-		"+app_info_print", id,
-		"+quit")
+	printedAppInfo, err := steamCmdAppInfoPrint(id, username)
 	if err != nil {
 		return err
 	}
 
-	stdout := bytes.NewBuffer(nil)
-
-	appInfoPrintCmd.Stdout = stdout
-	appInfoPrintCmd.Stderr = stdout
-
-	if err = appInfoPrintCmd.Run(); err != nil {
-		return err
-	}
-
-	scanner := bufio.NewScanner(stdout)
-	sb := new(strings.Builder)
-	appinfo := false
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		switch line {
-		case "\"" + id + "\"":
-			appinfo = true
-		case "}":
-			sb.WriteString(line)
-			appinfo = false
-		default:
-			// do nothing
-		}
-
-		if appinfo {
-			sb.WriteString(line)
-		}
-	}
-
-	if scanner.Err() != nil {
-		return err
-	}
-
-	if err = kvSteamAppInfo.Set(id, strings.NewReader(sb.String())); err != nil {
+	if err = kvSteamAppInfo.Set(id, strings.NewReader(printedAppInfo)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func steamCmdAppUpdate(id, name string, username string, operatingSystem vangogh_integration.OperatingSystem, installDir string) error {
+func steamUpdateApp(id, name string, username string, operatingSystem vangogh_integration.OperatingSystem, installDir string) error {
 
-	scaua := nod.Begin("downloading %s (%s) for %s with SteamCMD, please wait...", name, id, operatingSystem)
+	scaua := nod.Begin("updating and verifying %s (%s) for %s with SteamCMD, please wait...", name, id, operatingSystem)
 	defer scaua.Done()
 
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
@@ -223,19 +182,5 @@ func steamCmdAppUpdate(id, name string, username string, operatingSystem vangogh
 		}
 	}
 
-	steamOs := strings.ToLower(operatingSystem.String())
-
-	steamAppUpdateCmd, err := steamCmdCommand(data.CurrentOs(),
-		"+@ShutdownOnFailedCommand", "1",
-		"+@NoPromptForPassword", "1",
-		"+@sSteamCmdForcePlatformType", steamOs,
-		"+force_install_dir", absInstallDir,
-		"+login", username,
-		"+app_update", id,
-		"+quit")
-	if err != nil {
-		return err
-	}
-
-	return steamAppUpdateCmd.Run()
+	return steamCmdAppUpdate(id, operatingSystem, absInstallDir, username)
 }
