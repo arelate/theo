@@ -108,6 +108,7 @@ steam-connect
 
 steam-fix
     id*^
+    os={operating-systems^}
     steam-appid
 
 steam-install

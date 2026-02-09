@@ -71,7 +71,7 @@ func SteamRun(steamAppId string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem, installedLangCode); err != nil {
+	if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem); err != nil {
 		return err
 	}
 
@@ -103,8 +103,10 @@ func SteamRun(steamAppId string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-	appInstallDir := filepath.Join(steamAppsDir, ii.OperatingSystem.String(), appInfo.Config.InstallDir)
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
+	if err != nil {
+		return err
+	}
 
 	absSteamPrefixDir, err := data.AbsSteamPrefixDir(steamAppId)
 	if err != nil {
@@ -138,8 +140,8 @@ func SteamRun(steamAppId string, ii *InstallInfo, et *execTask) error {
 				return data.CurrentOs().ErrUnsupported()
 			}
 
-			et.exe = filepath.Join(appInstallDir, exe)
-			et.workDir = filepath.Join(appInstallDir, windowsToNixPath(slc.WorkingDir))
+			et.exe = filepath.Join(steamAppInstallDir, exe)
+			et.workDir = filepath.Join(steamAppInstallDir, windowsToNixPath(slc.WorkingDir))
 			et.name = appInfo.Common.Name
 			et.args = append(et.args, strings.Split(slc.Arguments, " ")...)
 

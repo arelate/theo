@@ -1,10 +1,8 @@
 package cli
 
 import (
-	"errors"
 	"net/url"
 	"os"
-	"path/filepath"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -67,19 +65,13 @@ func SteamUninstall(steamAppId string, ii *InstallInfo) error {
 
 	}
 
-	var steamAppName string
-	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
-		steamAppName = san
-	} else {
-		return errors.New("cannot resolve app name for " + steamAppId)
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
+	if err != nil {
+		return err
 	}
 
-	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-
-	absSteamInstallDir := filepath.Join(steamAppsDir, ii.OperatingSystem.String(), steamAppName)
-
-	if _, err = os.Stat(absSteamInstallDir); err == nil {
-		if err = os.RemoveAll(absSteamInstallDir); err != nil {
+	if _, err = os.Stat(steamAppInstallDir); err == nil {
+		if err = os.RemoveAll(steamAppInstallDir); err != nil {
 			return err
 		}
 	} else if os.IsNotExist(err) && !ii.force {

@@ -3,7 +3,6 @@ package cli
 import (
 	"net/url"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -118,18 +117,20 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 		}
 	}
 
-	if err = steamUpdateApp(steamAppId, appInfo.Common.Name, username, ii.OperatingSystem, appInfo.Config.InstallDir); err != nil {
+	if err = steamUpdateApp(steamAppId, appInfo.Common.Name, username, ii.OperatingSystem, rdx); err != nil {
 		return err
 	}
 
-	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-	absInstallDir := filepath.Join(steamAppsDir, ii.OperatingSystem.String(), appInfo.Config.InstallDir)
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
+	if err != nil {
+		return err
+	}
 
 	sgo := &steamGridOptions{
 		useSteamAssets: true,
 		steamRun:       true,
 		name:           appInfo.Common.Name,
-		installDir:     absInstallDir,
+		installDir:     steamAppInstallDir,
 		logoPosition:   nil,
 	}
 
@@ -185,21 +186,23 @@ func getSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar.K
 	return nil
 }
 
-func steamUpdateApp(id, name string, username string, operatingSystem vangogh_integration.OperatingSystem, installDir string) error {
+func steamUpdateApp(steamAppId, name string, username string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
 
-	scaua := nod.Begin("updating and verifying %s (%s) for %s with SteamCMD, please wait...", name, id, operatingSystem)
+	scaua := nod.Begin("updating and verifying %s (%s) for %s with SteamCMD, please wait...", name, steamAppId, operatingSystem)
 	defer scaua.Done()
 
-	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-	absInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), installDir)
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, operatingSystem, rdx)
+	if err != nil {
+		return err
+	}
 
-	if _, err := os.Stat(absInstallDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(absInstallDir, 0755); err != nil {
+	if _, err = os.Stat(steamAppInstallDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(steamAppInstallDir, 0755); err != nil {
 			return err
 		}
 	}
 
-	return steamCmdAppUpdate(id, operatingSystem, absInstallDir, username)
+	return steamCmdAppUpdate(steamAppId, operatingSystem, steamAppInstallDir, username)
 }
 
 func steamAppInfoProductDetails(appInfo *steam_appinfo.AppInfo) *vangogh_integration.ProductDetails {

@@ -202,3 +202,23 @@ func AbsSteamCmdBinPath(operatingSystem vangogh_integration.OperatingSystem) (st
 		return "", operatingSystem.ErrUnsupported()
 	}
 }
+
+func AbsSteamAppInstallDir(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
+		return "", err
+	}
+
+	var steamAppName string
+	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
+		steamAppName = san
+	}
+
+	if steamAppName == "" {
+		return "", errors.New("cannot resolve Steam app name for " + steamAppId)
+	}
+
+	steamAppsDir := Pwd.AbsDirPath(SteamApps)
+
+	return filepath.Join(steamAppsDir, operatingSystem.String(), pathways.Sanitize(steamAppName)), nil
+}
