@@ -65,6 +65,10 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 		username = un
 	}
 
+	if err = BackupMetadata(); err != nil {
+		return err
+	}
+
 	if err = getSteamAppInfo(steamAppId, username, kvSteamAppInfo, rdx, ii.force); err != nil {
 		return err
 	}

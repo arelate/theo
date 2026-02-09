@@ -21,15 +21,12 @@ func SteamUninstallHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 		LangCode:        defaultLangCode,
 		SteamInstall:    true,
-		verbose:         q.Has("verbose"),
 		force:           q.Has("force"),
 	}
 
-	purge := q.Has("purge")
-
-	return SteamUninstall(id, ii, purge)
+	return SteamUninstall(id, ii)
 }
 
-func SteamUninstall(id string, ii *InstallInfo, purge bool) error {
+func SteamUninstall(id string, ii *InstallInfo) error {
 	return nil
 }

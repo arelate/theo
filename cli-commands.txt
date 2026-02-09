@@ -141,7 +141,6 @@ steam-shortcut
 steam-uninstall
     id*^
     os={operating-systems^}
-    purge
     force
 
 uninstall
