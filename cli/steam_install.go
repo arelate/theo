@@ -47,9 +47,7 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 	sia := nod.Begin("installing Steam %s for %s...", steamAppId, ii.OperatingSystem)
 	defer sia.Done()
 
-	properties := append(data.SteamProperties(), data.InstallInfoProperty)
-
-	rdx, err := redux.NewWriter(data.AbsReduxDir(), properties...)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
