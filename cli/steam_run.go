@@ -148,6 +148,8 @@ func SteamRun(steamAppId string, ii *InstallInfo, et *execTask) error {
 			if err = osExec(steamAppId, ii.OperatingSystem, et); err != nil {
 				return err
 			}
+
+			break
 		}
 	}
 
