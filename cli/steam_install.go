@@ -1,11 +1,9 @@
 package cli
 
 import (
-	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/arelate/southern_light/steam_appinfo"
@@ -31,6 +29,7 @@ func SteamInstallHandler(u *url.URL) error {
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        defaultLangCode,
+		DownloadTypes:   []vangogh_integration.DownloadType{vangogh_integration.Installer},
 		UseSteamAssets:  true,
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
 		reveal:          q.Has("reveal"),
@@ -82,17 +81,10 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 		return err
 	}
 
-	var operatingSystems []vangogh_integration.OperatingSystem
-	if appInfo.Common.OsList != "" {
-		operatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
-	}
+	productDetails := steamAppInfoProductDetails(appInfo)
 
-	if len(operatingSystems) > 0 && !slices.Contains(operatingSystems, ii.OperatingSystem) {
-		return errors.New(appInfo.Common.Name + " is not available for " + ii.OperatingSystem.String())
-	} else if len(operatingSystems) == 0 && ii.OperatingSystem == vangogh_integration.Windows {
-		// do nothing, try to install the default Windows version
-	} else if len(operatingSystems) == 0 {
-		return errors.New(appInfo.Common.Name + " has no operating systems listed")
+	if err = resolveInstallInfo(steamAppId, ii, productDetails, rdx, currentOsThenWindows); err != nil {
+		return err
 	}
 
 	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
@@ -160,4 +152,25 @@ func steamUpdateApp(id, name string, username string, operatingSystem vangogh_in
 	}
 
 	return steamCmdAppUpdate(id, operatingSystem, absInstallDir, username)
+}
+
+func steamAppInfoProductDetails(appInfo *steam_appinfo.AppInfo) *vangogh_integration.ProductDetails {
+
+	var operatingSystems []vangogh_integration.OperatingSystem
+	if appInfo.Common.OsList != "" {
+		operatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
+	} else {
+		operatingSystems = append(operatingSystems, vangogh_integration.Windows)
+	}
+
+	productDetails := &vangogh_integration.ProductDetails{
+		SteamAppId:       appInfo.AppId,
+		Title:            appInfo.Common.Name,
+		ProductType:      vangogh_integration.GameProductType,
+		OperatingSystems: operatingSystems,
+		Developers:       []string{appInfo.Extended.Developer},
+		Publishers:       []string{appInfo.Extended.Publisher},
+	}
+
+	return productDetails
 }
