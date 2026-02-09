@@ -124,19 +124,63 @@ func reduceProductDetails(id string, productDetails *vangogh_integration.Product
 		oss = append(oss, os.String())
 	}
 
-	propertyValues[vangogh_integration.SlugProperty] = []string{productDetails.Slug}
-	propertyValues[vangogh_integration.SteamAppIdProperty] = []string{productDetails.SteamAppId}
-	propertyValues[vangogh_integration.TitleProperty] = []string{productDetails.Title}
-	propertyValues[vangogh_integration.OperatingSystemsProperty] = oss
-	propertyValues[vangogh_integration.DevelopersProperty] = productDetails.Developers
-	propertyValues[vangogh_integration.PublishersProperty] = productDetails.Publishers
-	propertyValues[vangogh_integration.VerticalImageProperty] = []string{productDetails.Images.VerticalImage}
-	propertyValues[vangogh_integration.ImageProperty] = []string{productDetails.Images.Image}
-	propertyValues[vangogh_integration.HeroProperty] = []string{productDetails.Images.Hero}
-	propertyValues[vangogh_integration.LogoProperty] = []string{productDetails.Images.Logo}
-	propertyValues[vangogh_integration.IconProperty] = []string{productDetails.Images.Icon}
-	propertyValues[vangogh_integration.IconSquareProperty] = []string{productDetails.Images.IconSquare}
-	propertyValues[vangogh_integration.BackgroundProperty] = []string{productDetails.Images.Background}
+	reductionProperties := []string{
+		vangogh_integration.SlugProperty,
+		vangogh_integration.SteamAppIdProperty,
+		vangogh_integration.TitleProperty,
+		vangogh_integration.OperatingSystemsProperty,
+		vangogh_integration.DevelopersProperty,
+		vangogh_integration.PublishersProperty,
+		vangogh_integration.VerticalImageProperty,
+		vangogh_integration.ImageProperty,
+		vangogh_integration.HeroProperty,
+		vangogh_integration.LogoProperty,
+		vangogh_integration.IconProperty,
+		vangogh_integration.IconSquareProperty,
+		vangogh_integration.BackgroundProperty,
+	}
+
+	for _, property := range reductionProperties {
+
+		var values []string
+
+		switch property {
+		case vangogh_integration.SlugProperty:
+			values = []string{productDetails.Slug}
+		case vangogh_integration.SteamAppIdProperty:
+			values = []string{productDetails.SteamAppId}
+		case vangogh_integration.TitleProperty:
+			values = []string{productDetails.Title}
+		case vangogh_integration.OperatingSystemsProperty:
+			values = oss
+		case vangogh_integration.DevelopersProperty:
+			values = productDetails.Developers
+		case vangogh_integration.PublishersProperty:
+			values = productDetails.Publishers
+		case vangogh_integration.VerticalImageProperty:
+			values = []string{productDetails.Images.VerticalImage}
+		case vangogh_integration.ImageProperty:
+			values = []string{productDetails.Images.Image}
+		case vangogh_integration.HeroProperty:
+			values = []string{productDetails.Images.Hero}
+		case vangogh_integration.LogoProperty:
+			values = []string{productDetails.Images.Logo}
+		case vangogh_integration.IconProperty:
+			values = []string{productDetails.Images.Icon}
+		case vangogh_integration.IconSquareProperty:
+			values = []string{productDetails.Images.IconSquare}
+		case vangogh_integration.BackgroundProperty:
+			values = []string{productDetails.Images.Background}
+		}
+
+		if len(values) == 1 && values[0] == "" {
+			values = nil
+		}
+
+		if len(values) > 0 {
+			propertyValues[property] = values
+		}
+	}
 
 	for property, values := range propertyValues {
 		if err := rdx.ReplaceValues(property, id, values...); err != nil {

@@ -116,7 +116,7 @@ func listInstalled(ii *InstallInfo) error {
 	for _, id := range installedIds {
 
 		title := id
-		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok {
+		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
 			title = fmt.Sprintf("%s (%s)", tp, id)
 		}
 

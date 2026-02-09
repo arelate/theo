@@ -225,7 +225,7 @@ func steamAppInfoProductDetails(appInfo *steam_appinfo.AppInfo) *vangogh_integra
 
 func reduceSteamAppInfo(appInfo *steam_appinfo.AppInfo, rdx redux.Writeable) error {
 
-	if err := rdx.MustHave(data.SteamProperties()...); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return err
 	}
 
