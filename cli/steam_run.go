@@ -26,6 +26,10 @@ func SteamRunHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+	}
+
 	et := &execTask{
 		verbose: q.Has("verbose"),
 	}
@@ -50,12 +54,12 @@ func SteamRunHandler(u *url.URL) error {
 		et.protonOptions = strings.Split(q.Get("proton-options"), ",")
 	}
 
-	return SteamRun(id, operatingSystem, et)
+	return SteamRun(id, ii, et)
 }
 
-func SteamRun(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
+func SteamRun(steamAppId string, ii *InstallInfo, et *execTask) error {
 
-	sra := nod.Begin("running %s for %s...", steamAppId, operatingSystem)
+	sra := nod.Begin("running %s for %s...", steamAppId, ii.OperatingSystem)
 	defer sra.Done()
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
@@ -81,7 +85,7 @@ func SteamRun(steamAppId string, operatingSystem vangogh_integration.OperatingSy
 	}
 
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-	appInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), appInfo.Config.InstallDir)
+	appInstallDir := filepath.Join(steamAppsDir, ii.OperatingSystem.String(), appInfo.Config.InstallDir)
 
 	absSteamPrefixDir, err := data.AbsSteamPrefixDir(steamAppId)
 	if err != nil {
@@ -93,11 +97,11 @@ func SteamRun(steamAppId string, operatingSystem vangogh_integration.OperatingSy
 	// TODO: better detect default launch task
 	for _, slc := range appInfo.Config.Launch {
 		osList := vangogh_integration.ParseManyOperatingSystems(strings.Split(slc.Config.OsList, ","))
-		if slices.Contains(osList, operatingSystem) {
+		if slices.Contains(osList, ii.OperatingSystem) {
 
 			exe := slc.Executable
 
-			switch operatingSystem {
+			switch ii.OperatingSystem {
 			case vangogh_integration.MacOS:
 				fallthrough
 			case vangogh_integration.Linux:
@@ -120,7 +124,7 @@ func SteamRun(steamAppId string, operatingSystem vangogh_integration.OperatingSy
 			et.name = appInfo.Common.Name
 			et.args = append(et.args, strings.Split(slc.Arguments, " ")...)
 
-			return osExec(steamAppId, operatingSystem, et)
+			return osExec(steamAppId, ii.OperatingSystem, et)
 		}
 	}
 

@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -18,8 +17,6 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-const steamAppIdTxt = "steam_appid.txt"
-
 func SteamInstallHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -31,17 +28,22 @@ func SteamInstallHandler(u *url.URL) error {
 		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
 	}
 
-	createSteamAppId := q.Has("create-steam-appid")
+	ii := &InstallInfo{
+		OperatingSystem: operatingSystem,
+		LangCode:        defaultLangCode,
+		UseSteamAssets:  true,
+		NoSteamShortcut: q.Has("no-steam-shortcut"),
+		reveal:          q.Has("reveal"),
+		verbose:         q.Has("verbose"),
+		force:           q.Has("force"),
+	}
 
-	verbose := q.Has("verbose")
-	force := q.Has("force")
-
-	return SteamInstall(id, operatingSystem, createSteamAppId, verbose, force)
+	return SteamInstall(id, ii)
 }
 
-func SteamInstall(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, createSteamAppId, verbose, force bool) error {
+func SteamInstall(steamAppId string, ii *InstallInfo) error {
 
-	sia := nod.Begin("installing Steam %s for %s...", steamAppId, operatingSystem)
+	sia := nod.Begin("installing Steam %s for %s...", steamAppId, ii.OperatingSystem)
 	defer sia.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.SteamProperties()...)
@@ -60,7 +62,7 @@ func SteamInstall(steamAppId string, operatingSystem vangogh_integration.Operati
 		username = un
 	}
 
-	if err = getSteamAppInfo(steamAppId, username, kvSteamAppInfo, force); err != nil {
+	if err = getSteamAppInfo(steamAppId, username, kvSteamAppInfo, ii.force); err != nil {
 		return err
 	}
 
@@ -85,34 +87,26 @@ func SteamInstall(steamAppId string, operatingSystem vangogh_integration.Operati
 		operatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
 	}
 
-	if len(operatingSystems) > 0 && !slices.Contains(operatingSystems, operatingSystem) {
-		return errors.New(appInfo.Common.Name + " is not available for " + operatingSystem.String())
-	} else if len(operatingSystems) == 0 && operatingSystem == vangogh_integration.Windows {
+	if len(operatingSystems) > 0 && !slices.Contains(operatingSystems, ii.OperatingSystem) {
+		return errors.New(appInfo.Common.Name + " is not available for " + ii.OperatingSystem.String())
+	} else if len(operatingSystems) == 0 && ii.OperatingSystem == vangogh_integration.Windows {
 		// do nothing, try to install the default Windows version
 	} else if len(operatingSystems) == 0 {
 		return errors.New(appInfo.Common.Name + " has no operating systems listed")
 	}
 
-	if operatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
-		if err = steamPrefixInit(steamAppId, verbose); err != nil {
+	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
+		if err = steamPrefixInit(steamAppId, ii.verbose); err != nil {
 			return err
 		}
 	}
 
-	if err = steamUpdateApp(steamAppId, appInfo.Common.Name, username, operatingSystem, appInfo.Config.InstallDir); err != nil {
+	if err = steamUpdateApp(steamAppId, appInfo.Common.Name, username, ii.OperatingSystem, appInfo.Config.InstallDir); err != nil {
 		return err
 	}
 
-	ii := &InstallInfo{
-		OperatingSystem: operatingSystem,
-		LangCode:        defaultLangCode,
-		UseSteamAssets:  true,
-		verbose:         verbose,
-		force:           force,
-	}
-
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-	absInstallDir := filepath.Join(steamAppsDir, operatingSystem.String(), appInfo.Config.InstallDir)
+	absInstallDir := filepath.Join(steamAppsDir, ii.OperatingSystem.String(), appInfo.Config.InstallDir)
 
 	sgo := &steamGridOptions{
 		useSteamAssets: true,
@@ -124,23 +118,6 @@ func SteamInstall(steamAppId string, operatingSystem vangogh_integration.Operati
 
 	if err = SteamShortcut([]string{steamAppId}, nil, false, ii, sgo); err != nil {
 		return err
-	}
-
-	if createSteamAppId {
-		// https://partner.steamgames.com/doc/sdk/api
-		absSteamAppIdTxtPath := filepath.Join(absInstallDir, steamAppIdTxt)
-		if _, err = os.Stat(absSteamAppIdTxtPath); err != nil {
-			var sait *os.File
-			sait, err = os.Create(absSteamAppIdTxtPath)
-			if err != nil {
-				return err
-			}
-			defer sait.Close()
-
-			if _, err = io.WriteString(sait, steamAppId); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

@@ -113,7 +113,8 @@ steam-fix
 steam-install
     id*^
     os*={operating-systems^}
-    create-steam-appid
+    no-steam-shortcut
+    reveal
     verbose
     force
 

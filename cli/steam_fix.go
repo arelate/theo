@@ -6,6 +6,8 @@ import (
 	"github.com/boggydigital/nod"
 )
 
+const steamAppIdTxt = "steam_appid.txt"
+
 func SteamFixHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -22,6 +24,21 @@ func SteamFix(steamAppId string, addSteamAppId bool) error {
 	defer sfa.Done()
 
 	if addSteamAppId {
+
+		//// https://partner.steamgames.com/doc/sdk/api
+		//absSteamAppIdTxtPath := filepath.Join(absInstallDir, steamAppIdTxt)
+		//if _, err = os.Stat(absSteamAppIdTxtPath); err != nil {
+		//	var sait *os.File
+		//	sait, err = os.Create(absSteamAppIdTxtPath)
+		//	if err != nil {
+		//		return err
+		//	}
+		//	defer sait.Close()
+		//
+		//	if _, err = io.WriteString(sait, steamAppId); err != nil {
+		//		return err
+		//	}
+		//}
 
 	}
 
