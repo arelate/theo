@@ -35,6 +35,7 @@ type InstallInfo struct {
 	NoSteamShortcut     bool                                `json:"no-steam-shortcut"`
 	UseSteamAssets      bool                                `json:"use-steam-assets"`
 	Env                 []string                            `json:"env"`
+	SteamInstall        bool                                `json:"steam-install,omitempty"`
 	reveal              bool                                // won't be serialized
 	verbose             bool                                // won't be serialized
 	force               bool                                // won't be serialized

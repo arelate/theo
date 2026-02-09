@@ -86,7 +86,6 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 	defer ra.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
-
 	if err != nil {
 		return err
 	}

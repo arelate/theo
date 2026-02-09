@@ -9,6 +9,7 @@ const (
 	VangoghSessionExpiresProperty = "vangogh-session-expires"
 
 	SteamUsernameProperty = "steam-username"
+	SteamAppNameProperty  = "steam-app-name"
 
 	BundleNameProperty = "bundle-name"
 
@@ -37,6 +38,7 @@ func VangoghProperties() []string {
 func SteamProperties() []string {
 	return []string{
 		SteamUsernameProperty,
+		SteamAppNameProperty,
 	}
 }
 

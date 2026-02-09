@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/arelate/southern_light/steam_appinfo"
@@ -31,6 +32,7 @@ func SteamInstallHandler(u *url.URL) error {
 		LangCode:        defaultLangCode,
 		DownloadTypes:   []vangogh_integration.DownloadType{vangogh_integration.Installer},
 		UseSteamAssets:  true,
+		SteamInstall:    true,
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
 		reveal:          q.Has("reveal"),
 		verbose:         q.Has("verbose"),
@@ -45,7 +47,9 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 	sia := nod.Begin("installing Steam %s for %s...", steamAppId, ii.OperatingSystem)
 	defer sia.Done()
 
-	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.SteamProperties()...)
+	properties := append(data.SteamProperties(), data.InstallInfoProperty)
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), properties...)
 	if err != nil {
 		return err
 	}
@@ -61,7 +65,7 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 		username = un
 	}
 
-	if err = getSteamAppInfo(steamAppId, username, kvSteamAppInfo, ii.force); err != nil {
+	if err = getSteamAppInfo(steamAppId, username, kvSteamAppInfo, rdx, ii.force); err != nil {
 		return err
 	}
 
@@ -85,6 +89,25 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 
 	if err = resolveInstallInfo(steamAppId, ii, productDetails, rdx, currentOsThenWindows); err != nil {
 		return err
+	}
+
+	printInstallInfoParams(ii, true, steamAppId)
+
+	if slices.Contains(ii.DownloadTypes, vangogh_integration.Installer) && !ii.force {
+
+		if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, steamAppId); ok {
+
+			var installInfo *InstallInfo
+			installInfo, _, err = matchInstallInfo(ii, installedInfoLines...)
+			if err != nil {
+				return err
+			}
+
+			if installInfo != nil {
+				sia.EndWithResult("Steam appId %s is already installed for %s", steamAppId, ii.OperatingSystem)
+				return nil
+			}
+		}
 	}
 
 	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
@@ -112,26 +135,49 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 		return err
 	}
 
+	if err = pinInstallInfo(steamAppId, ii, rdx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func getSteamAppInfo(id string, username string, kvSteamAppInfo kevlar.KeyValues, force bool) error {
+func getSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar.KeyValues, rdx redux.Writeable, force bool) error {
 
-	scaia := nod.Begin(" getting Steam appinfo for %s...", id)
+	scaia := nod.Begin(" getting Steam appinfo for %s...", steamAppId)
 	defer scaia.Done()
 
-	if kvSteamAppInfo.Has(id) && !force {
+	if kvSteamAppInfo.Has(steamAppId) && !force {
 		scaia.EndWithResult("already exist")
 		return nil
 	}
 
-	printedAppInfo, err := steamCmdAppInfoPrint(id, username)
+	printedAppInfo, err := steamCmdAppInfoPrint(steamAppId, username)
 	if err != nil {
 		return err
 	}
 
-	if err = kvSteamAppInfo.Set(id, strings.NewReader(printedAppInfo)); err != nil {
+	if err = kvSteamAppInfo.Set(steamAppId, strings.NewReader(printedAppInfo)); err != nil {
 		return err
+	}
+
+	if !rdx.HasKey(data.SteamAppNameProperty, steamAppId) || force {
+
+		var appInfoKeyValues []*steam_vdf.KeyValues
+		appInfoKeyValues, err = steam_vdf.ReadText(strings.NewReader(printedAppInfo))
+		if err != nil {
+			return err
+		}
+
+		var appInfo *steam_appinfo.AppInfo
+		appInfo, err = steam_appinfo.AppInfoVdf(appInfoKeyValues)
+		if err != nil {
+			return err
+		}
+
+		if err = reduceSteamAppInfo(appInfo, rdx); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -173,4 +219,17 @@ func steamAppInfoProductDetails(appInfo *steam_appinfo.AppInfo) *vangogh_integra
 	}
 
 	return productDetails
+}
+
+func reduceSteamAppInfo(appInfo *steam_appinfo.AppInfo, rdx redux.Writeable) error {
+
+	if err := rdx.MustHave(data.SteamProperties()...); err != nil {
+		return err
+	}
+
+	if err := rdx.ReplaceValues(data.SteamAppNameProperty, appInfo.AppId, appInfo.Common.Name); err != nil {
+		return err
+	}
+
+	return nil
 }

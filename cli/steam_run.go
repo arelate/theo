@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_vdf"
@@ -13,6 +14,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/redux"
 )
 
 func SteamRunHandler(u *url.URL) error {
@@ -59,8 +61,25 @@ func SteamRunHandler(u *url.URL) error {
 
 func SteamRun(steamAppId string, ii *InstallInfo, et *execTask) error {
 
+	playSessionStart := time.Now()
+
 	sra := nod.Begin("running %s for %s...", steamAppId, ii.OperatingSystem)
 	defer sra.Done()
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
+	if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem, installedLangCode); err != nil {
+		return err
+	}
+
+	printInstallInfoParams(ii, true, steamAppId)
+
+	if err = setLastRunDate(rdx, steamAppId); err != nil {
+		return err
+	}
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
 	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
@@ -124,11 +143,19 @@ func SteamRun(steamAppId string, ii *InstallInfo, et *execTask) error {
 			et.name = appInfo.Common.Name
 			et.args = append(et.args, strings.Split(slc.Arguments, " ")...)
 
-			return osExec(steamAppId, ii.OperatingSystem, et)
+			if err = osExec(steamAppId, ii.OperatingSystem, et); err != nil {
+				return err
+			}
 		}
 	}
 
-	return nil
+	playSessionDuration := time.Since(playSessionStart)
+
+	if err = recordPlaytime(rdx, steamAppId, playSessionDuration); err != nil {
+		return err
+	}
+
+	return updateTotalPlaytime(rdx, steamAppId)
 }
 
 func windowsToNixPath(wp string) string {

@@ -118,9 +118,7 @@ func Install(id string, ii *InstallInfo) error {
 				ia.EndWithResult("product %s is already installed", id)
 				return nil
 			}
-
 		}
-
 	}
 
 	if err = BackupMetadata(); err != nil {

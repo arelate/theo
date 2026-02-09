@@ -97,6 +97,7 @@ func listInstalled(ii *InstallInfo) error {
 
 	rdx, err := redux.NewReader(data.AbsReduxDir(),
 		vangogh_integration.TitleProperty,
+		data.SteamAppNameProperty,
 		data.InstallInfoProperty,
 		data.InstallDateProperty,
 		data.LastRunDateProperty,
@@ -118,6 +119,9 @@ func listInstalled(ii *InstallInfo) error {
 		title := id
 		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok {
 			title = fmt.Sprintf("%s (%s)", tp, id)
+		}
+		if san, ok := rdx.GetLastVal(data.SteamAppNameProperty, id); ok {
+			title = fmt.Sprintf("%s (%s)", san, id)
 		}
 
 		var installedDate string
@@ -155,6 +159,10 @@ func listInstalled(ii *InstallInfo) error {
 
 			infoLines := make([]string, 0)
 
+			if installedInfo.SteamInstall {
+				infoLines = append(infoLines, "Installed from Steam")
+			}
+
 			infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
 			infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
 
@@ -168,7 +176,10 @@ func listInstalled(ii *InstallInfo) error {
 			}
 			infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
 
-			infoLines = append(infoLines, "version: "+installedInfo.Version)
+			if installedInfo.Version != "" {
+				infoLines = append(infoLines, "version: "+installedInfo.Version)
+			}
+
 			if installedInfo.EstimatedBytes > 0 {
 				infoLines = append(infoLines, "size: "+vangogh_integration.FormatBytes(installedInfo.EstimatedBytes))
 			}
