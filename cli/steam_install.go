@@ -165,7 +165,7 @@ func getSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar.K
 		return err
 	}
 
-	if !rdx.HasKey(data.SteamAppNameProperty, steamAppId) || force {
+	if !rdx.HasKey(vangogh_integration.TitleProperty, steamAppId) || force {
 
 		var appInfoKeyValues []*steam_vdf.KeyValues
 		appInfoKeyValues, err = steam_vdf.ReadText(strings.NewReader(printedAppInfo))
@@ -231,7 +231,7 @@ func reduceSteamAppInfo(appInfo *steam_appinfo.AppInfo, rdx redux.Writeable) err
 		return err
 	}
 
-	if err := rdx.ReplaceValues(data.SteamAppNameProperty, appInfo.AppId, appInfo.Common.Name); err != nil {
+	if err := rdx.ReplaceValues(vangogh_integration.TitleProperty, appInfo.AppId, appInfo.Common.Name); err != nil {
 		return err
 	}
 

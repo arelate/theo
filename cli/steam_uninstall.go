@@ -68,7 +68,7 @@ func SteamUninstall(steamAppId string, ii *InstallInfo) error {
 	}
 
 	var steamAppName string
-	if san, ok := rdx.GetLastVal(data.SteamAppNameProperty, steamAppId); ok && san != "" {
+	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
 		steamAppName = san
 	} else {
 		return errors.New("cannot resolve app name for " + steamAppId)

@@ -97,7 +97,6 @@ func listInstalled(ii *InstallInfo) error {
 
 	rdx, err := redux.NewReader(data.AbsReduxDir(),
 		vangogh_integration.TitleProperty,
-		data.SteamAppNameProperty,
 		data.InstallInfoProperty,
 		data.InstallDateProperty,
 		data.LastRunDateProperty,
@@ -119,9 +118,6 @@ func listInstalled(ii *InstallInfo) error {
 		title := id
 		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok {
 			title = fmt.Sprintf("%s (%s)", tp, id)
-		}
-		if san, ok := rdx.GetLastVal(data.SteamAppNameProperty, id); ok {
-			title = fmt.Sprintf("%s (%s)", san, id)
 		}
 
 		var installedDate string
