@@ -138,6 +138,12 @@ steam-shortcut
     height-pct
     force
 
+steam-uninstall
+    id*^
+    os={operating-systems^}
+    purge
+    force
+
 uninstall
     id^*
     os={operating-systems^}
