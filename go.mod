@@ -1,9 +1,9 @@
 module github.com/arelate/theo
 
-go 1.25.5
+go 1.25.7
 
 require (
-	github.com/arelate/southern_light v0.4.0
+	github.com/arelate/southern_light v0.4.1
 	github.com/boggydigital/author v0.1.27
 	github.com/boggydigital/backups v0.1.7
 	github.com/boggydigital/clo v1.0.8
@@ -16,5 +16,5 @@ require (
 
 require (
 	github.com/boggydigital/wits v0.2.3 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
 )
