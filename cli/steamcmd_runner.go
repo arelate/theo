@@ -27,8 +27,9 @@ const (
 )
 
 const (
-	steamCmdTrueValue  = "1"
-	steamCmdFalseValue = "0"
+	steamCmdTrueValue      = "1"
+	steamCmdFalseValue     = "0"
+	steamCmdAnonymousValue = "anonymous"
 )
 
 func steamCmdRunner(commands ...string) (*exec.Cmd, error) {
@@ -74,7 +75,7 @@ func steamCmdAppInfoPrint(id string, username string) (string, error) {
 	appInfoPrintCmd, err := steamCmdRunner(
 		steamCmdShutdownOnFailedCommandVariable, steamCmdTrueValue,
 		steamCmdNoPromptForPasswordVariable, steamCmdTrueValue,
-		steamCmdLoginCommand, username,
+		steamCmdLoginCommand, steamCmdAnonymousValue, // app_info_print works with anonymous login
 		steamCmdAppInfoPrintCommand, id,
 		steamCmdQuitCommand)
 	if err != nil {
