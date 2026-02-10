@@ -27,6 +27,11 @@ var steamShortcutPrintedKeys = []string{
 	"LaunchOptions",
 }
 
+const (
+	gogIdTitleTemplate      = "%s (GOG: %s)"
+	steamAppIdTitleTemplate = "%s (Steam: %s)"
+)
+
 func ListHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -115,11 +120,6 @@ func listInstalled(ii *InstallInfo) error {
 
 	for _, id := range installedIds {
 
-		title := id
-		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
-			title = fmt.Sprintf("%s (%s)", tp, id)
-		}
-
 		var installedDate string
 		if ids, ok := rdx.GetLastVal(data.InstallDateProperty, id); ok && ids != "" {
 			if installDate, err := time.Parse(time.RFC3339, ids); err == nil {
@@ -128,6 +128,8 @@ func listInstalled(ii *InstallInfo) error {
 				return err
 			}
 		}
+
+		var title string
 
 		filteredIds := make(map[string]any)
 
@@ -153,11 +155,18 @@ func listInstalled(ii *InstallInfo) error {
 				continue
 			}
 
-			infoLines := make([]string, 0)
+			title = id
 
+			idTitleTemplate := gogIdTitleTemplate
 			if installedInfo.SteamInstall {
-				infoLines = append(infoLines, "Installed from Steam")
+				idTitleTemplate = steamAppIdTitleTemplate
 			}
+
+			if tp, sure := rdx.GetLastVal(vangogh_integration.TitleProperty, id); sure && tp != "" {
+				title = fmt.Sprintf(idTitleTemplate, tp, id)
+			}
+
+			infoLines := make([]string, 0)
 
 			infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
 			infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
