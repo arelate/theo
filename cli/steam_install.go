@@ -132,13 +132,19 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 		return err
 	}
 
+	shortcutLogoPosition := &logoPosition{
+		PinnedPosition: appInfo.Common.LibraryAssetsFull.LibraryLogo.PinnedPosition,
+		WidthPct:       appInfo.Common.LibraryAssetsFull.LibraryLogo.WidthPct,
+		HeightPct:      appInfo.Common.LibraryAssetsFull.LibraryLogo.HeighPct,
+	}
+
 	sgo := &steamGridOptions{
 		additions:    []string{steamAppId},
 		steamRun:     true,
 		assets:       shortcutAssets,
 		name:         appInfo.Common.Name,
 		installDir:   steamAppInstallDir,
-		logoPosition: nil,
+		logoPosition: shortcutLogoPosition,
 	}
 
 	if err = SteamShortcut(ii, sgo); err != nil {

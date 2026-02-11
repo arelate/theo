@@ -53,9 +53,9 @@ type steamGridOptions struct {
 }
 
 type logoPosition struct {
-	PinnedPosition string `json:"pinnedPosition"`
-	WidthPct       int    `json:"nWidthPct"`
-	HeightPct      int    `json:"nHeightPct"`
+	PinnedPosition string  `json:"pinnedPosition"`
+	WidthPct       float64 `json:"nWidthPct"`
+	HeightPct      float64 `json:"nHeightPct"`
 }
 
 func SteamShortcutHandler(u *url.URL) error {
@@ -133,19 +133,21 @@ func SteamShortcutHandler(u *url.URL) error {
 	}
 
 	if q.Has("width-pct") {
-		wpi, err := strconv.ParseInt(q.Get("width-pct"), 10, 32)
-		if err != nil {
+		var wp float64
+		if wp, err = strconv.ParseFloat(q.Get("width-pct"), 64); err == nil {
+			sgo.logoPosition.WidthPct = wp
+		} else {
 			return err
 		}
-		sgo.logoPosition.WidthPct = int(wpi)
 	}
 
 	if q.Has("height-pct") {
-		hpi, err := strconv.ParseInt(q.Get("height-pct"), 10, 32)
-		if err != nil {
+		var hp float64
+		if hp, err = strconv.ParseFloat(q.Get("height-pct"), 64); err == nil {
+			sgo.logoPosition.HeightPct = hp
+		} else {
 			return err
 		}
-		sgo.logoPosition.HeightPct = int(hpi)
 	}
 
 	return SteamShortcut(ii, sgo)
