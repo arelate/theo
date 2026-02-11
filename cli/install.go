@@ -552,7 +552,7 @@ func productDetailsShortcutAssets(productDetails *vangogh_integration.ProductDet
 			}
 		case steam_grid.LibraryLogo:
 			imageId = productDetails.Images.Logo
-		case steam_grid.Icon:
+		case steam_grid.ClientIcon:
 			if productDetails.Images.IconSquare != "" {
 				imageId = productDetails.Images.IconSquare
 			} else {

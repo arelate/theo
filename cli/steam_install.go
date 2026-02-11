@@ -261,15 +261,19 @@ func appInfoShortcutAssets(appInfo *steam_appinfo.AppInfo) (map[steam_grid.Asset
 		var imageId string
 		switch asset {
 		case steam_grid.Header:
-			imageId = appInfo.Common.LibraryAssetsFull.LibraryHeader.DefaultImage()
+			if appInfo.Common.LibraryAssetsFull.LibraryHeader != nil {
+				imageId = appInfo.Common.LibraryAssetsFull.LibraryHeader.DefaultImage()
+			} else {
+				imageId = appInfo.Common.DefaultHeaderImage()
+			}
 		case steam_grid.LibraryCapsule:
 			imageId = appInfo.Common.LibraryAssetsFull.LibraryCapsule.DefaultImage()
 		case steam_grid.LibraryHero:
 			imageId = appInfo.Common.LibraryAssetsFull.LibraryHero.DefaultImage()
 		case steam_grid.LibraryLogo:
 			imageId = appInfo.Common.LibraryAssetsFull.LibraryLogo.DefaultImage()
-		case steam_grid.Icon:
-			imageId = appInfo.Common.Icon
+		case steam_grid.ClientIcon:
+			imageId = appInfo.Common.ClientIcon
 		default:
 			return nil, errors.New("unexpected shortcut asset " + asset.String())
 		}
