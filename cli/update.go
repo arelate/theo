@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"net/url"
 	"strings"
@@ -125,7 +125,7 @@ func checkProductUpdates(id string, rdx redux.Writeable, force bool) ([]*Install
 		for _, line := range installedInfoLines {
 
 			var installedInfo InstallInfo
-			if err := json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
+			if err := json.UnmarshalRead(strings.NewReader(line), &installedInfo); err != nil {
 				return nil, err
 			}
 

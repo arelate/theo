@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"net/url"
 	"os"
@@ -451,7 +451,7 @@ func setLogoPosition(loginUser string, shortcutId uint32, lp *logoPosition) erro
 		LogoPosition: lp,
 	}
 
-	return json.NewEncoder(lpFile).Encode(&glp)
+	return json.MarshalWrite(lpFile, &glp)
 }
 
 func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcuts []*steam_vdf.KeyValues, force bool) (bool, error) {

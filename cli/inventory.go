@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"maps"
 	"os"
 	"path/filepath"
@@ -73,7 +73,7 @@ func readInventory(id, langCode string, operatingSystem vangogh_integration.Oper
 	}
 
 	var relFiles []string
-	if err = json.NewDecoder(inventoryFile).Decode(&relFiles); err != nil {
+	if err = json.UnmarshalRead(inventoryFile, &relFiles); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +102,7 @@ func writeInventory(id, langCode string, operatingSystem vangogh_integration.Ope
 	}
 	defer inventoryFile.Close()
 
-	return json.NewEncoder(inventoryFile).Encode(inventory)
+	return json.MarshalWrite(inventoryFile, inventory)
 }
 
 func removeInventoriedFiles(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {

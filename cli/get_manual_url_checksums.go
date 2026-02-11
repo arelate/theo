@@ -2,7 +2,7 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"io"
 	"net/http"
@@ -61,7 +61,7 @@ func readLocalManualUrlChecksums(id string, kvManualUrlChecksums kevlar.KeyValue
 	defer tmReadCloser.Close()
 
 	var manualUrlChecksums map[string]string
-	if err = json.NewDecoder(tmReadCloser).Decode(&manualUrlChecksums); err != nil {
+	if err = json.UnmarshalRead(tmReadCloser, &manualUrlChecksums); err != nil {
 		return nil, err
 	}
 
@@ -101,7 +101,7 @@ func fetchRemoteManualUrlChecksums(id string, rdx redux.Readable, kvManualUrlChe
 	}
 
 	var manualUrlChecksums map[string]string
-	if err = json.NewDecoder(buf).Decode(&manualUrlChecksums); err != nil {
+	if err = json.UnmarshalRead(buf, &manualUrlChecksums); err != nil {
 		return nil, err
 	}
 

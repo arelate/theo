@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/url"
@@ -114,7 +114,7 @@ func getWineBinariesVersions(rdx redux.Readable) ([]vangogh_integration.WineBina
 
 	var wbd []vangogh_integration.WineBinaryDetails
 
-	if err = json.NewDecoder(resp.Body).Decode(&wbd); err != nil {
+	if err = json.UnmarshalRead(resp.Body, &wbd); err != nil {
 		return nil, err
 	}
 

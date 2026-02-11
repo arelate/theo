@@ -2,7 +2,7 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"slices"
@@ -60,7 +60,7 @@ func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails)
 func matchInstallInfo(ii *InstallInfo, lines ...string) (*InstallInfo, string, error) {
 	for _, line := range lines {
 		var installedInfo InstallInfo
-		if err := json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
+		if err := json.UnmarshalRead(strings.NewReader(line), &installedInfo); err != nil {
 			return nil, "", err
 		}
 
@@ -89,7 +89,7 @@ func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	}
 
 	buf := bytes.NewBuffer(nil)
-	if err := json.NewEncoder(buf).Encode(ii); err != nil {
+	if err := json.MarshalWrite(buf, ii); err != nil {
 		return err
 	}
 
@@ -164,7 +164,7 @@ func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integr
 			for _, line := range installedInfoLines {
 
 				var ii InstallInfo
-				if err := json.NewDecoder(strings.NewReader(line)).Decode(&ii); err != nil {
+				if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
 					return vangogh_integration.AnyOperatingSystem, err
 				}
 
@@ -205,7 +205,7 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 			for _, line := range installedInfoLines {
 
 				var ii InstallInfo
-				if err := json.NewDecoder(strings.NewReader(line)).Decode(&ii); err != nil {
+				if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
 					return "", err
 				}
 

@@ -2,7 +2,7 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"io"
 	"net/http"
@@ -65,7 +65,7 @@ func readLocalProductDetails(id string, kvProductDetails kevlar.KeyValues) (*van
 	defer tmReadCloser.Close()
 
 	var productDetails vangogh_integration.ProductDetails
-	if err = json.NewDecoder(tmReadCloser).Decode(&productDetails); err != nil {
+	if err = json.UnmarshalRead(tmReadCloser, &productDetails); err != nil {
 		return nil, err
 	}
 
@@ -105,7 +105,7 @@ func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails k
 	}
 
 	var productDetails vangogh_integration.ProductDetails
-	if err = json.NewDecoder(buf).Decode(&productDetails); err != nil {
+	if err = json.UnmarshalRead(buf, &productDetails); err != nil {
 		return nil, err
 	}
 

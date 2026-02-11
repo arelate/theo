@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"net/http"
 	"net/url"
@@ -114,7 +114,7 @@ func vangoghValidateSessionToken(rdx redux.Readable) error {
 
 	var ste author.SessionTokenExpires
 
-	if err = json.NewDecoder(resp.Body).Decode(&ste); err != nil {
+	if err = json.UnmarshalRead(resp.Body, &ste); err != nil {
 		return err
 	}
 
@@ -167,7 +167,7 @@ func vangoghUpdateSessionToken(password string, rdx redux.Writeable) error {
 
 	var ste author.SessionTokenExpires
 
-	if err = json.NewDecoder(resp.Body).Decode(&ste); err != nil {
+	if err = json.UnmarshalRead(resp.Body, &ste); err != nil {
 		return err
 	}
 

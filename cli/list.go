@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"net/url"
@@ -141,7 +141,7 @@ func listInstalled(ii *InstallInfo) error {
 		for _, line := range installedInfoLines {
 
 			var installedInfo InstallInfo
-			if err = json.NewDecoder(strings.NewReader(line)).Decode(&installedInfo); err != nil {
+			if err = json.UnmarshalRead(strings.NewReader(line), &installedInfo); err != nil {
 				return err
 			}
 
