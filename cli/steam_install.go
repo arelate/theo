@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"errors"
 	"net/url"
 	"os"
 	"slices"
 	"strings"
 
 	"github.com/arelate/southern_light/steam_appinfo"
+	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -30,7 +32,6 @@ func SteamInstallHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 		LangCode:        defaultLangCode,
 		DownloadTypes:   []vangogh_integration.DownloadType{vangogh_integration.Installer},
-		UseSteamAssets:  true,
 		SteamInstall:    true,
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
 		reveal:          q.Has("reveal"),
@@ -126,15 +127,21 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 		return err
 	}
 
-	sgo := &steamGridOptions{
-		useSteamAssets: true,
-		steamRun:       true,
-		name:           appInfo.Common.Name,
-		installDir:     steamAppInstallDir,
-		logoPosition:   nil,
+	shortcutAssets, err := appInfoShortcutAssets(appInfo)
+	if err != nil {
+		return err
 	}
 
-	if err = SteamShortcut([]string{steamAppId}, nil, false, ii, sgo); err != nil {
+	sgo := &steamGridOptions{
+		additions:    []string{steamAppId},
+		steamRun:     true,
+		assets:       shortcutAssets,
+		name:         appInfo.Common.Name,
+		installDir:   steamAppInstallDir,
+		logoPosition: nil,
+	}
+
+	if err = SteamShortcut(ii, sgo); err != nil {
 		return err
 	}
 
@@ -237,4 +244,32 @@ func reduceSteamAppInfo(appInfo *steam_appinfo.AppInfo, rdx redux.Writeable) err
 	}
 
 	return nil
+}
+
+func appInfoShortcutAssets(appInfo *steam_appinfo.AppInfo) (map[steam_grid.Asset]*url.URL, error) {
+
+	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
+
+	for _, asset := range steam_grid.ShortcutAssets {
+
+		var imageId string
+		switch asset {
+		case steam_grid.Header:
+			imageId = appInfo.Common.LibraryAssetsFull.LibraryHeader.DefaultImage()
+		case steam_grid.LibraryCapsule:
+			imageId = appInfo.Common.LibraryAssetsFull.LibraryCapsule.DefaultImage()
+		case steam_grid.LibraryHero:
+			imageId = appInfo.Common.LibraryAssetsFull.LibraryHero.DefaultImage()
+		case steam_grid.LibraryLogo:
+			imageId = appInfo.Common.LibraryAssetsFull.LibraryLogo.DefaultImage()
+		case steam_grid.Icon:
+			imageId = appInfo.Common.Icon
+		default:
+			return nil, errors.New("unexpected shortcut asset " + asset.String())
+		}
+
+		shortcutAssets[asset] = steam_grid.AssetUrl(appInfo.AppId, imageId, asset)
+	}
+
+	return shortcutAssets, nil
 }

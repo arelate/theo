@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -44,7 +45,6 @@ func InstallHandler(u *url.URL) error {
 		DownloadTypes:   downloadTypes,
 		KeepDownloads:   q.Has("keep-downloads"),
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
-		UseSteamAssets:  q.Has("steam-assets"),
 		reveal:          q.Has("reveal"),
 		verbose:         q.Has("verbose"),
 		force:           q.Has("force"),
@@ -139,12 +139,19 @@ func Install(id string, ii *InstallInfo) error {
 
 	if !ii.NoSteamShortcut {
 
-		sgo := &steamGridOptions{
-			useSteamAssets: ii.UseSteamAssets,
-			logoPosition:   defaultLogoPosition(),
+		var pda map[steam_grid.Asset]*url.URL
+		pda, err = productDetailsShortcutAssets(productDetails, rdx)
+		if err != nil {
+			return err
 		}
 
-		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, sgo, rdx, ii.force); err != nil {
+		sgo := &steamGridOptions{
+			additions:    []string{id},
+			assets:       pda,
+			logoPosition: defaultLogoPosition(),
+		}
+
+		if err = SteamShortcut(ii, sgo); err != nil {
 			return err
 		}
 	}
@@ -523,4 +530,52 @@ func osInstalledPath(id, langCode string, operatingSystem vangogh_integration.Op
 	}
 
 	return filepath.Join(osLangInstalledAppsDir, installedPath), nil
+}
+
+func productDetailsShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, error) {
+
+	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
+
+	for _, asset := range steam_grid.ShortcutAssets {
+
+		var imageId string
+		switch asset {
+		case steam_grid.Header:
+			imageId = productDetails.Images.Image
+		case steam_grid.LibraryCapsule:
+			imageId = productDetails.Images.VerticalImage
+		case steam_grid.LibraryHero:
+			if productDetails.Images.Hero != "" {
+				imageId = productDetails.Images.Hero
+			} else {
+				imageId = productDetails.Images.Background
+			}
+		case steam_grid.LibraryLogo:
+			imageId = productDetails.Images.Logo
+		case steam_grid.Icon:
+			if productDetails.Images.IconSquare != "" {
+				imageId = productDetails.Images.IconSquare
+			} else {
+				imageId = productDetails.Images.Icon
+			}
+		default:
+			return nil, errors.New("unexpected shortcut asset " + asset.String())
+		}
+
+		if imageId != "" {
+			imageQuery := url.Values{
+				"id": {imageId},
+			}
+
+			vangoghImageUrl, err := data.VangoghUrl(data.HttpImagePath, imageQuery, rdx)
+			if err != nil {
+				return nil, err
+			}
+
+			shortcutAssets[asset] = vangoghImageUrl
+		}
+	}
+
+	return shortcutAssets, nil
+
 }

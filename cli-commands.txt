@@ -130,13 +130,17 @@ steam-run
 steam-shortcut
     add&
     remove&
-    update-all-installed
     os={operating-systems^}
     lang-code={language-codes^}
-    steam-assets
+    header
+    capsule
+    hero
+    logo
+    icon
     pinned-position=BottomLeft,BottomCenter,CenterCenter,UpperCenter
     width-pct
     height-pct
+    steam-run
     force
 
 steam-uninstall

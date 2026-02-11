@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/steam_integration"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
@@ -42,11 +43,13 @@ type gridLogoPosition struct {
 }
 
 type steamGridOptions struct {
-	useSteamAssets bool
-	steamRun       bool
-	name           string
-	installDir     string
-	logoPosition   *logoPosition
+	additions    []string
+	removals     []string
+	steamRun     bool
+	name         string
+	installDir   string
+	assets       map[steam_grid.Asset]*url.URL
+	logoPosition *logoPosition
 }
 
 type logoPosition struct {
@@ -59,14 +62,17 @@ func SteamShortcutHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	var add []string
-	if q.Has("add") {
-		add = strings.Split(q.Get("add"), ",")
+	sgo := &steamGridOptions{
+		steamRun:     q.Has("steam-run"),
+		logoPosition: defaultLogoPosition(),
 	}
 
-	var remove []string
+	if q.Has("add") {
+		sgo.additions = strings.Split(q.Get("add"), ",")
+	}
+
 	if q.Has("remove") {
-		remove = strings.Split(q.Get("remove"), ",")
+		sgo.removals = strings.Split(q.Get("remove"), ",")
 	}
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
@@ -85,9 +91,41 @@ func SteamShortcutHandler(u *url.URL) error {
 		force:           q.Has("force"),
 	}
 
-	sgo := &steamGridOptions{
-		useSteamAssets: q.Has("steam-assets"),
-		logoPosition:   defaultLogoPosition(),
+	var err error
+
+	if q.Has("header") {
+		sgo.assets[steam_grid.Header], err = url.Parse(q.Get("header"))
+		if err != nil {
+			return err
+		}
+	}
+
+	if q.Has("capsule") {
+		sgo.assets[steam_grid.LibraryCapsule], err = url.Parse(q.Get("capsule"))
+		if err != nil {
+			return err
+		}
+	}
+
+	if q.Has("hero") {
+		sgo.assets[steam_grid.LibraryHero], err = url.Parse(q.Get("hero"))
+		if err != nil {
+			return err
+		}
+	}
+
+	if q.Has("logo") {
+		sgo.assets[steam_grid.LibraryLogo], err = url.Parse(q.Get("logo"))
+		if err != nil {
+			return err
+		}
+	}
+
+	if q.Has("icon") {
+		sgo.assets[steam_grid.Icon], err = url.Parse(q.Get("icon"))
+		if err != nil {
+			return err
+		}
 	}
 
 	if q.Has("pinned-position") {
@@ -110,36 +148,28 @@ func SteamShortcutHandler(u *url.URL) error {
 		sgo.logoPosition.HeightPct = int(hpi)
 	}
 
-	updateAllInstalled := q.Has("update-all-installed")
-
-	return SteamShortcut(add, remove, updateAllInstalled, ii, sgo)
+	return SteamShortcut(ii, sgo)
 
 }
 
-func SteamShortcut(add []string, remove []string, updateAllInstalled bool, ii *InstallInfo, sgo *steamGridOptions) error {
+func SteamShortcut(ii *InstallInfo, sgo *steamGridOptions) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
 
-	if updateAllInstalled {
-		for id := range rdx.Keys(data.InstallInfoProperty) {
-			add = append(add, id)
-		}
-	}
-
-	if len(add) == 0 && len(remove) == 0 {
+	if len(sgo.additions) == 0 && len(sgo.removals) == 0 {
 		return errors.New("steam-shortcut requires product ids to add or remove")
 	}
 
-	if len(remove) > 0 {
-		if err = removeSteamShortcut(rdx, remove...); err != nil {
+	if len(sgo.removals) > 0 {
+		if err = removeSteamShortcut(rdx, sgo.removals...); err != nil {
 			return err
 		}
 	}
 
-	for _, id := range add {
+	for _, id := range sgo.additions {
 		if err = addSteamShortcut(id, ii.OperatingSystem, ii.LangCode, sgo, rdx, ii.force); err != nil {
 			return err
 		}
@@ -236,31 +266,7 @@ func addSteamShortcutsForUser(loginUser string,
 		}
 	}
 
-	productDetails, err := getProductDetails(id, rdx, force)
-	if err != nil {
-		return err
-	}
-
-	var steamAppId string
-
-	if sgo.steamRun {
-		steamAppId = id
-	} else {
-		if sai, ok := rdx.GetLastVal(vangogh_integration.SteamAppIdProperty, id); ok && sai != "" {
-			steamAppId = sai
-		} else {
-			sgo.useSteamAssets = false
-		}
-	}
-
-	switch sgo.useSteamAssets {
-	case true:
-		err = fetchSteamGridImages(loginUser, steamAppId, shortcut.AppId, force)
-	case false:
-		err = downloadVangoghGridImages(loginUser, shortcut.AppId, &productDetails.Images, rdx, force)
-	}
-
-	if err != nil {
+	if err = fetchSteamGridImages(loginUser, shortcut.AppId, sgo.assets, force); err != nil {
 		return err
 	}
 
@@ -332,68 +338,7 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 	return shortcut, nil
 }
 
-func downloadVangoghGridImages(loginUser string, shortcutId uint32, productImages *vangogh_integration.ProductImages, rdx redux.Readable, force bool) error {
-
-	dga := nod.Begin(" downloading GOG.com grid images...")
-	defer dga.Done()
-
-	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
-		return err
-	}
-
-	udhd, err := data.UserDataHomeDir()
-	if err != nil {
-		return err
-	}
-
-	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
-	dc := dolo.DefaultClient
-
-	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
-		dc.SetAuthorizationBearer(token)
-	}
-
-	imageProperties := make(map[vangogh_integration.ImageType]string)
-	if productImages.Image != "" {
-		imageProperties[vangogh_integration.Image] = productImages.Image
-	}
-	if productImages.VerticalImage != "" {
-		imageProperties[vangogh_integration.VerticalImage] = productImages.VerticalImage
-	}
-	if productImages.Hero != "" {
-		imageProperties[vangogh_integration.Hero] = productImages.Hero
-	} else if productImages.Background != "" {
-		imageProperties[vangogh_integration.Hero] = productImages.Background
-	}
-	if productImages.Logo != "" {
-		imageProperties[vangogh_integration.Logo] = productImages.Logo
-	}
-	if productImages.IconSquare != "" {
-		imageProperties[vangogh_integration.IconSquare] = productImages.IconSquare
-	} else if productImages.Icon != "" {
-		imageProperties[vangogh_integration.Icon] = productImages.Icon
-	}
-
-	for ip, imageId := range imageProperties {
-		imageQuery := url.Values{
-			"id": {imageId},
-		}
-
-		var srcUrl *url.URL
-		srcUrl, err = data.VangoghUrl(data.HttpImagePath, imageQuery, rdx)
-		if err != nil {
-			return err
-		}
-		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, ip)
-		if err = dc.Download(srcUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
-			dga.Error(err)
-		}
-	}
-
-	return nil
-}
-
-func fetchSteamGridImages(loginUser string, steamAppId string, shortcutId uint32, force bool) error {
+func fetchSteamGridImages(loginUser string, shortcutId uint32, gridAssets map[steam_grid.Asset]*url.URL, force bool) error {
 
 	dsa := nod.Begin(" downloading Steam grid images...")
 	defer dsa.Done()
@@ -406,16 +351,8 @@ func fetchSteamGridImages(loginUser string, steamAppId string, shortcutId uint32
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 	dc := dolo.DefaultClient
 
-	imageProperties := make(map[vangogh_integration.ImageType]string)
-	imageProperties[vangogh_integration.Image] = "header.jpg"
-	imageProperties[vangogh_integration.VerticalImage] = "library_600x900.jpg"
-	imageProperties[vangogh_integration.Hero] = "library_hero.jpg"
-	imageProperties[vangogh_integration.Logo] = "logo.png"
-
-	for ip, assetFilename := range imageProperties {
-
-		assetUrl := steam_integration.AssetUrl(steamAppId, assetFilename)
-		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, ip)
+	for asset, assetUrl := range gridAssets {
+		dstFilename := steam_grid.ImageFilename(shortcutId, asset)
 		if err = dc.Download(assetUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
 			dsa.Error(err)
 		}
@@ -435,7 +372,7 @@ func setLogoPosition(loginUser string, shortcutId uint32, lp *logoPosition) erro
 	}
 
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
-	relLogoPositionFilename := vangogh_integration.SteamGridLogoPositionFilename(shortcutId)
+	relLogoPositionFilename := steam_grid.LogoPositionFilename(shortcutId)
 
 	absLogoPositionFilename := filepath.Join(absSteamGridPath, relLogoPositionFilename)
 
@@ -456,8 +393,8 @@ func setLogoPosition(loginUser string, shortcutId uint32, lp *logoPosition) erro
 
 func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcuts []*steam_vdf.KeyValues, force bool) (bool, error) {
 
-	ansasa := nod.Begin(" adding non-Steam app shortcut for appId %d...", shortcut.AppId)
-	defer ansasa.Done()
+	asa := nod.Begin(" adding non-Steam app shortcut for appId %d...", shortcut.AppId)
+	defer asa.Done()
 
 	kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts")
 	if kvShortcuts == nil {
@@ -471,18 +408,18 @@ func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcut
 				return false, err
 			}
 
-			ansasa.EndWithResult("appended shortcut")
+			asa.EndWithResult("appended shortcut")
 		} else {
 			if err := steam_integration.UpdateShortcut(existingShortcut.Key, kvShortcuts, shortcut); err != nil {
 				return false, err
 			}
-			ansasa.EndWithResult("updated shortcut")
+			asa.EndWithResult("updated shortcut")
 		}
 		return true, nil
 
 	} else {
 
-		ansasa.EndWithResult("shortcut already exists (use -force to update)")
+		asa.EndWithResult("shortcut already exists (use -force to update)")
 		return false, nil
 
 	}
@@ -603,7 +540,7 @@ func steamStateDirExist() (bool, error) {
 
 	absSteamStatePath := filepath.Join(udhd, "Steam")
 
-	if _, err := os.Stat(absSteamStatePath); err == nil {
+	if _, err = os.Stat(absSteamStatePath); err == nil {
 		return true, nil
 	} else if os.IsNotExist(err) {
 		return false, nil
@@ -685,23 +622,16 @@ func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...st
 		}
 	}
 
-	if changed, err := removeNonSteamAppShortcut(kvUserShortcuts, removeShortcutAppIds...); err != nil {
+	var changed bool
+	if changed, err = removeNonSteamAppShortcut(kvUserShortcuts, removeShortcutAppIds...); err != nil {
 		return err
 	} else if changed {
-		if err := writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
+		if err = writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-var steamGridImageTypes = []vangogh_integration.ImageType{
-	vangogh_integration.Image,
-	vangogh_integration.VerticalImage,
-	vangogh_integration.Hero,
-	vangogh_integration.Logo,
-	vangogh_integration.Icon,
 }
 
 func removeSteamGridImages(loginUser string, shortcutId uint32) error {
@@ -716,13 +646,13 @@ func removeSteamGridImages(loginUser string, shortcutId uint32) error {
 
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 
-	for _, it := range steamGridImageTypes {
-		dstFilename := vangogh_integration.SteamGridImageFilename(shortcutId, it)
+	for _, asset := range steam_grid.ShortcutAssets {
+		dstFilename := steam_grid.ImageFilename(shortcutId, asset)
 		absDstPath := filepath.Join(absSteamGridPath, dstFilename)
-		if _, err := os.Stat(absDstPath); os.IsNotExist(err) {
+		if _, err = os.Stat(absDstPath); os.IsNotExist(err) {
 			continue
 		}
-		if err := os.Remove(absDstPath); err != nil {
+		if err = os.Remove(absDstPath); err != nil {
 			return err
 		}
 	}
