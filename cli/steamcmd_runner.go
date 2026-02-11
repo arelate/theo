@@ -125,8 +125,8 @@ func steamCmdAppUpdate(id string, operatingSystem vangogh_integration.OperatingS
 		steamCmdShutdownOnFailedCommandVariable, steamCmdTrueValue,
 		steamCmdNoPromptForPasswordVariable, steamCmdTrueValue,
 		steamCmdForcePlatformTypeVariable, strings.ToLower(operatingSystem.String()),
-		steamCmdLoginCommand, username,
 		steamCmdForceInstallDirCommand, absInstallDir,
+		steamCmdLoginCommand, username,
 		steamCmdAppUpdateCommand, id,
 		steamCmdQuitCommand)
 	if err != nil {
