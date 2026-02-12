@@ -2,7 +2,6 @@ package cli
 
 import (
 	"net/url"
-	"os"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -70,20 +69,18 @@ func SteamUninstall(steamAppId string, ii *InstallInfo) error {
 		return err
 	}
 
-	if _, err = os.Stat(steamAppInstallDir); err == nil {
-		if err = os.RemoveAll(steamAppInstallDir); err != nil {
-			return err
-		}
-	} else if os.IsNotExist(err) && !ii.force {
-		sua.EndWithResult("Steam app directory not found for %s", steamAppId)
-		return nil
-	} else if err != nil {
+	var username string
+	if un, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && un != "" {
+		username = un
+	}
+
+	if err = steamCmdAppUninstall(steamAppId, ii.OperatingSystem, steamAppInstallDir, username); err != nil {
 		return err
 	}
 
-	if err = unpinInstallInfo(steamAppId, ii, rdx); err != nil {
-		return err
-	}
+	//if err = unpinInstallInfo(steamAppId, ii, rdx); err != nil {
+	//	return err
+	//}
 
 	if err = removeSteamShortcut(rdx, steamAppId); err != nil {
 		return err

@@ -16,6 +16,7 @@ const (
 	steamCmdForceInstallDirCommand = "+force_install_dir"
 	steamCmdAppUpdateCommand       = "+app_update"
 	steamCmdAppInfoPrintCommand    = "+app_info_print"
+	steamCmdAppUninstallCommand    = "+app_uninstall"
 	steamCmdLogoutCommand          = "+logout"
 	steamCmdQuitCommand            = "+quit"
 )
@@ -119,7 +120,7 @@ func steamCmdAppInfoPrint(id string, username string) (string, error) {
 	return sb.String(), nil
 }
 
-func steamCmdAppUpdate(id string, operatingSystem vangogh_integration.OperatingSystem, absInstallDir string, username string) error {
+func steamCmdAppUpdate(id string, operatingSystem vangogh_integration.OperatingSystem, absInstallDir, username string) error {
 
 	steamAppUpdateCmd, err := steamCmdRunner(
 		steamCmdShutdownOnFailedCommandVariable, steamCmdTrueValue,
@@ -134,4 +135,22 @@ func steamCmdAppUpdate(id string, operatingSystem vangogh_integration.OperatingS
 	}
 
 	return steamAppUpdateCmd.Run()
+}
+
+func steamCmdAppUninstall(id string, operatingSystem vangogh_integration.OperatingSystem, absInstallDir, username string) error {
+
+	steamAppUninstallCmd, err := steamCmdRunner(
+		steamCmdShutdownOnFailedCommandVariable, steamCmdTrueValue,
+		steamCmdNoPromptForPasswordVariable, steamCmdTrueValue,
+		steamCmdForcePlatformTypeVariable, strings.ToLower(operatingSystem.String()),
+		steamCmdForceInstallDirCommand, absInstallDir,
+		steamCmdLoginCommand, username,
+		steamCmdAppUninstallCommand, id,
+		steamCmdQuitCommand)
+	if err != nil {
+		return err
+	}
+
+	return steamAppUninstallCmd.Run()
+
 }
