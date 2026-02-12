@@ -129,6 +129,10 @@ func checkProductUpdates(id string, rdx redux.Writeable, force bool) ([]*Install
 				return nil, err
 			}
 
+			if installedInfo.SteamInstall {
+				continue
+			}
+
 			if updated, err := isInstalledInfoUpdated(id, &installedInfo, rdx, force); updated && err == nil {
 				updatedInstalledInfo = append(updatedInstalledInfo, &installedInfo)
 			} else if err != nil {
