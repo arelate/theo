@@ -160,7 +160,7 @@ func AbsSteamPrefixDir(steamAppId string) (string, error) {
 
 	steamPrefixesDir := Pwd.AbsRelDirPath(SteamPrefixes, Wine)
 
-	return filepath.Join(steamPrefixesDir, appInfo.Common.Name), nil
+	return filepath.Join(steamPrefixesDir, pathways.Sanitize(appInfo.Common.Name)), nil
 }
 
 func AbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
