@@ -6,14 +6,18 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/arelate/southern_light/gog_integration"
+	"github.com/arelate/southern_light/steam_appinfo"
+	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
 )
@@ -90,22 +94,28 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode); err != nil {
+	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, setSteamInstall); err != nil {
 		return err
 	}
 
 	printInstallInfoParams(ii, true, id)
 
-	if err = checkProductType(id, rdx, ii.force); err != nil {
-		return err
-	}
-
 	if err = setLastRunDate(rdx, id); err != nil {
 		return err
 	}
 
-	if err = osRun(id, ii, rdx, et); err != nil {
-		return err
+	switch ii.SteamInstall {
+	case true:
+		if err = steamRun(id, ii, rdx, et); err != nil {
+			return err
+		}
+	default:
+		if err = checkProductType(id, rdx, ii.force); err != nil {
+			return err
+		}
+		if err = osRun(id, ii, rdx, et); err != nil {
+			return err
+		}
 	}
 
 	playSessionDuration := time.Since(playSessionStart)
@@ -423,4 +433,91 @@ func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *
 	default:
 		return operatingSystem.ErrUnsupported()
 	}
+}
+
+func windowsToNixPath(wp string) string {
+	return strings.Replace(wp, "\\", "/", -1)
+}
+
+func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
+
+	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
+	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
+	if err != nil {
+		return err
+	}
+
+	appInfoRc, err := kvSteamAppInfo.Get(steamAppId)
+	if err != nil {
+		return err
+	}
+	defer appInfoRc.Close()
+
+	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
+	if err != nil {
+		return err
+	}
+
+	appInfo, err := steam_appinfo.AppInfoVdf(appInfoKeyValues)
+	if err != nil {
+		return err
+	}
+
+	et, err = steamExecTask(appInfo, ii, rdx, et)
+	if err != nil {
+		return err
+	}
+
+	return osExec(steamAppId, ii.OperatingSystem, et)
+}
+
+func steamExecTask(appInfo *steam_appinfo.AppInfo, ii *InstallInfo, rdx redux.Readable, et *execTask) (*execTask, error) {
+
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(appInfo.AppId, ii.OperatingSystem, rdx)
+	if err != nil {
+		return nil, err
+	}
+
+	absSteamPrefixDir, err := data.AbsSteamPrefixDir(appInfo.AppId)
+	if err != nil {
+		return nil, err
+	}
+
+	et.prefix = absSteamPrefixDir
+
+	// TODO: better detect default launch task
+	for _, slc := range appInfo.Config.Launch {
+		osList := vangogh_integration.ParseManyOperatingSystems(strings.Split(slc.Config.OsList, ","))
+		if slices.Contains(osList, ii.OperatingSystem) {
+
+			exe := slc.Executable
+
+			switch ii.OperatingSystem {
+			case vangogh_integration.MacOS:
+				fallthrough
+			case vangogh_integration.Linux:
+				exe = windowsToNixPath(exe)
+			case vangogh_integration.Windows:
+				switch data.CurrentOs() {
+				case vangogh_integration.MacOS:
+					fallthrough
+				case vangogh_integration.Linux:
+					exe = windowsToNixPath(exe)
+				default:
+					return nil, data.CurrentOs().ErrUnsupported()
+				}
+			default:
+				return nil, data.CurrentOs().ErrUnsupported()
+			}
+
+			et.name = appInfo.Common.Name
+			et.exe = filepath.Join(steamAppInstallDir, exe)
+			et.workDir = filepath.Join(steamAppInstallDir, windowsToNixPath(slc.WorkingDir))
+			et.args = append(et.args, strings.Split(slc.Arguments, " ")...)
+
+			break
+		}
+	}
+
+	return et, nil
 }

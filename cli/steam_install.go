@@ -140,7 +140,6 @@ func SteamInstall(steamAppId string, ii *InstallInfo) error {
 
 	sgo := &steamGridOptions{
 		additions:    []string{steamAppId},
-		steamRun:     true,
 		assets:       shortcutAssets,
 		name:         appInfo.Common.Name,
 		installDir:   steamAppInstallDir,

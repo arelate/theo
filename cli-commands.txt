@@ -119,14 +119,6 @@ steam-install
     verbose
     force
 
-steam-run
-    id*^
-    os*={operating-systems^}
-    proton-runtime=proton-ge,umu-proton
-    steam-proton-runtime={steam-proton-runtimes}
-    proton-options&=enable-wayland,prefer-sdl,disable-hidraw,enable-hdr,no-steaminput
-    verbose
-
 steam-shortcut
     add&
     remove&
@@ -140,7 +132,6 @@ steam-shortcut
     pinned-position=BottomLeft,BottomCenter,CenterCenter,UpperCenter
     width-pct
     height-pct
-    steam-run
     force
 
 steam-uninstall

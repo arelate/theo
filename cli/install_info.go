@@ -22,6 +22,7 @@ const (
 	currentOsThenWindows resolutionPolicy = iota
 	installedOperatingSystem
 	installedLangCode
+	setSteamInstall
 )
 
 type InstallInfo struct {
@@ -233,6 +234,38 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 	}
 }
 
+func installedInfoSteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (bool, error) {
+	iisia := nod.Begin(" checking if %s is a Steam install...", id)
+	defer iisia.Done()
+
+	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+		switch len(installedInfoLines) {
+		case 0:
+			return false, errors.New("zero length installed info for " + id)
+		default:
+
+			for _, line := range installedInfoLines {
+
+				var ii InstallInfo
+				if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
+					return false, err
+				}
+
+				if ii.OperatingSystem != operatingSystem {
+					continue
+				}
+
+				return ii.SteamInstall, nil
+
+			}
+		}
+	} else {
+		return false, errors.New("no installation found for " + id)
+	}
+	return false, nil
+}
+
 func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable, policies ...resolutionPolicy) error {
 
 	nod.Log("resolveInstallInfo: policies %v", policies)
@@ -308,6 +341,16 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *van
 		nod.Log("resolveInstallInfo: resolved %s=%s",
 			vangogh_integration.LanguageCodeProperty,
 			installInfo.LangCode)
+	}
+
+	if slices.Contains(policies, setSteamInstall) {
+
+		if steamInstall, err := installedInfoSteamInstall(id, installInfo.OperatingSystem, rdx); err == nil {
+			installInfo.SteamInstall = steamInstall
+		} else {
+			return err
+		}
+
 	}
 
 	return nil

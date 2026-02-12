@@ -25,10 +25,9 @@ const (
 )
 
 const (
-	vangoghRunTemplate = "run {id}"
-	steamRunTemplate   = "steam-run {id}"
-	osTemplate         = "-os {operating-system}"
-	langCodeTemplate   = "-lang-code {lang-code}"
+	runTemplate      = "run {id}"
+	osTemplate       = "-os {operating-system}"
+	langCodeTemplate = "-lang-code {lang-code}"
 )
 
 const (
@@ -45,7 +44,6 @@ type gridLogoPosition struct {
 type steamGridOptions struct {
 	additions    []string
 	removals     []string
-	steamRun     bool
 	name         string
 	installDir   string
 	assets       map[steam_grid.Asset]*url.URL
@@ -63,7 +61,6 @@ func SteamShortcutHandler(u *url.URL) error {
 	q := u.Query()
 
 	sgo := &steamGridOptions{
-		steamRun:     q.Has("steam-run"),
 		logoPosition: defaultLogoPosition(),
 	}
 
@@ -305,18 +302,8 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 
 	launchOptions := make([]string, 0, 3)
 
-	var runTemplate string
-	if sgo.steamRun {
-		runTemplate = steamRunTemplate
-	} else {
-		runTemplate = vangoghRunTemplate
-	}
-
 	launchOptions = append(launchOptions, strings.Replace(runTemplate, "{id}", id, 1))
 	launchOptions = append(launchOptions, strings.Replace(osTemplate, "{operating-system}", operatingSystem.String(), 1))
-	if !sgo.steamRun {
-		launchOptions = append(launchOptions, strings.Replace(langCodeTemplate, "{lang-code}", langCode, 1))
-	}
 
 	var installedPath string
 	if sgo.installDir != "" {
