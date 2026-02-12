@@ -69,18 +69,13 @@ func SteamUninstall(steamAppId string, ii *InstallInfo) error {
 		return err
 	}
 
-	var username string
-	if un, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && un != "" {
-		username = un
-	}
-
-	if err = steamCmdAppUninstall(steamAppId, ii.OperatingSystem, steamAppInstallDir, username); err != nil {
+	if err = steamCmdAppUninstall(steamAppId, ii.OperatingSystem, steamAppInstallDir); err != nil {
 		return err
 	}
 
-	//if err = unpinInstallInfo(steamAppId, ii, rdx); err != nil {
-	//	return err
-	//}
+	if err = unpinInstallInfo(steamAppId, ii, rdx); err != nil {
+		return err
+	}
 
 	if err = removeSteamShortcut(rdx, steamAppId); err != nil {
 		return err

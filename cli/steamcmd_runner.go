@@ -137,14 +137,14 @@ func steamCmdAppUpdate(id string, operatingSystem vangogh_integration.OperatingS
 	return steamAppUpdateCmd.Run()
 }
 
-func steamCmdAppUninstall(id string, operatingSystem vangogh_integration.OperatingSystem, absInstallDir, username string) error {
+func steamCmdAppUninstall(id string, operatingSystem vangogh_integration.OperatingSystem, absInstallDir string) error {
 
 	steamAppUninstallCmd, err := steamCmdRunner(
 		steamCmdShutdownOnFailedCommandVariable, steamCmdTrueValue,
 		steamCmdNoPromptForPasswordVariable, steamCmdTrueValue,
 		steamCmdForcePlatformTypeVariable, strings.ToLower(operatingSystem.String()),
 		steamCmdForceInstallDirCommand, absInstallDir,
-		steamCmdLoginCommand, username,
+		steamCmdLoginCommand, steamCmdAnonymousValue,
 		steamCmdAppUninstallCommand, id,
 		steamCmdQuitCommand)
 	if err != nil {
