@@ -487,7 +487,13 @@ func steamExecTask(appInfo *steam_appinfo.AppInfo, ii *InstallInfo, rdx redux.Re
 
 	// TODO: better detect default launch task
 	for _, slc := range appInfo.Config.Launch {
-		osList := vangogh_integration.ParseManyOperatingSystems(strings.Split(slc.Config.OsList, ","))
+
+		var osList []vangogh_integration.OperatingSystem
+		if slc.Config.OsList != "" {
+			osList = vangogh_integration.ParseManyOperatingSystems(strings.Split(slc.Config.OsList, ","))
+		} else {
+			osList = []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
+		}
 		if slices.Contains(osList, ii.OperatingSystem) {
 
 			exe := slc.Executable
