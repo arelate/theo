@@ -231,7 +231,7 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 }
 
 func installedInfoOrigin(id string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (data.Origin, error) {
-	iisia := nod.Begin(" checking if %s is a Steam install...", id)
+	iisia := nod.Begin(" checking installed origin for %s...", id)
 	defer iisia.Done()
 
 	distinctOrigins := make([]data.Origin, 0)
