@@ -24,14 +24,14 @@ download
     force
 
 install
-    id^*
+    id^
+    steam-appid
     os={operating-systems^}
     lang-code={language-codes^}
     download-type&={download-types^}
     keep-downloads
     no-steam-shortcut
     env&
-    steam
     verbose
     force
 
