@@ -25,11 +25,11 @@ download
 
 install
     id^
-    steam-appid
     os={operating-systems^}
     lang-code={language-codes^}
     download-type&={download-types^}
     keep-downloads
+    steam-install
     no-steam-shortcut
     env&
     verbose
@@ -103,14 +103,6 @@ steam-fix
     id*^
     os={operating-systems^}
     steam-appid
-
-steam-install
-    id*^
-    os*={operating-systems^}
-    no-steam-shortcut
-    reveal
-    verbose
-    force
 
 steam-shortcut
     add&

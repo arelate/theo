@@ -53,7 +53,6 @@ func main() {
 		"setup-steamcmd":   cli.SetupSteamCmdHandler,
 		"setup-wine":       cli.SetupWineHandler,
 		"steam-fix":        cli.SteamFixHandler,
-		"steam-install":    cli.SteamInstallHandler,
 		"steam-shortcut":   cli.SteamShortcutHandler,
 		"uninstall":        cli.UninstallHandler,
 		"update":           cli.UpdateHandler,

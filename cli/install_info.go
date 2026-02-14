@@ -22,6 +22,7 @@ const (
 	currentOsThenWindows resolutionPolicy = iota
 	installedOperatingSystem
 	installedLangCode
+	setSteamInstall
 )
 
 type InstallInfo struct {
@@ -35,7 +36,6 @@ type InstallInfo struct {
 	NoSteamShortcut     bool                                `json:"no-steam-shortcut"`
 	Env                 []string                            `json:"env"`
 	SteamInstall        bool                                `json:"steam-install,omitempty"`
-	reveal              bool                                // won't be serialized
 	verbose             bool                                // won't be serialized
 	force               bool                                // won't be serialized
 }
@@ -342,10 +342,12 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *van
 			installInfo.LangCode)
 	}
 
-	if steamInstall, err := installedInfoSteamInstall(id, installInfo.OperatingSystem, rdx); err == nil {
-		installInfo.SteamInstall = steamInstall
-	} else {
-		return err
+	if slices.Contains(policies, setSteamInstall) {
+		if steamInstall, err := installedInfoSteamInstall(id, installInfo.OperatingSystem, rdx); err == nil {
+			installInfo.SteamInstall = steamInstall
+		} else {
+			return err
+		}
 	}
 
 	return nil

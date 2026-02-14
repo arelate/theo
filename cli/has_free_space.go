@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 
 	"github.com/arelate/southern_light/vangogh_integration"
@@ -42,14 +43,7 @@ func hasFreeSpaceForProduct(
 
 func hasFreeSpaceForBytes(path string, bytes int64) (bool, error) {
 
-	var relPath string
-	if userHomeDataRel, err := data.RelToUserDataHome(path); err == nil {
-		relPath = userHomeDataRel
-	} else {
-		return false, err
-	}
-
-	hfsa := nod.Begin("checking free space at %s...", relPath)
+	hfsa := nod.Begin("checking free space at %s...", filepath.Base(path))
 	defer hfsa.Done()
 
 	currentOs := data.CurrentOs()

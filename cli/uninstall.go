@@ -54,7 +54,7 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 		return nil
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode); err != nil {
+	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, setSteamInstall); err != nil {
 		return err
 	}
 

@@ -48,7 +48,7 @@ func SteamFix(steamAppId string, ii *InstallInfo, placeSteamAppId bool) error {
 
 		// https://partner.steamgames.com/doc/sdk/api
 
-		if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem); err != nil {
+		if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem, setSteamInstall); err != nil {
 			return err
 		}
 
