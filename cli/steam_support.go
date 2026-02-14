@@ -167,21 +167,25 @@ func steamShortcutAssets(appInfo *steam_appinfo.AppInfo) (map[steam_grid.Asset]*
 		var imageId string
 		switch asset {
 		case steam_grid.Header:
-			if appInfo.Common.LibraryAssetsFull.LibraryHeader != nil {
+			if appInfo.Common.LibraryAssetsFull != nil &&
+				appInfo.Common.LibraryAssetsFull.LibraryHeader != nil {
 				imageId = appInfo.Common.LibraryAssetsFull.LibraryHeader.DefaultImage()
 			} else if dh := appInfo.Common.DefaultHeaderImage(); dh != "" {
 				imageId = dh
 			}
 		case steam_grid.LibraryCapsule:
-			if appInfo.Common.LibraryAssetsFull.LibraryCapsule != nil {
+			if appInfo.Common.LibraryAssetsFull != nil &&
+				appInfo.Common.LibraryAssetsFull.LibraryCapsule != nil {
 				imageId = appInfo.Common.LibraryAssetsFull.LibraryCapsule.DefaultImage()
 			}
 		case steam_grid.LibraryHero:
-			if appInfo.Common.LibraryAssetsFull.LibraryHero != nil {
+			if appInfo.Common.LibraryAssetsFull != nil &&
+				appInfo.Common.LibraryAssetsFull.LibraryHero != nil {
 				imageId = appInfo.Common.LibraryAssetsFull.LibraryHero.DefaultImage()
 			}
 		case steam_grid.LibraryLogo:
-			if appInfo.Common.LibraryAssetsFull.LibraryLogo != nil {
+			if appInfo.Common.LibraryAssetsFull != nil &&
+				appInfo.Common.LibraryAssetsFull.LibraryLogo != nil {
 				imageId = appInfo.Common.LibraryAssetsFull.LibraryLogo.DefaultImage()
 			}
 		case steam_grid.ClientIcon:
@@ -201,10 +205,15 @@ func steamShortcutAssets(appInfo *steam_appinfo.AppInfo) (map[steam_grid.Asset]*
 		}
 	}
 
-	shortcutLogoPosition := &logoPosition{
-		PinnedPosition: appInfo.Common.LibraryAssetsFull.LibraryLogo.PinnedPosition,
-		WidthPct:       appInfo.Common.LibraryAssetsFull.LibraryLogo.WidthPct,
-		HeightPct:      appInfo.Common.LibraryAssetsFull.LibraryLogo.HeighPct,
+	var shortcutLogoPosition *logoPosition
+	if appInfo.Common.LibraryAssetsFull != nil {
+		shortcutLogoPosition = new(logoPosition{
+			PinnedPosition: appInfo.Common.LibraryAssetsFull.LibraryLogo.PinnedPosition,
+			WidthPct:       appInfo.Common.LibraryAssetsFull.LibraryLogo.WidthPct,
+			HeightPct:      appInfo.Common.LibraryAssetsFull.LibraryLogo.HeighPct,
+		})
+	} else {
+		shortcutLogoPosition = defaultLogoPosition()
 	}
 
 	return shortcutAssets, shortcutLogoPosition, nil
