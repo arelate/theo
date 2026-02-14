@@ -349,11 +349,3 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *van
 
 	return nil
 }
-
-//func printInstallInfoParams(ii *InstallInfo, noPatches bool, ids ...string) {
-//	vangogh_integration.PrintParams(ids,
-//		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
-//		[]string{ii.LangCode},
-//		ii.DownloadTypes,
-//		noPatches)
-//}
