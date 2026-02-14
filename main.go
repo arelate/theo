@@ -21,8 +21,6 @@ var (
 	cliHelp []byte
 )
 
-const debugParam = "debug"
-
 func main() {
 
 	nod.EnableStdOutPresenter()
@@ -70,14 +68,6 @@ func main() {
 	var u *url.URL
 	if u, err = defs.Parse(os.Args[1:]); err != nil {
 		log.Fatalln(err)
-	}
-
-	if q := u.Query(); q.Has(debugParam) {
-		logger, err := nod.EnableFileLogger(u.Path, data.Pwd.AbsDirPath(data.Logs))
-		if err != nil {
-			log.Fatalln(err)
-		}
-		defer logger.Close()
 	}
 
 	if err = defs.Serve(u); err != nil {

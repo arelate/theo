@@ -30,11 +30,9 @@ install
     download-type&={download-types^}
     keep-downloads
     no-steam-shortcut
-    steam-assets
     env&
-    reveal
+    steam
     verbose
-    debug
     force
 
 list
@@ -64,7 +62,6 @@ prefix
     archive
     remove
     verbose
-    debug
     force
 
 remove-downloads
@@ -94,7 +91,6 @@ run
     steam-proton-runtime={steam-proton-runtimes}
     proton-options&=enable-wayland,prefer-sdl,disable-hidraw,enable-hdr,no-steaminput
     verbose
-    debug
     force
 
 setup-steamcmd
@@ -137,14 +133,12 @@ uninstall
     lang-code={language-codes^}
     purge
     verbose
-    debug
     force
 
 update
     id^
     all
     verbose
-    debug
     force
 
 validate
