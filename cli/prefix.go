@@ -242,7 +242,7 @@ func Prefix(id string, ii *InstallInfo,
 	}
 
 	if remove {
-		if err = removeProductPrefix(id, ii.LangCode, rdx, ii.force); err != nil {
+		if err = removeProductPrefix(id, ii, rdx); err != nil {
 			return err
 		}
 	}
@@ -366,7 +366,7 @@ func createRegFile(absPath string, content []byte) error {
 	return nil
 }
 
-func removeProductPrefix(id, langCode string, rdx redux.Readable, force bool) error {
+func removeProductPrefix(id string, ii *InstallInfo, rdx redux.Readable) error {
 	rppa := nod.Begin(" removing installed files from prefix for %s...", id)
 	defer rppa.Done()
 
@@ -384,12 +384,12 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, force bool) er
 		return nil
 	}
 
-	if !force {
+	if !ii.force {
 		rppa.EndWithResult("found prefix, use -force to remove")
 		return nil
 	}
 
-	relInventoryFiles, err := readInventory(id, new(InstallInfo{OperatingSystem: vangogh_integration.Windows, LangCode: langCode}), rdx)
+	relInventoryFiles, err := readInventory(id, ii, rdx)
 	if os.IsNotExist(err) {
 		rppa.EndWithResult("installed files inventory not found")
 		return nil

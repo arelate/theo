@@ -124,7 +124,7 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 	return nil
 }
 
-func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+func prefixPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
 	pufa := nod.Begin(" placing unpacked files for %s...", id)
 	defer pufa.Done()
@@ -140,7 +140,7 @@ func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownload
 			return ErrMissingExtractedPayload
 		}
 
-		installedAppPath, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.Windows, LangCode: link.LanguageCode}), rdx)
+		installedAppPath, err := originOsInstalledPath(id, ii, rdx)
 
 		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
 			return err
@@ -150,13 +150,13 @@ func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownload
 	return nil
 }
 
-func prefixFindGlobFile(id, langCode string, rdx redux.Readable, globPattern string) (string, error) {
+func prefixFindGlobFile(id string, ii *InstallInfo, rdx redux.Readable, globPattern string) (string, error) {
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
 		return "", nil
 	}
 
-	installedAppDir, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.Windows, LangCode: langCode}), rdx)
+	installedAppDir, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -189,16 +189,16 @@ func prefixFindGlobFile(id, langCode string, rdx redux.Readable, globPattern str
 	return "", nil
 }
 
-func prefixFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 	fpggi := nod.Begin(" finding goggame-%s.info...", id)
 	defer fpggi.Done()
 
-	return prefixFindGlobFile(id, langCode, rdx, strings.Replace(gog_integration.GogGameInfoFilenameTemplate, "{id}", id, -1))
+	return prefixFindGlobFile(id, ii, rdx, strings.Replace(gog_integration.GogGameInfoFilenameTemplate, "{id}", id, -1))
 }
 
-func prefixFindGogGamesLnk(id, langCode string, rdx redux.Readable) (string, error) {
+func prefixFindGogGamesLnk(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 	fpl := nod.Begin(" finding .lnk...")
 	defer fpl.Done()
 
-	return prefixFindGlobFile(id, langCode, rdx, lnkGlob)
+	return prefixFindGlobFile(id, ii, rdx, lnkGlob)
 }

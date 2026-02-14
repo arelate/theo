@@ -119,7 +119,7 @@ func macOsReduceBundleNameProperty(id string, dls vangogh_integration.ProductDow
 	return nil
 }
 
-func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
 	mpufa := nod.Begin(" placing unpacked files for %s...", id)
 	defer mpufa.Done()
@@ -135,7 +135,7 @@ func macOsPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadL
 			return ErrMissingExtractedPayload
 		}
 
-		absBundlePath, err := originOsInstalledPath(id, new(InstallInfo{LangCode: link.LanguageCode, OperatingSystem: vangogh_integration.MacOS}), rdx)
+		absBundlePath, err := originOsInstalledPath(id, ii, rdx)
 
 		if err = placeUnpackedLinkPayload(&link, absUnpackedPayloadPath, absBundlePath); err != nil {
 			return err
@@ -190,6 +190,7 @@ func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, 
 }
 
 func macOsPostInstallActions(id string,
+	ii *InstallInfo,
 	dls vangogh_integration.ProductDownloadLinks,
 	rdx redux.Readable,
 	unpackDir string) error {
@@ -216,7 +217,7 @@ func macOsPostInstallActions(id string,
 			return err
 		}
 
-		absBundlePath, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.MacOS, LangCode: link.LanguageCode}), rdx)
+		absBundlePath, err := originOsInstalledPath(id, ii, rdx)
 		if err != nil {
 			return err
 		}
@@ -346,9 +347,9 @@ func macOsReveal(path string) error {
 	return cmd.Run()
 }
 
-func macOsFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+func macOsFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
-	absBundlePath, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.MacOS, LangCode: langCode}), rdx)
+	absBundlePath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -363,7 +364,7 @@ func macOsFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 		// some GOG games put Contents/Resources in the top install location, not app bundle
 
 		var absInstalledPath string
-		absInstalledPath, err = originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.MacOS, LangCode: langCode}), rdx)
+		absInstalledPath, err = originOsInstalledPath(id, ii, rdx)
 		if err != nil {
 			return "", err
 		}
@@ -379,9 +380,9 @@ func macOsFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, erro
 	return "", nil
 }
 
-func macOsFindBundleApp(id, langCode string, rdx redux.Readable) (string, error) {
+func macOsFindBundleApp(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
-	absInstalledPath, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.MacOS, LangCode: langCode}), rdx)
+	absInstalledPath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return "", err
 	}

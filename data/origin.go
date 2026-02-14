@@ -1,6 +1,10 @@
 package data
 
-import "errors"
+import (
+	"errors"
+	"maps"
+	"slices"
+)
 
 type Origin int
 
@@ -25,4 +29,8 @@ func (o Origin) String() string {
 
 func (o Origin) ErrUnsupportedOrigin() error {
 	return errors.New("unsupported origin: " + o.String())
+}
+
+func AllOrigins() []string {
+	return slices.Collect(maps.Values(originStrings))
 }

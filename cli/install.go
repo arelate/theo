@@ -191,8 +191,7 @@ func Install(id string, ii *InstallInfo) error {
 		}
 
 		sgo := &steamGridOptions{
-			additions:    []string{id},
-			origin:       ii.Origin,
+			ids:          []string{id},
 			assets:       pda,
 			logoPosition: lp,
 		}
@@ -468,15 +467,15 @@ func osGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductD
 func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsPlaceUnpackedFiles(id, dls, rdx, unpackDir)
+		return macOsPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir)
 	case vangogh_integration.Linux:
-		return linuxPlaceUnpackedFiles(id, dls, rdx, unpackDir)
+		return linuxPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			return prefixPlaceUnpackedFiles(id, dls, rdx, unpackDir)
+			return prefixPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir)
 		default:
 			return ii.OperatingSystem.ErrUnsupported()
 		}
@@ -526,7 +525,7 @@ func placeUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLink, abs
 func osPostInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsPostInstallActions(id, dls, rdx, unpackDir)
+		return macOsPostInstallActions(id, ii, dls, rdx, unpackDir)
 	default:
 		return nil
 	}

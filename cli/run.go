@@ -260,7 +260,7 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 	var absGogGameInfoPath string
 	switch et.defaultLauncher {
 	case false:
-		absGogGameInfoPath, err = osFindGogGameInfo(id, ii.OperatingSystem, ii.LangCode, rdx)
+		absGogGameInfoPath, err = osFindGogGameInfo(id, ii, rdx)
 		if err != nil {
 			return err
 		}
@@ -271,7 +271,7 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 	switch absGogGameInfoPath {
 	case "":
 		var absDefaultLauncherPath string
-		if absDefaultLauncherPath, err = osFindDefaultLauncher(id, ii.OperatingSystem, ii.LangCode, rdx); err != nil {
+		if absDefaultLauncherPath, err = osFindDefaultLauncher(id, ii, rdx); err != nil {
 			return err
 		}
 		if et, err = osExecTaskDefaultLauncher(absDefaultLauncherPath, ii.OperatingSystem, et); err != nil {
@@ -286,30 +286,30 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 	return osExec(id, ii.OperatingSystem, et)
 }
 
-func osFindGogGameInfo(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
+func osFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
 	var gogGameInfoPath string
 	var err error
 
-	switch operatingSystem {
+	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		gogGameInfoPath, err = macOsFindGogGameInfo(id, langCode, rdx)
+		gogGameInfoPath, err = macOsFindGogGameInfo(id, ii, rdx)
 	case vangogh_integration.Linux:
-		gogGameInfoPath, err = linuxFindGogGameInfo(id, langCode, rdx)
+		gogGameInfoPath, err = linuxFindGogGameInfo(id, ii, rdx)
 	case vangogh_integration.Windows:
 		currentOs := data.CurrentOs()
 		switch currentOs {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			gogGameInfoPath, err = prefixFindGogGameInfo(id, langCode, rdx)
+			gogGameInfoPath, err = prefixFindGogGameInfo(id, ii, rdx)
 		case vangogh_integration.Windows:
-			gogGameInfoPath, err = windowsFindGogGameInfo(id, langCode, rdx)
+			gogGameInfoPath, err = windowsFindGogGameInfo(id, ii, rdx)
 		default:
 			return "", currentOs.ErrUnsupported()
 		}
 	default:
-		return "", operatingSystem.ErrUnsupported()
+		return "", ii.OperatingSystem.ErrUnsupported()
 	}
 
 	if err != nil {
@@ -353,30 +353,30 @@ func osExecTaskGogGameInfo(absGogGameInfoPath string, operatingSystem vangogh_in
 	}
 }
 
-func osFindDefaultLauncher(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string, rdx redux.Readable) (string, error) {
+func osFindDefaultLauncher(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
 	var defaultLauncherPath string
 	var err error
 
-	switch operatingSystem {
+	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		defaultLauncherPath, err = macOsFindBundleApp(id, langCode, rdx)
+		defaultLauncherPath, err = macOsFindBundleApp(id, ii, rdx)
 	case vangogh_integration.Linux:
-		defaultLauncherPath, err = linuxFindStartSh(id, langCode, rdx)
+		defaultLauncherPath, err = linuxFindStartSh(id, ii, rdx)
 	case vangogh_integration.Windows:
 		currentOs := data.CurrentOs()
 		switch currentOs {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			defaultLauncherPath, err = prefixFindGogGamesLnk(id, langCode, rdx)
+			defaultLauncherPath, err = prefixFindGogGamesLnk(id, ii, rdx)
 		case vangogh_integration.Windows:
-			defaultLauncherPath, err = windowsFindGogGamesLnk(id, langCode, rdx)
+			defaultLauncherPath, err = windowsFindGogGamesLnk(id, ii, rdx)
 		default:
 			return "", currentOs.ErrUnsupported()
 		}
 	default:
-		return "", operatingSystem.ErrUnsupported()
+		return "", ii.OperatingSystem.ErrUnsupported()
 	}
 
 	if err != nil {

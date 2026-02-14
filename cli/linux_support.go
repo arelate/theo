@@ -106,7 +106,7 @@ func linuxRemoveLinkMojoSetupDir(link *vangogh_integration.ProductDownloadLink, 
 	return nil
 }
 
-func linuxPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+func linuxPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
 	lufa := nod.Begin(" placing unpacked files for %s...", id)
 	defer lufa.Done()
@@ -122,7 +122,7 @@ func linuxPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadL
 			return ErrMissingExtractedPayload
 		}
 
-		installedAppPath, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.Linux, LangCode: link.LanguageCode}), rdx)
+		installedAppPath, err := originOsInstalledPath(id, ii, rdx)
 
 		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
 			return err
@@ -209,9 +209,7 @@ func nixRunExecTask(et *execTask) error {
 	return cmd.Run()
 }
 
-func linuxFindStartSh(id, langCode string, rdx redux.Readable) (string, error) {
-
-	ii := new(InstallInfo{OperatingSystem: vangogh_integration.Linux, LangCode: langCode})
+func linuxFindStartSh(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
 	absInstalledPath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
@@ -275,9 +273,9 @@ func nixFreeSpace(path string) (int64, error) {
 	}
 }
 
-func linuxFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
+func linuxFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
-	absInstalledPath, err := originOsInstalledPath(id, new(InstallInfo{LangCode: langCode, OperatingSystem: vangogh_integration.Linux}), rdx)
+	absInstalledPath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return "", err
 	}
