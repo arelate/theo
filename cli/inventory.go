@@ -110,7 +110,7 @@ func removeInventoriedFiles(id string, ii *InstallInfo, rdx redux.Readable) erro
 	umpa := nod.Begin(" removing inventoried files for %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer umpa.Done()
 
-	absInstalledPath, err := osInstalledPath(id, ii, rdx)
+	absInstalledPath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
 	}

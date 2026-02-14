@@ -29,7 +29,7 @@ install
     lang-code={language-codes^}
     download-type&={download-types^}
     keep-downloads
-    steam-install
+    steam
     no-steam-shortcut
     env&
     verbose

@@ -22,12 +22,13 @@ const (
 	currentOsThenWindows resolutionPolicy = iota
 	installedOperatingSystem
 	installedLangCode
-	setSteamInstall
+	installedOrigin
 )
 
 type InstallInfo struct {
 	OperatingSystem     vangogh_integration.OperatingSystem `json:"os"`
 	LangCode            string                              `json:"lang-code"`
+	Origin              data.Origin                         `json:"origin"`
 	DownloadTypes       []vangogh_integration.DownloadType  `json:"download-types"`
 	DownloadableContent []string                            `json:"dlc"`
 	Version             string                              `json:"version"`
@@ -35,7 +36,6 @@ type InstallInfo struct {
 	KeepDownloads       bool                                `json:"keep-downloads"`
 	NoSteamShortcut     bool                                `json:"no-steam-shortcut"`
 	Env                 []string                            `json:"env"`
-	SteamInstall        bool                                `json:"steam-install,omitempty"`
 	verbose             bool                                // won't be serialized
 	force               bool                                // won't be serialized
 }
@@ -56,7 +56,7 @@ func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails)
 	}
 }
 
-func matchInstallInfo(ii *InstallInfo, lines ...string) (*InstallInfo, string, error) {
+func matchInstallInfoOsLangCode(ii *InstallInfo, lines ...string) (*InstallInfo, string, error) {
 	for _, line := range lines {
 		var installedInfo InstallInfo
 		if err := json.UnmarshalRead(strings.NewReader(line), &installedInfo); err != nil {
@@ -106,7 +106,7 @@ func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		_, installedInfoLine, err := matchInstallInfo(ii, installedInfoLines...)
+		_, installedInfoLine, err := matchInstallInfoOsLangCode(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func hasInstallInfo(id string, ii *InstallInfo, rdx redux.Readable) (bool, error
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		installInfo, _, err := matchInstallInfo(ii, installedInfoLines...)
+		installInfo, _, err := matchInstallInfoOsLangCode(ii, installedInfoLines...)
 		if err != nil {
 			return false, err
 		}
@@ -142,49 +142,65 @@ func hasInstallInfo(id string, ii *InstallInfo, rdx redux.Readable) (bool, error
 	}
 }
 
-func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integration.OperatingSystem, error) {
+type installInfoMapper func(ii *InstallInfo)
+
+func mapInstalledInfo(id string, rdx redux.Readable, mapper installInfoMapper) error {
 
 	iiosa := nod.Begin(" checking installed operating system for %s...", id)
 	defer iiosa.Done()
 
 	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
-		return vangogh_integration.AnyOperatingSystem, err
+		return err
 	}
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
 		switch len(installedInfoLines) {
 		case 0:
-			return vangogh_integration.AnyOperatingSystem, errors.New("zero length installed info for " + id)
+			return errors.New("zero length installed info for " + id)
 		default:
-
-			distinctOs := make([]vangogh_integration.OperatingSystem, 0)
 
 			for _, line := range installedInfoLines {
 
 				var ii InstallInfo
 				if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
-					return vangogh_integration.AnyOperatingSystem, err
+					return err
 				}
 
-				if !slices.Contains(distinctOs, ii.OperatingSystem) {
-					distinctOs = append(distinctOs, ii.OperatingSystem)
-				}
-
+				mapper(&ii)
 			}
-
-			switch len(distinctOs) {
-			case 0:
-				return vangogh_integration.AnyOperatingSystem, errors.New("no supported operating system for " + id)
-			case 1:
-				return distinctOs[0], nil
-			default:
-				return vangogh_integration.AnyOperatingSystem, errors.New("please specify operating system for " + id)
-			}
-
 		}
 	} else {
-		return vangogh_integration.AnyOperatingSystem, errors.New("no installation found for " + id)
+		return errors.New("no installation found for " + id)
+	}
+
+	return nil
+}
+
+func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integration.OperatingSystem, error) {
+
+	iiosa := nod.Begin(" checking installed operating system for %s...", id)
+	defer iiosa.Done()
+
+	distinctOs := make([]vangogh_integration.OperatingSystem, 0)
+
+	var distinctOsMapper = func(ii *InstallInfo) {
+		if !slices.Contains(distinctOs, ii.OperatingSystem) {
+			distinctOs = append(distinctOs, ii.OperatingSystem)
+		}
+	}
+
+	if err := mapInstalledInfo(id, rdx, distinctOsMapper); err != nil {
+		return vangogh_integration.AnyOperatingSystem, err
+	}
+
+	switch len(distinctOs) {
+	case 0:
+		return vangogh_integration.AnyOperatingSystem, errors.New("no supported operating system for " + id)
+	case 1:
+		return distinctOs[0], nil
+	default:
+		return vangogh_integration.AnyOperatingSystem, errors.New("please specify operating system for " + id)
 	}
 }
 
@@ -192,77 +208,52 @@ func installedInfoLangCode(id string, operatingSystem vangogh_integration.Operat
 	iilca := nod.Begin(" checking installed language code for %s...", id)
 	defer iilca.Done()
 
-	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+	distinctLangCodes := make([]string, 0)
 
-		switch len(installedInfoLines) {
-		case 0:
-			return "", errors.New("zero length installed info for " + id)
-		default:
-
-			distinctLangCodes := make([]string, 0)
-
-			for _, line := range installedInfoLines {
-
-				var ii InstallInfo
-				if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
-					return "", err
-				}
-
-				if ii.OperatingSystem != operatingSystem {
-					continue
-				}
-
-				if !slices.Contains(distinctLangCodes, ii.LangCode) {
-					distinctLangCodes = append(distinctLangCodes, ii.LangCode)
-				}
-
-			}
-
-			switch len(distinctLangCodes) {
-			case 0:
-				return "", errors.New("no supported language code system for " + id)
-			case 1:
-				return distinctLangCodes[0], nil
-			default:
-				return "", errors.New("please specify language code for " + id)
-			}
-
+	var distinctLangCodesMapper = func(ii *InstallInfo) {
+		if ii.OperatingSystem == operatingSystem && !slices.Contains(distinctLangCodes, ii.LangCode) {
+			distinctLangCodes = append(distinctLangCodes, ii.LangCode)
 		}
-	} else {
-		return "", errors.New("no installation found for " + id)
+	}
+
+	if err := mapInstalledInfo(id, rdx, distinctLangCodesMapper); err != nil {
+		return "", err
+	}
+
+	switch len(distinctLangCodes) {
+	case 0:
+		return "", errors.New("no supported language code for " + id)
+	case 1:
+		return distinctLangCodes[0], nil
+	default:
+		return "", errors.New("please specify language code for " + id)
 	}
 }
 
-func installedInfoSteamInstall(id string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (bool, error) {
+func installedInfoOrigin(id string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (data.Origin, error) {
 	iisia := nod.Begin(" checking if %s is a Steam install...", id)
 	defer iisia.Done()
 
-	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+	distinctOrigins := make([]data.Origin, 0)
 
-		switch len(installedInfoLines) {
-		case 0:
-			return false, errors.New("zero length installed info for " + id)
-		default:
-
-			for _, line := range installedInfoLines {
-
-				var ii InstallInfo
-				if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
-					return false, err
-				}
-
-				if ii.OperatingSystem != operatingSystem {
-					continue
-				}
-
-				return ii.SteamInstall, nil
-
-			}
+	var distinctOriginsMapper = func(ii *InstallInfo) {
+		if ii.OperatingSystem == operatingSystem && !slices.Contains(distinctOrigins, ii.Origin) {
+			distinctOrigins = append(distinctOrigins, ii.Origin)
 		}
-	} else {
-		return false, errors.New("no installation found for " + id)
 	}
-	return false, nil
+
+	if err := mapInstalledInfo(id, rdx, distinctOriginsMapper); err != nil {
+		return data.UnknownOrigin, err
+	}
+
+	switch len(distinctOrigins) {
+	case 0:
+		return data.UnknownOrigin, errors.New("no supported origins for " + id)
+	case 1:
+		return distinctOrigins[0], nil
+	default:
+		return data.UnknownOrigin, errors.New("please specify origin for " + id)
+	}
 }
 
 func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable, policies ...resolutionPolicy) error {
@@ -342,21 +333,27 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *van
 			installInfo.LangCode)
 	}
 
-	if slices.Contains(policies, setSteamInstall) {
-		if steamInstall, err := installedInfoSteamInstall(id, installInfo.OperatingSystem, rdx); err == nil {
-			installInfo.SteamInstall = steamInstall
-		} else {
-			return err
+	if installInfo.Origin == data.UnknownOrigin {
+		nod.Log("resolveInstallInfo: resolving origin...")
+
+		if slices.Contains(policies, installedOrigin) {
+			if origin, err := installedInfoOrigin(id, installInfo.OperatingSystem, rdx); err == nil {
+				installInfo.Origin = origin
+			} else {
+				return err
+			}
 		}
+
+		nod.Log("resolveInstallInfo: resolved origin=%s", installInfo.Origin)
 	}
 
 	return nil
 }
 
-func printInstallInfoParams(ii *InstallInfo, noPatches bool, ids ...string) {
-	vangogh_integration.PrintParams(ids,
-		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
-		[]string{ii.LangCode},
-		ii.DownloadTypes,
-		noPatches)
-}
+//func printInstallInfoParams(ii *InstallInfo, noPatches bool, ids ...string) {
+//	vangogh_integration.PrintParams(ids,
+//		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
+//		[]string{ii.LangCode},
+//		ii.DownloadTypes,
+//		noPatches)
+//}

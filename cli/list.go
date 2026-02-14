@@ -27,11 +27,6 @@ var steamShortcutPrintedKeys = []string{
 	"LaunchOptions",
 }
 
-const (
-	gogIdTitleTemplate      = "%s (GOG: %s)"
-	steamAppIdTitleTemplate = "%s (Steam: %s)"
-)
-
 func ListHandler(u *url.URL) error {
 
 	q := u.Query()
@@ -155,15 +150,9 @@ func listInstalled(ii *InstallInfo) error {
 				continue
 			}
 
-			title = id
-
-			idTitleTemplate := gogIdTitleTemplate
-			if installedInfo.SteamInstall {
-				idTitleTemplate = steamAppIdTitleTemplate
-			}
-
+			title = fmt.Sprintf("%s: %s", ii.Origin, id)
 			if tp, sure := rdx.GetLastVal(vangogh_integration.TitleProperty, id); sure && tp != "" {
-				title = fmt.Sprintf(idTitleTemplate, tp, id)
+				title = fmt.Sprintf("%s (%s)", tp, title)
 			}
 
 			infoLines := make([]string, 0)

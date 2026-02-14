@@ -129,7 +129,8 @@ func checkProductUpdates(id string, rdx redux.Writeable, force bool) ([]*Install
 				return nil, err
 			}
 
-			if installedInfo.SteamInstall {
+			// TODO: handle Steam updates properly
+			if installedInfo.Origin == data.SteamOrigin {
 				continue
 			}
 

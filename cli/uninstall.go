@@ -54,14 +54,14 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 		return nil
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, setSteamInstall); err != nil {
+	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, installedOrigin); err != nil {
 		return err
 	}
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
 		var installInfo *InstallInfo
-		installInfo, _, err = matchInstallInfo(ii, installedInfoLines...)
+		installInfo, _, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}
@@ -73,17 +73,13 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 	}
 
 	var installedAppDir string
-	installedAppDir, err = osInstalledPath(id, ii, rdx)
+	installedAppDir, err = originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
 	}
 
-	switch ii.SteamInstall {
-	case true:
-		if err = steamCmdAppUninstall(id, ii.OperatingSystem, installedAppDir); err != nil {
-			return err
-		}
-	default:
+	switch ii.Origin {
+	case data.VangoghOrigin:
 		if err = osUninstallProduct(id, ii, rdx); err != nil {
 			return err
 		}
@@ -99,6 +95,12 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 				return err
 			}
 		}
+	case data.SteamOrigin:
+		if err = steamCmdAppUninstall(id, ii.OperatingSystem, installedAppDir); err != nil {
+			return err
+		}
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
 	}
 
 	if purge {

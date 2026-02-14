@@ -49,12 +49,13 @@ func Reveal(id string, ii *InstallInfo, installed, downloads, backups bool) erro
 	}
 
 	if downloads {
-		if ii.SteamInstall {
-			return errors.New("revealing Steam downloads is not supported")
-		} else {
+		switch ii.Origin {
+		case data.VangoghOrigin:
 			if err := revealDownloads(id); err != nil {
 				return err
 			}
+		default:
+			return errors.New("downloads reveal not supported for " + ii.Origin.String())
 		}
 	}
 
@@ -89,7 +90,7 @@ func revealInstalled(id string, ii *InstallInfo) error {
 		ii.OperatingSystem = iios
 	}
 
-	if ii.LangCode == "" && !ii.SteamInstall {
+	if ii.Origin == data.VangoghOrigin && ii.LangCode == "" {
 		var lc string
 		lc, err = installedInfoLangCode(id, ii.OperatingSystem, rdx)
 		if err != nil {
@@ -102,13 +103,13 @@ func revealInstalled(id string, ii *InstallInfo) error {
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
 		var installedInfo *InstallInfo
-		installedInfo, _, err = matchInstallInfo(ii, installedInfoLines...)
+		installedInfo, _, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
 		if err != nil {
 			return err
 		}
 
 		if installedInfo != nil {
-			ii.SteamInstall = installedInfo.SteamInstall
+			ii.Origin = installedInfo.Origin
 			return currentOsRevealInstalled(id, ii, rdx)
 		} else {
 			ria.EndWithResult("no install found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
@@ -124,11 +125,13 @@ func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) er
 	var revealPath string
 	var err error
 
-	switch ii.SteamInstall {
-	case true:
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		revealPath, err = originOsInstalledPath(id, ii, rdx)
+	case data.SteamOrigin:
 		revealPath, err = data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx)
 	default:
-		revealPath, err = osInstalledPath(id, ii, rdx)
+		return ii.Origin.ErrUnsupportedOrigin()
 	}
 
 	if err != nil {

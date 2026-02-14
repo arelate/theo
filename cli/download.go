@@ -64,7 +64,11 @@ func Download(id string,
 	da := nod.NewProgress("downloading from the server...")
 	defer da.Done()
 
-	printInstallInfoParams(ii, true, id)
+	vangogh_integration.PrintParams([]string{id},
+		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
+		[]string{ii.LangCode},
+		ii.DownloadTypes,
+		true)
 
 	// always get the latest product details for download purposes
 	productDetails, err := getProductDetails(id, rdx, true)

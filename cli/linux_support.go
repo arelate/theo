@@ -122,7 +122,7 @@ func linuxPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownloadL
 			return ErrMissingExtractedPayload
 		}
 
-		installedAppPath, err := osInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.Linux, LangCode: link.LanguageCode}), rdx)
+		installedAppPath, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.Linux, LangCode: link.LanguageCode}), rdx)
 
 		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
 			return err
@@ -213,7 +213,7 @@ func linuxFindStartSh(id, langCode string, rdx redux.Readable) (string, error) {
 
 	ii := new(InstallInfo{OperatingSystem: vangogh_integration.Linux, LangCode: langCode})
 
-	absInstalledPath, err := osInstalledPath(id, ii, rdx)
+	absInstalledPath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return "", err
 	}
@@ -277,7 +277,7 @@ func nixFreeSpace(path string) (int64, error) {
 
 func linuxFindGogGameInfo(id, langCode string, rdx redux.Readable) (string, error) {
 
-	absInstalledPath, err := osInstalledPath(id, new(InstallInfo{LangCode: langCode, OperatingSystem: vangogh_integration.Linux}), rdx)
+	absInstalledPath, err := originOsInstalledPath(id, new(InstallInfo{LangCode: langCode, OperatingSystem: vangogh_integration.Linux}), rdx)
 	if err != nil {
 		return "", err
 	}

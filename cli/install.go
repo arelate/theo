@@ -44,11 +44,15 @@ func InstallHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
+		Origin:          data.VangoghOrigin,
 		KeepDownloads:   q.Has("keep-downloads"),
-		SteamInstall:    q.Has("steam-install"),
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
 		verbose:         q.Has("verbose"),
 		force:           q.Has("force"),
+	}
+
+	if q.Has("steam") {
+		ii.Origin = data.SteamOrigin
 	}
 
 	if q.Has("env") {
@@ -72,20 +76,17 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	printInstallInfoParams(ii, true, id)
+	vangogh_integration.PrintParams([]string{id},
+		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
+		[]string{ii.LangCode},
+		ii.DownloadTypes,
+		true)
 
 	var productDetails *vangogh_integration.ProductDetails
 	var appInfo *steam_appinfo.AppInfo
 
-	switch ii.SteamInstall {
-	case true:
-		appInfo, err = getSteamAppInfo(id, ii, rdx)
-		if err != nil {
-			return err
-		}
-
-		productDetails = steamProductDetails(appInfo)
-	default:
+	switch ii.Origin {
+	case data.VangoghOrigin:
 		// always getting the latest product details for install purposes
 		productDetails, err = getProductDetails(id, rdx, true)
 		if err != nil {
@@ -109,6 +110,15 @@ func Install(id string, ii *InstallInfo) error {
 		default:
 			return errors.New("unknown product type " + productDetails.ProductType)
 		}
+	case data.SteamOrigin:
+		appInfo, err = getSteamAppInfo(id, ii, rdx)
+		if err != nil {
+			return err
+		}
+
+		productDetails = steamProductDetails(appInfo)
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
 	}
 
 	if err = resolveInstallInfo(id, ii, productDetails, rdx, currentOsThenWindows); err != nil {
@@ -123,7 +133,7 @@ func Install(id string, ii *InstallInfo) error {
 		if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
 			var installInfo *InstallInfo
-			installInfo, _, err = matchInstallInfo(ii, installedInfoLines...)
+			installInfo, _, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
 			if err != nil {
 				return err
 			}
@@ -139,12 +149,8 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	switch ii.SteamInstall {
-	case true:
-		if err = steamUpdateApp(id, ii.OperatingSystem, rdx); err != nil {
-			return err
-		}
-	default:
+	switch ii.Origin {
+	case data.VangoghOrigin:
 		if err = Download(id, ii, nil, rdx); err != nil {
 			return err
 		}
@@ -153,9 +159,15 @@ func Install(id string, ii *InstallInfo) error {
 			return err
 		}
 
-		if err = installProduct(id, ii, productDetails, rdx); err != nil {
+		if err = vangoghInstallProduct(id, ii, productDetails, rdx); err != nil {
 			return err
 		}
+	case data.SteamOrigin:
+		if err = steamUpdateApp(id, ii.OperatingSystem, rdx); err != nil {
+			return err
+		}
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
 	}
 
 	if !ii.NoSteamShortcut {
@@ -163,13 +175,15 @@ func Install(id string, ii *InstallInfo) error {
 		var pda map[steam_grid.Asset]*url.URL
 		var lp *logoPosition
 
-		switch ii.SteamInstall {
-		case true:
+		switch ii.Origin {
+		case data.VangoghOrigin:
+			pda, lp, err = vangoghShortcutAssets(productDetails, rdx)
+		case data.SteamOrigin:
 			if appInfo != nil {
 				pda, lp, err = steamShortcutAssets(appInfo)
 			}
 		default:
-			pda, lp, err = vangoghShortcutAssets(productDetails, rdx)
+			return ii.Origin.ErrUnsupportedOrigin()
 		}
 
 		if err != nil {
@@ -178,7 +192,7 @@ func Install(id string, ii *InstallInfo) error {
 
 		sgo := &steamGridOptions{
 			additions:    []string{id},
-			steamInstall: ii.SteamInstall,
+			origin:       ii.Origin,
 			assets:       pda,
 			logoPosition: lp,
 		}
@@ -188,10 +202,15 @@ func Install(id string, ii *InstallInfo) error {
 		}
 	}
 
-	if !ii.KeepDownloads && !ii.SteamInstall {
-		if err = RemoveDownloads(id, ii, rdx); err != nil {
-			return err
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		if !ii.KeepDownloads {
+			if err = RemoveDownloads(id, ii, rdx); err != nil {
+				return err
+			}
 		}
+	default:
+		// do nothing
 	}
 
 	if err = pinInstallInfo(id, ii, rdx); err != nil {
@@ -206,7 +225,7 @@ func Install(id string, ii *InstallInfo) error {
 	return nil
 }
 
-func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
+func vangoghInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
 
 	ipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer ipa.Done()
@@ -288,7 +307,7 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 	}
 
 	// 6
-	absInstalledDir, err := osInstalledPath(id, ii, rdx)
+	absInstalledDir, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
 	}
@@ -529,42 +548,44 @@ func removeNewFiles(oldSet, newSet []string) error {
 	return nil
 }
 
-func osInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
+func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
-	if ii.SteamInstall {
-
+	switch ii.Origin {
+	case data.SteamOrigin:
 		if steamAppInstallDir, err := data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx); err == nil {
 			return steamAppInstallDir, nil
 		} else {
 			return "", err
 		}
-	}
+	case data.VangoghOrigin:
+		installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
-	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
+		osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(ii.OperatingSystem, ii.LangCode))
 
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(ii.OperatingSystem, ii.LangCode))
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
-		return "", err
-	}
-
-	var installedPath string
-	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
-		installedPath = slug
-	} else {
-		return "", errors.New("slug is not defined for product " + id)
-	}
-
-	switch ii.OperatingSystem {
-	case vangogh_integration.MacOS:
-		if bundleName, sure := rdx.GetLastVal(data.BundleNameProperty, id); sure && bundleName != "" {
-			installedPath = filepath.Join(installedPath, bundleName)
+		if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
+			return "", err
 		}
-	default:
-		// do nothing
-	}
 
-	return filepath.Join(osLangInstalledAppsDir, installedPath), nil
+		var installedPath string
+		if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
+			installedPath = slug
+		} else {
+			return "", errors.New("slug is not defined for product " + id)
+		}
+
+		switch ii.OperatingSystem {
+		case vangogh_integration.MacOS:
+			if bundleName, sure := rdx.GetLastVal(data.BundleNameProperty, id); sure && bundleName != "" {
+				installedPath = filepath.Join(installedPath, bundleName)
+			}
+		default:
+			// do nothing
+		}
+
+		return filepath.Join(osLangInstalledAppsDir, installedPath), nil
+	default:
+		return "", ii.Origin.ErrUnsupportedOrigin()
+	}
 }
 
 func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, *logoPosition, error) {

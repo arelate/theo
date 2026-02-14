@@ -54,7 +54,11 @@ func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	rda := nod.NewProgress("removing downloads...")
 	defer rda.Done()
 
-	printInstallInfoParams(ii, true, id)
+	vangogh_integration.PrintParams([]string{id},
+		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
+		[]string{ii.LangCode},
+		ii.DownloadTypes,
+		true)
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 

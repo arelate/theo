@@ -94,28 +94,34 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, setSteamInstall); err != nil {
+	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, installedOrigin); err != nil {
 		return err
 	}
 
-	printInstallInfoParams(ii, true, id)
+	vangogh_integration.PrintParams([]string{id},
+		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
+		[]string{ii.LangCode},
+		ii.DownloadTypes,
+		true)
 
 	if err = setLastRunDate(rdx, id); err != nil {
 		return err
 	}
 
-	switch ii.SteamInstall {
-	case true:
-		if err = steamRun(id, ii, rdx, et); err != nil {
-			return err
-		}
-	default:
+	switch ii.Origin {
+	case data.VangoghOrigin:
 		if err = checkProductType(id, rdx, ii.force); err != nil {
 			return err
 		}
 		if err = osRun(id, ii, rdx, et); err != nil {
 			return err
 		}
+	case data.SteamOrigin:
+		if err = steamRun(id, ii, rdx, et); err != nil {
+			return err
+		}
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
 	}
 
 	playSessionDuration := time.Since(playSessionStart)

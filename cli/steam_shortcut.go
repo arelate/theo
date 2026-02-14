@@ -45,7 +45,7 @@ type steamGridOptions struct {
 	additions    []string
 	removals     []string
 	name         string
-	steamInstall bool
+	origin       data.Origin
 	assets       map[steam_grid.Asset]*url.URL
 	logoPosition *logoPosition
 }
@@ -305,7 +305,7 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 	launchOptions = append(launchOptions, strings.Replace(runTemplate, "{id}", id, 1))
 	launchOptions = append(launchOptions, strings.Replace(osTemplate, "{operating-system}", operatingSystem.String(), 1))
 
-	installedPath, err := osInstalledPath(id, new(InstallInfo{OperatingSystem: operatingSystem, LangCode: langCode, SteamInstall: sgo.steamInstall}), rdx)
+	installedPath, err := originOsInstalledPath(id, new(InstallInfo{OperatingSystem: operatingSystem, LangCode: langCode, Origin: sgo.origin}), rdx)
 	if err != nil {
 		return nil, err
 	}
