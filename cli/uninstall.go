@@ -70,20 +70,38 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 			ua.EndWithResult("no install info found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
 			return nil
 		}
-
 	}
 
-	if err = osUninstallProduct(id, ii, rdx); err != nil {
+	var installedAppDir string
+	installedAppDir, err = osInstalledPath(id, ii, rdx)
+	if err != nil {
 		return err
 	}
 
-	if purge {
-		var installedAppDir string
-		installedAppDir, err = osInstalledPath(id, ii.LangCode, ii.OperatingSystem, rdx)
+	switch ii.SteamInstall {
+	case true:
+		if err = steamCmdAppUninstall(id, ii.OperatingSystem, installedAppDir); err != nil {
+			return err
+		}
+	default:
+		if err = osUninstallProduct(id, ii, rdx); err != nil {
+			return err
+		}
+
+		var absInventoryFilename string
+		absInventoryFilename, err = data.AbsInventoryFilename(id, ii.LangCode, ii.OperatingSystem, rdx)
 		if err != nil {
 			return err
 		}
 
+		if _, err = os.Stat(absInventoryFilename); err == nil {
+			if err = os.Remove(absInventoryFilename); err != nil {
+				return err
+			}
+		}
+	}
+
+	if purge {
 		if _, err = os.Stat(installedAppDir); err == nil {
 			if err = os.RemoveAll(installedAppDir); err != nil {
 				return err
@@ -103,17 +121,6 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 		}
 	}
 
-	absInventoryFilename, err := data.AbsInventoryFilename(id, ii.LangCode, ii.OperatingSystem, rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(absInventoryFilename); err == nil {
-		if err = os.Remove(absInventoryFilename); err != nil {
-			return err
-		}
-	}
-
 	if err = unpinInstallInfo(id, ii, rdx); err != nil {
 		return err
 	}
@@ -123,7 +130,6 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 	}
 
 	return nil
-
 }
 
 func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
@@ -131,7 +137,7 @@ func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	oupa := nod.Begin(" uninstalling %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer oupa.Done()
 
-	if err := removeInventoriedFiles(id, ii.LangCode, ii.OperatingSystem, rdx); err != nil {
+	if err := removeInventoriedFiles(id, ii, rdx); err != nil {
 		return err
 	}
 

@@ -56,9 +56,9 @@ func getInventory(operatingSystem vangogh_integration.OperatingSystem, dls vango
 	return slices.Sorted(maps.Keys(filesMap)), nil
 }
 
-func readInventory(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) ([]string, error) {
+func readInventory(id string, ii *InstallInfo, rdx redux.Readable) ([]string, error) {
 
-	absInventoryFilename, err := data.AbsInventoryFilename(id, langCode, operatingSystem, rdx)
+	absInventoryFilename, err := data.AbsInventoryFilename(id, ii.LangCode, ii.OperatingSystem, rdx)
 	if err != nil {
 		return nil, err
 	}
@@ -105,12 +105,12 @@ func writeInventory(id, langCode string, operatingSystem vangogh_integration.Ope
 	return json.MarshalWrite(inventoryFile, inventory)
 }
 
-func removeInventoriedFiles(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
+func removeInventoriedFiles(id string, ii *InstallInfo, rdx redux.Readable) error {
 
-	umpa := nod.Begin(" removing inventoried files for %s %s-%s...", id, operatingSystem, langCode)
+	umpa := nod.Begin(" removing inventoried files for %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer umpa.Done()
 
-	absInstalledPath, err := osInstalledPath(id, langCode, operatingSystem, rdx)
+	absInstalledPath, err := osInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
 	}
@@ -120,7 +120,7 @@ func removeInventoriedFiles(id, langCode string, operatingSystem vangogh_integra
 		return nil
 	}
 
-	relInventory, err := readInventory(id, langCode, operatingSystem, rdx)
+	relInventory, err := readInventory(id, ii, rdx)
 	if err != nil {
 		return err
 	}

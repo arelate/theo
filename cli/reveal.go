@@ -128,7 +128,7 @@ func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) er
 	case true:
 		revealPath, err = data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx)
 	default:
-		revealPath, err = osInstalledPath(id, ii.LangCode, ii.OperatingSystem, rdx)
+		revealPath, err = osInstalledPath(id, ii, rdx)
 	}
 
 	if err != nil {

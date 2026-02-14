@@ -94,7 +94,7 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, setSteamInstall); err != nil {
+	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode); err != nil {
 		return err
 	}
 

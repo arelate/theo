@@ -22,7 +22,6 @@ const (
 	currentOsThenWindows resolutionPolicy = iota
 	installedOperatingSystem
 	installedLangCode
-	setSteamInstall
 )
 
 type InstallInfo struct {
@@ -343,14 +342,10 @@ func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *van
 			installInfo.LangCode)
 	}
 
-	if slices.Contains(policies, setSteamInstall) {
-
-		if steamInstall, err := installedInfoSteamInstall(id, installInfo.OperatingSystem, rdx); err == nil {
-			installInfo.SteamInstall = steamInstall
-		} else {
-			return err
-		}
-
+	if steamInstall, err := installedInfoSteamInstall(id, installInfo.OperatingSystem, rdx); err == nil {
+		installInfo.SteamInstall = steamInstall
+	} else {
+		return err
 	}
 
 	return nil

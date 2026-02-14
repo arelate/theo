@@ -309,7 +309,7 @@ func createSteamShortcut(loginUser string, id string, operatingSystem vangogh_in
 	if sgo.installDir != "" {
 		installedPath = sgo.installDir
 	} else {
-		installedPath, err = osInstalledPath(id, langCode, operatingSystem, rdx)
+		installedPath, err = osInstalledPath(id, new(InstallInfo{OperatingSystem: operatingSystem, LangCode: langCode}), rdx)
 		if err != nil {
 			return nil, err
 		}
@@ -594,7 +594,6 @@ func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...st
 
 	for _, id := range ids {
 
-		// TODO: steam-install created shortcuts can't be deleted since they don't have title
 		var title string
 		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
 			title = tp

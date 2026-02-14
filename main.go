@@ -58,7 +58,6 @@ func main() {
 		"steam-fix":        cli.SteamFixHandler,
 		"steam-install":    cli.SteamInstallHandler,
 		"steam-shortcut":   cli.SteamShortcutHandler,
-		"steam-uninstall":  cli.SteamUninstallHandler,
 		"uninstall":        cli.UninstallHandler,
 		"update":           cli.UpdateHandler,
 		"validate":         cli.ValidateHandler,

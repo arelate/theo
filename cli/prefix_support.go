@@ -140,7 +140,7 @@ func prefixPlaceUnpackedFiles(id string, dls vangogh_integration.ProductDownload
 			return ErrMissingExtractedPayload
 		}
 
-		installedAppPath, err := osInstalledPath(id, link.LanguageCode, vangogh_integration.Windows, rdx)
+		installedAppPath, err := osInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.Windows, LangCode: link.LanguageCode}), rdx)
 
 		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
 			return err
@@ -156,7 +156,7 @@ func prefixFindGlobFile(id, langCode string, rdx redux.Readable, globPattern str
 		return "", nil
 	}
 
-	installedAppDir, err := osInstalledPath(id, langCode, vangogh_integration.Windows, rdx)
+	installedAppDir, err := osInstalledPath(id, new(InstallInfo{OperatingSystem: vangogh_integration.Windows, LangCode: langCode}), rdx)
 	if err != nil {
 		return "", err
 	}

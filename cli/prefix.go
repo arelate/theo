@@ -388,7 +388,7 @@ func removeProductPrefix(id, langCode string, rdx redux.Readable, force bool) er
 		return nil
 	}
 
-	relInventoryFiles, err := readInventory(id, langCode, vangogh_integration.Windows, rdx)
+	relInventoryFiles, err := readInventory(id, new(InstallInfo{OperatingSystem: vangogh_integration.Windows, LangCode: langCode}), rdx)
 	if os.IsNotExist(err) {
 		rppa.EndWithResult("installed files inventory not found")
 		return nil

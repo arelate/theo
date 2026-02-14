@@ -262,7 +262,7 @@ func installProduct(id string, ii *InstallInfo, productDetails *vangogh_integrat
 	}
 
 	// 6
-	absInstalledDir, err := osInstalledPath(id, ii.LangCode, ii.OperatingSystem, rdx)
+	absInstalledDir, err := osInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
 	}
@@ -503,11 +503,20 @@ func removeNewFiles(oldSet, newSet []string) error {
 	return nil
 }
 
-func osInstalledPath(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
+func osInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
+
+	if ii.SteamInstall {
+
+		if steamAppInstallDir, err := data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx); err == nil {
+			return steamAppInstallDir, nil
+		} else {
+			return "", err
+		}
+	}
 
 	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
-	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(operatingSystem, langCode))
+	osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(ii.OperatingSystem, ii.LangCode))
 
 	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
 		return "", err
@@ -520,7 +529,7 @@ func osInstalledPath(id, langCode string, operatingSystem vangogh_integration.Op
 		return "", errors.New("slug is not defined for product " + id)
 	}
 
-	switch operatingSystem {
+	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		if bundleName, sure := rdx.GetLastVal(data.BundleNameProperty, id); sure && bundleName != "" {
 			installedPath = filepath.Join(installedPath, bundleName)
