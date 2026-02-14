@@ -10,8 +10,9 @@ backup-metadata
 
 connect
     url
-    username
+    username^
     password
+    steam
     reset
 
 download
@@ -101,10 +102,6 @@ setup-steamcmd
 
 setup-wine
     force
-
-steam-connect
-    username*^
-    reset
 
 steam-fix
     id*^

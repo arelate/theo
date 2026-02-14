@@ -22,56 +22,60 @@ func ConnectHandler(u *url.URL) error {
 	username := q.Get("username")
 	password := q.Get("password")
 
+	steam := q.Has("steam")
 	reset := q.Has("reset")
 
-	return VangoghConnect(urlStr, username, password, reset)
+	return Connect(urlStr, username, password, steam, reset)
 }
 
-func VangoghConnect(
-	urlStr string,
-	username, password string,
-	reset bool) error {
+func Connect(urlStr, username, password string, steam, reset bool) error {
 
-	vca := nod.Begin("connecting to vangogh...")
-	defer vca.Done()
+	ca := nod.Begin("setting up theo connection...")
+	defer ca.Done()
 
-	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.VangoghProperties()...)
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
 
-	if reset {
-		if err = resetVangoghConnection(rdx); err != nil {
-			return err
-		}
+	switch steam {
+	case true:
+		return steamSetupConnection(username, rdx, reset)
+	default:
+		return vangoghSetupConnection(urlStr, username, password, rdx, reset)
 	}
-
-	if err = rdx.ReplaceValues(data.VangoghUrlProperty, data.VangoghUrlProperty, urlStr); err != nil {
-		return err
-	}
-
-	if err = rdx.ReplaceValues(data.VangoghUsernameProperty, data.VangoghUsernameProperty, username); err != nil {
-		return err
-	}
-
-	if err = vangoghUpdateSessionToken(password, rdx); err != nil {
-		return err
-	}
-
-	if err = vangoghValidateSessionToken(rdx); err != nil {
-		return err
-	}
-
-	return nil
 }
 
-func resetVangoghConnection(rdx redux.Writeable) error {
-	rvca := nod.Begin("resetting vangogh connection...")
-	defer rvca.Done()
+func vangoghSetupConnection(urlStr, username, password string, rdx redux.Writeable, reset bool) error {
 
 	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return err
 	}
+
+	if reset {
+		if err := vangoghResetConnection(rdx); err != nil {
+			return err
+		}
+	}
+
+	if err := rdx.ReplaceValues(data.VangoghUrlProperty, data.VangoghUrlProperty, urlStr); err != nil {
+		return err
+	}
+
+	if err := rdx.ReplaceValues(data.VangoghUsernameProperty, data.VangoghUsernameProperty, username); err != nil {
+		return err
+	}
+
+	if err := vangoghUpdateSessionToken(password, rdx); err != nil {
+		return err
+	}
+
+	return vangoghValidateSessionToken(rdx)
+}
+
+func vangoghResetConnection(rdx redux.Writeable) error {
+	rvca := nod.Begin("resetting vangogh connection...")
+	defer rvca.Done()
 
 	for _, vp := range data.VangoghProperties() {
 		if err := rdx.CutKeys(vp, vp); err != nil {
@@ -180,4 +184,43 @@ func vangoghUpdateSessionToken(password string, rdx redux.Writeable) error {
 	}
 
 	return nil
+}
+
+func steamSetupConnection(username string, rdx redux.Writeable, reset bool) error {
+
+	if err := rdx.MustHave(data.SteamProperties()...); err != nil {
+		return err
+	}
+
+	if reset {
+		if err := steamResetConnection(rdx); err != nil {
+			return err
+		}
+	}
+
+	switch username {
+	case "":
+		if un, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && un != "" {
+			username = un
+		} else {
+			return errors.New("please provide Steam username")
+		}
+	default:
+		if err := rdx.ReplaceValues(data.SteamUsernameProperty, data.SteamUsernameProperty, username); err != nil {
+			return err
+		}
+	}
+
+	return steamCmdLogin(username)
+}
+
+func steamResetConnection(rdx redux.Writeable) error {
+	rsca := nod.Begin("resetting Steam connection...")
+	defer rsca.Done()
+
+	if err := rdx.CutKeys(data.SteamUsernameProperty, data.SteamUsernameProperty); err != nil {
+		return err
+	}
+
+	return steamCmdLogout()
 }
