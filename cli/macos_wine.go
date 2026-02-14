@@ -25,8 +25,6 @@ const (
 
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
-type wineTaskExecFunc func(id string, et *execTask) error
-
 func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
 	defer mipa.Done()

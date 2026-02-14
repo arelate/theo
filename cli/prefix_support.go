@@ -69,21 +69,14 @@ func steamPrefixInit(steamAppId string, verbose bool) error {
 
 func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
-	currentOs := data.CurrentOs()
-
 	puia := nod.Begin(" unpacking %s installers for %s-%s...", id, vangogh_integration.Windows, ii.LangCode)
 	defer puia.Done()
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	var currentOsTaskExec wineTaskExecFunc
-	switch currentOs {
-	case vangogh_integration.MacOS:
-		currentOsTaskExec = macOsWineExecTask
-	case vangogh_integration.Linux:
-		currentOsTaskExec = linuxProtonExecTask
-	default:
-		return currentOs.ErrUnsupported()
+	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	if err != nil {
+		return err
 	}
 
 	for _, link := range dls {
@@ -93,20 +86,22 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 		}
 
 		absDstDir := filepath.Join(unpackDir, link.LocalFilename)
-		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
+		if _, err = os.Stat(absDstDir); os.IsNotExist(err) {
 			if err = os.MkdirAll(absDstDir, 0755); err != nil {
 				return err
 			}
 		}
 
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
-		prefixDstDir := filepath.Join("C:\\Temp", id, link.LocalFilename)
+		prefixDstDir := filepath.Join("C:", "Temp", id, link.LocalFilename)
 
 		innoSetupDirArg := strings.Replace(innoSetupDirArgTemplate, "{dir}", prefixDstDir, 1)
 
 		et := &execTask{
+			name:    link.LocalFilename,
 			exe:     absInstallerPath,
 			workDir: downloadsDir,
+			prefix:  absPrefixDir,
 			args: []string{
 				innoSetupVerySilentArg,
 				innoSetupNoRestartArg,
@@ -116,8 +111,17 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 			verbose: ii.verbose,
 		}
 
-		if err := currentOsTaskExec(id, et); err != nil {
-			return err
+		switch data.CurrentOs() {
+		case vangogh_integration.MacOS:
+			if err = macOsWineExecTask(id, et); err != nil {
+				return err
+			}
+		case vangogh_integration.Linux:
+			if err = linuxProtonExecTask(id, et); err != nil {
+				return err
+			}
+		default:
+			return data.CurrentOs().ErrUnsupported()
 		}
 	}
 
