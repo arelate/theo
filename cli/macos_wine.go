@@ -25,7 +25,7 @@ const (
 
 const defaultCxBottleTemplate = "win10_64" // CrossOver.app/Contents/SharedSupport/CrossOver/share/crossover/bottle_templates
 
-type wineRunFunc func(id string, rdx redux.Readable, et *execTask) error
+type wineTaskExecFunc func(id string, et *execTask) error
 
 func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 	mipa := nod.Begin(" initializing %s prefix...", vangogh_integration.MacOS)
@@ -34,55 +34,7 @@ func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 	return macOsCreateCxBottle(absPrefixDir, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRun(id string, rdx redux.Readable, et *execTask) error {
-
-	_, exeFilename := filepath.Split(et.exe)
-
-	mwra := nod.Begin(" running %s with WINE, please wait...", exeFilename)
-	defer mwra.Done()
-
-	if et.verbose && len(et.env) > 0 {
-		pea := nod.Begin(" env:")
-		pea.EndWithResult(strings.Join(et.env, " "))
-	}
-
-	absCxBinDir, err := macOsGetAbsCxBinDir(nil)
-	if err != nil {
-		return err
-	}
-
-	absWineBinPath := filepath.Join(absCxBinDir, relWineFilename)
-
-	if strings.HasSuffix(et.exe, ".lnk") {
-		et.args = append([]string{"--start", et.exe}, et.args...)
-	} else {
-		et.args = append([]string{et.exe}, et.args...)
-	}
-
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	et.args = append([]string{"--bottle", absPrefixDir}, et.args...)
-
-	cmd := exec.Command(absWineBinPath, et.args...)
-
-	if et.workDir != "" {
-		cmd.Dir = et.workDir
-	}
-
-	cmd.Env = append(os.Environ(), et.env...)
-
-	if et.verbose {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	return cmd.Run()
-}
-
-func macOsWineRunExecTask(et *execTask) error {
+func macOsWineRunExecTask(id string, et *execTask) error {
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", et.name)
 	defer mwra.Done()

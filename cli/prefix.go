@@ -334,13 +334,14 @@ func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force
 	et := &execTask{
 		exe:     regeditBin,
 		workDir: absDriveCroot,
+		prefix:  absPrefixDir,
 		args:    []string{absRegPath},
 		verbose: verbose,
 	}
 
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
-		if err = macOsWineRun(absPrefixDir, rdx, et); err != nil {
+		if err = macOsWineRunExecTask(id, et); err != nil {
 			return err
 		}
 	default:

@@ -76,12 +76,12 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	var currentOsWineRun wineRunFunc
+	var currentOsTaskExec wineTaskExecFunc
 	switch currentOs {
 	case vangogh_integration.MacOS:
-		currentOsWineRun = macOsWineRun
+		currentOsTaskExec = macOsWineRunExecTask
 	case vangogh_integration.Linux:
-		currentOsWineRun = linuxProtonRun
+		currentOsTaskExec = linuxProtonRunExecTask
 	default:
 		return currentOs.ErrUnsupported()
 	}
@@ -116,7 +116,7 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 			verbose: ii.verbose,
 		}
 
-		if err := currentOsWineRun(id, rdx, et); err != nil {
+		if err := currentOsTaskExec(id, et); err != nil {
 			return err
 		}
 	}
