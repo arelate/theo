@@ -34,7 +34,7 @@ func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 	return macOsCreateCxBottle(absPrefixDir, defaultCxBottleTemplate, verbose)
 }
 
-func macOsWineRunExecTask(id string, et *execTask) error {
+func macOsWineExecTask(id string, et *execTask) error {
 
 	mwra := nod.Begin(" running %s with WINE, please wait...", et.name)
 	defer mwra.Done()

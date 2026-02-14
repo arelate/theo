@@ -79,9 +79,9 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 	var currentOsTaskExec wineTaskExecFunc
 	switch currentOs {
 	case vangogh_integration.MacOS:
-		currentOsTaskExec = macOsWineRunExecTask
+		currentOsTaskExec = macOsWineExecTask
 	case vangogh_integration.Linux:
-		currentOsTaskExec = linuxProtonRunExecTask
+		currentOsTaskExec = linuxProtonExecTask
 	default:
 		return currentOs.ErrUnsupported()
 	}

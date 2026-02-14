@@ -424,9 +424,9 @@ func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *
 		currentOs := data.CurrentOs()
 		switch currentOs {
 		case vangogh_integration.MacOS:
-			return macOsWineRunExecTask(id, et)
+			return macOsWineExecTask(id, et)
 		case vangogh_integration.Linux:
-			return linuxProtonRunExecTask(id, et)
+			return linuxProtonExecTask(id, et)
 		default:
 			return currentOs.ErrUnsupported()
 		}

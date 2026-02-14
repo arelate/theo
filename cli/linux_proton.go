@@ -34,7 +34,7 @@ const (
 	relSteamCompatibilityToolPath = "Steam/compatibilitytools.d"
 )
 
-func linuxProtonRunExecTask(id string, et *execTask) error {
+func linuxProtonExecTask(id string, et *execTask) error {
 
 	lwra := nod.Begin(" running %s with Proton, please wait...", et.name)
 	defer lwra.Done()
