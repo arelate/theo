@@ -12,10 +12,8 @@ import (
 
 	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_grid"
-	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
 )
@@ -86,7 +84,7 @@ func Install(id string, ii *InstallInfo) error {
 			return err
 		}
 
-		productDetails = steamAppInfoProductDetails(appInfo)
+		productDetails = steamProductDetails(appInfo)
 	default:
 		// always getting the latest product details for install purposes
 		productDetails, err = getProductDetails(id, rdx, true)
@@ -168,10 +166,10 @@ func Install(id string, ii *InstallInfo) error {
 		switch ii.SteamInstall {
 		case true:
 			if appInfo != nil {
-				pda, lp, err = appInfoShortcutAssets(appInfo)
+				pda, lp, err = steamShortcutAssets(appInfo)
 			}
 		default:
-			pda, lp, err = productDetailsShortcutAssets(productDetails, rdx)
+			pda, lp, err = vangoghShortcutAssets(productDetails, rdx)
 		}
 
 		if err != nil {
@@ -569,7 +567,7 @@ func osInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (string, er
 	return filepath.Join(osLangInstalledAppsDir, installedPath), nil
 }
 
-func productDetailsShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, *logoPosition, error) {
+func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, *logoPosition, error) {
 
 	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
 
@@ -615,198 +613,4 @@ func productDetailsShortcutAssets(productDetails *vangogh_integration.ProductDet
 
 	return shortcutAssets, defaultLogoPosition(), nil
 
-}
-
-func getSteamAppInfo(steamAppId string, ii *InstallInfo, rdx redux.Writeable) (*steam_appinfo.AppInfo, error) {
-
-	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
-
-	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
-	if err != nil {
-		return nil, err
-	}
-
-	var username string
-	if un, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && un != "" {
-		username = un
-	} else {
-		return nil, errors.New("cannot resolve Steam username")
-	}
-
-	if err = fetchSteamAppInfo(steamAppId, username, kvSteamAppInfo, rdx, ii.force); err != nil {
-		return nil, err
-	}
-
-	appInfoRc, err := kvSteamAppInfo.Get(steamAppId)
-	if err != nil {
-		return nil, err
-	}
-	defer appInfoRc.Close()
-
-	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
-	if err != nil {
-		return nil, err
-	}
-
-	return steam_appinfo.AppInfoVdf(appInfoKeyValues)
-}
-
-func fetchSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar.KeyValues, rdx redux.Writeable, force bool) error {
-
-	scaia := nod.Begin(" getting Steam appinfo for %s...", steamAppId)
-	defer scaia.Done()
-
-	if kvSteamAppInfo.Has(steamAppId) && !force {
-		scaia.EndWithResult("already exist")
-		return nil
-	}
-
-	printedAppInfo, err := steamCmdAppInfoPrint(steamAppId, username)
-	if err != nil {
-		return err
-	}
-
-	if err = kvSteamAppInfo.Set(steamAppId, strings.NewReader(printedAppInfo)); err != nil {
-		return err
-	}
-
-	if !rdx.HasKey(vangogh_integration.TitleProperty, steamAppId) || force {
-
-		var appInfoKeyValues []*steam_vdf.KeyValues
-		appInfoKeyValues, err = steam_vdf.ReadText(strings.NewReader(printedAppInfo))
-		if err != nil {
-			return err
-		}
-
-		var appInfo *steam_appinfo.AppInfo
-		appInfo, err = steam_appinfo.AppInfoVdf(appInfoKeyValues)
-		if err != nil {
-			return err
-		}
-
-		if err = reduceSteamAppInfo(appInfo, rdx); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
-
-	var steamAppName string
-	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
-		steamAppName = san
-	} else {
-		return errors.New("cannot resolve Steam app title")
-	}
-
-	var steamUsername string
-	if sun, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && sun != "" {
-		steamUsername = sun
-	} else {
-		return errors.New("cannot resolve Steam username")
-	}
-
-	scaua := nod.Begin("updating and verifying %s (%s) for %s with SteamCMD, please wait...", steamAppName, steamAppId, operatingSystem)
-	defer scaua.Done()
-
-	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, operatingSystem, rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(steamAppInstallDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(steamAppInstallDir, 0755); err != nil {
-			return err
-		}
-	}
-
-	return steamCmdAppUpdate(steamAppId, operatingSystem, steamAppInstallDir, steamUsername)
-}
-
-func steamAppInfoProductDetails(appInfo *steam_appinfo.AppInfo) *vangogh_integration.ProductDetails {
-
-	var operatingSystems []vangogh_integration.OperatingSystem
-	if appInfo.Common.OsList != "" {
-		operatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
-	} else {
-		operatingSystems = append(operatingSystems, vangogh_integration.Windows)
-	}
-
-	productDetails := &vangogh_integration.ProductDetails{
-		SteamAppId:       appInfo.AppId,
-		Title:            appInfo.Common.Name,
-		ProductType:      vangogh_integration.GameProductType,
-		OperatingSystems: operatingSystems,
-		Developers:       []string{appInfo.Extended.Developer},
-		Publishers:       []string{appInfo.Extended.Publisher},
-	}
-
-	return productDetails
-}
-
-func reduceSteamAppInfo(appInfo *steam_appinfo.AppInfo, rdx redux.Writeable) error {
-
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return err
-	}
-
-	if err := rdx.ReplaceValues(vangogh_integration.TitleProperty, appInfo.AppId, appInfo.Common.Name); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func appInfoShortcutAssets(appInfo *steam_appinfo.AppInfo) (map[steam_grid.Asset]*url.URL, *logoPosition, error) {
-
-	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
-
-	for _, asset := range steam_grid.ShortcutAssets {
-
-		var imageId string
-		switch asset {
-		case steam_grid.Header:
-			if appInfo.Common.LibraryAssetsFull.LibraryHeader != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryHeader.DefaultImage()
-			} else if dh := appInfo.Common.DefaultHeaderImage(); dh != "" {
-				imageId = dh
-			}
-		case steam_grid.LibraryCapsule:
-			if appInfo.Common.LibraryAssetsFull.LibraryCapsule != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryCapsule.DefaultImage()
-			}
-		case steam_grid.LibraryHero:
-			if appInfo.Common.LibraryAssetsFull.LibraryHero != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryHero.DefaultImage()
-			}
-		case steam_grid.LibraryLogo:
-			if appInfo.Common.LibraryAssetsFull.LibraryLogo != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryLogo.DefaultImage()
-			}
-		case steam_grid.ClientIcon:
-			imageId = appInfo.Common.ClientIcon
-		default:
-			return nil, nil, errors.New("unexpected shortcut asset " + asset.String())
-		}
-
-		if imageId == "" {
-			if defaultImageId, ok := steam_grid.DefaultAssetsFilenames[asset]; ok {
-				imageId = defaultImageId
-			}
-		}
-
-		if imageId != "" {
-			shortcutAssets[asset] = steam_grid.AssetUrl(appInfo.AppId, imageId, asset)
-		}
-	}
-
-	shortcutLogoPosition := &logoPosition{
-		PinnedPosition: appInfo.Common.LibraryAssetsFull.LibraryLogo.PinnedPosition,
-		WidthPct:       appInfo.Common.LibraryAssetsFull.LibraryLogo.WidthPct,
-		HeightPct:      appInfo.Common.LibraryAssetsFull.LibraryLogo.HeighPct,
-	}
-
-	return shortcutAssets, shortcutLogoPosition, nil
 }
