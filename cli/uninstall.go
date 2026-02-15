@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/arelate/southern_light/steamcmd"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -96,7 +97,14 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 			}
 		}
 	case data.SteamOrigin:
-		if err = steamCmdAppUninstall(id, ii.OperatingSystem, installedAppDir); err != nil {
+
+		var absSteamCmdPath string
+		absSteamCmdPath, err = data.AbsSteamCmdBinPath(data.CurrentOs())
+		if err != nil {
+			return err
+		}
+
+		if err = steamcmd.AppUninstall(absSteamCmdPath, id, ii.OperatingSystem, installedAppDir); err != nil {
 			return err
 		}
 	default:

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/arelate/southern_light/steamcmd"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/author"
 	"github.com/boggydigital/nod"
@@ -211,7 +212,12 @@ func steamSetupConnection(username string, rdx redux.Writeable, reset bool) erro
 		}
 	}
 
-	return steamCmdLogin(username)
+	absSteamCmdPath, err := data.AbsSteamCmdBinPath(data.CurrentOs())
+	if err != nil {
+		return err
+	}
+
+	return steamcmd.Login(absSteamCmdPath, username)
 }
 
 func steamResetConnection(rdx redux.Writeable) error {
@@ -222,5 +228,10 @@ func steamResetConnection(rdx redux.Writeable) error {
 		return err
 	}
 
-	return steamCmdLogout()
+	absSteamCmdPath, err := data.AbsSteamCmdBinPath(data.CurrentOs())
+	if err != nil {
+		return err
+	}
+
+	return steamcmd.Logout(absSteamCmdPath)
 }

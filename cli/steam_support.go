@@ -9,6 +9,7 @@ import (
 	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/steam_vdf"
+	"github.com/arelate/southern_light/steamcmd"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
@@ -60,7 +61,12 @@ func fetchSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar
 		return nil
 	}
 
-	printedAppInfo, err := steamCmdAppInfoPrint(steamAppId, username)
+	absSteamCmdPath, err := data.AbsSteamCmdBinPath(data.CurrentOs())
+	if err != nil {
+		return err
+	}
+
+	printedAppInfo, err := steamcmd.AppInfoPrint(absSteamCmdPath, steamAppId)
 	if err != nil {
 		return err
 	}
@@ -121,7 +127,12 @@ func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.Opera
 		}
 	}
 
-	return steamCmdAppUpdate(steamAppId, operatingSystem, steamAppInstallDir, steamUsername)
+	absSteamCmdPath, err := data.AbsSteamCmdBinPath(data.CurrentOs())
+	if err != nil {
+		return err
+	}
+
+	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername)
 }
 
 func steamProductDetails(appInfo *steam_appinfo.AppInfo) *vangogh_integration.ProductDetails {
