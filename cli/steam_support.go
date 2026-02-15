@@ -71,6 +71,10 @@ func fetchSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar
 		return err
 	}
 
+	if strings.Replace(printedAppInfo, steamAppId, "", 1) == "\"\"{}" { // empty appinfo for steamAppId: "steamAppId"{}
+		return errors.New("empty appinfo for " + steamAppId)
+	}
+
 	if err = kvSteamAppInfo.Set(steamAppId, strings.NewReader(printedAppInfo)); err != nil {
 		return err
 	}
