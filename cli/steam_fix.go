@@ -29,12 +29,13 @@ func SteamFixHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 	}
 
-	placeSteamAppId := q.Has("steam-appid")
+	fixSteamAppId := q.Has("steam-appid")
+	revert := q.Has("revert")
 
-	return SteamFix(id, ii, placeSteamAppId)
+	return SteamFix(id, ii, fixSteamAppId, revert)
 }
 
-func SteamFix(steamAppId string, ii *InstallInfo, placeSteamAppId bool) error {
+func SteamFix(steamAppId string, ii *InstallInfo, fixSteamAppId, revert bool) error {
 
 	sfa := nod.Begin("applying Steam fixes...")
 	defer sfa.Done()
@@ -44,22 +45,44 @@ func SteamFix(steamAppId string, ii *InstallInfo, placeSteamAppId bool) error {
 		return err
 	}
 
-	if placeSteamAppId {
-
-		// https://partner.steamgames.com/doc/sdk/api
-
-		if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem, installedOrigin); err != nil {
+	if fixSteamAppId {
+		if err = steamAppIdFix(steamAppId, ii, rdx, revert); err != nil {
 			return err
 		}
+	}
 
-		var steamAppInstallDir string
-		steamAppInstallDir, err = data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
-		if err != nil {
+	return nil
+}
+
+func steamAppIdFix(steamAppId string, ii *InstallInfo, rdx redux.Writeable, revert bool) error {
+
+	saifa := nod.Begin(" applying steam-appid.txt fix...")
+	defer saifa.Done()
+
+	// https://partner.steamgames.com/doc/sdk/api
+
+	var err error
+	if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem, installedOrigin); err != nil {
+		return err
+	}
+
+	var steamAppInstallDir string
+	steamAppInstallDir, err = data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	absSteamAppIdTxtPath := filepath.Join(steamAppInstallDir, steamAppIdTxt)
+
+	switch revert {
+	case true:
+		if err = os.Remove(absSteamAppIdTxtPath); os.IsNotExist(err) {
+			saifa.EndWithResult("not present")
+		} else if err != nil {
 			return err
 		}
-
-		absSteamAppIdTxtPath := filepath.Join(steamAppInstallDir, steamAppIdTxt)
-		if _, err = os.Stat(absSteamAppIdTxtPath); err != nil {
+	default:
+		if _, err = os.Stat(absSteamAppIdTxtPath); os.IsNotExist(err) {
 			var sait *os.File
 			sait, err = os.Create(absSteamAppIdTxtPath)
 			if err != nil {
@@ -70,6 +93,8 @@ func SteamFix(steamAppId string, ii *InstallInfo, placeSteamAppId bool) error {
 			if _, err = io.WriteString(sait, steamAppId); err != nil {
 				return err
 			}
+		} else if os.IsExist(err) {
+			saifa.EndWithResult("already exists")
 		}
 	}
 

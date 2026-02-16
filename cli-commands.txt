@@ -103,6 +103,7 @@ steam-fix
     id*^
     os={operating-systems^}
     steam-appid
+    revert
 
 steam-shortcut
     id^&*
