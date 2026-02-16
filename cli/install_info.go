@@ -108,6 +108,8 @@ func hasInstallInfo(id string, request *InstallInfo, rdx redux.Readable) (bool, 
 		return true, nil
 	} else if errors.Is(err, ErrInstallInfoTooMany) {
 		return true, nil
+	} else if errors.Is(err, ErrInstallInfoNotFound) {
+		return false, nil
 	}
 
 	return false, ErrInstallInfoNotFound
