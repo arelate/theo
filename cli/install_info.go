@@ -109,7 +109,7 @@ func hasInstallInfo(id string, request *InstallInfo, rdx redux.Readable) (bool, 
 	} else if errors.Is(err, ErrInstallInfoTooMany) {
 		return true, nil
 	} else if errors.Is(err, ErrInstallInfoNotFound) {
-		return false, nil
+
 	}
 
 	return false, ErrInstallInfoNotFound
@@ -128,15 +128,22 @@ func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*I
 			return nil, err
 		}
 
-		filteredInstalledInfo := filterInstalledInfo(installedInfo, request)
-
-		switch len(filteredInstalledInfo) {
+		switch len(installedInfo) {
 		case 0:
 			return nil, ErrInstallInfoNotFound
 		case 1:
-			return filteredInstalledInfo[0], nil
+			return installedInfo[0], nil
 		default:
-			return nil, ErrInstallInfoTooMany
+			filteredInstalledInfo := filterInstalledInfo(installedInfo, request)
+
+			switch len(filteredInstalledInfo) {
+			case 0:
+				return nil, ErrInstallInfoNotFound
+			case 1:
+				return filteredInstalledInfo[0], nil
+			default:
+				return nil, ErrInstallInfoTooMany
+			}
 		}
 
 	} else {
