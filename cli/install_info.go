@@ -128,22 +128,15 @@ func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*I
 			return nil, err
 		}
 
-		switch len(installedInfo) {
+		filteredInstalledInfo := filterInstalledInfo(installedInfo, request)
+
+		switch len(filteredInstalledInfo) {
 		case 0:
 			return nil, ErrInstallInfoNotFound
 		case 1:
-			return installedInfo[0], nil
+			return filteredInstalledInfo[0], nil
 		default:
-			filteredInstalledInfo := filterInstalledInfo(installedInfo, request)
-
-			switch len(filteredInstalledInfo) {
-			case 0:
-				return nil, ErrInstallInfoNotFound
-			case 1:
-				return filteredInstalledInfo[0], nil
-			default:
-				return nil, ErrInstallInfoTooMany
-			}
+			return nil, ErrInstallInfoTooMany
 		}
 
 	} else {
