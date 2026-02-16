@@ -82,7 +82,7 @@ func RunHandler(u *url.URL) error {
 	return Run(id, ii, et)
 }
 
-func Run(id string, ii *InstallInfo, et *execTask) error {
+func Run(id string, request *InstallInfo, et *execTask) error {
 
 	playSessionStart := time.Now()
 
@@ -94,7 +94,8 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, installedOrigin); err != nil {
+	ii, err := matchInstalledInfo(id, request, rdx)
+	if err != nil {
 		return err
 	}
 
@@ -109,7 +110,7 @@ func Run(id string, ii *InstallInfo, et *execTask) error {
 	}
 
 	switch ii.Origin {
-	case data.VangoghOrigin:
+	case data.VangoghGogOrigin:
 		if err = checkProductType(id, rdx, ii.force); err != nil {
 			return err
 		}

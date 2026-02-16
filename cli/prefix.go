@@ -85,7 +85,8 @@ func PrefixHandler(u *url.URL) error {
 		et)
 }
 
-func Prefix(id string, ii *InstallInfo,
+func Prefix(id string,
+	request *InstallInfo,
 	mod, program, installWineBinary string,
 	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
 	info, archive, remove bool,
@@ -97,7 +98,8 @@ func Prefix(id string, ii *InstallInfo,
 		return err
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedLangCode); err != nil {
+	ii, err := matchInstalledInfo(id, request, rdx)
+	if err != nil {
 		return err
 	}
 

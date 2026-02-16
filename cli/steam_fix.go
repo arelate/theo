@@ -54,15 +54,15 @@ func SteamFix(steamAppId string, ii *InstallInfo, fixSteamAppId, revert bool) er
 	return nil
 }
 
-func steamAppIdFix(steamAppId string, ii *InstallInfo, rdx redux.Writeable, revert bool) error {
+func steamAppIdFix(steamAppId string, request *InstallInfo, rdx redux.Writeable, revert bool) error {
 
 	saifa := nod.Begin(" applying steam-appid.txt fix...")
 	defer saifa.Done()
 
 	// https://partner.steamgames.com/doc/sdk/api
 
-	var err error
-	if err = resolveInstallInfo(steamAppId, ii, nil, rdx, installedOperatingSystem, installedOrigin); err != nil {
+	ii, err := matchInstalledInfo(steamAppId, request, rdx)
+	if err != nil {
 		return err
 	}
 

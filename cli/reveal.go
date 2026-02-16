@@ -50,7 +50,7 @@ func Reveal(id string, ii *InstallInfo, installed, downloads, backups bool) erro
 
 	if downloads {
 		switch ii.Origin {
-		case data.VangoghOrigin:
+		case data.VangoghGogOrigin:
 			if err := revealDownloads(id); err != nil {
 				return err
 			}
@@ -68,7 +68,7 @@ func Reveal(id string, ii *InstallInfo, installed, downloads, backups bool) erro
 	return nil
 }
 
-func revealInstalled(id string, ii *InstallInfo) error {
+func revealInstalled(id string, request *InstallInfo) error {
 
 	ria := nod.Begin("revealing installation for %s...", id)
 	defer ria.Done()
@@ -81,43 +81,50 @@ func revealInstalled(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-		iios, err := installedInfoOperatingSystem(id, rdx)
-		if err != nil {
-			return err
-		}
-
-		ii.OperatingSystem = iios
+	ii, err := matchInstalledInfo(id, request, rdx)
+	if err != nil {
+		return err
 	}
 
-	if ii.Origin == data.VangoghOrigin && ii.LangCode == "" {
-		var lc string
-		lc, err = installedInfoLangCode(id, ii.OperatingSystem, rdx)
-		if err != nil {
-			return err
-		}
+	return currentOsRevealInstalled(id, ii, rdx)
 
-		ii.LangCode = lc
-	}
+	//if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
+	//	iios, err := installedInfoOperatingSystem(id, rdx)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	ii.OperatingSystem = iios
+	//}
+	//
+	//if ii.Origin == data.VangoghGogOrigin && ii.LangCode == "" {
+	//	var lc string
+	//	lc, err = installedInfoLangCode(id, ii.OperatingSystem, rdx)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	ii.LangCode = lc
+	//}
 
-	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
-
-		var installedInfo *InstallInfo
-		installedInfo, _, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
-		if err != nil {
-			return err
-		}
-
-		if installedInfo != nil {
-			ii.Origin = installedInfo.Origin
-			return currentOsRevealInstalled(id, ii, rdx)
-		} else {
-			ria.EndWithResult("no install found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
-		}
-
-	}
-
-	return nil
+	//if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+	//
+	//	var installedInfo *InstallInfo
+	//	installedInfo, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	if installedInfo != nil {
+	//		ii.Origin = installedInfo.Origin
+	//		return currentOsRevealInstalled(id, ii, rdx)
+	//	} else {
+	//		ria.EndWithResult("no install found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
+	//	}
+	//
+	//}
+	//
+	//return nil
 }
 
 func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) error {
@@ -126,7 +133,7 @@ func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) er
 	var err error
 
 	switch ii.Origin {
-	case data.VangoghOrigin:
+	case data.VangoghGogOrigin:
 		revealPath, err = originOsInstalledPath(id, ii, rdx)
 	case data.SteamOrigin:
 		revealPath, err = data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx)

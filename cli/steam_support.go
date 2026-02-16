@@ -139,27 +139,6 @@ func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.Opera
 	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername)
 }
 
-func steamProductDetails(appInfo *steam_appinfo.AppInfo) *vangogh_integration.ProductDetails {
-
-	var operatingSystems []vangogh_integration.OperatingSystem
-	if appInfo.Common.OsList != "" {
-		operatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
-	} else {
-		operatingSystems = append(operatingSystems, vangogh_integration.Windows)
-	}
-
-	productDetails := &vangogh_integration.ProductDetails{
-		SteamAppId:       appInfo.AppId,
-		Title:            appInfo.Common.Name,
-		ProductType:      vangogh_integration.GameProductType,
-		OperatingSystems: operatingSystems,
-		Developers:       []string{appInfo.Extended.Developer},
-		Publishers:       []string{appInfo.Extended.Publisher},
-	}
-
-	return productDetails
-}
-
 func steamReduceAppInfo(appInfo *steam_appinfo.AppInfo, rdx redux.Writeable) error {
 
 	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {

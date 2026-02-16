@@ -40,7 +40,7 @@ func UninstallHandler(u *url.URL) error {
 	return Uninstall(id, ii, purge)
 }
 
-func Uninstall(id string, ii *InstallInfo, purge bool) error {
+func Uninstall(id string, request *InstallInfo, purge bool) error {
 
 	ua := nod.Begin("uninstalling %s...", id)
 	defer ua.Done()
@@ -50,43 +50,30 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 		return err
 	}
 
-	if !ii.force {
+	if !request.force {
 		ua.EndWithResult("uninstall requires -force parameter")
 		return nil
 	}
 
-	if err = resolveInstallInfo(id, ii, nil, rdx, installedOperatingSystem, installedLangCode, installedOrigin); err != nil {
-		return err
-	}
-
-	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
-
-		var installInfo *InstallInfo
-		installInfo, _, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
-		if err != nil {
-			return err
-		}
-
-		if installInfo == nil {
-			ua.EndWithResult("no install info found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
-			return nil
-		}
-	}
-
-	var installedAppDir string
-	installedAppDir, err = originOsInstalledPath(id, ii, rdx)
+	installInfo, err := matchInstalledInfo(id, request, rdx)
 	if err != nil {
 		return err
 	}
 
-	switch ii.Origin {
-	case data.VangoghOrigin:
-		if err = osUninstallProduct(id, ii, rdx); err != nil {
+	var installedAppDir string
+	installedAppDir, err = originOsInstalledPath(id, installInfo, rdx)
+	if err != nil {
+		return err
+	}
+
+	switch installInfo.Origin {
+	case data.VangoghGogOrigin:
+		if err = osUninstallProduct(id, installInfo, rdx); err != nil {
 			return err
 		}
 
 		var absInventoryFilename string
-		absInventoryFilename, err = data.AbsInventoryFilename(id, ii.LangCode, ii.OperatingSystem, rdx)
+		absInventoryFilename, err = data.AbsInventoryFilename(id, installInfo.LangCode, installInfo.OperatingSystem, rdx)
 		if err != nil {
 			return err
 		}
@@ -104,11 +91,11 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 			return err
 		}
 
-		if err = steamcmd.AppUninstall(absSteamCmdPath, id, ii.OperatingSystem, installedAppDir); err != nil {
+		if err = steamcmd.AppUninstall(absSteamCmdPath, id, installInfo.OperatingSystem, installedAppDir); err != nil {
 			return err
 		}
 	default:
-		return ii.Origin.ErrUnsupportedOrigin()
+		return installInfo.Origin.ErrUnsupportedOrigin()
 	}
 
 	if purge {
@@ -119,7 +106,7 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 		}
 
 		// account for macOS bundle name
-		if ii.OperatingSystem == vangogh_integration.MacOS {
+		if installInfo.OperatingSystem == vangogh_integration.MacOS {
 			if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" && !strings.Contains(bundleName, "/") {
 				installedAppParentDir := strings.TrimSuffix(installedAppDir, bundleName)
 				if _, err = os.Stat(installedAppParentDir); err == nil {
@@ -131,7 +118,7 @@ func Uninstall(id string, ii *InstallInfo, purge bool) error {
 		}
 	}
 
-	if err = unpinInstallInfo(id, ii, rdx); err != nil {
+	if err = unpinInstallInfo(id, installInfo, rdx); err != nil {
 		return err
 	}
 

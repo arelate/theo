@@ -44,7 +44,7 @@ func InstallHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
-		Origin:          data.VangoghOrigin,
+		Origin:          data.VangoghGogOrigin,
 		KeepDownloads:   q.Has("keep-downloads"),
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
 		verbose:         q.Has("verbose"),
@@ -85,13 +85,18 @@ func Install(id string, ii *InstallInfo) error {
 	var productDetails *vangogh_integration.ProductDetails
 	var appInfo *steam_appinfo.AppInfo
 
+	var productOperatingSystems []vangogh_integration.OperatingSystem
+
 	switch ii.Origin {
-	case data.VangoghOrigin:
+	case data.VangoghGogOrigin:
 		// always getting the latest product details for install purposes
 		productDetails, err = getProductDetails(id, rdx, true)
 		if err != nil {
 			return err
 		}
+
+		ii.ReduceProductDetails(productDetails)
+		productOperatingSystems = productDetails.OperatingSystems
 
 		switch productDetails.ProductType {
 		case vangogh_integration.DlcProductType:
@@ -116,32 +121,22 @@ func Install(id string, ii *InstallInfo) error {
 			return err
 		}
 
-		productDetails = steamProductDetails(appInfo)
+		productOperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
 
-	if err = resolveInstallInfo(id, ii, productDetails, rdx, currentOsThenWindows); err != nil {
-		return err
-	}
-
-	ii.AddProductDetails(productDetails)
+	setInstallInfoDefaults(ii, productOperatingSystems)
 
 	// don't check existing installations for DLCs, Extras
 	if slices.Contains(ii.DownloadTypes, vangogh_integration.Installer) && !ii.force {
 
-		if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
-
-			var installInfo *InstallInfo
-			installInfo, _, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
-			if err != nil {
-				return err
-			}
-
-			if installInfo != nil {
-				ia.EndWithResult("product %s is already installed", id)
-				return nil
-			}
+		var ok bool
+		if ok, err = hasInstallInfo(id, ii, rdx); ok && err == nil {
+			ia.EndWithResult("already installed")
+			return nil
+		} else if err != nil {
+			return err
 		}
 	}
 
@@ -150,7 +145,7 @@ func Install(id string, ii *InstallInfo) error {
 	}
 
 	switch ii.Origin {
-	case data.VangoghOrigin:
+	case data.VangoghGogOrigin:
 		if err = Download(id, ii, nil, rdx); err != nil {
 			return err
 		}
@@ -176,7 +171,7 @@ func Install(id string, ii *InstallInfo) error {
 		var lp *logoPosition
 
 		switch ii.Origin {
-		case data.VangoghOrigin:
+		case data.VangoghGogOrigin:
 			pda, lp, err = vangoghShortcutAssets(productDetails, rdx)
 		case data.SteamOrigin:
 			if appInfo != nil {
@@ -202,7 +197,7 @@ func Install(id string, ii *InstallInfo) error {
 	}
 
 	switch ii.Origin {
-	case data.VangoghOrigin:
+	case data.VangoghGogOrigin:
 		if !ii.KeepDownloads {
 			if err = RemoveDownloads(id, ii, rdx); err != nil {
 				return err
@@ -556,7 +551,7 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 		} else {
 			return "", err
 		}
-	case data.VangoghOrigin:
+	case data.VangoghGogOrigin:
 		installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
 		osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(ii.OperatingSystem, ii.LangCode))

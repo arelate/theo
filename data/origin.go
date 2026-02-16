@@ -10,14 +10,14 @@ type Origin int
 
 const (
 	UnknownOrigin Origin = iota
-	VangoghOrigin
+	VangoghGogOrigin
 	SteamOrigin
 )
 
 var originStrings = map[Origin]string{
-	UnknownOrigin: "unknown",
-	VangoghOrigin: "vangogh",
-	SteamOrigin:   "Steam",
+	UnknownOrigin:    "unknown",
+	VangoghGogOrigin: "vangogh-gog",
+	SteamOrigin:      "Steam",
 }
 
 func (o Origin) String() string {

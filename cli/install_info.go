@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json/v2"
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -16,13 +15,9 @@ import (
 
 const defaultLangCode = "en"
 
-type resolutionPolicy int
-
-const (
-	currentOsThenWindows resolutionPolicy = iota
-	installedOperatingSystem
-	installedLangCode
-	installedOrigin
+var (
+	ErrInstallInfoNotFound = errors.New("install info not found")
+	ErrInstallInfoTooMany  = errors.New("multiple installations match request")
 )
 
 type InstallInfo struct {
@@ -40,7 +35,7 @@ type InstallInfo struct {
 	force               bool                                // won't be serialized
 }
 
-func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails) {
+func (ii *InstallInfo) ReduceProductDetails(pd *vangogh_integration.ProductDetails) {
 
 	dls := pd.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
@@ -54,20 +49,6 @@ func (ii *InstallInfo) AddProductDetails(pd *vangogh_integration.ProductDetails)
 		}
 		ii.EstimatedBytes += dl.EstimatedBytes
 	}
-}
-
-func matchInstallInfoOsLangCode(ii *InstallInfo, lines ...string) (*InstallInfo, string, error) {
-	for _, line := range lines {
-		var installedInfo InstallInfo
-		if err := json.UnmarshalRead(strings.NewReader(line), &installedInfo); err != nil {
-			return nil, "", err
-		}
-
-		if installedInfo.OperatingSystem == ii.OperatingSystem && installedInfo.LangCode == ii.LangCode {
-			return &installedInfo, line, nil
-		}
-	}
-	return nil, "", nil
 }
 
 func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
@@ -92,7 +73,7 @@ func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 		return err
 	}
 
-	return rdx.BatchAddValues(data.InstallInfoProperty, map[string][]string{id: {buf.String()}})
+	return rdx.AddValues(data.InstallInfoProperty, id, buf.String())
 }
 
 func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
@@ -104,248 +85,122 @@ func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 		return err
 	}
 
-	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
-
-		_, installedInfoLine, err := matchInstallInfoOsLangCode(ii, installedInfoLines...)
-		if err != nil {
-			return err
-		}
-
-		if err = rdx.CutValues(data.InstallInfoProperty, id, installedInfoLine); err != nil {
-			return err
-		}
-
-	} else {
-		uiia.EndWithResult("install info not found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
+	installedInfo, err := matchInstalledInfo(id, ii, rdx)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	buf := new(bytes.Buffer)
+	if err = json.MarshalWrite(buf, installedInfo); err != nil {
+		return err
+	}
+
+	return rdx.CutValues(data.InstallInfoProperty, id, buf.String())
 }
 
-func hasInstallInfo(id string, ii *InstallInfo, rdx redux.Readable) (bool, error) {
+func hasInstallInfo(id string, request *InstallInfo, rdx redux.Readable) (bool, error) {
 
 	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
 		return false, err
 	}
 
-	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
-
-		installInfo, _, err := matchInstallInfoOsLangCode(ii, installedInfoLines...)
-		if err != nil {
-			return false, err
-		}
-
-		return installInfo != nil, nil
-
-	} else {
-		return false, nil
+	if matchedInstalledInfo, err := matchInstalledInfo(id, request, rdx); err == nil && matchedInstalledInfo != nil {
+		return true, nil
+	} else if errors.Is(err, ErrInstallInfoTooMany) {
+		return true, nil
 	}
+
+	return false, ErrInstallInfoNotFound
 }
 
-type installInfoMapper func(ii *InstallInfo)
-
-func mapInstalledInfo(id string, rdx redux.Readable, mapper installInfoMapper) error {
-
-	iiosa := nod.Begin(" checking installed operating system for %s...", id)
-	defer iiosa.Done()
+func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*InstallInfo, error) {
 
 	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
-		return err
+		return nil, err
 	}
 
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		switch len(installedInfoLines) {
+		installedInfo, err := unmarshalInstalledInfo(installedInfoLines...)
+		if err != nil {
+			return nil, err
+		}
+
+		switch len(installedInfo) {
 		case 0:
-			return errors.New("zero length installed info for " + id)
+			return nil, ErrInstallInfoNotFound
+		case 1:
+			return installedInfo[0], nil
 		default:
+			filteredInstalledInfo := filterInstalledInfo(installedInfo, request)
 
-			for _, line := range installedInfoLines {
-
-				var ii InstallInfo
-				if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
-					return err
-				}
-
-				mapper(&ii)
+			switch len(filteredInstalledInfo) {
+			case 0:
+				return nil, ErrInstallInfoNotFound
+			case 1:
+				return filteredInstalledInfo[0], nil
+			default:
+				return nil, ErrInstallInfoTooMany
 			}
 		}
+
 	} else {
-		return errors.New("no installation found for " + id)
-	}
-
-	return nil
-}
-
-func installedInfoOperatingSystem(id string, rdx redux.Readable) (vangogh_integration.OperatingSystem, error) {
-
-	iiosa := nod.Begin(" checking installed operating system for %s...", id)
-	defer iiosa.Done()
-
-	distinctOs := make([]vangogh_integration.OperatingSystem, 0)
-
-	var distinctOsMapper = func(ii *InstallInfo) {
-		if !slices.Contains(distinctOs, ii.OperatingSystem) {
-			distinctOs = append(distinctOs, ii.OperatingSystem)
-		}
-	}
-
-	if err := mapInstalledInfo(id, rdx, distinctOsMapper); err != nil {
-		return vangogh_integration.AnyOperatingSystem, err
-	}
-
-	switch len(distinctOs) {
-	case 0:
-		return vangogh_integration.AnyOperatingSystem, errors.New("no supported operating system for " + id)
-	case 1:
-		return distinctOs[0], nil
-	default:
-		return vangogh_integration.AnyOperatingSystem, errors.New("please specify operating system for " + id)
+		return nil, ErrInstallInfoNotFound
 	}
 }
 
-func installedInfoLangCode(id string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
-	iilca := nod.Begin(" checking installed language code for %s...", id)
-	defer iilca.Done()
+func unmarshalInstalledInfo(lines ...string) ([]*InstallInfo, error) {
 
-	distinctLangCodes := make([]string, 0)
+	installedInfo := make([]*InstallInfo, 0, len(lines))
 
-	var distinctLangCodesMapper = func(ii *InstallInfo) {
-		if ii.OperatingSystem == operatingSystem && !slices.Contains(distinctLangCodes, ii.LangCode) {
-			distinctLangCodes = append(distinctLangCodes, ii.LangCode)
+	for _, line := range lines {
+		var ii InstallInfo
+
+		if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
+			return nil, err
 		}
+
+		installedInfo = append(installedInfo, &ii)
 	}
 
-	if err := mapInstalledInfo(id, rdx, distinctLangCodesMapper); err != nil {
-		return "", err
-	}
-
-	switch len(distinctLangCodes) {
-	case 0:
-		return "", errors.New("no supported language code for " + id)
-	case 1:
-		return distinctLangCodes[0], nil
-	default:
-		return "", errors.New("please specify language code for " + id)
-	}
+	return installedInfo, nil
 }
 
-func installedInfoOrigin(id string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (data.Origin, error) {
-	iisia := nod.Begin(" checking installed origin for %s...", id)
-	defer iisia.Done()
+func filterInstalledInfo(installedInfo []*InstallInfo, request *InstallInfo) []*InstallInfo {
 
-	distinctOrigins := make([]data.Origin, 0)
+	filteredInstalledInfo := make([]*InstallInfo, 0, len(installedInfo))
 
-	var distinctOriginsMapper = func(ii *InstallInfo) {
-		if ii.OperatingSystem == operatingSystem && !slices.Contains(distinctOrigins, ii.Origin) {
-			distinctOrigins = append(distinctOrigins, ii.Origin)
+	for _, ii := range installedInfo {
+		if request.OperatingSystem != vangogh_integration.AnyOperatingSystem && ii.OperatingSystem == request.OperatingSystem &&
+			request.LangCode != "" && ii.LangCode == request.LangCode &&
+			request.Origin != data.UnknownOrigin && ii.Origin == request.Origin {
+			filteredInstalledInfo = append(filteredInstalledInfo, ii)
 		}
 	}
 
-	if err := mapInstalledInfo(id, rdx, distinctOriginsMapper); err != nil {
-		return data.UnknownOrigin, err
-	}
-
-	switch len(distinctOrigins) {
-	case 0:
-		return data.UnknownOrigin, errors.New("no supported origins for " + id)
-	case 1:
-		return distinctOrigins[0], nil
-	default:
-		return data.UnknownOrigin, errors.New("please specify origin for " + id)
-	}
+	return filteredInstalledInfo
 }
 
-func resolveInstallInfo(id string, installInfo *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable, policies ...resolutionPolicy) error {
+func setInstallInfoDefaults(request *InstallInfo, availableOperatingSystems []vangogh_integration.OperatingSystem) {
 
-	nod.Log("resolveInstallInfo: policies %v", policies)
-
-	if installInfo.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-
-		nod.Log("resolveInstallInfo: resolving %s=%s...",
-			vangogh_integration.OperatingSystemsProperty,
-			installInfo.OperatingSystem)
-
-		if slices.Contains(policies, currentOsThenWindows) {
-
-			if productDetails == nil {
-				return errors.New("product details are required to resolve install info")
-			}
-
-			if slices.Contains(productDetails.OperatingSystems, data.CurrentOs()) {
-				installInfo.OperatingSystem = data.CurrentOs()
-			} else if slices.Contains(productDetails.OperatingSystems, vangogh_integration.Windows) {
-				installInfo.OperatingSystem = vangogh_integration.Windows
-			} else {
-				unsupportedOsMsg := fmt.Sprintf("product doesn't support %s or %s, only %v",
-					data.CurrentOs(), vangogh_integration.Windows, productDetails.OperatingSystems)
-				return errors.New(unsupportedOsMsg)
-			}
-
-		} else if slices.Contains(policies, installedOperatingSystem) {
-
-			installedOs, err := installedInfoOperatingSystem(id, rdx)
-			if err != nil {
-				return err
-			}
-
-			installInfo.OperatingSystem = installedOs
-		}
-
-		nod.Log("resolveInstallInfo: resolved %s=%s",
-			vangogh_integration.OperatingSystemsProperty,
-			installInfo.OperatingSystem)
+	if request.Origin == data.UnknownOrigin {
+		request.Origin = data.VangoghGogOrigin
 	}
 
-	if len(installInfo.DownloadTypes) == 0 {
-
-		defaultDownloadTypes := []vangogh_integration.DownloadType{
-			vangogh_integration.Installer,
-			vangogh_integration.DLC,
-		}
-
-		nod.Log("resolveInstallInfo: resolved %s=%v",
-			vangogh_integration.DownloadTypeProperty,
-			defaultDownloadTypes)
-
-		installInfo.DownloadTypes = defaultDownloadTypes
-	}
-
-	if installInfo.LangCode == "" {
-
-		nod.Log("resolveInstallInfo: resolving %s...",
-			vangogh_integration.LanguageCodeProperty)
-
-		if slices.Contains(policies, installedLangCode) {
-
-			if lc, err := installedInfoLangCode(id, installInfo.OperatingSystem, rdx); err == nil {
-				installInfo.LangCode = lc
-			} else {
-				return err
-			}
-
+	if request.OperatingSystem == vangogh_integration.AnyOperatingSystem {
+		if slices.Contains(availableOperatingSystems, data.CurrentOs()) {
+			request.OperatingSystem = data.CurrentOs()
 		} else {
-			installInfo.LangCode = defaultLangCode
+			request.OperatingSystem = vangogh_integration.Windows
 		}
-
-		nod.Log("resolveInstallInfo: resolved %s=%s",
-			vangogh_integration.LanguageCodeProperty,
-			installInfo.LangCode)
 	}
 
-	if installInfo.Origin == data.UnknownOrigin {
-		nod.Log("resolveInstallInfo: resolving origin...")
-
-		if slices.Contains(policies, installedOrigin) {
-			if origin, err := installedInfoOrigin(id, installInfo.OperatingSystem, rdx); err == nil {
-				installInfo.Origin = origin
-			} else {
-				return err
-			}
-		}
-
-		nod.Log("resolveInstallInfo: resolved origin=%s", installInfo.Origin)
+	if request.LangCode == "" {
+		request.LangCode = defaultLangCode
 	}
 
-	return nil
+	if len(request.DownloadTypes) == 0 {
+		request.DownloadTypes = []vangogh_integration.DownloadType{vangogh_integration.Installer, vangogh_integration.DLC}
+	}
+
 }

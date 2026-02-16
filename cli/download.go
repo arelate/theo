@@ -76,9 +76,7 @@ func Download(id string,
 		return err
 	}
 
-	if err = resolveInstallInfo(id, ii, productDetails, rdx, currentOsThenWindows); err != nil {
-		return err
-	}
+	setInstallInfoDefaults(ii, productDetails.OperatingSystems)
 
 	if err = downloadProductFiles(id, productDetails, ii, manualUrlFilter, rdx); err != nil {
 		return err
