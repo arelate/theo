@@ -87,44 +87,6 @@ func revealInstalled(id string, request *InstallInfo) error {
 	}
 
 	return currentOsRevealInstalled(id, ii, rdx)
-
-	//if ii.OperatingSystem == vangogh_integration.AnyOperatingSystem {
-	//	iios, err := installedInfoOperatingSystem(id, rdx)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	ii.OperatingSystem = iios
-	//}
-	//
-	//if ii.Origin == data.VangoghGogOrigin && ii.LangCode == "" {
-	//	var lc string
-	//	lc, err = installedInfoLangCode(id, ii.OperatingSystem, rdx)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	ii.LangCode = lc
-	//}
-
-	//if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
-	//
-	//	var installedInfo *InstallInfo
-	//	installedInfo, err = matchInstallInfoOsLangCode(ii, installedInfoLines...)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	if installedInfo != nil {
-	//		ii.Origin = installedInfo.Origin
-	//		return currentOsRevealInstalled(id, ii, rdx)
-	//	} else {
-	//		ria.EndWithResult("no install found for %s %s-%s", id, ii.OperatingSystem, ii.LangCode)
-	//	}
-	//
-	//}
-	//
-	//return nil
 }
 
 func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) error {

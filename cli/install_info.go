@@ -13,7 +13,10 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-const defaultLangCode = "en"
+const (
+	langCodeAny     = ""
+	langCodeDefault = "en"
+)
 
 var (
 	ErrInstallInfoNotFound = errors.New("install info not found")
@@ -51,6 +54,31 @@ func (ii *InstallInfo) ReduceProductDetails(pd *vangogh_integration.ProductDetai
 	}
 }
 
+func (ii *InstallInfo) Matches(another *InstallInfo) bool {
+
+	var matchesOs, matchesLangCode, matchesOrigin bool
+
+	if ii.OperatingSystem == another.OperatingSystem ||
+		ii.OperatingSystem == vangogh_integration.AnyOperatingSystem ||
+		another.OperatingSystem == vangogh_integration.AnyOperatingSystem {
+		matchesOs = true
+	}
+
+	if ii.LangCode == another.LangCode ||
+		ii.LangCode == langCodeAny ||
+		another.LangCode == langCodeAny {
+		matchesLangCode = true
+	}
+
+	if ii.Origin == another.Origin ||
+		ii.Origin == data.UnknownOrigin ||
+		another.Origin == data.UnknownOrigin {
+		matchesOrigin = true
+	}
+
+	return matchesOs && matchesLangCode && matchesOrigin
+}
+
 func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	piia := nod.Begin("pinning install info for %s...", id)
@@ -76,7 +104,7 @@ func pinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	return rdx.AddValues(data.InstallInfoProperty, id, buf.String())
 }
 
-func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
+func unpinInstallInfo(id string, request *InstallInfo, rdx redux.Writeable) error {
 
 	uiia := nod.Begin(" unpinning install info...")
 	defer uiia.Done()
@@ -85,7 +113,7 @@ func unpinInstallInfo(id string, ii *InstallInfo, rdx redux.Writeable) error {
 		return err
 	}
 
-	installedInfo, err := matchInstalledInfo(id, ii, rdx)
+	installedInfo, err := matchInstalledInfo(id, request, rdx)
 	if err != nil {
 		return err
 	}
@@ -109,10 +137,10 @@ func hasInstallInfo(id string, request *InstallInfo, rdx redux.Readable) (bool, 
 	} else if errors.Is(err, ErrInstallInfoTooMany) {
 		return true, nil
 	} else if errors.Is(err, ErrInstallInfoNotFound) {
-
+		return false, nil
 	}
 
-	return false, ErrInstallInfoNotFound
+	return false, nil
 }
 
 func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*InstallInfo, error) {
@@ -121,39 +149,41 @@ func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*I
 		return nil, err
 	}
 
+	var installedInfo []InstallInfo
+
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
-		installedInfo, err := unmarshalInstalledInfo(installedInfoLines...)
-		if err != nil {
+		var err error
+		if installedInfo, err = unmarshalInstalledInfo(installedInfoLines...); err != nil {
 			return nil, err
-		}
-
-		switch len(installedInfo) {
-		case 0:
-			return nil, ErrInstallInfoNotFound
-		case 1:
-			return installedInfo[0], nil
-		default:
-			filteredInstalledInfo := filterInstalledInfo(installedInfo, request)
-
-			switch len(filteredInstalledInfo) {
-			case 0:
-				return nil, ErrInstallInfoNotFound
-			case 1:
-				return filteredInstalledInfo[0], nil
-			default:
-				return nil, ErrInstallInfoTooMany
-			}
 		}
 
 	} else {
 		return nil, ErrInstallInfoNotFound
 	}
+
+	var matchedInstalledInfo []InstallInfo
+
+	for _, ii := range installedInfo {
+		if ii.Matches(request) {
+			matchedInstalledInfo = append(matchedInstalledInfo, ii)
+		}
+	}
+
+	switch len(matchedInstalledInfo) {
+	case 0:
+		return nil, ErrInstallInfoNotFound
+	case 1:
+		return &matchedInstalledInfo[0], nil
+	default:
+		return nil, ErrInstallInfoTooMany
+	}
+
 }
 
-func unmarshalInstalledInfo(lines ...string) ([]*InstallInfo, error) {
+func unmarshalInstalledInfo(lines ...string) ([]InstallInfo, error) {
 
-	installedInfo := make([]*InstallInfo, 0, len(lines))
+	installedInfo := make([]InstallInfo, 0, len(lines))
 
 	for _, line := range lines {
 		var ii InstallInfo
@@ -162,25 +192,10 @@ func unmarshalInstalledInfo(lines ...string) ([]*InstallInfo, error) {
 			return nil, err
 		}
 
-		installedInfo = append(installedInfo, &ii)
+		installedInfo = append(installedInfo, ii)
 	}
 
 	return installedInfo, nil
-}
-
-func filterInstalledInfo(installedInfo []*InstallInfo, request *InstallInfo) []*InstallInfo {
-
-	filteredInstalledInfo := make([]*InstallInfo, 0, len(installedInfo))
-
-	for _, ii := range installedInfo {
-		if request.OperatingSystem != vangogh_integration.AnyOperatingSystem && ii.OperatingSystem == request.OperatingSystem &&
-			request.LangCode != "" && ii.LangCode == request.LangCode &&
-			request.Origin != data.UnknownOrigin && ii.Origin == request.Origin {
-			filteredInstalledInfo = append(filteredInstalledInfo, ii)
-		}
-	}
-
-	return filteredInstalledInfo
 }
 
 func setInstallInfoDefaults(request *InstallInfo, availableOperatingSystems []vangogh_integration.OperatingSystem) {
@@ -198,7 +213,7 @@ func setInstallInfoDefaults(request *InstallInfo, availableOperatingSystems []va
 	}
 
 	if request.LangCode == "" {
-		request.LangCode = defaultLangCode
+		request.LangCode = langCodeDefault
 	}
 
 	if len(request.DownloadTypes) == 0 {
