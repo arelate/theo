@@ -66,12 +66,12 @@ func ParsePostInstallScript(path string) (*PostInstallScript, error) {
 			continue
 		}
 
-		if strings.HasPrefix(line, bundleNamePfx) {
-			pis.bundleName = strings.Trim(strings.TrimPrefix(line, bundleNamePfx), "\"")
+		if after, ok := strings.CutPrefix(line, bundleNamePfx); ok {
+			pis.bundleName = strings.Trim(after, "\"")
 			continue
 		}
-		if strings.HasPrefix(line, installerTypePfx) {
-			pis.installerType = strings.Trim(strings.TrimPrefix(line, installerTypePfx), "\"")
+		if after, ok := strings.CutPrefix(line, installerTypePfx); ok {
+			pis.installerType = strings.Trim(after, "\"")
 			continue
 		}
 		if !slices.Contains(knownPostInstallLines, line) {

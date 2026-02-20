@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/url"
 	"os"
 	"path"
@@ -490,9 +491,7 @@ func prefixSetEnv(id, langCode string, env []string, rdx redux.Writeable) error 
 
 func mergeEnv(env1 []string, env2 []string) []string {
 	de1, de2 := decodeEnv(env1), decodeEnv(env2)
-	for k, v := range de2 {
-		de1[k] = v
-	}
+	maps.Copy(de1, de2)
 	return encodeEnv(de1)
 }
 

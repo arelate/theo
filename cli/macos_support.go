@@ -260,8 +260,8 @@ func macOsProcessPostInstallScript(commands []string, productDownloadsDir, bundl
 	pcca.TotalInt(len(commands))
 
 	for _, cmd := range commands {
-		if strings.HasPrefix(cmd, catCmdPfx) {
-			if catCmdParts := strings.Split(strings.TrimPrefix(cmd, catCmdPfx), " "); len(catCmdParts) == 3 {
+		if after, ok := strings.CutPrefix(cmd, catCmdPfx); ok {
+			if catCmdParts := strings.Split(after, " "); len(catCmdParts) == 3 {
 				srcGlob := strings.Trim(strings.Replace(catCmdParts[0], "\"${pkgpath}\"", productDownloadsDir, 1), "\"")
 				dstPath := strings.Trim(strings.Replace(catCmdParts[2], "${gog_full_path}", bundleAppPath, 1), "\"")
 				if err := macOsCatFiles(srcGlob, dstPath); err != nil {
