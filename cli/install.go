@@ -154,6 +154,10 @@ func Install(id string, ii *InstallInfo) error {
 			return err
 		}
 
+		if productDetails == nil {
+			return errors.New("nil productDetails")
+		}
+
 		if err = vangoghInstallProduct(id, ii, productDetails, rdx); err != nil {
 			return err
 		}
@@ -172,6 +176,10 @@ func Install(id string, ii *InstallInfo) error {
 
 		switch ii.Origin {
 		case data.VangoghGogOrigin:
+			if productDetails == nil {
+				return errors.New("nil productDetails")
+			}
+
 			pda, lp, err = vangoghShortcutAssets(productDetails, rdx)
 		case data.SteamOrigin:
 			if appInfo != nil {
