@@ -346,7 +346,7 @@ func setLogoPosition(loginUser string, shortcutId uint32, lp *logoPosition) erro
 	return json.MarshalWrite(lpFile, &glp)
 }
 
-func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcuts []*steam_vdf.KeyValues, force bool) (bool, error) {
+func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcuts steam_vdf.ValveDataFile, force bool) (bool, error) {
 
 	asa := nod.Begin(" adding non-Steam app shortcut for appId %d...", shortcut.AppId)
 	defer asa.Done()

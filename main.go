@@ -69,6 +69,41 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	//appInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
+	//
+	//kvAppInfo, err := kevlar.New(appInfoDir, steam_vdf.Ext)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//for id := range kvAppInfo.Keys() {
+	//
+	//	var rcAiKv io.ReadCloser
+	//	rcAiKv, err = kvAppInfo.Get(id)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	var aiVdf steam_vdf.ValveDataFile
+	//	aiVdf, err = steam_vdf.ReadText(rcAiKv)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	var kv *steam_vdf.KeyValues
+	//	kv, err = aiVdf.At(id, "common")
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	fmt.Println(id, kv.Val("name"))
+	//
+	//	if err = rcAiKv.Close(); err != nil {
+	//		panic(err)
+	//	}
+	//
+	//}
+
 	if err = defs.Serve(u); err != nil {
 		tsa.Error(err)
 		log.Fatalln(err)
