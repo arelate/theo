@@ -186,12 +186,11 @@ func Install(id string, ii *InstallInfo) error {
 		}
 
 		sgo := &steamGridOptions{
-			id:           id,
 			assets:       pda,
 			logoPosition: lp,
 		}
 
-		if err = SteamShortcut(ii, sgo); err != nil {
+		if err = SteamShortcut(id, ii, sgo); err != nil {
 			return err
 		}
 	}
