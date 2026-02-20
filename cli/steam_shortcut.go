@@ -42,7 +42,6 @@ type gridLogoPosition struct {
 }
 
 type steamGridOptions struct {
-	ids          []string
 	name         string
 	assets       map[steam_grid.Asset]*url.URL
 	logoPosition *logoPosition
@@ -59,13 +58,9 @@ func SteamShortcutHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	ids, err := vangogh_integration.IdsFromUrl(u)
-	if err != nil {
-		return err
-	}
+	id := q.Get(vangogh_integration.IdProperty)
 
 	sgo := &steamGridOptions{
-		ids:          ids,
 		logoPosition: defaultLogoPosition(),
 		remove:       q.Has("remove"),
 	}
@@ -85,6 +80,8 @@ func SteamShortcutHandler(u *url.URL) error {
 		LangCode:        langCode,
 		force:           q.Has("force"),
 	}
+
+	var err error
 
 	if q.Has("header") {
 		sgo.assets[steam_grid.Header], err = url.Parse(q.Get("header"))
@@ -143,11 +140,11 @@ func SteamShortcutHandler(u *url.URL) error {
 		}
 	}
 
-	return SteamShortcut(ii, sgo)
+	return SteamShortcut(id, ii, sgo)
 
 }
 
-func SteamShortcut(ii *InstallInfo, sgo *steamGridOptions) error {
+func SteamShortcut(id string, ii *InstallInfo, sgo *steamGridOptions) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
@@ -155,14 +152,12 @@ func SteamShortcut(ii *InstallInfo, sgo *steamGridOptions) error {
 	}
 
 	if sgo.remove {
-		if err = removeSteamShortcut(rdx, sgo.ids...); err != nil {
+		if err = removeSteamShortcut(id, rdx); err != nil {
 			return err
 		}
 	} else {
-		for _, id := range sgo.ids {
-			if err = addSteamShortcut(id, ii, rdx, sgo); err != nil {
-				return err
-			}
+		if err = addSteamShortcut(id, ii, rdx, sgo); err != nil {
+			return err
 		}
 	}
 
@@ -188,10 +183,8 @@ func addSteamShortcut(id string, ii *InstallInfo, rdx redux.Writeable, sgo *stea
 		return err
 	}
 
-	if sgo == nil {
-		sgo = &steamGridOptions{
-			logoPosition: defaultLogoPosition(),
-		}
+	if sgo.logoPosition == nil {
+		sgo.logoPosition = defaultLogoPosition()
 	}
 
 	for _, loginUser := range loginUsers {
@@ -360,16 +353,16 @@ func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcut
 		return false, errors.New("provided shortcuts.vdf is missing shortcuts key")
 	}
 
-	if existingShortcut := steam_integration.GetShortcutByAppId(kvShortcuts, shortcut.AppId); existingShortcut == nil || force {
+	if existingShortcut := steam_integration.GetShortcutByAppId(shortcut.AppId, kvShortcuts); existingShortcut == nil || force {
 
 		if existingShortcut == nil {
-			if err = steam_integration.AppendShortcut(kvShortcuts, shortcut); err != nil {
+			if err = steam_integration.AppendShortcut(shortcut, kvShortcuts); err != nil {
 				return false, err
 			}
 
 			asa.EndWithResult("appended shortcut")
 		} else {
-			if err = steam_integration.UpdateShortcut(existingShortcut.Key, kvShortcuts, shortcut); err != nil {
+			if err = steam_integration.UpdateShortcut(existingShortcut.Key, shortcut, kvShortcuts); err != nil {
 				return false, err
 			}
 			asa.EndWithResult("updated shortcut")
@@ -507,8 +500,8 @@ func steamStateDirExist() (bool, error) {
 	}
 }
 
-func removeSteamShortcut(rdx redux.Readable, ids ...string) error {
-	rssa := nod.Begin("removing Steam shortcuts for %s...", strings.Join(ids, ","))
+func removeSteamShortcut(id string, rdx redux.Readable) error {
+	rssa := nod.Begin("removing Steam shortcuts for %s...", id)
 	defer rssa.Done()
 
 	ok, err := steamStateDirExist()
@@ -527,7 +520,7 @@ func removeSteamShortcut(rdx redux.Readable, ids ...string) error {
 	}
 
 	for _, loginUser := range loginUsers {
-		if err := removeSteamShortcutsForUser(loginUser, rdx, ids...); err != nil {
+		if err = removeSteamShortcutsForUser(id, loginUser, rdx); err != nil {
 			return err
 		}
 	}
@@ -535,11 +528,9 @@ func removeSteamShortcut(rdx redux.Readable, ids ...string) error {
 	return nil
 }
 
-func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...string) error {
+func removeSteamShortcutsForUser(id string, loginUser string, rdx redux.Readable) error {
 
-	rsfua := nod.Begin(" removing Steam user %s shortcuts for %s...",
-		loginUser,
-		strings.Join(ids, ","))
+	rsfua := nod.Begin(" removing %s Steam shortcuts for %s...", id, loginUser)
 	defer rsfua.Done()
 
 	kvUserShortcuts, err := readUserShortcuts(loginUser)
@@ -562,28 +553,21 @@ func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...st
 		return nil
 	}
 
-	removeShortcutAppIds := make([]uint32, 0, len(ids))
+	var title string
+	if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
+		title = tp
+	} else {
+		return errors.New("product is missing title")
+	}
 
-	for _, id := range ids {
+	shortcutId := steam_integration.ShortcutAppId(title)
 
-		var title string
-		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
-			title = tp
-		} else {
-			return errors.New("product is missing title")
-		}
-
-		shortcutId := steam_integration.ShortcutAppId(title)
-
-		removeShortcutAppIds = append(removeShortcutAppIds, shortcutId)
-
-		if err = removeSteamGridImages(loginUser, shortcutId); err != nil {
-			return err
-		}
+	if err = removeSteamGridImages(loginUser, shortcutId); err != nil {
+		return err
 	}
 
 	var changed bool
-	if changed, err = removeNonSteamAppShortcut(kvUserShortcuts, removeShortcutAppIds...); err != nil {
+	if changed, err = removeNonSteamAppShortcut(shortcutId, kvUserShortcuts); err != nil {
 		return err
 	} else if changed {
 		if err = writeUserShortcuts(loginUser, kvUserShortcuts); err != nil {
@@ -628,17 +612,11 @@ func defaultLogoPosition() *logoPosition {
 	}
 }
 
-func removeNonSteamAppShortcut(
-	kvUserShortcuts steam_vdf.ValveDataFile,
-	shortcutsIds ...uint32) (bool, error) {
+func removeNonSteamAppShortcut(shortcutId uint32, kvUserShortcuts steam_vdf.ValveDataFile) (bool, error) {
 
-	shortcutsStrs := make([]string, 0, len(shortcutsIds))
-	for _, shortcutId := range shortcutsIds {
-		shortcutsStrs = append(shortcutsStrs, strconv.FormatInt(int64(shortcutId), 10))
-	}
+	shortcutsStr := strconv.FormatInt(int64(shortcutId), 10)
 
-	rnsasa := nod.Begin(" removing non-Steam app shortcut for appIds: %s...",
-		strings.Join(shortcutsStrs, ","))
+	rnsasa := nod.Begin(" removing non-Steam app shortcut for %s...", shortcutsStr)
 	defer rnsasa.Done()
 
 	kvShortcuts, err := kvUserShortcuts.At("shortcuts")
@@ -650,7 +628,7 @@ func removeNonSteamAppShortcut(
 		return false, errors.New("provided shortcuts.vdf is missing shortcuts key")
 	}
 
-	if err = steam_integration.RemoveShortcuts(kvShortcuts, shortcutsIds...); err != nil {
+	if err = steam_integration.RemoveShortcuts(shortcutId, kvShortcuts); err != nil {
 		return false, err
 	}
 

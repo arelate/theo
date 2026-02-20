@@ -106,7 +106,7 @@ steam-fix
     revert
 
 steam-shortcut
-    id^&*
+    id^*
     os={operating-systems^}
     lang-code={language-codes^}
     origin={origins^}

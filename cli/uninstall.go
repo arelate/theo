@@ -122,7 +122,7 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		return err
 	}
 
-	if err = removeSteamShortcut(rdx, id); err != nil {
+	if err = removeSteamShortcut(id, rdx); err != nil {
 		return err
 	}
 

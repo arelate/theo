@@ -186,7 +186,7 @@ func Install(id string, ii *InstallInfo) error {
 		}
 
 		sgo := &steamGridOptions{
-			ids:          []string{id},
+			id:           id,
 			assets:       pda,
 			logoPosition: lp,
 		}
