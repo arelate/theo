@@ -351,7 +351,11 @@ func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcut
 	asa := nod.Begin(" adding non-Steam app shortcut for appId %d...", shortcut.AppId)
 	defer asa.Done()
 
-	kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts")
+	kvShortcuts, err := kvUserShortcuts.At("shortcuts")
+	if err != nil {
+		return false, err
+	}
+
 	if kvShortcuts == nil {
 		return false, errors.New("provided shortcuts.vdf is missing shortcuts key")
 	}
@@ -359,13 +363,13 @@ func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcut
 	if existingShortcut := steam_integration.GetShortcutByAppId(kvShortcuts, shortcut.AppId); existingShortcut == nil || force {
 
 		if existingShortcut == nil {
-			if err := steam_integration.AppendShortcut(kvShortcuts, shortcut); err != nil {
+			if err = steam_integration.AppendShortcut(kvShortcuts, shortcut); err != nil {
 				return false, err
 			}
 
 			asa.EndWithResult("appended shortcut")
 		} else {
-			if err := steam_integration.UpdateShortcut(existingShortcut.Key, kvShortcuts, shortcut); err != nil {
+			if err = steam_integration.UpdateShortcut(existingShortcut.Key, kvShortcuts, shortcut); err != nil {
 				return false, err
 			}
 			asa.EndWithResult("updated shortcut")
@@ -380,7 +384,7 @@ func addNonSteamAppShortcut(shortcut *steam_integration.Shortcut, kvUserShortcut
 	}
 }
 
-func readUserShortcuts(loginUser string) ([]*steam_vdf.KeyValues, error) {
+func readUserShortcuts(loginUser string) (steam_vdf.ValveDataFile, error) {
 
 	rusa := nod.Begin(" loading Steam user %s shortcuts.vdf...", loginUser)
 	defer rusa.Done()
@@ -466,25 +470,24 @@ func getSteamLoginUsers() ([]string, error) {
 		return nil, err
 	}
 
-	if users := steam_vdf.GetKevValuesByKey(kvLoginUsers, "users"); users != nil {
-
-		steamIds := make([]string, 0, len(users.Values))
-
-		for _, userId := range users.Values {
-
-			var steamId int64
-			steamId, err = steam_integration.SteamIdFromUserId(userId.Key)
-			if err != nil {
-				return nil, err
-			}
-			steamIds = append(steamIds, strconv.FormatInt(steamId, 10))
-		}
-
-		return steamIds, nil
-
+	users, err := kvLoginUsers.At("users")
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, errors.New("failed to successfully process loginusers.vdf")
+	steamIds := make([]string, 0, len(users.Values))
+
+	for _, userId := range users.Values {
+
+		var steamId int64
+		steamId, err = steam_integration.SteamIdFromUserId(userId.Key)
+		if err != nil {
+			return nil, err
+		}
+		steamIds = append(steamIds, strconv.FormatInt(steamId, 10))
+	}
+
+	return steamIds, nil
 }
 
 func steamStateDirExist() (bool, error) {
@@ -549,11 +552,14 @@ func removeSteamShortcutsForUser(loginUser string, rdx redux.Readable, ids ...st
 		return nil
 	}
 
-	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
-		if len(kvShortcuts.Values) == 0 {
-			rsfua.EndWithResult("user %s has no shortcuts", loginUser)
-			return nil
-		}
+	kvShortcuts, err := kvUserShortcuts.At("shortcuts")
+	if err != nil {
+		return err
+	}
+
+	if len(kvShortcuts.Values) == 0 {
+		rsfua.EndWithResult("user %s has no shortcuts", loginUser)
+		return nil
 	}
 
 	removeShortcutAppIds := make([]uint32, 0, len(ids))
@@ -623,7 +629,7 @@ func defaultLogoPosition() *logoPosition {
 }
 
 func removeNonSteamAppShortcut(
-	kvUserShortcuts []*steam_vdf.KeyValues,
+	kvUserShortcuts steam_vdf.ValveDataFile,
 	shortcutsIds ...uint32) (bool, error) {
 
 	shortcutsStrs := make([]string, 0, len(shortcutsIds))
@@ -635,12 +641,16 @@ func removeNonSteamAppShortcut(
 		strings.Join(shortcutsStrs, ","))
 	defer rnsasa.Done()
 
-	kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts")
+	kvShortcuts, err := kvUserShortcuts.At("shortcuts")
+	if err != nil {
+		return false, err
+	}
+
 	if kvShortcuts == nil {
 		return false, errors.New("provided shortcuts.vdf is missing shortcuts key")
 	}
 
-	if err := steam_integration.RemoveShortcuts(kvShortcuts, shortcutsIds...); err != nil {
+	if err = steam_integration.RemoveShortcuts(kvShortcuts, shortcutsIds...); err != nil {
 		return false, err
 	}
 

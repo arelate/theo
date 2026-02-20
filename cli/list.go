@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/arelate/southern_light/gog_integration"
-	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -327,36 +326,35 @@ func listUserShortcuts(loginUser string, allKeyValues bool) error {
 		return nil
 	}
 
-	if kvShortcuts := steam_vdf.GetKevValuesByKey(kvUserShortcuts, "shortcuts"); kvShortcuts != nil {
+	kvShortcuts, err := kvUserShortcuts.At("shortcuts")
+	if err != nil {
+		return err
+	}
 
-		shortcutValues := make(map[string][]string)
+	shortcutValues := make(map[string][]string)
 
-		for _, shortcut := range kvShortcuts.Values {
-			shortcutKey := fmt.Sprintf("shortcut: %s", shortcut.Key)
+	for _, shortcut := range kvShortcuts.Values {
+		shortcutKey := fmt.Sprintf("shortcut: %s", shortcut.Key)
 
-			for _, kv := range shortcut.Values {
+		for _, kv := range shortcut.Values {
 
-				var addKeyValue bool
-				switch allKeyValues {
-				case true:
-					addKeyValue = true
-				case false:
-					addKeyValue = slices.Contains(steamShortcutPrintedKeys, kv.Key) && kv.TypedValue != nil
-				}
+			var addKeyValue bool
+			switch allKeyValues {
+			case true:
+				addKeyValue = true
+			case false:
+				addKeyValue = slices.Contains(steamShortcutPrintedKeys, kv.Key) && kv.TypedValue != nil
+			}
 
-				if addKeyValue {
-					keyValue := fmt.Sprintf("%s: %v", kv.Key, kv.TypedValue)
-					shortcutValues[shortcutKey] = append(shortcutValues[shortcutKey], keyValue)
-				}
+			if addKeyValue {
+				keyValue := fmt.Sprintf("%s: %v", kv.Key, kv.TypedValue)
+				shortcutValues[shortcutKey] = append(shortcutValues[shortcutKey], keyValue)
 			}
 		}
-
-		heading := fmt.Sprintf("Steam user %s shortcuts", loginUser)
-		lusa.EndWithSummary(heading, shortcutValues)
-
-	} else {
-		lusa.EndWithResult("no shortcuts found")
 	}
+
+	heading := fmt.Sprintf("Steam user %s shortcuts", loginUser)
+	lusa.EndWithSummary(heading, shortcutValues)
 
 	return nil
 }
