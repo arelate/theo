@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
-	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/steamcmd"
@@ -17,7 +17,7 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-func getSteamAppInfo(steamAppId string, ii *InstallInfo, rdx redux.Writeable) (*steam_appinfo.AppInfo, error) {
+func getSteamAppInfoKv(steamAppId string, ii *InstallInfo, rdx redux.Writeable) (steam_vdf.ValveDataFile, error) {
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
 
@@ -43,12 +43,7 @@ func getSteamAppInfo(steamAppId string, ii *InstallInfo, rdx redux.Writeable) (*
 	}
 	defer appInfoRc.Close()
 
-	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
-	if err != nil {
-		return nil, err
-	}
-
-	return steam_appinfo.AppInfoVdf(appInfoKeyValues)
+	return steam_vdf.ReadText(appInfoRc)
 }
 
 func fetchSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar.KeyValues, rdx redux.Writeable, force bool) error {
@@ -81,19 +76,13 @@ func fetchSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar
 
 	if !rdx.HasKey(vangogh_integration.TitleProperty, steamAppId) || force {
 
-		var appInfoKeyValues []*steam_vdf.KeyValues
-		appInfoKeyValues, err = steam_vdf.ReadText(strings.NewReader(printedAppInfo))
+		var appInfoKv steam_vdf.ValveDataFile
+		appInfoKv, err = steam_vdf.ReadText(strings.NewReader(printedAppInfo))
 		if err != nil {
 			return err
 		}
 
-		var appInfo *steam_appinfo.AppInfo
-		appInfo, err = steam_appinfo.AppInfoVdf(appInfoKeyValues)
-		if err != nil {
-			return err
-		}
-
-		if err = steamReduceAppInfo(appInfo, rdx); err != nil {
+		if err = steamReduceAppInfo(steamAppId, appInfoKv, rdx); err != nil {
 			return err
 		}
 	}
@@ -139,53 +128,72 @@ func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.Opera
 	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername)
 }
 
-func steamReduceAppInfo(appInfo *steam_appinfo.AppInfo, rdx redux.Writeable) error {
+func steamReduceAppInfo(steamAppId string, appInfoKv steam_vdf.ValveDataFile, rdx redux.Writeable) error {
 
 	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return err
 	}
 
-	if err := rdx.ReplaceValues(vangogh_integration.TitleProperty, appInfo.AppId, appInfo.Common.Name); err != nil {
+	var appInfoName string
+	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {
+		appInfoName = ain
+	}
+
+	if err := rdx.ReplaceValues(vangogh_integration.TitleProperty, steamAppId, appInfoName); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func steamShortcutAssets(appInfo *steam_appinfo.AppInfo) (map[steam_grid.Asset]*url.URL, *logoPosition, error) {
+func steamShortcutAssets(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (map[steam_grid.Asset]*url.URL, error) {
 
 	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
 
 	for _, asset := range steam_grid.ShortcutAssets {
 
 		var imageId string
+		var err error
+
 		switch asset {
 		case steam_grid.Header:
-			if appInfo.Common.LibraryAssetsFull != nil &&
-				appInfo.Common.LibraryAssetsFull.LibraryHeader != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryHeader.DefaultImage()
-			} else if dh := appInfo.Common.DefaultHeaderImage(); dh != "" {
-				imageId = dh
+
+			if imageId, err = steamAppInfoAsset(appInfoKv,
+				[]string{steamAppId, "common", "library_assets_full", "library_header", "image", "english"},
+				[]string{steamAppId, "common", "header_image", "english"}...); err != nil {
+				return nil, err
 			}
+
 		case steam_grid.LibraryCapsule:
-			if appInfo.Common.LibraryAssetsFull != nil &&
-				appInfo.Common.LibraryAssetsFull.LibraryCapsule != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryCapsule.DefaultImage()
+
+			if imageId, err = steamAppInfoAsset(appInfoKv,
+				[]string{steamAppId, "common", "library_assets_full", "library_capsule", "image", "english"}); err != nil {
+				return nil, err
 			}
+
 		case steam_grid.LibraryHero:
-			if appInfo.Common.LibraryAssetsFull != nil &&
-				appInfo.Common.LibraryAssetsFull.LibraryHero != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryHero.DefaultImage()
+
+			if imageId, err = steamAppInfoAsset(appInfoKv,
+				[]string{steamAppId, "common", "library_assets_full", "library_hero", "image", "english"}); err != nil {
+				return nil, err
 			}
+
 		case steam_grid.LibraryLogo:
-			if appInfo.Common.LibraryAssetsFull != nil &&
-				appInfo.Common.LibraryAssetsFull.LibraryLogo != nil {
-				imageId = appInfo.Common.LibraryAssetsFull.LibraryLogo.DefaultImage()
+
+			if imageId, err = steamAppInfoAsset(appInfoKv,
+				[]string{steamAppId, "common", "library_assets_full", "library_logo", "image", "english"}); err != nil {
+				return nil, err
 			}
+
 		case steam_grid.ClientIcon:
-			imageId = appInfo.Common.ClientIcon
+
+			if imageId, err = steamAppInfoAsset(appInfoKv,
+				[]string{steamAppId, "common", "clienticon"}); err != nil {
+				return nil, err
+			}
+
 		default:
-			return nil, nil, errors.New("unexpected shortcut asset " + asset.String())
+			return nil, errors.New("unexpected shortcut asset " + asset.String())
 		}
 
 		if imageId == "" {
@@ -195,20 +203,72 @@ func steamShortcutAssets(appInfo *steam_appinfo.AppInfo) (map[steam_grid.Asset]*
 		}
 
 		if imageId != "" {
-			shortcutAssets[asset] = steam_grid.AssetUrl(appInfo.AppId, imageId, asset)
+			shortcutAssets[asset] = steam_grid.AssetUrl(steamAppId, imageId, asset)
 		}
 	}
 
-	var shortcutLogoPosition *logoPosition
-	if appInfo.Common.LibraryAssetsFull != nil {
-		shortcutLogoPosition = new(logoPosition{
-			PinnedPosition: appInfo.Common.LibraryAssetsFull.LibraryLogo.PinnedPosition,
-			WidthPct:       appInfo.Common.LibraryAssetsFull.LibraryLogo.WidthPct,
-			HeightPct:      appInfo.Common.LibraryAssetsFull.LibraryLogo.HeighPct,
-		})
+	return shortcutAssets, nil
+}
+
+func steamAppInfoAsset(appInfoKv steam_vdf.ValveDataFile, preferredPath []string, fallbackPath ...string) (string, error) {
+
+	if preferredAsset, ok := appInfoKv.Val(preferredPath...); ok {
+		return preferredAsset, nil
 	} else {
+
+		if len(fallbackPath) > 0 {
+
+			if fallbackAsset, sure := appInfoKv.Val(fallbackPath...); sure {
+				return fallbackAsset, nil
+			}
+		}
+	}
+
+	return "", nil
+}
+
+func steamLogoPosition(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (*logoPosition, error) {
+
+	shortcutLogoPosition := new(logoPosition)
+
+	if pinnedPosition, err := steamAppInfoAsset(appInfoKv,
+		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "pinned_position"}); err == nil {
+		shortcutLogoPosition.PinnedPosition = pinnedPosition
+	} else {
+		return nil, err
+	}
+
+	if wps, err := steamAppInfoAsset(appInfoKv,
+		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "width_pct"}); err == nil {
+
+		var wpf float64
+		if wpf, err = strconv.ParseFloat(wps, 64); err == nil {
+			shortcutLogoPosition.WidthPct = wpf
+		} else {
+			return nil, err
+		}
+
+	} else {
+		return nil, err
+	}
+
+	if hps, err := steamAppInfoAsset(appInfoKv,
+		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "height_pct"}); err == nil {
+
+		var hpf float64
+		if hpf, err = strconv.ParseFloat(hps, 64); err == nil {
+			shortcutLogoPosition.HeightPct = hpf
+		} else {
+			return nil, err
+		}
+
+	} else {
+		return nil, err
+	}
+
+	if shortcutLogoPosition.PinnedPosition == "" {
 		shortcutLogoPosition = defaultLogoPosition()
 	}
 
-	return shortcutAssets, shortcutLogoPosition, nil
+	return shortcutLogoPosition, nil
 }

@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/boggydigital/kevlar"
@@ -148,19 +147,23 @@ func AbsSteamPrefixDir(steamAppId string) (string, error) {
 
 	defer appInfoRc.Close()
 
-	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
-	if err != nil {
-		return "", err
-	}
-
-	appInfo, err := steam_appinfo.AppInfoVdf(appInfoKeyValues)
+	appInfoKv, err := steam_vdf.ReadText(appInfoRc)
 	if err != nil {
 		return "", err
 	}
 
 	steamPrefixesDir := Pwd.AbsRelDirPath(SteamPrefixes, Wine)
 
-	return filepath.Join(steamPrefixesDir, pathways.Sanitize(appInfo.Common.Name)), nil
+	var appInfoName string
+	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {
+		appInfoName = ain
+	}
+
+	if appInfoName == "" {
+		return "", errors.New("empty appinfo name")
+	}
+
+	return filepath.Join(steamPrefixesDir, pathways.Sanitize(appInfoName)), nil
 }
 
 func AbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {

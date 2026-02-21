@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_grid"
+	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -83,7 +83,7 @@ func Install(id string, ii *InstallInfo) error {
 		true)
 
 	var productDetails *vangogh_integration.ProductDetails
-	var appInfo *steam_appinfo.AppInfo
+	var appInfoKv steam_vdf.ValveDataFile
 
 	var productOperatingSystems []vangogh_integration.OperatingSystem
 
@@ -116,12 +116,17 @@ func Install(id string, ii *InstallInfo) error {
 			return errors.New("unknown product type " + productDetails.ProductType)
 		}
 	case data.SteamOrigin:
-		appInfo, err = getSteamAppInfo(id, ii, rdx)
+		appInfoKv, err = getSteamAppInfoKv(id, ii, rdx)
 		if err != nil {
 			return err
 		}
 
-		productOperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(appInfo.Common.OsList, ","))
+		var osList string
+		if ol, ok := appInfoKv.Val(id, "common", "oslist"); ok {
+			osList = ol
+		}
+
+		productOperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(osList, ","))
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -180,17 +185,27 @@ func Install(id string, ii *InstallInfo) error {
 				return errors.New("nil productDetails")
 			}
 
-			pda, lp, err = vangoghShortcutAssets(productDetails, rdx)
+			pda, err = vangoghShortcutAssets(productDetails, rdx)
+			if err != nil {
+				return err
+			}
+
+			lp = defaultLogoPosition()
+
 		case data.SteamOrigin:
-			if appInfo != nil {
-				pda, lp, err = steamShortcutAssets(appInfo)
+			if appInfoKv != nil {
+				pda, err = steamShortcutAssets(id, appInfoKv)
+				if err != nil {
+					return err
+				}
+
+				lp, err = steamLogoPosition(id, appInfoKv)
+				if err != nil {
+					return err
+				}
 			}
 		default:
 			return ii.Origin.ErrUnsupportedOrigin()
-		}
-
-		if err != nil {
-			return err
 		}
 
 		sgo := &steamGridOptions{
@@ -589,7 +604,7 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 	}
 }
 
-func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, *logoPosition, error) {
+func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, error) {
 
 	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
 
@@ -616,7 +631,7 @@ func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, r
 				imageId = productDetails.Images.Icon
 			}
 		default:
-			return nil, nil, errors.New("unexpected shortcut asset " + asset.String())
+			return nil, errors.New("unexpected shortcut asset " + asset.String())
 		}
 
 		if imageId != "" {
@@ -626,13 +641,13 @@ func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, r
 
 			vangoghImageUrl, err := data.VangoghUrl(data.HttpImagePath, imageQuery, rdx)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 
 			shortcutAssets[asset] = vangoghImageUrl
 		}
 	}
 
-	return shortcutAssets, defaultLogoPosition(), nil
+	return shortcutAssets, nil
 
 }

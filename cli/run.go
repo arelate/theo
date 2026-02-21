@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/arelate/southern_light/gog_integration"
-	"github.com/arelate/southern_light/steam_appinfo"
 	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/southern_light/wine_integration"
@@ -460,17 +459,12 @@ func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTa
 	}
 	defer appInfoRc.Close()
 
-	appInfoKeyValues, err := steam_vdf.ReadText(appInfoRc)
+	appInfoKv, err := steam_vdf.ReadText(appInfoRc)
 	if err != nil {
 		return err
 	}
 
-	appInfo, err := steam_appinfo.AppInfoVdf(appInfoKeyValues)
-	if err != nil {
-		return err
-	}
-
-	et, err = steamExecTask(appInfo, ii, rdx, et)
+	et, err = steamExecTask(steamAppId, appInfoKv, ii, rdx, et)
 	if err != nil {
 		return err
 	}
@@ -478,32 +472,51 @@ func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTa
 	return osExec(steamAppId, ii.OperatingSystem, et)
 }
 
-func steamExecTask(appInfo *steam_appinfo.AppInfo, ii *InstallInfo, rdx redux.Readable, et *execTask) (*execTask, error) {
+func steamExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable, et *execTask) (*execTask, error) {
 
-	steamAppInstallDir, err := data.AbsSteamAppInstallDir(appInfo.AppId, ii.OperatingSystem, rdx)
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
 	if err != nil {
 		return nil, err
 	}
 
-	absSteamPrefixDir, err := data.AbsSteamPrefixDir(appInfo.AppId)
+	absSteamPrefixDir, err := data.AbsSteamPrefixDir(steamAppId)
 	if err != nil {
 		return nil, err
 	}
 
 	et.prefix = absSteamPrefixDir
 
+	var appInfoName string
+	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {
+		appInfoName = ain
+	}
+
+	appInfoClKv, err := appInfoKv.At(steamAppId, "config", "launch")
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO: better detect default launch task
-	for _, slc := range appInfo.Config.Launch {
+	for _, lcKv := range appInfoClKv.Values {
 
 		var osList []vangogh_integration.OperatingSystem
-		if slc.Config.OsList != "" {
-			osList = vangogh_integration.ParseManyOperatingSystems(strings.Split(slc.Config.OsList, ","))
+
+		if lol, ok := lcKv.Values.Val("config", "oslist"); ok {
+			osList = vangogh_integration.ParseManyOperatingSystems(strings.Split(lol, ","))
 		} else {
 			osList = []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
 		}
+
 		if slices.Contains(osList, ii.OperatingSystem) {
 
-			exe := slc.Executable
+			var exe string
+			if lcExe, ok := lcKv.Values.Val("executable"); ok {
+				exe = lcExe
+			}
+
+			if exe == "" {
+				continue
+			}
 
 			switch ii.OperatingSystem {
 			case vangogh_integration.MacOS:
@@ -523,10 +536,16 @@ func steamExecTask(appInfo *steam_appinfo.AppInfo, ii *InstallInfo, rdx redux.Re
 				return nil, data.CurrentOs().ErrUnsupported()
 			}
 
-			et.name = appInfo.Common.Name
+			et.name = appInfoName
 			et.exe = filepath.Join(steamAppInstallDir, exe)
-			et.workDir = filepath.Join(steamAppInstallDir, windowsToNixPath(slc.WorkingDir))
-			et.args = append(et.args, strings.Split(slc.Arguments, " ")...)
+
+			if workingDir, ok := lcKv.Values.Val("workingdir"); ok {
+				et.workDir = filepath.Join(steamAppInstallDir, windowsToNixPath(workingDir))
+			}
+
+			if arguments, ok := lcKv.Values.Val("arguments"); ok {
+				et.args = append(et.args, strings.Split(arguments, " ")...)
+			}
 
 			break
 		}
