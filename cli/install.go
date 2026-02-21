@@ -167,6 +167,13 @@ func Install(id string, ii *InstallInfo) error {
 			return err
 		}
 	case data.SteamOrigin:
+
+		if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
+			if err = steamPrefixInit(id, ii.verbose); err != nil {
+				return err
+			}
+		}
+
 		if err = steamUpdateApp(id, ii.OperatingSystem, rdx); err != nil {
 			return err
 		}
