@@ -6,9 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
@@ -105,10 +103,15 @@ func InitPathways() error {
 }
 
 func GetPrefixName(id string, rdx redux.Readable) (string, error) {
-	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
-		return slug, nil
+
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
+		return "", err
+	}
+
+	if title, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && title != "" {
+		return pathways.Sanitize(title), nil
 	} else {
-		return "", errors.New("product slug is undefined: " + id)
+		return "", errors.New("product title is not defined: " + id)
 	}
 }
 
@@ -116,12 +119,20 @@ func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode st
 	return strings.Join([]string{operatingSystem.String(), langCode}, "-")
 }
 
-func AbsPrefixDir(id string, rdx redux.Readable) (string, error) {
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+func AbsPrefixDir(id string, origin Origin, rdx redux.Readable) (string, error) {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return "", err
 	}
 
-	prefixesDir := Pwd.AbsRelDirPath(Prefixes, Wine)
+	var prefixesDir string
+	switch origin {
+	case SteamOrigin:
+		prefixesDir = Pwd.AbsRelDirPath(SteamPrefixes, Wine)
+	case VangoghGogOrigin:
+		prefixesDir = Pwd.AbsRelDirPath(Prefixes, Wine)
+	default:
+		return "", origin.ErrUnsupportedOrigin()
+	}
 
 	prefixName, err := GetPrefixName(id, rdx)
 	if err != nil {
@@ -131,52 +142,17 @@ func AbsPrefixDir(id string, rdx redux.Readable) (string, error) {
 	return filepath.Join(prefixesDir, prefixName), nil
 }
 
-func AbsSteamPrefixDir(steamAppId string) (string, error) {
-
-	appInfoDir := Pwd.AbsRelDirPath(SteamAppInfo, Metadata)
-
-	kvAppInfo, err := kevlar.New(appInfoDir, steam_vdf.Ext)
-	if err != nil {
-		return "", err
-	}
-
-	appInfoRc, err := kvAppInfo.Get(steamAppId)
-	if err != nil {
-		return "", err
-	}
-
-	defer appInfoRc.Close()
-
-	appInfoKv, err := steam_vdf.ReadText(appInfoRc)
-	if err != nil {
-		return "", err
-	}
-
-	steamPrefixesDir := Pwd.AbsRelDirPath(SteamPrefixes, Wine)
-
-	var appInfoName string
-	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {
-		appInfoName = ain
-	}
-
-	if appInfoName == "" {
-		return "", errors.New("empty appinfo name")
-	}
-
-	return filepath.Join(steamPrefixesDir, pathways.Sanitize(appInfoName)), nil
-}
-
 func AbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return "", err
 	}
 
 	osLangInventoryDir := filepath.Join(Pwd.AbsRelDirPath(Inventory, InstalledApps), OsLangCode(operatingSystem, langCode))
 
-	if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
-		return filepath.Join(osLangInventoryDir, slug+inventoryExt), nil
+	if title, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && title != "" {
+		return filepath.Join(osLangInventoryDir, pathways.Sanitize(title)+inventoryExt), nil
 	} else {
-		return "", errors.New("product slug is undefined: " + id)
+		return "", errors.New("product title is undefined: " + id)
 	}
 }
 

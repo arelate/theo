@@ -23,16 +23,12 @@ const lnkGlob = "*.lnk"
 
 const prefixRelDriveCDir = "drive_c"
 
-func prefixInit(id string, rdx redux.Readable, verbose bool) error {
+func prefixInit(id string, origin data.Origin, rdx redux.Readable, verbose bool) error {
 
 	cpa := nod.Begin("initializing prefix for %s...", id)
 	defer cpa.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return err
-	}
-
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
 	if err != nil {
 		return err
 	}
@@ -47,26 +43,6 @@ func prefixInit(id string, rdx redux.Readable, verbose bool) error {
 	}
 }
 
-func steamPrefixInit(steamAppId string, verbose bool) error {
-
-	cpa := nod.Begin("initializing Steam prefix for %s...", steamAppId)
-	defer cpa.Done()
-
-	absSteamPrefixDir, err := data.AbsSteamPrefixDir(steamAppId)
-	if err != nil {
-		return err
-	}
-
-	switch data.CurrentOs() {
-	case vangogh_integration.MacOS:
-		return macOsInitPrefix(absSteamPrefixDir, verbose)
-	case vangogh_integration.Linux:
-		return linuxInitPrefix(absSteamPrefixDir, verbose)
-	default:
-		return data.CurrentOs().ErrUnsupported()
-	}
-}
-
 func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
 	puia := nod.Begin(" unpacking %s installers for %s-%s...", id, vangogh_integration.Windows, ii.LangCode)
@@ -74,7 +50,7 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
 	if err != nil {
 		return err
 	}
@@ -156,7 +132,7 @@ func prefixPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integratio
 
 func prefixFindGlobFile(id string, ii *InstallInfo, rdx redux.Readable, globPattern string) (string, error) {
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return "", nil
 	}
 

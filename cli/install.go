@@ -15,6 +15,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -169,7 +170,7 @@ func Install(id string, ii *InstallInfo) error {
 	case data.SteamOrigin:
 
 		if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
-			if err = steamPrefixInit(id, ii.verbose); err != nil {
+			if err = prefixInit(id, ii.Origin, rdx, ii.verbose); err != nil {
 				return err
 			}
 		}
@@ -252,10 +253,6 @@ func vangoghInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_i
 
 	ipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer ipa.Done()
-
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
-		return err
-	}
 
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
@@ -387,7 +384,7 @@ func osPreInstallActions(id string, ii *InstallInfo, rdx redux.Readable) error {
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			return prefixInit(id, rdx, ii.verbose)
+			return prefixInit(id, ii.Origin, rdx, ii.verbose)
 		default:
 			return nil
 		}
@@ -416,7 +413,7 @@ func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, err
 		case vangogh_integration.MacOS:
 			fallthrough
 		case vangogh_integration.Linux:
-			absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+			absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
 			if err != nil {
 				return "", err
 			}
@@ -585,15 +582,15 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 
 		osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(ii.OperatingSystem, ii.LangCode))
 
-		if err := rdx.MustHave(vangogh_integration.SlugProperty, data.BundleNameProperty); err != nil {
+		if err := rdx.MustHave(vangogh_integration.TitleProperty, data.BundleNameProperty); err != nil {
 			return "", err
 		}
 
 		var installedPath string
-		if slug, ok := rdx.GetLastVal(vangogh_integration.SlugProperty, id); ok && slug != "" {
-			installedPath = slug
+		if title, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && title != "" {
+			installedPath = pathways.Sanitize(title)
 		} else {
-			return "", errors.New("slug is not defined for product " + id)
+			return "", errors.New("product title not defined for: " + id)
 		}
 
 		switch ii.OperatingSystem {

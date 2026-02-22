@@ -75,8 +75,7 @@ func revealInstalled(id string, request *InstallInfo) error {
 
 	rdx, err := redux.NewReader(data.AbsReduxDir(),
 		data.InstallInfoProperty,
-		vangogh_integration.TitleProperty,
-		vangogh_integration.SlugProperty)
+		vangogh_integration.TitleProperty)
 	if err != nil {
 		return err
 	}

@@ -220,7 +220,7 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
 
 		var absPrefixDir string
-		if absPrefixDir, err = data.AbsPrefixDir(id, rdx); err == nil {
+		if absPrefixDir, err = data.AbsPrefixDir(id, ii.Origin, rdx); err == nil {
 			et.prefix = absPrefixDir
 		} else {
 			return err
@@ -479,12 +479,12 @@ func steamExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *Ins
 		return nil, err
 	}
 
-	absSteamPrefixDir, err := data.AbsSteamPrefixDir(steamAppId)
+	absPrefixDir, err := data.AbsPrefixDir(steamAppId, ii.Origin, rdx)
 	if err != nil {
 		return nil, err
 	}
 
-	et.prefix = absSteamPrefixDir
+	et.prefix = absPrefixDir
 
 	var appInfoName string
 	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {

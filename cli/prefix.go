@@ -100,23 +100,9 @@ func Prefix(id string,
 		return err
 	}
 
-	var absPrefixDir string
-
-	switch ii.Origin {
-	case data.VangoghGogOrigin:
-		absPrefixDir, err = data.AbsPrefixDir(id, rdx)
-		if err != nil {
-			return err
-		}
-
-	case data.SteamOrigin:
-		absPrefixDir, err = data.AbsSteamPrefixDir(id)
-		if err != nil {
-			return err
-		}
-
-	default:
-		return ii.Origin.ErrUnsupportedOrigin()
+	absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
+	if err != nil {
+		return err
 	}
 
 	et.prefix = absPrefixDir
@@ -152,7 +138,7 @@ func Prefix(id string,
 	}
 
 	if et.exe != "" {
-		if err = prefixSetExe(id, et.exe, rdx); err != nil {
+		if err = prefixSetExe(id, ii.Origin, et.exe, rdx); err != nil {
 			return err
 		}
 	}
@@ -173,11 +159,11 @@ func Prefix(id string,
 
 		switch mod {
 		case prefixModEnableRetina:
-			if err = prefixModRetina(id, false, rdx, et.verbose, ii.force); err != nil {
+			if err = prefixModRetina(id, ii.Origin, false, rdx, et.verbose, ii.force); err != nil {
 				return err
 			}
 		case prefixModDisableRetina:
-			if err = prefixModRetina(id, true, rdx, et.verbose, ii.force); err != nil {
+			if err = prefixModRetina(id, ii.Origin, true, rdx, et.verbose, ii.force); err != nil {
 				return err
 			}
 		}
@@ -241,7 +227,7 @@ func Prefix(id string,
 	}
 
 	if archive {
-		if err = archiveProductPrefix(id); err != nil {
+		if err = archiveProductPrefix(id, ii.Origin); err != nil {
 			return err
 		}
 	}
@@ -255,12 +241,12 @@ func Prefix(id string,
 	return nil
 }
 
-func archiveProductPrefix(id string) error {
+func archiveProductPrefix(id string, origin data.Origin) error {
 
 	appa := nod.Begin("archiving prefix for %s...", id)
 	defer appa.Done()
 
-	rdx, err := redux.NewReader(data.AbsReduxDir(), vangogh_integration.SlugProperty)
+	rdx, err := redux.NewReader(data.AbsReduxDir(), vangogh_integration.TitleProperty)
 	if err != nil {
 		return err
 	}
@@ -274,7 +260,7 @@ func archiveProductPrefix(id string) error {
 
 	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, prefixName)
 
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
 	if err != nil {
 		return err
 	}
@@ -299,7 +285,7 @@ func cleanupProductPrefixArchive(absPrefixNameArchiveDir string) error {
 	return backups.Cleanup(absPrefixNameArchiveDir, true, cppa)
 }
 
-func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force bool) error {
+func prefixModRetina(id string, origin data.Origin, revert bool, rdx redux.Writeable, verbose, force bool) error {
 
 	mpa := nod.Begin("modding retina in prefix for %s...", id)
 	defer mpa.Done()
@@ -309,11 +295,11 @@ func prefixModRetina(id string, revert bool, rdx redux.Writeable, verbose, force
 		return nil
 	}
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixEnvProperty, data.PrefixExeProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty, data.PrefixEnvProperty, data.PrefixExeProperty); err != nil {
 		return err
 	}
 
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
 	if err != nil {
 		return err
 	}
@@ -375,11 +361,11 @@ func removeProductPrefix(id string, ii *InstallInfo, rdx redux.Readable) error {
 	rppa := nod.Begin(" removing installed files from prefix for %s...", id)
 	defer rppa.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return err
 	}
 
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
 	if err != nil {
 		return err
 	}
@@ -470,14 +456,14 @@ func prefixSetEnv(id, langCode string, env []string, rdx redux.Writeable) error 
 	spea := nod.Begin("setting %s...", data.PrefixEnvProperty)
 	defer spea.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixEnvProperty); err != nil {
-		return err
-	}
-
 	newEnvs := make(map[string][]string)
 
 	prefixName, err := data.GetPrefixName(id, rdx)
 	if err != nil {
+		return err
+	}
+
+	if err = rdx.MustHave(data.PrefixEnvProperty); err != nil {
 		return err
 	}
 
@@ -515,7 +501,7 @@ func encodeEnv(de map[string]string) []string {
 	return ee
 }
 
-func prefixSetExe(id string, exe string, rdx redux.Writeable) error {
+func prefixSetExe(id string, origin data.Origin, exe string, rdx redux.Writeable) error {
 
 	spepa := nod.Begin("setting %s...", data.PrefixExeProperty)
 	defer spepa.Done()
@@ -526,11 +512,7 @@ func prefixSetExe(id string, exe string, rdx redux.Writeable) error {
 		return nil
 	}
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixExeProperty); err != nil {
-		return err
-	}
-
-	absPrefixDir, err := data.AbsPrefixDir(id, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
 	if err != nil {
 		return err
 	}
@@ -545,6 +527,10 @@ func prefixSetExe(id string, exe string, rdx redux.Writeable) error {
 		return err
 	}
 
+	if err = rdx.MustHave(data.PrefixExeProperty); err != nil {
+		return err
+	}
+
 	return rdx.ReplaceValues(data.PrefixExeProperty, prefixName, exe)
 }
 
@@ -553,16 +539,16 @@ func prefixSetArgs(id, langCode string, args []string, rdx redux.Writeable) erro
 	spepa := nod.Begin("setting %s...", data.PrefixArgProperty)
 	defer spepa.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixArgProperty); err != nil {
-		return err
-	}
-
 	prefixName, err := data.GetPrefixName(id, rdx)
 	if err != nil {
 		return err
 	}
 
 	langPrefixName := path.Join(prefixName, langCode)
+
+	if err = rdx.MustHave(data.PrefixArgProperty); err != nil {
+		return err
+	}
 
 	return rdx.ReplaceValues(data.PrefixArgProperty, langPrefixName, args...)
 }
@@ -571,12 +557,6 @@ func prefixInfo(id, langCode string, rdx redux.Readable) error {
 
 	pia := nod.Begin("looking up prefix details...")
 	defer pia.Done()
-
-	if err := rdx.MustHave(vangogh_integration.TitleProperty,
-		data.PrefixEnvProperty,
-		data.PrefixExeProperty); err != nil {
-		return err
-	}
 
 	prefixName, err := data.GetPrefixName(id, rdx)
 	if err != nil {
@@ -587,6 +567,10 @@ func prefixInfo(id, langCode string, rdx redux.Readable) error {
 	summary := make(map[string][]string)
 
 	properties := []string{data.PrefixEnvProperty, data.PrefixExeProperty, data.PrefixArgProperty}
+
+	if err = rdx.MustHave(data.PrefixEnvProperty, data.PrefixExeProperty, data.PrefixArgProperty); err != nil {
+		return err
+	}
 
 	for _, p := range properties {
 		if values, ok := rdx.GetAllValues(p, langPrefixName); ok {
@@ -610,7 +594,7 @@ func prefixDefaultEnv(id, langCode string, rdx redux.Writeable) error {
 	pdea := nod.Begin("defaulting prefix environment variables...")
 	defer pdea.Done()
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, data.PrefixEnvProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty, data.PrefixEnvProperty); err != nil {
 		return err
 	}
 
@@ -633,7 +617,7 @@ func prefixDeleteProperty(id, langCode, property string, rdx redux.Writeable, fo
 		return nil
 	}
 
-	if err := rdx.MustHave(vangogh_integration.SlugProperty, property); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty, property); err != nil {
 		return err
 	}
 

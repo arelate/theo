@@ -125,7 +125,6 @@ func reduceProductDetails(id string, productDetails *vangogh_integration.Product
 	}
 
 	reductionProperties := []string{
-		vangogh_integration.SlugProperty,
 		vangogh_integration.SteamAppIdProperty,
 		vangogh_integration.TitleProperty,
 		vangogh_integration.OperatingSystemsProperty,
@@ -145,8 +144,6 @@ func reduceProductDetails(id string, productDetails *vangogh_integration.Product
 		var values []string
 
 		switch property {
-		case vangogh_integration.SlugProperty:
-			values = []string{productDetails.Slug}
 		case vangogh_integration.SteamAppIdProperty:
 			values = []string{productDetails.SteamAppId}
 		case vangogh_integration.TitleProperty:

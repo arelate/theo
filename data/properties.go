@@ -46,7 +46,6 @@ func AllProperties() []string {
 	ap = append(ap,
 		[]string{
 			vangogh_integration.TitleProperty,
-			vangogh_integration.SlugProperty,
 			vangogh_integration.SteamAppIdProperty,
 			vangogh_integration.OperatingSystemsProperty,
 			vangogh_integration.DevelopersProperty,
