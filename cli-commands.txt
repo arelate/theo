@@ -49,7 +49,6 @@ prefix
     lang-code={language-codes^}
     env&
     arg&
-    steam
     exe
     program={wine-programs}
     mod={prefix-mods}
