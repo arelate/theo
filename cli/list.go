@@ -14,6 +14,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -149,9 +150,12 @@ func listInstalled(ii *InstallInfo) error {
 				continue
 			}
 
+			var installDir string
+
 			title = fmt.Sprintf("%s: %s", installedInfo.Origin, id)
 			if tp, sure := rdx.GetLastVal(vangogh_integration.TitleProperty, id); sure && tp != "" {
 				title = fmt.Sprintf("%s (%s)", tp, title)
+				installDir = pathways.Sanitize(tp)
 			}
 
 			infoLines := make([]string, 0)
@@ -187,6 +191,7 @@ func listInstalled(ii *InstallInfo) error {
 				summary[title] = append(summary[title], "- installed: "+installedDate)
 			}
 
+			summary[title] = append(summary[title], "- install dir: "+installDir)
 		}
 
 		// playtimes
