@@ -172,15 +172,15 @@ func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, 
 			return nil, err
 		}
 
-		var appBundleName string
-		if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok {
-			appBundleName = bundleName
-		}
+		//var appBundleName string
+		//if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok {
+		//	appBundleName = bundleName
+		//}
 
 		for _, ruf := range relUnpackedFiles {
-			if appBundleName != "" {
-				ruf = filepath.Join(appBundleName, ruf)
-			}
+			//if appBundleName != "" && !strings.HasSuffix(appBundleName, appBundleExt) {
+			//	ruf = filepath.Join(appBundleName, ruf)
+			//}
 			filesMap[ruf] = nil
 		}
 
