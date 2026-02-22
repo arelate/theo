@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"maps"
 	"net/url"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"github.com/arelate/southern_light/steam_grid"
-	"github.com/arelate/southern_light/steam_vdf"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -83,60 +83,15 @@ func Install(id string, ii *InstallInfo) error {
 		ii.DownloadTypes,
 		true)
 
-	var productDetails *vangogh_integration.ProductDetails
-	var appInfoKv steam_vdf.ValveDataFile
-
-	var productOperatingSystems []vangogh_integration.OperatingSystem
-
-	switch ii.Origin {
-	case data.VangoghGogOrigin:
-		// always getting the latest product details for install purposes
-		productDetails, err = getProductDetails(id, rdx, true)
-		if err != nil {
-			return err
-		}
-
-		ii.ReduceProductDetails(productDetails)
-		productOperatingSystems = productDetails.OperatingSystems
-
-		switch productDetails.ProductType {
-		case vangogh_integration.DlcProductType:
-			ia.EndWithResult("install %s required product(s) to get this downloadable content", strings.Join(productDetails.RequiresGames, ","))
-			return nil
-		case vangogh_integration.PackProductType:
-			ia.EndWithResult("installing product(s) included in this pack: %s", strings.Join(productDetails.IncludesGames, ","))
-			for _, includedId := range productDetails.IncludesGames {
-				if err = Install(includedId, ii); err != nil {
-					return err
-				}
-			}
-			return nil
-		case vangogh_integration.GameProductType:
-			// do nothing
-		default:
-			return errors.New("unknown product type " + productDetails.ProductType)
-		}
-	case data.SteamOrigin:
-		appInfoKv, err = getSteamAppInfoKv(id, ii, rdx)
-		if err != nil {
-			return err
-		}
-
-		var osList string
-		if ol, ok := appInfoKv.Val(id, "common", "oslist"); ok {
-			osList = ol
-		}
-
-		productOperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(osList, ","))
-	default:
-		return ii.Origin.ErrUnsupportedOrigin()
+	originData, err := originGetData(id, ii, rdx)
+	if err != nil {
+		return err
 	}
 
-	setInstallInfoDefaults(ii, productOperatingSystems)
+	setInstallInfoDefaults(ii, originData.OperatingSystems)
 
 	// don't check existing installations for DLCs, Extras
 	if slices.Contains(ii.DownloadTypes, vangogh_integration.Installer) && !ii.force {
-
 		var ok bool
 		if ok, err = hasInstallInfo(id, ii, rdx); ok && err == nil {
 			ia.EndWithResult("already installed")
@@ -150,91 +105,16 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	switch ii.Origin {
-	case data.VangoghGogOrigin:
-		if err = Download(id, ii, nil, rdx); err != nil {
-			return err
-		}
-
-		if err = Validate(id, ii, nil, rdx); err != nil {
-			return err
-		}
-
-		if productDetails == nil {
-			return errors.New("nil productDetails")
-		}
-
-		if err = vangoghInstallProduct(id, ii, productDetails, rdx); err != nil {
-			return err
-		}
-	case data.SteamOrigin:
-
-		if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
-			if err = prefixInit(id, ii.Origin, rdx, ii.verbose); err != nil {
-				return err
-			}
-		}
-
-		if err = steamUpdateApp(id, ii.OperatingSystem, rdx); err != nil {
-			return err
-		}
-	default:
-		return ii.Origin.ErrUnsupportedOrigin()
+	if err = originInstall(id, ii, originData, rdx); err != nil {
+		return err
 	}
 
-	if !ii.NoSteamShortcut {
-
-		var pda map[steam_grid.Asset]*url.URL
-		var lp *logoPosition
-
-		switch ii.Origin {
-		case data.VangoghGogOrigin:
-			if productDetails == nil {
-				return errors.New("nil productDetails")
-			}
-
-			pda, err = vangoghShortcutAssets(productDetails, rdx)
-			if err != nil {
-				return err
-			}
-
-			lp = defaultLogoPosition()
-
-		case data.SteamOrigin:
-			if appInfoKv != nil {
-				pda, err = steamShortcutAssets(id, appInfoKv)
-				if err != nil {
-					return err
-				}
-
-				lp, err = steamLogoPosition(id, appInfoKv)
-				if err != nil {
-					return err
-				}
-			}
-		default:
-			return ii.Origin.ErrUnsupportedOrigin()
-		}
-
-		sgo := &steamGridOptions{
-			assets:       pda,
-			logoPosition: lp,
-		}
-
-		if err = SteamShortcut(id, ii, sgo); err != nil {
-			return err
-		}
+	if err = originAddSteamShortcut(id, ii, originData, rdx); err != nil {
+		return err
 	}
 
-	switch ii.Origin {
-	case data.VangoghGogOrigin:
-		if !ii.KeepDownloads {
-			if err = RemoveDownloads(id, ii, rdx); err != nil {
-				return err
-			}
-		}
-	default:
-		// do nothing
+	if err = originPostInstall(id, ii, rdx); err != nil {
+		return err
 	}
 
 	if err = pinInstallInfo(id, ii, rdx); err != nil {
@@ -249,7 +129,150 @@ func Install(id string, ii *InstallInfo) error {
 	return nil
 }
 
-func vangoghInstallProduct(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
+func originGetData(id string, ii *InstallInfo, rdx redux.Writeable) (*data.OriginData, error) {
+
+	originData := new(data.OriginData)
+	var err error
+
+	switch ii.Origin {
+	case data.VangoghGogOrigin:
+		// always getting the latest product details for install purposes
+		originData.ProductDetails, err = getProductDetails(id, rdx, true)
+		if err != nil {
+			return nil, err
+		}
+
+		ii.ReduceProductDetails(originData.ProductDetails)
+		originData.OperatingSystems = originData.ProductDetails.OperatingSystems
+
+		switch originData.ProductDetails.ProductType {
+		case vangogh_integration.DlcProductType:
+			return nil, fmt.Errorf("install %s required product(s) to get this downloadable content", strings.Join(originData.ProductDetails.RequiresGames, ","))
+		case vangogh_integration.PackProductType:
+			return nil, fmt.Errorf("install %s included product(s) to get this edition", strings.Join(originData.ProductDetails.IncludesGames, ","))
+		case vangogh_integration.GameProductType:
+			// do nothing
+		default:
+			return nil, errors.New("unknown product type " + originData.ProductDetails.ProductType)
+		}
+	case data.SteamOrigin:
+		originData.AppInfoKv, err = getSteamAppInfoKv(id, ii, rdx)
+		if err != nil {
+			return nil, err
+		}
+
+		var osList string
+		if ol, ok := originData.AppInfoKv.Val(id, "common", "oslist"); ok {
+			osList = ol
+		}
+
+		originData.OperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(osList, ","))
+	default:
+		return nil, ii.Origin.ErrUnsupportedOrigin()
+	}
+
+	return originData, nil
+}
+
+func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
+
+	if ii.NoSteamShortcut {
+		return nil
+	}
+
+	var pda map[steam_grid.Asset]*url.URL
+	var lp *logoPosition
+	var err error
+
+	switch ii.Origin {
+	case data.VangoghGogOrigin:
+		if originData.ProductDetails == nil {
+			return errors.New("nil productDetails")
+		}
+
+		pda, err = vangoghShortcutAssets(originData.ProductDetails, rdx)
+		if err != nil {
+			return err
+		}
+
+		lp = defaultLogoPosition()
+
+	case data.SteamOrigin:
+		if originData.AppInfoKv != nil {
+			pda, err = steamShortcutAssets(id, originData.AppInfoKv)
+			if err != nil {
+				return err
+			}
+
+			lp, err = steamLogoPosition(id, originData.AppInfoKv)
+			if err != nil {
+				return err
+			}
+		}
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
+	}
+
+	sgo := &steamGridOptions{
+		assets:       pda,
+		logoPosition: lp,
+	}
+
+	return addSteamShortcut(id, ii, rdx, sgo)
+}
+
+func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
+
+	switch ii.Origin {
+	case data.VangoghGogOrigin:
+		if err := Download(id, ii, nil, rdx); err != nil {
+			return err
+		}
+
+		if err := Validate(id, ii, nil, rdx); err != nil {
+			return err
+		}
+
+		if originData.ProductDetails == nil {
+			return errors.New("nil productDetails")
+		}
+
+		if err := vangoghUnpackPlace(id, ii, originData.ProductDetails, rdx); err != nil {
+			return err
+		}
+	case data.SteamOrigin:
+
+		if err := osPreInstallActions(id, ii, rdx); err != nil {
+			return err
+		}
+
+		if err := steamUpdateApp(id, ii.OperatingSystem, rdx); err != nil {
+			return err
+		}
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
+	}
+
+	return nil
+}
+
+func originPostInstall(id string, ii *InstallInfo, rdx redux.Writeable) error {
+
+	switch ii.Origin {
+	case data.VangoghGogOrigin:
+		if !ii.KeepDownloads {
+			if err := RemoveDownloads(id, ii, rdx); err != nil {
+				return err
+			}
+		}
+	default:
+		// do nothing
+	}
+
+	return nil
+}
+
+func vangoghUnpackPlace(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
 
 	ipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer ipa.Done()

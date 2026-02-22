@@ -45,7 +45,6 @@ type steamGridOptions struct {
 	name         string
 	assets       map[steam_grid.Asset]*url.URL
 	logoPosition *logoPosition
-	remove       bool
 }
 
 type logoPosition struct {
@@ -62,7 +61,6 @@ func SteamShortcutHandler(u *url.URL) error {
 
 	sgo := &steamGridOptions{
 		logoPosition: defaultLogoPosition(),
-		remove:       q.Has("remove"),
 	}
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
@@ -140,23 +138,26 @@ func SteamShortcutHandler(u *url.URL) error {
 		}
 	}
 
-	return SteamShortcut(id, ii, sgo)
+	remove := q.Has("remove")
+
+	return SteamShortcut(id, ii, sgo, remove)
 
 }
 
-func SteamShortcut(id string, ii *InstallInfo, sgo *steamGridOptions) error {
+func SteamShortcut(id string, ii *InstallInfo, sgo *steamGridOptions, remove bool) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
 	}
 
-	if sgo.remove {
-		if err = removeSteamShortcut(id, rdx); err != nil {
+	switch remove {
+	case false:
+		if err = addSteamShortcut(id, ii, rdx, sgo); err != nil {
 			return err
 		}
-	} else {
-		if err = addSteamShortcut(id, ii, rdx, sgo); err != nil {
+	case true:
+		if err = removeSteamShortcut(id, rdx); err != nil {
 			return err
 		}
 	}
