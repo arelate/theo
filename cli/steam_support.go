@@ -322,25 +322,26 @@ func steamAppInfoSize(steamAppId string, operatingSystem vangogh_integration.Ope
 			continue
 		}
 
+		var depotOperatingSystems []vangogh_integration.OperatingSystem
 		if depotOsList, ok := depotKv.Values.Val("config", "oslist"); ok && depotOsList != "" {
-
-			depotOperatingSystems := vangogh_integration.ParseManyOperatingSystems(strings.Split(depotOsList, ","))
-			if !slices.Contains(depotOperatingSystems, operatingSystem) {
-				continue
-			}
-
-			if sizeStr, sure := depotKv.Values.Val("manifests", "public", "size"); sure && sizeStr != "" {
-				var sizeInt int64
-				if sizeInt, err = strconv.ParseInt(sizeStr, 10, 64); err == nil {
-					estimatedBytes += sizeInt
-				} else {
-					return 0, err
-				}
-			}
-
+			depotOperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(depotOsList, ","))
 		} else {
+			depotOperatingSystems = []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
+		}
+
+		if !slices.Contains(depotOperatingSystems, operatingSystem) {
 			continue
 		}
+
+		if sizeStr, sure := depotKv.Values.Val("manifests", "public", "size"); sure && sizeStr != "" {
+			var sizeInt int64
+			if sizeInt, err = strconv.ParseInt(sizeStr, 10, 64); err == nil {
+				estimatedBytes += sizeInt
+			} else {
+				return 0, err
+			}
+		}
+
 	}
 
 	return estimatedBytes, nil

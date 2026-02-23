@@ -96,7 +96,7 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 		}
 
 		if timeUpdate, err := steamAppInfoTimeUpdated(id, originData.AppInfoKv); err == nil {
-			ii.Version = timeUpdate.Format(time.DateTime)
+			ii.TimeUpdated = timeUpdate.Format(time.DateTime)
 		} else {
 			return err
 		}
