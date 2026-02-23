@@ -138,7 +138,7 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable) (*data.Origi
 			return nil, err
 		}
 	case data.SteamOrigin:
-		originData.AppInfoKv, err = getSteamAppInfoKv(id, rdx, true)
+		originData.AppInfoKv, err = steamGetAppInfoKv(id, rdx, true)
 		if err != nil {
 			return nil, err
 		}

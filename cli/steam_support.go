@@ -19,7 +19,7 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-func getSteamAppInfoKv(steamAppId string, rdx redux.Writeable, force bool) (steam_vdf.ValveDataFile, error) {
+func steamGetAppInfoKv(steamAppId string, rdx redux.Writeable, force bool) (steam_vdf.ValveDataFile, error) {
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
 
@@ -28,14 +28,7 @@ func getSteamAppInfoKv(steamAppId string, rdx redux.Writeable, force bool) (stea
 		return nil, err
 	}
 
-	var username string
-	if un, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && un != "" {
-		username = un
-	} else {
-		return nil, errors.New("cannot resolve Steam username")
-	}
-
-	if err = fetchSteamAppInfo(steamAppId, username, kvSteamAppInfo, rdx, force); err != nil {
+	if err = steamFetchAppInfo(steamAppId, kvSteamAppInfo, rdx, force); err != nil {
 		return nil, err
 	}
 
@@ -48,7 +41,7 @@ func getSteamAppInfoKv(steamAppId string, rdx redux.Writeable, force bool) (stea
 	return steam_vdf.ReadText(appInfoRc)
 }
 
-func fetchSteamAppInfo(steamAppId string, username string, kvSteamAppInfo kevlar.KeyValues, rdx redux.Writeable, force bool) error {
+func steamFetchAppInfo(steamAppId string, kvSteamAppInfo kevlar.KeyValues, rdx redux.Writeable, force bool) error {
 
 	scaia := nod.Begin(" getting Steam appinfo for %s...", steamAppId)
 	defer scaia.Done()
