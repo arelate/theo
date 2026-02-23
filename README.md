@@ -1,17 +1,24 @@
 # theo
 
-`theo` is a command-line (CLI) client for [vangogh](https://github.com/arelate/vangogh) that allows downloading, installing and running games from your local DRM-free collection. At the moment `theo` implements support for macOS and Linux, tested on Steam Deck. Eventually `theo` hopes to provide a web GUI to manage your local games.
+`theo` is a command-line (CLI) client for [vangogh](https://github.com/arelate/vangogh) that allows installing and running games from your local DRM-free collection and DRM-free games from Steam. At the moment `theo` implements support for macOS and Linux, tested on Steam Deck. 
 
 ## Working with theo
 
  - [Installing theo](https://github.com/arelate/theo/wiki/Installing-theo)
+
+### Using theo with vangogh
+
  - [Connecting to vangogh](https://github.com/arelate/theo/wiki/Connecting-to-vangogh)
- - [Key theo commands](https://github.com/arelate/theo/wiki/Key-theo-commands)
+ - [Using theo with vangogh](https://github.com/arelate/theo/wiki/Using-theo-with-vangogh)
+
+### Using theo with Steam DRM-free games
+
+- [Connecting to Steam](https://github.com/arelate/theo/wiki/Connecting-to-Steam)
+- [Using theo with Steam](https://github.com/arelate/theo/wiki/Using-theo-with-Steam)
 
 ## theo wouldn't be possible without...
 
-- On macOS `theo` **requires** a version of [CrossOver](https://www.codeweavers.com/crossover) purchased and licensed for the current user. In the future I'm planning to switch to macOS WINE and DXMT.
-- On Linux `theo` will use [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) and [proton-ge-custom](https://github.com/GloriousEggroll/proton-ge-custom) or, optionally, [umu-proton](https://github.com/Open-Wine-Components/umu-proton). You don't need to do anything, theo will download the latest versions for you automatically from `vangogh`, as needed. Those will be installed under `theo` state folder, not globally and won't interfere with other apps.
+[...these great projects](https://github.com/arelate/theo/wiki/theo-wouldn't-be-possible-without...)
 
 ## Why is it called theo?
 
