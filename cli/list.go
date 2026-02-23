@@ -163,18 +163,35 @@ func listInstalled(ii *InstallInfo) error {
 			infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
 			infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
 
-			pfxDt := "type: "
-			if len(installedInfo.DownloadTypes) > 1 {
-				pfxDt = "types: "
+			switch installedInfo.Origin {
+			case data.VangoghGogOrigin:
+				pfxDt := "type: "
+				if len(installedInfo.DownloadTypes) > 1 {
+					pfxDt = "types: "
+				}
+				dts := make([]string, 0, len(installedInfo.DownloadTypes))
+				for _, dt := range installedInfo.DownloadTypes {
+					dts = append(dts, dt.HumanReadableString())
+				}
+				infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
+			default:
+				// do nothing
 			}
-			dts := make([]string, 0, len(installedInfo.DownloadTypes))
-			for _, dt := range installedInfo.DownloadTypes {
-				dts = append(dts, dt.HumanReadableString())
-			}
-			infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
 
 			if installedInfo.Version != "" {
 				infoLines = append(infoLines, "version: "+installedInfo.Version)
+			}
+
+			if installedInfo.TimeUpdated != "" {
+				var tuu int64
+				if tuu, err = strconv.ParseInt(installedInfo.TimeUpdated, 10, 64); err == nil {
+
+					timeUpdated := time.Unix(tuu, 0)
+					infoLines = append(infoLines, "updated: "+timeUpdated.Format(time.DateTime))
+
+				} else {
+					return err
+				}
 			}
 
 			if installedInfo.EstimatedBytes > 0 {
@@ -188,10 +205,12 @@ func listInstalled(ii *InstallInfo) error {
 			}
 
 			if installedDate != "" {
-				summary[title] = append(summary[title], "- installed: "+installedDate)
+				installStr := "- installed: " + installedDate
+				if installDir != "" {
+					installStr += "; dir: " + installDir
+				}
+				summary[title] = append(summary[title], installStr)
 			}
-
-			summary[title] = append(summary[title], "- install dir: "+installDir)
 		}
 
 		// playtimes
@@ -200,10 +219,13 @@ func listInstalled(ii *InstallInfo) error {
 			continue
 		}
 
+		var playtimeStr string
+
 		if tpms, sure := rdx.GetLastVal(data.TotalPlaytimeMinutesProperty, id); sure && tpms != "" {
-			if tpmi, err := strconv.ParseInt(tpms, 10, 64); err == nil {
+			var tpmi int64
+			if tpmi, err = strconv.ParseInt(tpms, 10, 64); err == nil {
 				if tpmi > 0 {
-					summary[title] = append(summary[title], "- total playtime: "+fmtHoursMinutes(tpmi))
+					playtimeStr = "- total playtime: " + fmtHoursMinutes(tpmi)
 				}
 			} else {
 				return err
@@ -211,11 +233,23 @@ func listInstalled(ii *InstallInfo) error {
 		}
 
 		if lrds, sure := rdx.GetLastVal(data.LastRunDateProperty, id); sure && lrds != "" {
-			if lrdt, err := time.Parse(time.RFC3339, lrds); err == nil {
-				summary[title] = append(summary[title], "- last run date: "+lrdt.Format(time.DateTime))
+			var lrdt time.Time
+			if lrdt, err = time.Parse(time.RFC3339, lrds); err == nil {
+				lastRunDate := "last run date: " + lrdt.Format(time.DateTime)
+
+				switch playtimeStr {
+				case "":
+					playtimeStr = "- " + lastRunDate
+				default:
+					playtimeStr += "; " + lastRunDate
+				}
 			} else {
 				return err
 			}
+		}
+
+		if playtimeStr != "" {
+			summary[title] = append(summary[title], playtimeStr)
 		}
 
 	}
