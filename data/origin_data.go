@@ -6,7 +6,6 @@ import (
 )
 
 type OriginData struct {
-	ProductDetails   *vangogh_integration.ProductDetails
-	AppInfoKv        steam_vdf.ValveDataFile
-	OperatingSystems []vangogh_integration.OperatingSystem
+	ProductDetails *vangogh_integration.ProductDetails
+	AppInfoKv      steam_vdf.ValveDataFile
 }

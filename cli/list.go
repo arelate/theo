@@ -183,15 +183,7 @@ func listInstalled(ii *InstallInfo) error {
 			}
 
 			if installedInfo.TimeUpdated != "" {
-				var tuu int64
-				if tuu, err = strconv.ParseInt(installedInfo.TimeUpdated, 10, 64); err == nil {
-
-					timeUpdated := time.Unix(tuu, 0)
-					infoLines = append(infoLines, "updated: "+timeUpdated.Format(time.DateTime))
-
-				} else {
-					return err
-				}
+				infoLines = append(infoLines, "updated: "+installedInfo.TimeUpdated)
 			}
 
 			if installedInfo.EstimatedBytes > 0 {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -40,7 +41,7 @@ type InstallInfo struct {
 	force               bool                                // won't be serialized
 }
 
-func (ii *InstallInfo) applyOriginData(id string, originData *data.OriginData) error {
+func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) error {
 
 	switch ii.Origin {
 	case data.VangoghGogOrigin:
@@ -49,7 +50,7 @@ func (ii *InstallInfo) applyOriginData(id string, originData *data.OriginData) e
 			return errors.New("cannot sync nil product details for " + id)
 		}
 
-		originData.OperatingSystems = originData.ProductDetails.OperatingSystems
+		setInstallInfoDefaults(ii, originData.ProductDetails.OperatingSystems)
 
 		dls := originData.ProductDetails.DownloadLinks.
 			FilterOperatingSystems(ii.OperatingSystem).
@@ -86,17 +87,25 @@ func (ii *InstallInfo) applyOriginData(id string, originData *data.OriginData) e
 			osList = ol
 		}
 
-		originData.OperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(osList, ","))
+		setInstallInfoDefaults(ii, vangogh_integration.ParseManyOperatingSystems(strings.Split(osList, ",")))
 
-		if buildId, ok := originData.AppInfoKv.Val(id, "depots", "branches", "public", "buildid"); ok && buildId != "" {
-			ii.Version = buildId
+		if version, err := steamAppInfoVersion(id, originData.AppInfoKv); err == nil {
+			ii.Version = version
+		} else {
+			return err
 		}
 
-		if timeUpdated, ok := originData.AppInfoKv.Val(id, "depots", "branches", "public", "timeupdated"); ok && timeUpdated != "" {
-			ii.TimeUpdated = timeUpdated
+		if timeUpdate, err := steamAppInfoTimeUpdated(id, originData.AppInfoKv); err == nil {
+			ii.Version = timeUpdate.Format(time.DateTime)
+		} else {
+			return err
 		}
 
-		// TODO: implement size reduction for AppInfo
+		if estimatedBytes, err := steamAppInfoSize(id, ii.OperatingSystem, originData.AppInfoKv); err == nil {
+			ii.EstimatedBytes = estimatedBytes
+		} else {
+			return err
+		}
 
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()

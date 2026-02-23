@@ -4,8 +4,10 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/steam_vdf"
@@ -271,4 +273,75 @@ func steamLogoPosition(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (*l
 	}
 
 	return shortcutLogoPosition, nil
+}
+
+func steamAppInfoVersion(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (string, error) {
+
+	if buildId, ok := appInfoKv.Val(steamAppId, "depots", "branches", "public", "buildid"); ok && buildId != "" {
+		return buildId, nil
+	}
+	return "", errors.New("appinfo is missing depots/branches/public/buildid")
+}
+
+func steamAppInfoTimeUpdated(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (time.Time, error) {
+	if timeUpdated, ok := appInfoKv.Val(steamAppId, "depots", "branches", "public", "timeupdated"); ok && timeUpdated != "" {
+		if tuu, err := strconv.ParseInt(timeUpdated, 10, 64); err == nil {
+
+			return time.Unix(tuu, 0), nil
+		} else {
+			return time.Time{}, err
+		}
+	}
+	return time.Time{}, nil
+}
+
+func steamAppInfoSize(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, appInfoKv steam_vdf.ValveDataFile) (int64, error) {
+
+	depotsKv, err := appInfoKv.At(steamAppId, "depots")
+	if errors.Is(err, steam_vdf.ErrVdfKeyNotFound) {
+		// depots key not present stop reducing
+		return 0, nil
+	} else if err != nil {
+		return 0, err
+	}
+
+	var estimatedBytes int64
+
+	for _, depotKv := range depotsKv.Values {
+
+		// skip key values that don't have Values, e.g. "baselanguages
+		if len(depotKv.Values) == 0 {
+			continue
+		}
+
+		// skip depots that have depotfromapp or sharedinstall set (Redistributables depot)
+		if depotFromApp, ok := depotsKv.Values.Val("depotfromapp"); ok && depotFromApp != "" {
+			continue
+		}
+		if sharedInstall, ok := depotKv.Values.Val("sharedinstall"); ok && sharedInstall != "" {
+			continue
+		}
+
+		if depotOsList, ok := depotKv.Values.Val("config", "oslist"); ok && depotOsList != "" {
+
+			depotOperatingSystems := vangogh_integration.ParseManyOperatingSystems(strings.Split(depotOsList, ","))
+			if !slices.Contains(depotOperatingSystems, operatingSystem) {
+				continue
+			}
+
+			if sizeStr, sure := depotKv.Values.Val("manifests", "public", "size"); sure && sizeStr != "" {
+				var sizeInt int64
+				if sizeInt, err = strconv.ParseInt(sizeStr, 10, 64); err == nil {
+					estimatedBytes += sizeInt
+				} else {
+					return 0, err
+				}
+			}
+
+		} else {
+			continue
+		}
+	}
+
+	return estimatedBytes, nil
 }

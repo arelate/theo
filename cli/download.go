@@ -102,7 +102,9 @@ func downloadProductFiles(id string,
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	if err := hasFreeSpaceForProduct(productDetails, downloadsDir, ii, manualUrlFilter); err != nil {
+	originData := new(data.OriginData{ProductDetails: productDetails})
+
+	if err := originHasFreeSpace(id, downloadsDir, ii, originData, manualUrlFilter); err != nil {
 		return err
 	}
 

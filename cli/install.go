@@ -87,8 +87,6 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	setInstallInfoDefaults(ii, originData.OperatingSystems)
-
 	// don't check existing installations for DLCs, Extras
 	if slices.Contains(ii.DownloadTypes, vangogh_integration.Installer) && !ii.force {
 		var ok bool
@@ -135,23 +133,20 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable) (*data.Origi
 
 	switch ii.Origin {
 	case data.VangoghGogOrigin:
-
 		originData.ProductDetails, err = getProductDetails(id, rdx, true)
 		if err != nil {
 			return nil, err
 		}
-
 	case data.SteamOrigin:
 		originData.AppInfoKv, err = getSteamAppInfoKv(id, rdx, true)
 		if err != nil {
 			return nil, err
 		}
-
 	default:
 		return nil, ii.Origin.ErrUnsupportedOrigin()
 	}
 
-	if err = ii.applyOriginData(id, originData); err != nil {
+	if err = ii.reduceOriginData(id, originData); err != nil {
 		return nil, err
 	}
 
@@ -221,10 +216,16 @@ func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx 
 			return errors.New("nil productDetails")
 		}
 
-		if err := vangoghUnpackPlace(id, ii, originData.ProductDetails, rdx); err != nil {
+		if err := vangoghUnpackPlace(id, ii, originData, rdx); err != nil {
 			return err
 		}
 	case data.SteamOrigin:
+
+		steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
+
+		if err := originHasFreeSpace(id, steamAppsDir, ii, originData, nil); err != nil {
+			return err
+		}
 
 		if err := osPreInstallActions(id, ii, rdx); err != nil {
 			return err
@@ -256,12 +257,12 @@ func originPostInstall(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	return nil
 }
 
-func vangoghUnpackPlace(id string, ii *InstallInfo, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
+func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
 
 	ipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer ipa.Done()
 
-	dls := productDetails.DownloadLinks.
+	dls := originData.ProductDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
 		FilterDownloadTypes(ii.DownloadTypes...)
@@ -303,7 +304,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, productDetails *vangogh_inte
 	// 1
 	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
-	if err := hasFreeSpaceForProduct(productDetails, installedAppsDir, ii, nil); err != nil {
+	if err := originHasFreeSpace(id, installedAppsDir, ii, originData, nil); err != nil {
 		return err
 	}
 
