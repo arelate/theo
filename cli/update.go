@@ -129,12 +129,7 @@ func checkProductUpdates(id string, rdx redux.Writeable, force bool) ([]*Install
 				return nil, err
 			}
 
-			// TODO: handle Steam updates properly
-			if installedInfo.Origin == data.SteamOrigin {
-				continue
-			}
-
-			if updated, err := isInstalledInfoUpdated(id, &installedInfo, rdx, force); updated && err == nil {
+			if updated, err := originIsInstalledInfoUpdated(id, &installedInfo, rdx, force); updated && err == nil {
 				updatedInstalledInfo = append(updatedInstalledInfo, &installedInfo)
 			} else if err != nil {
 				return nil, err
@@ -148,18 +143,36 @@ func checkProductUpdates(id string, rdx redux.Writeable, force bool) ([]*Install
 
 }
 
-func isInstalledInfoUpdated(id string, installedInfo *InstallInfo, rdx redux.Writeable, force bool) (bool, error) {
+func originIsInstalledInfoUpdated(id string, installedInfo *InstallInfo, rdx redux.Writeable, force bool) (bool, error) {
 
-	iiiua := nod.Begin(" checking %s %s-%s version...", id, installedInfo.OperatingSystem, installedInfo.LangCode)
+	iiiua := nod.Begin(" checking %s (%s) %s-%s version...", id, installedInfo.Origin, installedInfo.OperatingSystem, installedInfo.LangCode)
 	defer iiiua.Done()
 
-	latestProductDetails, err := getProductDetails(id, rdx, true)
-	if err != nil {
-		return false, err
-	}
-
 	installedVersion := installedInfo.Version
-	latestVersion := productDetailsVersion(latestProductDetails, installedInfo)
+	var latestVersion string
+
+	switch installedInfo.Origin {
+	case data.VangoghGogOrigin:
+		latestProductDetails, err := getProductDetails(id, rdx, true)
+		if err != nil {
+			return false, err
+		}
+
+		latestVersion = productDetailsVersion(latestProductDetails, installedInfo)
+	case data.SteamOrigin:
+
+		latestAppInfoKv, err := steamGetAppInfoKv(id, rdx, true)
+		if err != nil {
+			return false, err
+		}
+
+		latestVersion, err = steamAppInfoVersion(id, latestAppInfoKv)
+		if err != nil {
+			return false, err
+		}
+	default:
+		return false, installedInfo.Origin.ErrUnsupportedOrigin()
+	}
 
 	if installedVersion == "" && !force {
 		iiiua.EndWithResult("cannot determine installed version")
