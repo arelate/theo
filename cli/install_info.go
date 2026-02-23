@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json/v2"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 
@@ -30,6 +31,7 @@ type InstallInfo struct {
 	DownloadTypes       []vangogh_integration.DownloadType  `json:"download-types"`
 	DownloadableContent []string                            `json:"dlc"`
 	Version             string                              `json:"version"`
+	TimeUpdated         string                              `json:"time-updated,omitempty"`
 	EstimatedBytes      int64                               `json:"estimated-bytes"`
 	KeepDownloads       bool                                `json:"keep-downloads"`
 	NoSteamShortcut     bool                                `json:"no-steam-shortcut"`
@@ -38,20 +40,69 @@ type InstallInfo struct {
 	force               bool                                // won't be serialized
 }
 
-func (ii *InstallInfo) ReduceProductDetails(pd *vangogh_integration.ProductDetails) {
+func (ii *InstallInfo) applyOriginData(id string, originData *data.OriginData) error {
 
-	dls := pd.DownloadLinks.
-		FilterOperatingSystems(ii.OperatingSystem).
-		FilterLanguageCodes(ii.LangCode).
-		FilterDownloadTypes(ii.DownloadTypes...)
+	switch ii.Origin {
+	case data.VangoghGogOrigin:
 
-	ii.EstimatedBytes = 0
-	for _, dl := range dls {
-		if ii.Version == "" && dl.DownloadType == vangogh_integration.Installer {
-			ii.Version = dl.Version
+		if originData.ProductDetails == nil {
+			return errors.New("cannot sync nil product details for " + id)
 		}
-		ii.EstimatedBytes += dl.EstimatedBytes
+
+		originData.OperatingSystems = originData.ProductDetails.OperatingSystems
+
+		dls := originData.ProductDetails.DownloadLinks.
+			FilterOperatingSystems(ii.OperatingSystem).
+			FilterLanguageCodes(ii.LangCode).
+			FilterDownloadTypes(ii.DownloadTypes...)
+
+		ii.EstimatedBytes = 0
+		for _, dl := range dls {
+			if ii.Version == "" && dl.DownloadType == vangogh_integration.Installer {
+				ii.Version = dl.Version
+			}
+			ii.EstimatedBytes += dl.EstimatedBytes
+		}
+
+		switch originData.ProductDetails.ProductType {
+		case vangogh_integration.DlcProductType:
+			return fmt.Errorf("install %s required product(s) to get this downloadable content", strings.Join(originData.ProductDetails.RequiresGames, ","))
+		case vangogh_integration.PackProductType:
+			return fmt.Errorf("install %s included product(s) to get this edition", strings.Join(originData.ProductDetails.IncludesGames, ","))
+		case vangogh_integration.GameProductType:
+			// do nothing
+		default:
+			return errors.New("unknown product type " + originData.ProductDetails.ProductType)
+		}
+
+	case data.SteamOrigin:
+
+		if originData.AppInfoKv == nil {
+			return errors.New("cannot sync nil appinfo for " + id)
+		}
+
+		var osList string
+		if ol, ok := originData.AppInfoKv.Val(id, "common", "oslist"); ok {
+			osList = ol
+		}
+
+		originData.OperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(osList, ","))
+
+		if buildId, ok := originData.AppInfoKv.Val(id, "depots", "branches", "public", "buildid"); ok && buildId != "" {
+			ii.Version = buildId
+		}
+
+		if timeUpdated, ok := originData.AppInfoKv.Val(id, "depots", "branches", "public", "timeupdated"); ok && timeUpdated != "" {
+			ii.TimeUpdated = timeUpdated
+		}
+
+		// TODO: implement size reduction for AppInfo
+
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
 	}
+
+	return nil
 }
 
 func (ii *InstallInfo) Matches(another *InstallInfo) bool {

@@ -17,7 +17,7 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-func getSteamAppInfoKv(steamAppId string, ii *InstallInfo, rdx redux.Writeable) (steam_vdf.ValveDataFile, error) {
+func getSteamAppInfoKv(steamAppId string, rdx redux.Writeable, force bool) (steam_vdf.ValveDataFile, error) {
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
 
@@ -33,7 +33,7 @@ func getSteamAppInfoKv(steamAppId string, ii *InstallInfo, rdx redux.Writeable) 
 		return nil, errors.New("cannot resolve Steam username")
 	}
 
-	if err = fetchSteamAppInfo(steamAppId, username, kvSteamAppInfo, rdx, ii.force); err != nil {
+	if err = fetchSteamAppInfo(steamAppId, username, kvSteamAppInfo, rdx, force); err != nil {
 		return nil, err
 	}
 

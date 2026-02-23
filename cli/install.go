@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 	"maps"
 	"net/url"
 	"os"
@@ -136,39 +135,24 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable) (*data.Origi
 
 	switch ii.Origin {
 	case data.VangoghGogOrigin:
-		// always getting the latest product details for install purposes
+
 		originData.ProductDetails, err = getProductDetails(id, rdx, true)
 		if err != nil {
 			return nil, err
 		}
 
-		ii.ReduceProductDetails(originData.ProductDetails)
-		originData.OperatingSystems = originData.ProductDetails.OperatingSystems
-
-		switch originData.ProductDetails.ProductType {
-		case vangogh_integration.DlcProductType:
-			return nil, fmt.Errorf("install %s required product(s) to get this downloadable content", strings.Join(originData.ProductDetails.RequiresGames, ","))
-		case vangogh_integration.PackProductType:
-			return nil, fmt.Errorf("install %s included product(s) to get this edition", strings.Join(originData.ProductDetails.IncludesGames, ","))
-		case vangogh_integration.GameProductType:
-			// do nothing
-		default:
-			return nil, errors.New("unknown product type " + originData.ProductDetails.ProductType)
-		}
 	case data.SteamOrigin:
-		originData.AppInfoKv, err = getSteamAppInfoKv(id, ii, rdx)
+		originData.AppInfoKv, err = getSteamAppInfoKv(id, rdx, true)
 		if err != nil {
 			return nil, err
 		}
 
-		var osList string
-		if ol, ok := originData.AppInfoKv.Val(id, "common", "oslist"); ok {
-			osList = ol
-		}
-
-		originData.OperatingSystems = vangogh_integration.ParseManyOperatingSystems(strings.Split(osList, ","))
 	default:
 		return nil, ii.Origin.ErrUnsupportedOrigin()
+	}
+
+	if err = ii.applyOriginData(id, originData); err != nil {
+		return nil, err
 	}
 
 	return originData, nil
