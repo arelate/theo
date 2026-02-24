@@ -1,8 +1,8 @@
 # theo
 
-`theo` is a command-line (CLI) client for [vangogh](https://github.com/arelate/vangogh) that allows installing and running games from your local DRM-free collection and DRM-free games from Steam. At the moment `theo` implements support for macOS and Linux, tested on Steam Deck. 
+`theo` is a command-line (CLI) app that allows installing and running games from your local DRM-free collection ([vangogh](https://github.com/arelate/vangogh)) and DRM-free games from Steam. At the moment `theo` implements support for macOS and Linux, tested on Steam Deck. 
 
-## Setting up theo (with any service)
+## Setting up theo (for use with any service)
 
  - [Installing theo](https://github.com/arelate/theo/wiki/Installing-theo)
  - [Connecting to vangogh](https://github.com/arelate/theo/wiki/Connecting-to-vangogh)
