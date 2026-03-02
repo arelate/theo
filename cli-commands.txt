@@ -120,6 +120,8 @@ steam-shortcut
     remove
     force
 
+test-epic-games
+
 uninstall
     id^*
     os={operating-systems^}
