@@ -121,6 +121,7 @@ steam-shortcut
     force
 
 test-epic-games
+    access-token^
 
 uninstall
     id^*

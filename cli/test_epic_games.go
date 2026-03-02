@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,7 +12,11 @@ import (
 	"github.com/boggydigital/coost"
 )
 
-func TestEpicGamesHandler(_ *url.URL) error {
+func TestEpicGamesHandler(u *url.URL) error {
+
+	q := u.Query()
+
+	accessToken := q.Get("access-token")
 
 	fmt.Println()
 
@@ -48,25 +53,35 @@ func TestEpicGamesHandler(_ *url.URL) error {
 	client := http.DefaultClient
 	client.Jar = jar
 
-	fmt.Println("GetApiRedirect")
+	if accessToken == "" {
 
-	apiRedirectResponse, err := epic_games.GetApiRedirect(client)
-	if err != nil {
-		return err
-	}
+		fmt.Println("GetApiRedirect")
 
-	fmt.Println("PostToken")
+		apiRedirectResponse, err := epic_games.GetApiRedirect(client)
+		if err != nil {
+			return err
+		}
 
-	postTokenResponse, err := epic_games.PostToken(apiRedirectResponse.AuthorizationCode, client)
-	if err != nil {
-		return err
-	}
+		fmt.Println("PostToken")
 
-	fmt.Println("GetVerifyToken")
+		postTokenResponse, err := epic_games.PostToken(apiRedirectResponse.AuthorizationCode, client)
+		if err != nil {
+			return err
+		}
 
-	verifyTokenResponse, err := epic_games.GetVerifyToken(postTokenResponse.AccessToken, client)
-	if err != nil {
-		return err
+		if postTokenResponse.AccessToken == "" {
+			return errors.New("failed to get access token")
+		}
+
+		fmt.Println("GetVerifyToken")
+
+		verifyTokenResponse, err := epic_games.GetVerifyToken(accessToken, client)
+		if err != nil {
+			return err
+		}
+
+		accessToken = verifyTokenResponse.Token
+
 	}
 
 	//fmt.Println("GetGameAssets")
@@ -108,7 +123,7 @@ func TestEpicGamesHandler(_ *url.URL) error {
 
 	fmt.Println("GetLibraryItems")
 
-	libraryItems, err := epic_games.GetLibraryItems("", verifyTokenResponse.Token, client)
+	libraryItems, err := epic_games.GetLibraryItems("", accessToken, client)
 	if err != nil {
 		return err
 	}
@@ -116,7 +131,7 @@ func TestEpicGamesHandler(_ *url.URL) error {
 	for _, rec := range libraryItems.Records {
 
 		var catalogItem *epic_games.CatalogItem
-		catalogItem, err = epic_games.GetCatalogItem(rec.Namespace, rec.CatalogItemId, verifyTokenResponse.Token, client)
+		catalogItem, err = epic_games.GetCatalogItem(rec.Namespace, rec.CatalogItemId, accessToken, client)
 		if err != nil {
 			return err
 		}
@@ -124,7 +139,7 @@ func TestEpicGamesHandler(_ *url.URL) error {
 		fmt.Println(catalogItem)
 
 		var gameManifest *epic_games.GameManifest
-		gameManifest, err = epic_games.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", verifyTokenResponse.Token, client)
+		gameManifest, err = epic_games.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", accessToken, client)
 		if err != nil {
 			return err
 		}
@@ -167,7 +182,7 @@ func TestEpicGamesHandler(_ *url.URL) error {
 
 	fmt.Println("DeleteToken")
 
-	if err = epic_games.DeleteToken(verifyTokenResponse.Token, client); err != nil {
+	if err = epic_games.DeleteToken(accessToken, client); err != nil {
 		return err
 	}
 
