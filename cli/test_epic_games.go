@@ -106,42 +106,64 @@ func TestEpicGamesHandler(_ *url.URL) error {
 	//
 	//}
 
-	//fmt.Println("GetLibraryItems")
-	//
-	//libraryItems, err := epic_games.GetLibraryItems("", verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	return err
-	//}
+	fmt.Println("GetLibraryItems")
 
-	//for _, rec := range libraryItems.Records {
-
-	//var catalogItem *epic_games.CatalogItem
-	//catalogItem, err = epic_games.GetCatalogItem(rec.Namespace, rec.CatalogItemId, verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//fmt.Println(catalogItem)
-
-	//var gameManifest *epic_games.GameManifest
-	//gameManifest, err = epic_games.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//fmt.Println(gameManifest)
-
-	//}
-
-	fmt.Println("GetGameAssets")
-
-	var gameAssets []epic_games.GameAsset
-	gameAssets, err = epic_games.GetGameAssets("Windows", verifyTokenResponse.Token, client)
+	libraryItems, err := epic_games.GetLibraryItems("", verifyTokenResponse.Token, client)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	fmt.Println(gameAssets)
+	for _, rec := range libraryItems.Records {
+
+		var catalogItem *epic_games.CatalogItem
+		catalogItem, err = epic_games.GetCatalogItem(rec.Namespace, rec.CatalogItemId, verifyTokenResponse.Token, client)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(catalogItem)
+
+		var gameManifest *epic_games.GameManifest
+		gameManifest, err = epic_games.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", verifyTokenResponse.Token, client)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(gameManifest)
+
+		for _, element := range gameManifest.Elements {
+			for _, manifest := range element.Manifests {
+				var manifestUrl *url.URL
+				manifestUrl, err = url.Parse(manifest.Uri)
+				if err != nil {
+					return err
+				}
+
+				q := manifestUrl.Query()
+
+				for _, kv := range manifest.QueryParams {
+					q.Add(kv.Name, kv.Value)
+				}
+
+				manifestUrl.RawQuery = q.Encode()
+
+				fmt.Println(manifestUrl.String())
+			}
+		}
+
+		break
+
+	}
+
+	//fmt.Println("GetGameAssets")
+	//
+	//var gameAssets []epic_games.GameAsset
+	//gameAssets, err = epic_games.GetGameAssets("Windows", verifyTokenResponse.Token, client)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//fmt.Println(gameAssets)
 
 	fmt.Println("DeleteToken")
 
