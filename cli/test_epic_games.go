@@ -14,10 +14,41 @@ import (
 
 func TestEpicGamesHandler(u *url.URL) error {
 
-	q := u.Query()
+	//q := u.Query()
+	//
+	//accessToken := q.Get("access-token")
+	//
+	//return testApis(accessToken)
 
-	accessToken := q.Get("access-token")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
 
+	absManifestPath := filepath.Join(homeDir, "Downloads", "epic.manifest")
+
+	return testManifest(absManifestPath)
+}
+
+func testManifest(path string) error {
+
+	manifestFile, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer manifestFile.Close()
+
+	manifest, err := epic_games.ReadManifest(manifestFile)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(manifest)
+
+	return nil
+}
+
+func testApis(accessToken string) error {
 	fmt.Println()
 
 	homeDir, err := os.UserHomeDir()
