@@ -8,17 +8,16 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/arelate/southern_light/epic_games"
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/boggydigital/coost"
 )
 
 func TestEpicGamesHandler(u *url.URL) error {
 
-	//q := u.Query()
-	//
-	//accessToken := q.Get("access-token")
-	//
-	//return testApis(accessToken)
+	q := u.Query()
+
+	apis := q.Has("apis")
+	manifest := q.Has("manifest")
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -27,7 +26,13 @@ func TestEpicGamesHandler(u *url.URL) error {
 
 	absManifestPath := filepath.Join(homeDir, "Downloads", "epic.manifest")
 
-	return testManifest(absManifestPath)
+	if apis {
+		return testApis()
+	} else if manifest {
+		return testManifest(absManifestPath)
+	}
+
+	return errors.New("need apis or manifest")
 }
 
 func testManifest(path string) error {
@@ -38,9 +43,13 @@ func testManifest(path string) error {
 	}
 	defer manifestFile.Close()
 
-	manifest, err := epic_games.ReadManifest(manifestFile)
+	manifest, err := egs_integration.ReadManifest(manifestFile)
 	if err != nil {
 		return err
+	}
+
+	for _, chk := range manifest.ChunkList.Chunks {
+		fmt.Println(manifest.Path(chk))
 	}
 
 	fmt.Println(manifest)
@@ -48,7 +57,7 @@ func testManifest(path string) error {
 	return nil
 }
 
-func testApis(accessToken string) error {
+func testApis() error {
 	fmt.Println()
 
 	homeDir, err := os.UserHomeDir()
@@ -64,7 +73,7 @@ func testApis(accessToken string) error {
 		return err
 	}
 
-	outputCookiesPath := filepath.Join(homeDir, "Downloads", "epic_games_cookies.json")
+	outputCookiesPath := filepath.Join(homeDir, "Downloads", "egs_integration_cookies.json")
 
 	var importCookieBytes []byte
 	importCookieBytes, err = os.ReadFile(importCookiesPath)
@@ -72,11 +81,11 @@ func testApis(accessToken string) error {
 		return err
 	}
 
-	if err = coost.Import(string(importCookieBytes), epic_games.HostUrl(), outputCookiesPath); err != nil {
+	if err = coost.Import(string(importCookieBytes), egs_integration.HostUrl(), outputCookiesPath); err != nil {
 		return err
 	}
 
-	jar, err := coost.Read(epic_games.HostUrl(), outputCookiesPath)
+	jar, err := coost.Read(egs_integration.HostUrl(), outputCookiesPath)
 	if err != nil {
 		return err
 	}
@@ -84,66 +93,60 @@ func testApis(accessToken string) error {
 	client := http.DefaultClient
 	client.Jar = jar
 
-	if accessToken == "" {
+	fmt.Println("GetApiRedirect")
 
-		fmt.Println("GetApiRedirect")
+	apiRedirectResponse, err := egs_integration.GetApiRedirect(client)
+	if err != nil {
+		return err
+	}
 
-		apiRedirectResponse, err := epic_games.GetApiRedirect(client)
-		if err != nil {
-			return err
-		}
+	fmt.Println("PostToken")
 
-		fmt.Println("PostToken")
+	postTokenResponse, err := egs_integration.PostToken(apiRedirectResponse.AuthorizationCode, client)
+	if err != nil {
+		return err
+	}
 
-		postTokenResponse, err := epic_games.PostToken(apiRedirectResponse.AuthorizationCode, client)
-		if err != nil {
-			return err
-		}
+	if postTokenResponse.AccessToken == "" {
+		return errors.New("failed to get access token")
+	}
 
-		if postTokenResponse.AccessToken == "" {
-			return errors.New("failed to get access token")
-		}
+	fmt.Println("GetVerifyToken")
 
-		fmt.Println("GetVerifyToken")
-
-		verifyTokenResponse, err := epic_games.GetVerifyToken(accessToken, client)
-		if err != nil {
-			return err
-		}
-
-		accessToken = verifyTokenResponse.Token
-
+	verifyTokenResponse, err := egs_integration.GetVerifyToken(postTokenResponse.AccessToken, client)
+	if err != nil {
+		return err
 	}
 
 	//fmt.Println("GetGameAssets")
 	//
-	//gameAssets, err := epic_games.GetGameAssets("Windows", verifyTokenResponse.Token, client)
+	//gameAssets, err := egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
 	//if err != nil {
 	//	return err
 	//}
 	//
 	//fmt.Println(gameAssets)
 
-	//fmt.Println("GetLauncherManifests")
-	//
-	//launcherManifests, err := epic_games.GetLauncherManifests("Windows", verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//fmt.Println(launcherManifests)
+	fmt.Println("GetLauncherManifests")
+
+	launcherManifests, err := egs_integration.GetLauncherManifests("Windows", verifyTokenResponse.Token, client)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(launcherManifests)
 
 	//fmt.Println("GetUserEntitlements")
 	//
-	//entitlements, err := epic_games.GetUserEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, 0, 1000, client)
+	//entitlements, err := egs_integration.GetUserEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, 0, 1000, client)
 	//if err != nil {
 	//	return err
 	//}
 	//
 	//for _, ent := range entitlements {
 	//
-	//	var catalogItem *epic_games.CatalogItem
-	//	catalogItem, err = epic_games.GetCatalogItem(ent.Namespace, ent.CatalogItemId, verifyTokenResponse.Token, client)
+	//	var catalogItem *egs_integration.CatalogItem
+	//	catalogItem, err = egs_integration.GetCatalogItem(ent.Namespace, ent.CatalogItemId, verifyTokenResponse.Token, client)
 	//	if err != nil {
 	//		return err
 	//	}
@@ -154,23 +157,23 @@ func testApis(accessToken string) error {
 
 	fmt.Println("GetLibraryItems")
 
-	libraryItems, err := epic_games.GetLibraryItems("", accessToken, client)
+	libraryItems, err := egs_integration.GetLibraryItems("", verifyTokenResponse.Token, client)
 	if err != nil {
 		return err
 	}
 
 	for _, rec := range libraryItems.Records {
 
-		var catalogItem *epic_games.CatalogItem
-		catalogItem, err = epic_games.GetCatalogItem(rec.Namespace, rec.CatalogItemId, accessToken, client)
+		var catalogItem *egs_integration.CatalogItem
+		catalogItem, err = egs_integration.GetCatalogItem(rec.Namespace, rec.CatalogItemId, verifyTokenResponse.Token, client)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println(catalogItem)
 
-		var gameManifest *epic_games.GameManifest
-		gameManifest, err = epic_games.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", accessToken, client)
+		var gameManifest *egs_integration.GameManifest
+		gameManifest, err = egs_integration.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", verifyTokenResponse.Token, client)
 		if err != nil {
 			return err
 		}
@@ -197,14 +200,14 @@ func testApis(accessToken string) error {
 			}
 		}
 
-		break
+		//break
 
 	}
 
 	//fmt.Println("GetGameAssets")
 	//
-	//var gameAssets []epic_games.GameAsset
-	//gameAssets, err = epic_games.GetGameAssets("Windows", verifyTokenResponse.Token, client)
+	//var gameAssets []egs_integration.GameAsset
+	//gameAssets, err = egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
 	//if err != nil {
 	//	panic(err)
 	//}
@@ -213,13 +216,13 @@ func testApis(accessToken string) error {
 
 	fmt.Println("DeleteToken")
 
-	if err = epic_games.DeleteToken(accessToken, client); err != nil {
+	if err = egs_integration.DeleteToken(verifyTokenResponse.Token, client); err != nil {
 		return err
 	}
 
 	//fmt.Println("GetEntitlements")
 	//
-	//entitlements, err := epic_games.GetEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, client)
+	//entitlements, err := egs_integration.GetEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, client)
 	//if err != nil {
 	//	return err
 	//}
@@ -229,7 +232,7 @@ func testApis(accessToken string) error {
 	//
 	//	fmt.Println("GetCatalogItem", ent)
 	//
-	//	entStr, err := epic_games.GetCatalogItem(ent.Namespace, ent.CatalogItemId, postTokenResponse.AccessToken, client)
+	//	entStr, err := egs_integration.GetCatalogItem(ent.Namespace, ent.CatalogItemId, postTokenResponse.AccessToken, client)
 	//	if err != nil {
 	//		return err
 	//	}
