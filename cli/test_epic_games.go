@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/arelate/southern_light/egs_integration"
 	"github.com/boggydigital/coost"
@@ -18,38 +19,44 @@ func TestEpicGamesHandler(u *url.URL) error {
 
 	apis := q.Has("apis")
 	manifest := q.Has("manifest")
+	id := q.Get("id")
+
+	if apis {
+		return testApis()
+	} else if manifest {
+		return testManifest(id)
+	}
+
+	return errors.New("need apis or manifest")
+}
+
+func testManifest(id string) error {
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
-	absManifestPath := filepath.Join(homeDir, "Downloads", "epic.manifest")
-
-	if apis {
-		return testApis()
-	} else if manifest {
-		return testManifest(absManifestPath)
+	manifestFilename := id
+	if !strings.HasSuffix(id, ".manifest") {
+		manifestFilename += ".manifest"
 	}
 
-	return errors.New("need apis or manifest")
-}
+	absManifestPath := filepath.Join(homeDir, "Downloads", "epic", manifestFilename)
 
-func testManifest(path string) error {
-
-	manifestFile, err := os.Open(path)
+	manifestFile, err := os.Open(absManifestPath)
 	if err != nil {
 		return err
 	}
 	defer manifestFile.Close()
 
-	manifest, err := egs_integration.ReadManifest(manifestFile)
+	manifest, err := egs_integration.ReadBinary(manifestFile)
 	if err != nil {
 		return err
 	}
 
 	for _, chk := range manifest.ChunkList.Chunks {
-		fmt.Println(manifest.Path(chk))
+		fmt.Println(chk.Path(manifest.Metadata.Version))
 	}
 
 	fmt.Println(manifest)
@@ -67,13 +74,13 @@ func testApis() error {
 
 	// Login to epicgames.com and use a simple URL like https://www.epicgames.com/id/api/redirect
 	// to capture cookies using instructions from https://github.com/boggydigital/coost
-	importCookiesPath := filepath.Join(homeDir, "Downloads", "import_cookies.txt")
+	importCookiesPath := filepath.Join(homeDir, "Downloads", "epic", "import_cookies.txt")
 
 	if _, err = os.Stat(importCookiesPath); err != nil {
 		return err
 	}
 
-	outputCookiesPath := filepath.Join(homeDir, "Downloads", "egs_integration_cookies.json")
+	outputCookiesPath := filepath.Join(homeDir, "Downloads", "epic", "egs_integration_cookies.json")
 
 	var importCookieBytes []byte
 	importCookieBytes, err = os.ReadFile(importCookiesPath)
@@ -127,14 +134,14 @@ func testApis() error {
 	//
 	//fmt.Println(gameAssets)
 
-	fmt.Println("GetLauncherManifests")
-
-	launcherManifests, err := egs_integration.GetLauncherManifests("Windows", verifyTokenResponse.Token, client)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(launcherManifests)
+	//fmt.Println("GetLauncherManifests")
+	//
+	//launcherManifests, err := egs_integration.GetLauncherManifests("Windows", verifyTokenResponse.Token, client)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//fmt.Println(launcherManifests)
 
 	//fmt.Println("GetUserEntitlements")
 	//
@@ -162,7 +169,9 @@ func testApis() error {
 		return err
 	}
 
-	for _, rec := range libraryItems.Records {
+	limit := 10
+
+	for ii, rec := range libraryItems.Records {
 
 		var catalogItem *egs_integration.CatalogItem
 		catalogItem, err = egs_integration.GetCatalogItem(rec.Namespace, rec.CatalogItemId, verifyTokenResponse.Token, client)
@@ -170,7 +179,8 @@ func testApis() error {
 			return err
 		}
 
-		fmt.Println(catalogItem)
+		//fmt.Println(catalogItem)
+		fmt.Println(catalogItem.Title)
 
 		var gameManifest *egs_integration.GameManifest
 		gameManifest, err = egs_integration.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", verifyTokenResponse.Token, client)
@@ -178,7 +188,7 @@ func testApis() error {
 			return err
 		}
 
-		fmt.Println(gameManifest)
+		//fmt.Println(gameManifest.Elements)
 
 		for _, element := range gameManifest.Elements {
 			for _, manifest := range element.Manifests {
@@ -196,11 +206,13 @@ func testApis() error {
 
 				manifestUrl.RawQuery = q.Encode()
 
-				fmt.Println(manifestUrl.String())
+				fmt.Println(" - " + manifestUrl.String())
 			}
 		}
 
-		//break
+		if ii == limit-1 {
+			break
+		}
 
 	}
 

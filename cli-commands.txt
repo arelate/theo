@@ -123,6 +123,7 @@ steam-shortcut
 test-epic-games
     apis
     manifest
+    id
 
 uninstall
     id^*
