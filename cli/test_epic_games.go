@@ -19,8 +19,10 @@ func TestEpicGamesHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	manifests := q.Has("list-manifests")
-	chunks := q.Has("download-chunks")
+	lsManifests := q.Has("list-manifests")
+	dlChunks := q.Has("download-chunks")
+	tsChunks := q.Has("test-chunks")
+
 	id := q.Get("id")
 	cdnUrlStr := q.Get("cdn-url")
 
@@ -29,18 +31,20 @@ func TestEpicGamesHandler(u *url.URL) error {
 		return err
 	}
 
-	if manifests {
+	if lsManifests {
 		return listManifests(id)
-	} else if chunks {
+	} else if dlChunks {
 		return downloadChunks(id, cdnUrl)
+	} else if tsChunks {
+		return testChunks(id)
 	}
 
 	return errors.New("need apis or manifest")
 }
 
-func downloadChunks(id string, cdnUrl *url.URL) error {
+func downloadChunks(manifestId string, cdnUrl *url.URL) error {
 
-	if id == "" {
+	if manifestId == "" {
 		return errors.New("empty manifest id")
 	}
 
@@ -49,8 +53,8 @@ func downloadChunks(id string, cdnUrl *url.URL) error {
 		return err
 	}
 
-	manifestFilename := id
-	if !strings.HasSuffix(id, ".manifest") {
+	manifestFilename := manifestId
+	if !strings.HasSuffix(manifestId, ".manifest") {
 		manifestFilename += ".manifest"
 	}
 
@@ -69,7 +73,7 @@ func downloadChunks(id string, cdnUrl *url.URL) error {
 
 	originalPath := cdnUrl.Path
 
-	targetChunksDir := filepath.Join(homeDir, "Downloads", "epic", "chunks", strings.TrimSuffix(id, ".manifest"))
+	targetChunksDir := filepath.Join(homeDir, "Downloads", "epic", "chunks", strings.TrimSuffix(manifestId, ".manifest"))
 
 	dc := dolo.DefaultClient
 
@@ -313,6 +317,48 @@ func listManifests(appId string) error {
 				fmt.Println(" - " + mu.String())
 			}
 		}
+
+	}
+
+	return nil
+}
+
+func testChunks(manifestId string) error {
+
+	if manifestId == "" {
+		return errors.New("empty manifest id")
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	manifestFilename := manifestId
+	if !strings.HasSuffix(manifestId, ".manifest") {
+		manifestFilename += ".manifest"
+	}
+
+	absManifestPath := filepath.Join(homeDir, "Downloads", "epic", manifestFilename)
+
+	manifestFile, err := os.Open(absManifestPath)
+	if err != nil {
+		return err
+	}
+	defer manifestFile.Close()
+
+	manifest, err := egs_integration.ReadBinary(manifestFile)
+	if err != nil {
+		return err
+	}
+
+	targetChunksDir := filepath.Join(homeDir, "Downloads", "epic", "chunks", strings.TrimSuffix(manifestId, ".manifest"))
+
+	for _, chk := range manifest.ChunkList.Chunks {
+
+		chkFilename := filepath.Base(chk.Path(manifest.Metadata.FeatureLevel))
+
+		fmt.Println(filepath.Join(targetChunksDir, chkFilename))
 
 	}
 
