@@ -6,31 +6,43 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/arelate/southern_light/egs_integration"
 	"github.com/boggydigital/coost"
+	"github.com/boggydigital/dolo"
 )
 
 func TestEpicGamesHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	apis := q.Has("apis")
-	manifest := q.Has("manifest")
+	manifests := q.Has("list-manifests")
+	chunks := q.Has("download-chunks")
 	id := q.Get("id")
+	cdnUrlStr := q.Get("cdn-url")
 
-	if apis {
-		return testApis()
-	} else if manifest {
-		return testManifest(id)
+	cdnUrl, err := url.Parse(cdnUrlStr)
+	if err != nil {
+		return err
+	}
+
+	if manifests {
+		return listManifests(id)
+	} else if chunks {
+		return downloadChunks(id, cdnUrl)
 	}
 
 	return errors.New("need apis or manifest")
 }
 
-func testManifest(id string) error {
+func downloadChunks(id string, cdnUrl *url.URL) error {
+
+	if id == "" {
+		return errors.New("empty manifest id")
+	}
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -55,16 +67,161 @@ func testManifest(id string) error {
 		return err
 	}
 
-	for _, chk := range manifest.ChunkList.Chunks {
-		fmt.Println(chk.Path(manifest.Metadata.Version))
-	}
+	originalPath := cdnUrl.Path
 
-	fmt.Println(manifest)
+	targetChunksDir := filepath.Join(homeDir, "Downloads", "epic", "chunks", strings.TrimSuffix(id, ".manifest"))
+
+	dc := dolo.DefaultClient
+
+	for ii, chk := range manifest.ChunkList.Chunks {
+		cdnUrl.Path = path.Join(originalPath, chk.Path(manifest.Metadata.FeatureLevel))
+
+		if err = dc.Download(cdnUrl, false, nil, targetChunksDir); err != nil {
+			return err
+		}
+
+		fmt.Println(ii, len(manifest.ChunkList.Chunks))
+	}
 
 	return nil
 }
 
-func testApis() error {
+//func testApis() error {
+//
+//	//fmt.Println("GetGameAssets")
+//	//
+//	//gameAssets, err := egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//
+//	//fmt.Println(gameAssets)
+//
+//	//fmt.Println("GetLauncherManifests")
+//	//
+//	//launcherManifests, err := egs_integration.GetLauncherManifests("Windows", verifyTokenResponse.Token, client)
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//
+//	//fmt.Println(launcherManifests)
+//
+//	//fmt.Println("GetUserEntitlements")
+//	//
+//	//entitlements, err := egs_integration.GetUserEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, 0, 1000, client)
+//	//if err != nil {
+//	//	return err
+//	//}
+//	//
+//	//for _, ent := range entitlements {
+//	//
+//	//	var catalogItem *egs_integration.CatalogItem
+//	//	catalogItem, err = egs_integration.GetCatalogItem(ent.Namespace, ent.CatalogItemId, verifyTokenResponse.Token, client)
+//	//	if err != nil {
+//	//		return err
+//	//	}
+//	//
+//	//	fmt.Println(catalogItem)
+//	//
+//	//}
+//
+//	fmt.Println("GetLibraryItems")
+//
+//	libraryItems, err := egs_integration.GetLibraryItems("", verifyTokenResponse.Token, client)
+//	if err != nil {
+//		return err
+//	}
+//
+//	limit := 10
+//
+//	for ii, rec := range libraryItems.Records {
+//
+//		var catalogItem *egs_integration.CatalogItem
+//		catalogItem, err = egs_integration.GetCatalogItem(rec.Namespace, rec.CatalogItemId, verifyTokenResponse.Token, client)
+//		if err != nil {
+//			return err
+//		}
+//
+//		//fmt.Println(catalogItem)
+//		fmt.Println(catalogItem.Title)
+//
+//		var gameManifest *egs_integration.GameManifest
+//		gameManifest, err = egs_integration.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", verifyTokenResponse.Token, client)
+//		if err != nil {
+//			return err
+//		}
+//
+//		//fmt.Println(gameManifest.Elements)
+//
+//		for _, element := range gameManifest.Elements {
+//			for _, manifest := range element.Manifests {
+//				var manifestUrl *url.URL
+//				manifestUrl, err = url.Parse(manifest.Uri)
+//				if err != nil {
+//					return err
+//				}
+//
+//				q := manifestUrl.Query()
+//
+//				for _, kv := range manifest.QueryParams {
+//					q.Add(kv.Name, kv.Value)
+//				}
+//
+//				manifestUrl.RawQuery = q.Encode()
+//
+//				fmt.Println(" - " + manifestUrl.String())
+//			}
+//		}
+//
+//		if ii == limit-1 {
+//			break
+//		}
+//
+//	}
+//
+//	//fmt.Println("GetGameAssets")
+//	//
+//	//var gameAssets []egs_integration.GameAsset
+//	//gameAssets, err = egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
+//	//if err != nil {
+//	//	panic(err)
+//	//}
+//	//
+//	//fmt.Println(gameAssets)
+//
+//	fmt.Println("DeleteToken")
+//
+//	if err = egs_integration.DeleteToken(verifyTokenResponse.Token, client); err != nil {
+//		return err
+//	}
+//
+//	//fmt.Println("GetEntitlements")
+//	//
+//	//entitlements, err := egs_integration.GetEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, client)
+//	//if err != nil {
+//	//	return err
+//	//}
+//
+//	//
+//	//for _, ent := range entitlements {
+//	//
+//	//	fmt.Println("GetCatalogItem", ent)
+//	//
+//	//	entStr, err := egs_integration.GetCatalogItem(ent.Namespace, ent.CatalogItemId, postTokenResponse.AccessToken, client)
+//	//	if err != nil {
+//	//		return err
+//	//	}
+//	//
+//	//	fmt.Println(entStr)
+//	//
+//	//	break
+//	//}
+//
+//	return nil
+//}
+
+func listManifests(appId string) error {
+
 	fmt.Println()
 
 	homeDir, err := os.UserHomeDir()
@@ -125,134 +282,39 @@ func testApis() error {
 		return err
 	}
 
-	//fmt.Println("GetGameAssets")
-	//
-	//gameAssets, err := egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//fmt.Println(gameAssets)
-
-	//fmt.Println("GetLauncherManifests")
-	//
-	//launcherManifests, err := egs_integration.GetLauncherManifests("Windows", verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//fmt.Println(launcherManifests)
-
-	//fmt.Println("GetUserEntitlements")
-	//
-	//entitlements, err := egs_integration.GetUserEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, 0, 1000, client)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//for _, ent := range entitlements {
-	//
-	//	var catalogItem *egs_integration.CatalogItem
-	//	catalogItem, err = egs_integration.GetCatalogItem(ent.Namespace, ent.CatalogItemId, verifyTokenResponse.Token, client)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	fmt.Println(catalogItem)
-	//
-	//}
-
-	fmt.Println("GetLibraryItems")
-
-	libraryItems, err := egs_integration.GetLibraryItems("", verifyTokenResponse.Token, client)
+	gameAssets, err := egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
 	if err != nil {
 		return err
 	}
 
-	limit := 10
+	for _, ga := range gameAssets {
 
-	for ii, rec := range libraryItems.Records {
-
-		var catalogItem *egs_integration.CatalogItem
-		catalogItem, err = egs_integration.GetCatalogItem(rec.Namespace, rec.CatalogItemId, verifyTokenResponse.Token, client)
-		if err != nil {
-			return err
+		if ga.AppName != appId {
+			continue
 		}
 
-		//fmt.Println(catalogItem)
-		fmt.Println(catalogItem.Title)
+		fmt.Println("appname:" + ga.AppName)
+		fmt.Println("namespace:" + ga.Namespace)
+		fmt.Println("catalog-item:" + ga.CatalogItemId)
 
 		var gameManifest *egs_integration.GameManifest
-		gameManifest, err = egs_integration.GetGameManifest(rec.Namespace, rec.CatalogItemId, rec.AppName, "Windows", verifyTokenResponse.Token, client)
+		gameManifest, err = egs_integration.GetGameManifest(ga.Namespace, ga.CatalogItemId, ga.AppName, "Windows", verifyTokenResponse.Token, client)
 		if err != nil {
 			return err
 		}
-
-		//fmt.Println(gameManifest.Elements)
 
 		for _, element := range gameManifest.Elements {
 			for _, manifest := range element.Manifests {
-				var manifestUrl *url.URL
-				manifestUrl, err = url.Parse(manifest.Uri)
+				var mu *url.URL
+				mu, err = manifest.Url()
 				if err != nil {
 					return err
 				}
-
-				q := manifestUrl.Query()
-
-				for _, kv := range manifest.QueryParams {
-					q.Add(kv.Name, kv.Value)
-				}
-
-				manifestUrl.RawQuery = q.Encode()
-
-				fmt.Println(" - " + manifestUrl.String())
+				fmt.Println(" - " + mu.String())
 			}
 		}
 
-		if ii == limit-1 {
-			break
-		}
-
 	}
-
-	//fmt.Println("GetGameAssets")
-	//
-	//var gameAssets []egs_integration.GameAsset
-	//gameAssets, err = egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//fmt.Println(gameAssets)
-
-	fmt.Println("DeleteToken")
-
-	if err = egs_integration.DeleteToken(verifyTokenResponse.Token, client); err != nil {
-		return err
-	}
-
-	//fmt.Println("GetEntitlements")
-	//
-	//entitlements, err := egs_integration.GetEntitlements(verifyTokenResponse.AccountId, verifyTokenResponse.Token, client)
-	//if err != nil {
-	//	return err
-	//}
-
-	//
-	//for _, ent := range entitlements {
-	//
-	//	fmt.Println("GetCatalogItem", ent)
-	//
-	//	entStr, err := egs_integration.GetCatalogItem(ent.Namespace, ent.CatalogItemId, postTokenResponse.AccessToken, client)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	fmt.Println(entStr)
-	//
-	//	break
-	//}
 
 	return nil
 }
