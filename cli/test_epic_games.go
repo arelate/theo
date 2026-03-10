@@ -66,7 +66,7 @@ func downloadChunks(manifestId string, cdnUrl *url.URL) error {
 	}
 	defer manifestFile.Close()
 
-	manifest, err := egs_integration.ReadBinary(manifestFile)
+	manifest, err := egs_integration.ReadBinaryManifest(manifestFile)
 	if err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func testChunks(manifestId string) error {
 	}
 	defer manifestFile.Close()
 
-	manifest, err := egs_integration.ReadBinary(manifestFile)
+	manifest, err := egs_integration.ReadBinaryManifest(manifestFile)
 	if err != nil {
 		return err
 	}
@@ -358,8 +358,25 @@ func testChunks(manifestId string) error {
 
 		chkFilename := filepath.Base(chk.Path(manifest.Metadata.FeatureLevel))
 
+		var chunkFile *os.File
+		chunkFile, err = os.Open(filepath.Join(targetChunksDir, chkFilename))
+		if err != nil {
+			return err
+		}
+
+		//var chkReader io.ReadSeeker
+		_, err = egs_integration.ReadChunk(chunkFile)
+		if err != nil {
+			return err
+		}
+
+		if err = chunkFile.Close(); err != nil {
+			return err
+		}
+
 		fmt.Println(filepath.Join(targetChunksDir, chkFilename))
 
+		break
 	}
 
 	return nil
