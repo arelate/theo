@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ func TestEpicGamesHandler(u *url.URL) error {
 
 	lsManifests := q.Has("list-manifests")
 	dlChunks := q.Has("download-chunks")
+	vlChunks := q.Has("validate-chunks")
 	asChunks := q.Has("assemble-chunks")
 
 	id := q.Get("id")
@@ -37,6 +39,8 @@ func TestEpicGamesHandler(u *url.URL) error {
 		return listManifests(id)
 	} else if dlChunks {
 		return downloadChunks(id, cdnUrl)
+	} else if vlChunks {
+		return validateChunks(id)
 	} else if asChunks {
 		return assembleChunks(id)
 	}
@@ -320,6 +324,76 @@ func listManifests(appId string) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func validateChunks(manifestId string) error {
+	if manifestId == "" {
+		return errors.New("empty manifest id")
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	manifestFilename := manifestId
+	if !strings.HasSuffix(manifestId, ".manifest") {
+		manifestFilename += ".manifest"
+	}
+
+	absManifestPath := filepath.Join(homeDir, "Downloads", "epic", manifestFilename)
+
+	manifestFile, err := os.Open(absManifestPath)
+	if err != nil {
+		return err
+	}
+	defer manifestFile.Close()
+
+	manifest, err := egs_integration.ReadBinaryManifest(manifestFile)
+	if err != nil {
+		return err
+	}
+
+	chunksDir := filepath.Join(homeDir, "Downloads", "epic", "chunks", strings.TrimSuffix(manifestId, ".manifest"))
+
+	fmt.Println()
+
+	for _, chunk := range manifest.ChunkList.Chunks {
+
+		chunkPath := filepath.Join(chunksDir, filepath.Base(chunk.Path(manifest.Metadata.FeatureLevel)))
+
+		chunkFile, err := os.Open(chunkPath)
+		if err != nil {
+			return err
+		}
+
+		//fmt.Println(chunk.Path(manifest.Metadata.FeatureLevel))
+		//fmt.Printf("hash:%x\n", chunk.ShaHash)
+
+		chunkReader, err := egs_integration.ReadChunk(chunkFile)
+		if err != nil {
+			return err
+		}
+
+		chunkData, err := io.ReadAll(chunkReader)
+		if err != nil {
+			return err
+		}
+
+		shaSum := sha1.Sum(chunkData)
+
+		expectedShaSum := fmt.Sprintf("%x", chunk.ShaHash)
+		actualShaSum := fmt.Sprintf("%x", shaSum)
+
+		result := "error"
+		if expectedShaSum == actualShaSum {
+			result = "valid"
+		}
+
+		fmt.Println(filepath.Base(chunk.Path(manifest.Metadata.FeatureLevel)), result)
 	}
 
 	return nil

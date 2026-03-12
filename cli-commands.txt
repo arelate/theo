@@ -123,6 +123,7 @@ steam-shortcut
 test-epic-games
     list-manifests
     download-chunks
+    validate-chunks
     assemble-chunks
     id^*
     cdn-url
