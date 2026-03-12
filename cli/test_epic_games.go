@@ -25,6 +25,7 @@ func TestEpicGamesHandler(u *url.URL) error {
 	lsManifests := q.Has("list-manifests")
 	dlChunks := q.Has("download-chunks")
 	vlChunks := q.Has("validate-chunks")
+	vlFiles := q.Has("validate-files")
 	asChunks := q.Has("assemble-chunks")
 
 	id := q.Get("id")
@@ -43,6 +44,8 @@ func TestEpicGamesHandler(u *url.URL) error {
 		return validateChunks(id)
 	} else if asChunks {
 		return assembleChunks(id)
+	} else if vlFiles {
+		return validateFiles(id)
 	}
 
 	return errors.New("need apis or manifest")
@@ -447,8 +450,6 @@ func assembleFile(manifestId string, f *egs_integration.File, featureLevel uint3
 	//	return nil
 	//}
 
-	fmt.Println(f.Filename)
-
 	var err error
 
 	homeDir, err := os.UserHomeDir()
@@ -494,11 +495,87 @@ func assembleFile(manifestId string, f *egs_integration.File, featureLevel uint3
 			return err
 		}
 
-		//fmt.Println(string(chunkData[part.Offset : part.Offset+part.Size]))
 		if _, err = io.Copy(outFile, bytes.NewReader(chunkData[part.Offset:part.Offset+part.Size])); err != nil {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func validateFiles(manifestId string) error {
+
+	if manifestId == "" {
+		return errors.New("empty manifest id")
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	manifestFilename := manifestId
+	if !strings.HasSuffix(manifestId, ".manifest") {
+		manifestFilename += ".manifest"
+	}
+
+	absManifestPath := filepath.Join(homeDir, "Downloads", "epic", manifestFilename)
+
+	manifestFile, err := os.Open(absManifestPath)
+	if err != nil {
+		return err
+	}
+	defer manifestFile.Close()
+
+	manifest, err := egs_integration.ReadBinaryManifest(manifestFile)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println()
+
+	for _, file := range manifest.FileList.List {
+		if err = validateFile(manifestId, &file); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateFile(manifestId string, f *egs_integration.File) error {
+
+	var err error
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	outputDir := filepath.Join(homeDir, "Downloads", "epic", "output", strings.TrimSuffix(manifestId, ".manifest"))
+
+	absFilename := filepath.Join(outputDir, f.Filename)
+
+	inputFile, err := os.Open(absFilename)
+	if err != nil {
+		return err
+	}
+
+	inputData, err := io.ReadAll(inputFile)
+	if err != nil {
+		return err
+	}
+
+	shaSum := sha1.Sum(inputData)
+	actualShaSum := fmt.Sprintf("%x", shaSum)
+	expectedShaSum := fmt.Sprintf("%x", f.ShaHash)
+
+	result := "error"
+	if actualShaSum == expectedShaSum {
+		result = "valid"
+	}
+
+	fmt.Println(f.Filename, result)
 
 	return nil
 }

@@ -124,6 +124,7 @@ test-epic-games
     list-manifests
     download-chunks
     validate-chunks
+    validate-files
     assemble-chunks
     id^*
     cdn-url
