@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,7 +23,7 @@ func TestEpicGamesHandler(u *url.URL) error {
 
 	lsManifests := q.Has("list-manifests")
 	dlChunks := q.Has("download-chunks")
-	tsChunks := q.Has("test-chunks")
+	asChunks := q.Has("assemble-chunks")
 
 	id := q.Get("id")
 	cdnUrlStr := q.Get("cdn-url")
@@ -35,8 +37,8 @@ func TestEpicGamesHandler(u *url.URL) error {
 		return listManifests(id)
 	} else if dlChunks {
 		return downloadChunks(id, cdnUrl)
-	} else if tsChunks {
-		return testChunks(id)
+	} else if asChunks {
+		return assembleChunks(id)
 	}
 
 	return errors.New("need apis or manifest")
@@ -80,7 +82,7 @@ func downloadChunks(manifestId string, cdnUrl *url.URL) error {
 	for ii, chk := range manifest.ChunkList.Chunks {
 		cdnUrl.Path = path.Join(originalPath, chk.Path(manifest.Metadata.FeatureLevel))
 
-		if err = dc.Download(cdnUrl, false, nil, targetChunksDir); err != nil {
+		if err = dc.Download(cdnUrl, false, nil, targetChunksDir, chk.Path(manifest.Metadata.FeatureLevel)); err != nil {
 			return err
 		}
 
@@ -286,7 +288,7 @@ func listManifests(appId string) error {
 		return err
 	}
 
-	gameAssets, err := egs_integration.GetGameAssets("Windows", verifyTokenResponse.Token, client)
+	gameAssets, err := egs_integration.GetGameAssets("Mac", verifyTokenResponse.Token, client)
 	if err != nil {
 		return err
 	}
@@ -302,7 +304,7 @@ func listManifests(appId string) error {
 		fmt.Println("catalog-item:" + ga.CatalogItemId)
 
 		var gameManifest *egs_integration.GameManifest
-		gameManifest, err = egs_integration.GetGameManifest(ga.Namespace, ga.CatalogItemId, ga.AppName, "Windows", verifyTokenResponse.Token, client)
+		gameManifest, err = egs_integration.GetGameManifest(ga.Namespace, ga.CatalogItemId, ga.AppName, "Mac", verifyTokenResponse.Token, client)
 		if err != nil {
 			return err
 		}
@@ -323,7 +325,7 @@ func listManifests(appId string) error {
 	return nil
 }
 
-func testChunks(manifestId string) error {
+func assembleChunks(manifestId string) error {
 
 	if manifestId == "" {
 		return errors.New("empty manifest id")
@@ -352,31 +354,76 @@ func testChunks(manifestId string) error {
 		return err
 	}
 
-	targetChunksDir := filepath.Join(homeDir, "Downloads", "epic", "chunks", strings.TrimSuffix(manifestId, ".manifest"))
+	chunksDir := filepath.Join(homeDir, "Downloads", "epic", "chunks", strings.TrimSuffix(manifestId, ".manifest"))
 
-	for _, chk := range manifest.ChunkList.Chunks {
+	fmt.Println()
 
-		chkFilename := filepath.Base(chk.Path(manifest.Metadata.FeatureLevel))
+	for _, file := range manifest.FileList.List {
+		if err = assembleFile(manifestId, &file, manifest.Metadata.FeatureLevel, chunksDir); err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func assembleFile(manifestId string, f *egs_integration.File, featureLevel uint32, chunksDir string) error {
+
+	//if !strings.HasSuffix(f.Filename, ".json") {
+	//	return nil
+	//}
+
+	fmt.Println(f.Filename)
+
+	var err error
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	outputDir := filepath.Join(homeDir, "Downloads", "epic", "output", strings.TrimSuffix(manifestId, ".manifest"))
+
+	absOutputFilename := filepath.Join(outputDir, f.Filename)
+	absOutputDir, _ := filepath.Split(absOutputFilename)
+
+	if _, err = os.Stat(absOutputDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(absOutputDir, 0775); err != nil {
+			return err
+		}
+	}
+
+	outFile, err := os.Create(absOutputFilename)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	for _, part := range f.Parts {
+
+		chunkPath := filepath.Join(chunksDir, filepath.Base(part.Chunk.Path(featureLevel)))
 		var chunkFile *os.File
-		chunkFile, err = os.Open(filepath.Join(targetChunksDir, chkFilename))
+		chunkFile, err = os.Open(chunkPath)
 		if err != nil {
 			return err
 		}
 
-		//var chkReader io.ReadSeeker
-		_, err = egs_integration.ReadChunk(chunkFile)
+		var chunkReader io.Reader
+		chunkReader, err = egs_integration.ReadChunk(chunkFile)
+		if err != nil {
+			return nil
+		}
+
+		var chunkData []byte
+		chunkData, err = io.ReadAll(chunkReader)
 		if err != nil {
 			return err
 		}
 
-		if err = chunkFile.Close(); err != nil {
+		//fmt.Println(string(chunkData[part.Offset : part.Offset+part.Size]))
+		if _, err = io.Copy(outFile, bytes.NewReader(chunkData[part.Offset:part.Offset+part.Size])); err != nil {
 			return err
 		}
-
-		fmt.Println(filepath.Join(targetChunksDir, chkFilename))
-
-		break
 	}
 
 	return nil
