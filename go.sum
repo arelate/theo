@@ -12,6 +12,8 @@ github.com/arelate/southern_light v0.4.29 h1:qAPp+t28/NTOOZFyrnkD1P/4+TXeh8Y8tY2
 github.com/arelate/southern_light v0.4.29/go.mod h1:lEUjkJHheTGnO2cq7RO5RbLPE0DS2X5t4X3wJ9WkkRA=
 github.com/arelate/southern_light v0.4.30 h1:WI4lROLzDbE/eqJNYMnaI5330fS8zJxnPuKwlSri4ZM=
 github.com/arelate/southern_light v0.4.30/go.mod h1:lEUjkJHheTGnO2cq7RO5RbLPE0DS2X5t4X3wJ9WkkRA=
+github.com/arelate/southern_light v0.4.31 h1:pBWJInATaP5b9Gedzs3Z48R/ckx6QsxvJajbW65iBhk=
+github.com/arelate/southern_light v0.4.31/go.mod h1:lEUjkJHheTGnO2cq7RO5RbLPE0DS2X5t4X3wJ9WkkRA=
 github.com/boggydigital/author v0.1.27 h1:Y3JE+GpkBNa3/op/DspsBmn5T+EZKOn+tGsZwk7LnrQ=
 github.com/boggydigital/author v0.1.27/go.mod h1:dCqaAkZMxVEwqshy8m//UfhlaSozk8zwO8mMFWvtbH8=
 github.com/boggydigital/backups v0.1.7 h1:X+qFblWtF3+zMx8IteZG/bGHXIiboR3EAtAtJiXCryc=
@@ -40,3 +42,5 @@ github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 golang.org/x/crypto v0.48.0 h1:/VRzVqiRSggnhY7gNRxPauEQ5Drw9haKdM0jqfcCFts=
 golang.org/x/crypto v0.48.0/go.mod h1:r0kV5h3qnFPlQnBSrULhlsRfryS2pmewsg+XfMgkVos=
+golang.org/x/crypto v0.49.0 h1:+Ng2ULVvLHnJ/ZFEq4KdcDd/cfjrrjjNSXNzxg0Y4U4=
+golang.org/x/crypto v0.49.0/go.mod h1:ErX4dUh2UM+CFYiXZRTcMpEcN8b/1gxEuv3nODoYtCA=
