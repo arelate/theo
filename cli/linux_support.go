@@ -237,8 +237,7 @@ func nixFreeSpace(path string) (int64, error) {
 	}
 
 	buf := bytes.NewBuffer(nil)
-
-	dfCmd := exec.Command(dfPath, "-k", path)
+	dfCmd := exec.Command(dfPath, "-Pk", path)
 	dfCmd.Stdout = buf
 
 	if err = dfCmd.Run(); err != nil {
@@ -250,23 +249,22 @@ func nixFreeSpace(path string) (int64, error) {
 		return -1, errors.New("unsupported df output lines format")
 	}
 
-	var ai int
-	if ai = strings.Index(lines[0], "Available"); ai == 0 || ai >= len(lines[0])-1 {
-		return -1, errors.New("df output is missing Available")
+	values := make([]string, 0, 5)
+	for _, val := range strings.Split(lines[1], " ") {
+		if val == "" {
+			continue
+		}
+		values = append(values, val)
 	}
 
-	var sub string
-	if sub = lines[1][ai:]; len(sub) == 0 {
-		return -1, errors.New("df values format is too short")
+	if len(values) < 4 {
+		return -1, errors.New("unsupported df output values format")
 	}
 
-	var abs string
-	var ok bool
-	if abs, _, ok = strings.Cut(sub, " "); !ok {
-		abs = sub
-	}
-
-	if abi, err := strconv.ParseInt(abs, 10, 32); err == nil {
+	var abi int64
+	// When both the -k and -P options are specified, the following header line shall be written (in the POSIX locale):
+	//"Filesystem 1024-blocks Used Available Capacity Mounted on\n"
+	if abi, err = strconv.ParseInt(values[3], 10, 64); err == nil {
 		return abi * 1024, nil
 	} else {
 		return -1, err
