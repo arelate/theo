@@ -42,7 +42,7 @@ var (
 	ErrNoMacOsAppBundle              = errors.New("cannot locate macOS app bundle")
 )
 
-func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
+func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string, force bool) error {
 
 	mui := nod.Begin(" unpacking %s installers with pkgutil, please wait...", id)
 	defer mui.Done()
@@ -61,7 +61,7 @@ func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 		// only unpack first Installer pkg, as that should achieve intended outcome
 		// certain games (e.g. Baldur's Gate 3) ship additional language patches
 		// that are likely not desired for default unpacking
-		if link.DownloadType == vangogh_integration.Installer && installerUnpacked {
+		if link.DownloadType == vangogh_integration.Installer && installerUnpacked && !force {
 			continue
 		}
 
@@ -132,7 +132,7 @@ func macOsReduceBundleNameProperty(id string, dls vangogh_integration.ProductDow
 	return nil
 }
 
-func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string, force bool) error {
 
 	mpufa := nod.Begin(" placing unpacked files for %s...", id)
 	defer mpufa.Done()
@@ -146,7 +146,7 @@ func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 		}
 
 		// see the comment in macOsUnpackInstallers
-		if link.DownloadType == vangogh_integration.Installer && installerPlaced {
+		if link.DownloadType == vangogh_integration.Installer && installerPlaced && !force {
 			continue
 		}
 
@@ -169,7 +169,7 @@ func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 	return nil
 }
 
-func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) ([]string, error) {
+func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string, force bool) ([]string, error) {
 
 	mgia := nod.Begin(" creating inventory of unpacked files...")
 	defer mgia.Done()
@@ -189,7 +189,7 @@ func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, 
 		}
 
 		// see the comment in macOsUnpackInstallers
-		if link.DownloadType == vangogh_integration.Installer && installerInventoried {
+		if link.DownloadType == vangogh_integration.Installer && installerInventoried && !force {
 			continue
 		}
 
@@ -220,7 +220,8 @@ func macOsPostInstallActions(id string,
 	ii *InstallInfo,
 	dls vangogh_integration.ProductDownloadLinks,
 	rdx redux.Readable,
-	unpackDir string) error {
+	unpackDir string,
+	force bool) error {
 
 	mpia := nod.Begin(" running %s post-install actions for %s...", vangogh_integration.MacOS, id)
 	defer mpia.Done()
@@ -236,7 +237,7 @@ func macOsPostInstallActions(id string,
 		}
 
 		// see the comment in macOsUnpackInstallers
-		if link.DownloadType == vangogh_integration.Installer && installerPostInstallActed {
+		if link.DownloadType == vangogh_integration.Installer && installerPostInstallActed && !force {
 			continue
 		}
 

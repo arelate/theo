@@ -455,7 +455,7 @@ func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.Prod
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsUnpackInstallers(id, dls, unpackDir)
+		return macOsUnpackInstallers(id, dls, unpackDir, ii.force)
 	case vangogh_integration.Linux:
 		return linuxExecuteInstallers(id, dls, unpackDir)
 	case vangogh_integration.Windows:
@@ -487,7 +487,7 @@ func osGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductD
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsGetInventory(id, dls, rdx, unpackDir)
+		return macOsGetInventory(id, dls, rdx, unpackDir, ii.force)
 	default:
 		return getInventory(ii.OperatingSystem, dls, unpackDir)
 	}
@@ -496,7 +496,7 @@ func osGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductD
 func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir)
+		return macOsPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir, ii.force)
 	case vangogh_integration.Linux:
 		return linuxPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir)
 	case vangogh_integration.Windows:
@@ -554,7 +554,7 @@ func placeUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLink, abs
 func osPostInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsPostInstallActions(id, ii, dls, rdx, unpackDir)
+		return macOsPostInstallActions(id, ii, dls, rdx, unpackDir, ii.force)
 	default:
 		return nil
 	}
