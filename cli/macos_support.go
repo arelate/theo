@@ -50,9 +50,18 @@ func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 	downloadsDir := data.Pwd.AbsDirPath(vangogh_integration.Downloads)
 	productDownloadsDir := filepath.Join(downloadsDir, id)
 
+	installerUnpacked := false
+
 	for _, link := range dls {
 
 		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
+			continue
+		}
+
+		// only unpack first Installer pkg, as that should achieve intended outcome
+		// certain games (e.g. Baldur's Gate 3) ship additional language patches
+		// that are likely not desired for default unpacking
+		if link.DownloadType == vangogh_integration.Installer && installerUnpacked {
 			continue
 		}
 
@@ -60,6 +69,10 @@ func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 
 		if err := macOsUnpackLink(&link, absInstallerPath, unpackDir); err != nil {
 			return err
+		}
+
+		if link.DownloadType == vangogh_integration.Installer {
+			installerUnpacked = true
 		}
 	}
 
@@ -124,9 +137,16 @@ func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 	mpufa := nod.Begin(" placing unpacked files for %s...", id)
 	defer mpufa.Done()
 
+	installerPlaced := false
+
 	for _, link := range dls {
 
 		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
+			continue
+		}
+
+		// see the comment in macOsUnpackInstallers
+		if link.DownloadType == vangogh_integration.Installer && installerPlaced {
 			continue
 		}
 
@@ -139,6 +159,10 @@ func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 
 		if err = placeUnpackedLinkPayload(&link, absUnpackedPayloadPath, absBundlePath); err != nil {
 			return err
+		}
+
+		if link.DownloadType == vangogh_integration.Installer {
+			installerPlaced = true
 		}
 	}
 
@@ -156,9 +180,16 @@ func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, 
 
 	filesMap := make(map[string]any)
 
+	installerInventoried := false
+
 	for _, link := range dls {
 
 		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
+			continue
+		}
+
+		// see the comment in macOsUnpackInstallers
+		if link.DownloadType == vangogh_integration.Installer && installerInventoried {
 			continue
 		}
 
@@ -172,16 +203,12 @@ func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, 
 			return nil, err
 		}
 
-		//var appBundleName string
-		//if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok {
-		//	appBundleName = bundleName
-		//}
-
 		for _, ruf := range relUnpackedFiles {
-			//if appBundleName != "" && !strings.HasSuffix(appBundleName, appBundleExt) {
-			//	ruf = filepath.Join(appBundleName, ruf)
-			//}
 			filesMap[ruf] = nil
+		}
+
+		if link.DownloadType == vangogh_integration.Installer {
+			installerInventoried = true
 		}
 
 	}
@@ -200,9 +227,16 @@ func macOsPostInstallActions(id string,
 
 	absBundlePaths := make(map[string]any)
 
+	installerPostInstallActed := false
+
 	for _, link := range dls {
 
 		if !isLinkExecutable(&link, vangogh_integration.MacOS) {
+			continue
+		}
+
+		// see the comment in macOsUnpackInstallers
+		if link.DownloadType == vangogh_integration.Installer && installerPostInstallActed {
 			continue
 		}
 
@@ -228,6 +262,10 @@ func macOsPostInstallActions(id string,
 			if err = macOsProcessPostInstallScript(customCommands, productDownloadsDir, absBundlePath); err != nil {
 				return err
 			}
+		}
+
+		if link.DownloadType == vangogh_integration.Installer {
+			installerPostInstallActed = true
 		}
 	}
 
