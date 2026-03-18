@@ -63,7 +63,7 @@ func PrefixHandler(u *url.URL) error {
 
 	mod := q.Get("mod")
 	program := q.Get("program")
-	installWineBinary := q.Get("install-wine-binary")
+	wineBinary := q.Get("install-wine-binary")
 
 	defaultEnv := q.Has("default-env")
 	deleteEnv := q.Has("delete-env")
@@ -77,7 +77,7 @@ func PrefixHandler(u *url.URL) error {
 	remove := q.Has("remove")
 
 	return Prefix(id, ii,
-		mod, program, installWineBinary,
+		mod, program, wineBinary,
 		defaultEnv, deleteEnv, deleteExe, deleteArg,
 		info, archive, remove,
 		et)
@@ -85,7 +85,7 @@ func PrefixHandler(u *url.URL) error {
 
 func Prefix(id string,
 	request *InstallInfo,
-	mod, program, installWineBinary string,
+	mod, program, wineBinary string,
 	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
 	info, archive, remove bool,
 	et *execTask) error {
@@ -185,55 +185,20 @@ func Prefix(id string,
 
 	}
 
-	if installWineBinary != "" {
-
-		if !slices.Contains(wine_integration.WineBinariesCodes(), installWineBinary) {
-			return errors.New("unknown WINE binary " + installWineBinary)
-		}
-
-		var requestedWineBinary *wine_integration.Binary
-		for _, binary := range wine_integration.OsWineBinaries {
-			if binary.OS == vangogh_integration.Windows && binary.Code == installWineBinary {
-				requestedWineBinary = &binary
-			}
-		}
-
-		if requestedWineBinary == nil {
-			return errors.New("no match for WINE binary code " + installWineBinary)
-		}
-
-		// TODO: this would only support direct download sources.
-		// Currently all coded WINE binaries are direct download sources, so this if fine for now.
-		wbFilename := path.Base(requestedWineBinary.DownloadUrl)
-
-		var wineDownloadsDir string
-		wineDownloadsDir = data.Pwd.AbsRelDirPath(data.BinDownloads, data.Wine)
-
-		et.name = requestedWineBinary.String()
-		et.exe = filepath.Join(wineDownloadsDir, wbFilename)
-
-		if args, ok := wine_integration.WineBinariesCodesArgs[installWineBinary]; ok {
-			et.args = args
-		}
-
-		if _, err = os.Stat(et.exe); os.IsNotExist(err) {
-			return errors.New("matched WINE binary not found, use setup-wine to download")
-		}
-
-		if err = osExec(id, vangogh_integration.Windows, et); err != nil {
+	if wineBinary != "" {
+		if err = prefixInstallBinary(id, wineBinary, absPrefixDir, et); err != nil {
 			return err
 		}
-
 	}
 
 	if archive {
-		if err = archiveProductPrefix(id, ii.Origin); err != nil {
+		if err = prefixArchiveProduct(id, ii.Origin); err != nil {
 			return err
 		}
 	}
 
 	if remove {
-		if err = removeProductPrefix(id, ii, rdx); err != nil {
+		if err = prefixRemoveProduct(id, ii, rdx); err != nil {
 			return err
 		}
 	}
@@ -241,7 +206,75 @@ func Prefix(id string,
 	return nil
 }
 
-func archiveProductPrefix(id string, origin data.Origin) error {
+func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *execTask) error {
+
+	if !slices.Contains(wine_integration.WineBinariesCodes(), wineBinary) {
+		return errors.New("unknown WINE binary " + wineBinary)
+	}
+
+	var requestedWineBinary *wine_integration.Binary
+	for _, binary := range wine_integration.OsWineBinaries {
+		if binary.OS == vangogh_integration.Windows && binary.Code == wineBinary {
+			requestedWineBinary = &binary
+		}
+	}
+
+	if requestedWineBinary == nil {
+		return errors.New("no match for WINE binary code " + wineBinary)
+	}
+
+	// This would only support direct download sources.
+	// Currently all coded WINE binaries are direct download sources, so this if fine for now.
+	wbFilename := path.Base(requestedWineBinary.DownloadUrl)
+
+	var wineDownloadsDir string
+	wineDownloadsDir = data.Pwd.AbsRelDirPath(data.BinDownloads, data.Wine)
+
+	et.name = requestedWineBinary.String()
+	et.exe = filepath.Join(wineDownloadsDir, wbFilename)
+
+	if args, ok := wine_integration.WineBinariesCodesArgs[wineBinary]; ok {
+		et.args = args
+	}
+
+	if _, err := os.Stat(et.exe); os.IsNotExist(err) {
+		return errors.New("matched WINE binary not found, use setup-wine to download")
+	}
+
+	switch wineBinary {
+	case wine_integration.DxEndUserRuntimeCode:
+
+		originalName := et.name
+
+		dxSetupDir, _ := filepath.Split(wine_integration.DxSetupPath)
+		absDxUnpackDir := filepath.Join(absPrefixDir, prefixRelDriveCDir, dxSetupDir)
+
+		if _, err := os.Stat(absDxUnpackDir); err == nil {
+			if err = os.RemoveAll(absDxUnpackDir); err != nil {
+				return err
+			}
+		}
+
+		et.name = "Unpack: " + originalName
+
+		// extract to {prefix}/drive_c/DirectX
+		if err := osExec(id, vangogh_integration.Windows, et); err != nil {
+			return err
+		}
+
+		// Set execTask to run DXSetup.exe on func exit
+		et.exe = filepath.Join(absPrefixDir, prefixRelDriveCDir, wine_integration.DxSetupPath)
+		et.args = wine_integration.DxSetupArgs
+		et.name = "Setup : " + originalName
+
+	default:
+		// do nothing
+	}
+
+	return osExec(id, vangogh_integration.Windows, et)
+}
+
+func prefixArchiveProduct(id string, origin data.Origin) error {
 
 	appa := nod.Begin("archiving prefix for %s...", id)
 	defer appa.Done()
@@ -275,10 +308,10 @@ func archiveProductPrefix(id string, origin data.Origin) error {
 		return err
 	}
 
-	return cleanupProductPrefixArchive(absPrefixNameArchiveDir)
+	return prefixCleanupProductArchive(absPrefixNameArchiveDir)
 }
 
-func cleanupProductPrefixArchive(absPrefixNameArchiveDir string) error {
+func prefixCleanupProductArchive(absPrefixNameArchiveDir string) error {
 	cppa := nod.NewProgress(" cleaning up old prefix archives...")
 	defer cppa.Done()
 
@@ -350,14 +383,14 @@ func createRegFile(absPath string, content []byte) error {
 	}
 	defer regFile.Close()
 
-	if _, err := io.Copy(regFile, bytes.NewReader(content)); err != nil {
+	if _, err = io.Copy(regFile, bytes.NewReader(content)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func removeProductPrefix(id string, ii *InstallInfo, rdx redux.Readable) error {
+func prefixRemoveProduct(id string, ii *InstallInfo, rdx redux.Readable) error {
 	rppa := nod.Begin(" removing installed files from prefix for %s...", id)
 	defer rppa.Done()
 
@@ -388,18 +421,18 @@ func removeProductPrefix(id string, ii *InstallInfo, rdx redux.Readable) error {
 		return err
 	}
 
-	if err = removePrefixInstalledFiles(absPrefixDir, relInventoryFiles...); err != nil {
+	if err = prefixRemoveInstalledFiles(absPrefixDir, relInventoryFiles...); err != nil {
 		return err
 	}
 
-	if err = removePrefixDirs(absPrefixDir, relInventoryFiles...); err != nil {
+	if err = prefixRemoveDirs(absPrefixDir, relInventoryFiles...); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func removePrefixInstalledFiles(absPrefixDir string, relFiles ...string) error {
+func prefixRemoveInstalledFiles(absPrefixDir string, relFiles ...string) error {
 	rpifa := nod.NewProgress(" removing inventoried files in prefix...")
 	defer rpifa.Done()
 
@@ -420,7 +453,7 @@ func removePrefixInstalledFiles(absPrefixDir string, relFiles ...string) error {
 	return nil
 }
 
-func removePrefixDirs(absPrefixDir string, relFiles ...string) error {
+func prefixRemoveDirs(absPrefixDir string, relFiles ...string) error {
 	rpda := nod.NewProgress(" removing prefix empty directories...")
 	defer rpda.Done()
 
