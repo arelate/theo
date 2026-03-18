@@ -76,10 +76,13 @@ func PrefixHandler(u *url.URL) error {
 	archive := q.Has("archive")
 	remove := q.Has("remove")
 
+	run := q.Has("run")
+
 	return Prefix(id, ii,
 		mod, program, wineBinary,
 		defaultEnv, deleteEnv, deleteExe, deleteArg,
 		info, archive, remove,
+		run,
 		et)
 }
 
@@ -88,6 +91,7 @@ func Prefix(id string,
 	mod, program, wineBinary string,
 	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
 	info, archive, remove bool,
+	run bool,
 	et *execTask) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -138,8 +142,13 @@ func Prefix(id string,
 	}
 
 	if et.exe != "" {
-		if err = prefixSetExe(id, ii.Origin, et.exe, rdx); err != nil {
-			return err
+		switch run {
+		case true:
+			return osExec(id, vangogh_integration.Windows, et)
+		default:
+			if err = prefixSetExe(id, ii.Origin, et.exe, rdx); err != nil {
+				return err
+			}
 		}
 	}
 

@@ -60,6 +60,7 @@ prefix
     info
     archive
     remove
+    run
     verbose
     force
 
