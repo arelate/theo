@@ -265,7 +265,7 @@ func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *
 			}
 		}
 
-		et.name = "Extract: " + originalName
+		et.name = "extract: " + originalName
 
 		// extract to {prefix}/drive_c/DirectX
 		if err := osExec(id, vangogh_integration.Windows, et); err != nil {
@@ -275,7 +275,7 @@ func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *
 		// Set execTask to run DXSetup.exe on func exit
 		et.exe = filepath.Join(absPrefixDir, prefixRelDriveCDir, wine_integration.DxSetupPath)
 		et.args = wine_integration.DxSetupArgs
-		et.name = "Install: " + originalName
+		et.name = "install: " + originalName
 
 	default:
 		// do nothing
