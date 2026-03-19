@@ -144,6 +144,7 @@ func Prefix(id string,
 	if et.exe != "" {
 		switch run {
 		case true:
+			et.name = filepath.Base(et.exe)
 			return osExec(id, vangogh_integration.Windows, et)
 		default:
 			if err = prefixSetExe(id, ii.Origin, et.exe, rdx); err != nil {
