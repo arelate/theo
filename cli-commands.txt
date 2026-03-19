@@ -90,6 +90,7 @@ run
     proton-runtime=proton-ge,umu-proton
     steam-proton-runtime={steam-proton-runtimes}
     proton-options&=enable-wayland,prefer-sdl,disable-hidraw,enable-hdr,no-steaminput
+    no-fix
     verbose
     force
 

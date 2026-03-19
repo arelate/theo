@@ -11,6 +11,7 @@ type execTask struct {
 	steamProtonRuntime string
 	prefix             string
 	playTask           string
+	noFix              bool
 	defaultLauncher    bool
 	verbose            bool
 }

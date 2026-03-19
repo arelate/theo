@@ -48,6 +48,7 @@ func RunHandler(u *url.URL) error {
 		verbose:         q.Has("verbose"),
 		playTask:        q.Get("playtask"),
 		defaultLauncher: q.Has("default-launcher"),
+		noFix:           q.Has("no-fix"),
 	}
 
 	if q.Has("env") {
@@ -420,6 +421,10 @@ func osExecTaskDefaultLauncher(absDefaultLauncherPath string, operatingSystem va
 }
 
 func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
+
+	if !et.noFix {
+		et = fixExecTask(id, operatingSystem, et)
+	}
 
 	switch operatingSystem {
 	case vangogh_integration.MacOS:
