@@ -265,48 +265,62 @@ func listPlayTasks(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	absGogGameInfoPath, err := prefixFindGogGameInfo(id, ii, rdx)
-	if err != nil {
-		return err
-	}
-
-	gogGameInfo, err := gog_integration.GetGogGameInfo(absGogGameInfoPath)
+	installedInfo, err := matchInstalledInfo(id, ii, rdx)
 	if err != nil {
 		return err
 	}
 
 	playTasksSummary := make(map[string][]string)
 
-	for _, pt := range gogGameInfo.PlayTasks {
-		list := make([]string, 0)
-		if pt.Arguments != "" {
-			list = append(list, "arguments:"+pt.Arguments)
-		}
-		list = append(list, "category:"+pt.Category)
-		if pt.IsPrimary {
-			list = append(list, "isPrimary:true")
-		}
-		if pt.IsHidden {
-			list = append(list, "isHidden:true")
-		}
-		if len(pt.Languages) > 0 {
-			list = append(list, "languages:"+strings.Join(pt.Languages, ","))
-		}
-		if pt.Link != "" {
-			list = append(list, "link:"+pt.Link)
-		}
-		if len(pt.OsBitness) > 0 {
-			list = append(list, "osBitness:"+strings.Join(pt.OsBitness, ","))
-		}
-		if pt.Path != "" {
-			list = append(list, "path:"+pt.Path)
-		}
-		list = append(list, "type:"+pt.Type)
-		if pt.WorkingDir != "" {
-			list = append(list, "workingDir:"+pt.WorkingDir)
+	switch installedInfo.Origin {
+	case data.VangoghGogOrigin:
+		var absGogGameInfoPath string
+		absGogGameInfoPath, err = prefixFindGogGameInfo(id, installedInfo, rdx)
+		if err != nil {
+			return err
 		}
 
-		playTasksSummary["name:"+pt.Name] = list
+		var gogGameInfo *gog_integration.GogGameInfo
+		gogGameInfo, err = gog_integration.GetGogGameInfo(absGogGameInfoPath)
+		if err != nil {
+			return err
+		}
+
+		for _, pt := range gogGameInfo.PlayTasks {
+			list := make([]string, 0)
+			if pt.Arguments != "" {
+				list = append(list, "arguments:"+pt.Arguments)
+			}
+			list = append(list, "category:"+pt.Category)
+			if pt.IsPrimary {
+				list = append(list, "isPrimary:true")
+			}
+			if pt.IsHidden {
+				list = append(list, "isHidden:true")
+			}
+			if len(pt.Languages) > 0 {
+				list = append(list, "languages:"+strings.Join(pt.Languages, ","))
+			}
+			if pt.Link != "" {
+				list = append(list, "link:"+pt.Link)
+			}
+			if len(pt.OsBitness) > 0 {
+				list = append(list, "osBitness:"+strings.Join(pt.OsBitness, ","))
+			}
+			if pt.Path != "" {
+				list = append(list, "path:"+pt.Path)
+			}
+			list = append(list, "type:"+pt.Type)
+			if pt.WorkingDir != "" {
+				list = append(list, "workingDir:"+pt.WorkingDir)
+			}
+
+			playTasksSummary["name:"+pt.Name] = list
+		}
+	case data.SteamOrigin:
+		panic("not implemented")
+	default:
+		return installedInfo.Origin.ErrUnsupportedOrigin()
 	}
 
 	lpta.EndWithSummary("found the following playTasks:", playTasksSummary)

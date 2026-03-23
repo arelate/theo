@@ -8,7 +8,7 @@ import (
 
 func fixExecTask(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) *execTask {
 	switch id {
-	case "1456460669":
+	case "1456460669": // Baldur's Gate 3
 		switch operatingSystem {
 		case vangogh_integration.MacOS:
 			dir, fn := filepath.Split(et.exe)
