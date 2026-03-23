@@ -298,6 +298,10 @@ func steamAppInfoSize(steamAppId string, operatingSystem vangogh_integration.Ope
 		return 0, err
 	}
 
+	//if err = depotsKv.WriteString(os.Stdout, 0, steam_vdf.VdfNewLines, steam_vdf.VdfTabsIndent); err != nil {
+	//	return 0, err
+	//}
+
 	var estimatedBytes int64
 
 	for _, depotKv := range depotsKv.Values {
@@ -312,6 +316,10 @@ func steamAppInfoSize(steamAppId string, operatingSystem vangogh_integration.Ope
 			continue
 		}
 		if sharedInstall, ok := depotKv.Values.Val("sharedinstall"); ok && sharedInstall != "" {
+			continue
+		}
+
+		if language, ok := depotsKv.Values.Val("config", "language"); ok && language != "english" {
 			continue
 		}
 
