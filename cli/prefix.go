@@ -49,9 +49,8 @@ func PrefixHandler(u *url.URL) error {
 	}
 
 	et := &execTask{
-		exe:             q.Get("exe"),
-		operatingSystem: vangogh_integration.Windows,
-		verbose:         q.Has("verbose"),
+		exe:     q.Get("exe"),
+		verbose: q.Has("verbose"),
 	}
 
 	if q.Has("env") {
@@ -367,12 +366,11 @@ func prefixModRetina(id string, origin data.Origin, revert bool, rdx redux.Write
 	}
 
 	et := &execTask{
-		exe:             regeditBin,
-		operatingSystem: vangogh_integration.Windows,
-		workDir:         absDriveCroot,
-		prefix:          absPrefixDir,
-		args:            []string{absRegPath},
-		verbose:         verbose,
+		exe:     regeditBin,
+		workDir: absDriveCroot,
+		prefix:  absPrefixDir,
+		args:    []string{absRegPath},
+		verbose: verbose,
 	}
 
 	switch data.CurrentOs() {

@@ -450,8 +450,6 @@ func macOsExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integr
 	absGogGameInfoDir, _ := filepath.Split(absGogGameInfoPath)
 	absExeRootDir := strings.TrimSuffix(absGogGameInfoDir, relMacOsGogGameInfoDir+"/")
 
-	// TODO: DRY
-
 	exePath := pt.Path
 	// account for Windows-style relative paths, e.g. DOSBOX\DOSBOX.exe
 	if parts := strings.Split(exePath, "\\"); len(parts) > 1 {
