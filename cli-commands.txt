@@ -37,7 +37,7 @@ install
 
 list
     installed
-    playtasks
+    tasks
     steam-shortcuts
     os={operating-systems^}
     lang-code={language-codes^}
@@ -84,7 +84,7 @@ run
     lang-code={language-codes^}
     env&
     arg&
-    playtask
+    task
     default-launcher
     work-dir
     proton-runtime=proton-ge,umu-proton

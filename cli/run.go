@@ -46,7 +46,7 @@ func RunHandler(u *url.URL) error {
 	et := &execTask{
 		workDir:         q.Get("work-dir"),
 		verbose:         q.Has("verbose"),
-		playTask:        q.Get("playtask"),
+		task:            q.Get("task"),
 		defaultLauncher: q.Has("default-launcher"),
 		noFix:           q.Has("no-fix"),
 	}
@@ -118,7 +118,7 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 			return err
 		}
 	case data.SteamOrigin:
-		if err = steamRun(id, ii, rdx); err != nil {
+		if err = steamRun(id, ii, rdx, et); err != nil {
 			return err
 		}
 	default:
@@ -450,7 +450,7 @@ func windowsToNixPath(wp string) string {
 	return strings.Replace(wp, "\\", "/", -1)
 }
 
-func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable) error {
+func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
 	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
@@ -469,13 +469,18 @@ func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable) error {
 		return err
 	}
 
-	var steamLcEt *execTask
-	steamLcEt, err = steamDefaultExecTask(steamAppId, appInfoKv, ii, rdx)
+	switch et.task {
+	case "":
+		et, err = steamDefaultTask(steamAppId, appInfoKv, ii, rdx)
+	default:
+		et, err = steamNamedTask(steamAppId, et.task, appInfoKv, ii, rdx)
+	}
+
 	if err != nil {
 		return err
 	}
 
-	return osExec(steamAppId, ii.OperatingSystem, steamLcEt)
+	return osExec(steamAppId, ii.OperatingSystem, et)
 }
 
 func getSteamLaunchConfigs(steamAppId string, appInfoKv steam_vdf.ValveDataFile) ([]*steam_integration.LaunchConfig, error) {
@@ -529,7 +534,7 @@ func getSteamLaunchConfigs(steamAppId string, appInfoKv steam_vdf.ValveDataFile)
 	return launchConfigs, nil
 }
 
-func steamDefaultExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable) (*execTask, error) {
+func steamDefaultTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable) (*execTask, error) {
 
 	steamLaunchConfigs, err := getSteamLaunchConfigs(steamAppId, appInfoKv)
 	if err != nil {
@@ -589,4 +594,67 @@ func steamDefaultExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, 
 	}
 
 	return nil, errors.New("cannot determine default steam launch config for " + steamAppId)
+}
+
+func steamNamedTask(steamAppId, task string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable) (*execTask, error) {
+
+	steamLaunchConfigs, err := getSteamLaunchConfigs(steamAppId, appInfoKv)
+	if err != nil {
+		return nil, err
+	}
+
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
+	if err != nil {
+		return nil, err
+	}
+
+	absPrefixDir, err := data.AbsPrefixDir(steamAppId, ii.Origin, rdx)
+	if err != nil {
+		return nil, err
+	}
+
+	var appInfoName string
+	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {
+		appInfoName = ain
+	}
+
+	et := new(execTask)
+
+	for _, slc := range steamLaunchConfigs {
+
+		var lcOperatingSystem vangogh_integration.OperatingSystem
+
+		if slc.OsList != "" {
+			osList := vangogh_integration.ParseManyOperatingSystems(strings.Split(slc.OsList, ","))
+			switch len(osList) {
+			case 0:
+				lcOperatingSystem = vangogh_integration.Windows
+			case 1:
+				lcOperatingSystem = osList[0]
+			default:
+				return nil, errors.New("more than one steam launch config found for " + steamAppId)
+			}
+		} else {
+			lcOperatingSystem = vangogh_integration.Windows
+		}
+
+		if lcOperatingSystem != ii.OperatingSystem ||
+			slc.Executable == "" ||
+			slc.OsArch == "32" ||
+			slc.Description != task {
+			continue
+		}
+
+		et.exe = filepath.Join(steamAppInstallDir, windowsToNixPath(slc.Executable))
+		et.workDir = filepath.Join(steamAppInstallDir, windowsToNixPath(slc.WorkingDir))
+		et.prefix = absPrefixDir
+		et.title = slc.Description
+		if et.title == "" {
+			et.title = appInfoName
+		}
+
+		return et, nil
+	}
+
+	return nil, errors.New("named steam launch config not found for " + steamAppId)
 }

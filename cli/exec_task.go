@@ -10,7 +10,7 @@ type execTask struct {
 	protonRuntime      string
 	steamProtonRuntime string
 	prefix             string
-	playTask           string
+	task               string
 	noFix              bool
 	defaultLauncher    bool
 	verbose            bool

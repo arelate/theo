@@ -32,8 +32,8 @@ func ListHandler(u *url.URL) error {
 	q := u.Query()
 
 	installed := q.Has("installed")
-	playTasks := q.Has("playtasks")
-	steamShorts := q.Has("steam-shortcuts")
+	tasks := q.Has("tasks")
+	steamShortcuts := q.Has("steam-shortcuts")
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
 	if q.Has(vangogh_integration.OperatingSystemsProperty) {
@@ -53,14 +53,14 @@ func ListHandler(u *url.URL) error {
 	id := q.Get(vangogh_integration.IdProperty)
 	allKeyValues := q.Has("all-key-values")
 
-	return List(installed, playTasks, steamShorts, ii, id, allKeyValues)
+	return List(installed, tasks, steamShortcuts, ii, id, allKeyValues)
 }
 
-func List(installed, playTasks, steamShortcuts bool,
+func List(installed, tasks, steamShortcuts bool,
 	installInfo *InstallInfo,
 	id string, allKeyValues bool) error {
 
-	if installed || playTasks || steamShortcuts {
+	if installed || tasks || steamShortcuts {
 		// do nothing
 	} else {
 		return errors.New("you need to specify at least one category to list")
@@ -72,11 +72,11 @@ func List(installed, playTasks, steamShortcuts bool,
 		}
 	}
 
-	if playTasks {
+	if tasks {
 		if id == "" {
-			return errors.New("listing playTasks requires product id")
+			return errors.New("listing tasks requires product id")
 		}
-		if err := listPlayTasks(id, installInfo); err != nil {
+		if err := listTasks(id, installInfo); err != nil {
 			return err
 		}
 	}
@@ -255,9 +255,9 @@ func listInstalled(ii *InstallInfo) error {
 	return nil
 }
 
-func listPlayTasks(id string, ii *InstallInfo) error {
+func listTasks(id string, ii *InstallInfo) error {
 
-	lpta := nod.Begin("listing playTasks for %s...", id)
+	lpta := nod.Begin("listing tasks for %s...", id)
 	defer lpta.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -270,62 +270,112 @@ func listPlayTasks(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	playTasksSummary := make(map[string][]string)
+	tasksSummary := make(map[string][]string)
 
 	switch installedInfo.Origin {
 	case data.VangoghGogOrigin:
-		var absGogGameInfoPath string
-		absGogGameInfoPath, err = prefixFindGogGameInfo(id, installedInfo, rdx)
-		if err != nil {
-			return err
-		}
-
-		var gogGameInfo *gog_integration.GogGameInfo
-		gogGameInfo, err = gog_integration.GetGogGameInfo(absGogGameInfoPath)
-		if err != nil {
-			return err
-		}
-
-		for _, pt := range gogGameInfo.PlayTasks {
-			list := make([]string, 0)
-			if pt.Arguments != "" {
-				list = append(list, "arguments:"+pt.Arguments)
-			}
-			list = append(list, "category:"+pt.Category)
-			if pt.IsPrimary {
-				list = append(list, "isPrimary:true")
-			}
-			if pt.IsHidden {
-				list = append(list, "isHidden:true")
-			}
-			if len(pt.Languages) > 0 {
-				list = append(list, "languages:"+strings.Join(pt.Languages, ","))
-			}
-			if pt.Link != "" {
-				list = append(list, "link:"+pt.Link)
-			}
-			if len(pt.OsBitness) > 0 {
-				list = append(list, "osBitness:"+strings.Join(pt.OsBitness, ","))
-			}
-			if pt.Path != "" {
-				list = append(list, "path:"+pt.Path)
-			}
-			list = append(list, "type:"+pt.Type)
-			if pt.WorkingDir != "" {
-				list = append(list, "workingDir:"+pt.WorkingDir)
-			}
-
-			playTasksSummary["title:"+pt.Name] = list
-		}
+		tasksSummary, err = listGogInfoPlayTasks(id, installedInfo, rdx)
 	case data.SteamOrigin:
-		panic("not implemented")
+		tasksSummary, err = listSteamAppInfoTasks(id, rdx, ii.force)
 	default:
-		return installedInfo.Origin.ErrUnsupportedOrigin()
+		err = installedInfo.Origin.ErrUnsupportedOrigin()
 	}
 
-	lpta.EndWithSummary("found the following playTasks:", playTasksSummary)
+	if err != nil {
+		return err
+	}
+
+	lpta.EndWithSummary("found the following tasks:", tasksSummary)
 
 	return nil
+}
+
+func listGogInfoPlayTasks(gogId string, ii *InstallInfo, rdx redux.Readable) (map[string][]string, error) {
+
+	absGogGameInfoPath, err := prefixFindGogGameInfo(gogId, ii, rdx)
+	if err != nil {
+		return nil, err
+	}
+
+	gogGameInfo, err := gog_integration.GetGogGameInfo(absGogGameInfoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	gogPlayTasks := make(map[string][]string)
+
+	for _, pt := range gogGameInfo.PlayTasks {
+		list := make([]string, 0)
+		if pt.Arguments != "" {
+			list = append(list, "arguments:"+pt.Arguments)
+		}
+		list = append(list, "category:"+pt.Category)
+		if pt.IsPrimary {
+			list = append(list, "isPrimary:true")
+		}
+		if pt.IsHidden {
+			list = append(list, "isHidden:true")
+		}
+		if len(pt.Languages) > 0 {
+			list = append(list, "languages:"+strings.Join(pt.Languages, ","))
+		}
+		if pt.Link != "" {
+			list = append(list, "link:"+pt.Link)
+		}
+		if len(pt.OsBitness) > 0 {
+			list = append(list, "osBitness:"+strings.Join(pt.OsBitness, ","))
+		}
+		if pt.Path != "" {
+			list = append(list, "path:"+pt.Path)
+		}
+		list = append(list, "type:"+pt.Type)
+		if pt.WorkingDir != "" {
+			list = append(list, "workingDir:"+pt.WorkingDir)
+		}
+
+		gogPlayTasks["title:"+pt.Name] = list
+	}
+
+	return gogPlayTasks, nil
+}
+
+func listSteamAppInfoTasks(steamAppId string, rdx redux.Writeable, force bool) (map[string][]string, error) {
+
+	appInfoKv, err := steamGetAppInfoKv(steamAppId, rdx, force)
+	if err != nil {
+		return nil, err
+	}
+
+	launchConfigs, err := getSteamLaunchConfigs(steamAppId, appInfoKv)
+	if err != nil {
+		return nil, err
+	}
+
+	steamLaunchConfigTasks := make(map[string][]string)
+
+	for _, lc := range launchConfigs {
+
+		list := make([]string, 0)
+		if lc.Executable != "" {
+			list = append(list, "executable:"+lc.Executable)
+		}
+		if lc.Arguments != "" {
+			list = append(list, "arguments:"+lc.Arguments)
+		}
+		if lc.OsList != "" {
+			list = append(list, "oslist:"+lc.OsList)
+		}
+		if lc.OsArch != "" {
+			list = append(list, "osarch:"+lc.OsArch)
+		}
+		if lc.WorkingDir != "" {
+			list = append(list, "workingdir:"+lc.WorkingDir)
+		}
+
+		steamLaunchConfigTasks["description:"+lc.Description] = list
+	}
+
+	return steamLaunchConfigTasks, nil
 }
 
 func listSteamShortcuts(allKeyValues bool) error {

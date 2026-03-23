@@ -293,7 +293,7 @@ func linuxFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (strin
 
 func linuxExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integration.GogGameInfo, et *execTask) (*execTask, error) {
 
-	pt, err := gogGameInfo.GetPlayTask(et.playTask)
+	pt, err := gogGameInfo.GetPlayTask(et.task)
 	if err != nil {
 		return nil, err
 	}
