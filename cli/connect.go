@@ -23,13 +23,24 @@ func ConnectHandler(u *url.URL) error {
 	username := q.Get("username")
 	password := q.Get("password")
 
-	steam := q.Has("steam")
+	var origin data.Origin
+
+	if q.Has("steam") {
+		origin = data.SteamOrigin
+	} else if q.Has("epic-games") {
+		origin = data.EpicGamesOrigin
+	} else {
+		origin = data.VangoghOrigin
+	}
+
+	cookie := q.Get("cookie")
+
 	reset := q.Has("reset")
 
-	return Connect(urlStr, username, password, steam, reset)
+	return Connect(urlStr, username, password, cookie, origin, reset)
 }
 
-func Connect(urlStr, username, password string, steam, reset bool) error {
+func Connect(urlStr, username, password, cookie string, origin data.Origin, reset bool) error {
 
 	ca := nod.Begin("setting up theo connection...")
 	defer ca.Done()
@@ -39,11 +50,18 @@ func Connect(urlStr, username, password string, steam, reset bool) error {
 		return err
 	}
 
-	switch steam {
-	case true:
-		return steamSetupConnection(username, rdx, reset)
-	default:
+	switch origin {
+	case data.VangoghOrigin:
 		return vangoghSetupConnection(urlStr, username, password, rdx, reset)
+	case data.SteamOrigin:
+		if password != "" {
+			return errors.New("steam password will be requested by SteamCMD")
+		}
+		return steamSetupConnection(username, rdx, reset)
+	case data.EpicGamesOrigin:
+		return epicGamesSetupConnection(cookie)
+	default:
+		return origin.ErrUnsupportedOrigin()
 	}
 }
 
@@ -234,4 +252,8 @@ func steamResetConnection(rdx redux.Writeable) error {
 	}
 
 	return steamcmd.Logout(absSteamCmdPath)
+}
+
+func epicGamesSetupConnection(cookie string) error {
+	return nil
 }

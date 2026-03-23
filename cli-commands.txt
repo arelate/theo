@@ -13,6 +13,8 @@ connect
     username^
     password
     steam
+    epic-games
+    cookie
     reset
 
 download

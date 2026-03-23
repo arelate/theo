@@ -67,7 +67,7 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 	}
 
 	switch installInfo.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		if err = osUninstallProduct(id, installInfo, rdx); err != nil {
 			return err
 		}

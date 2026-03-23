@@ -50,7 +50,7 @@ func Reveal(id string, ii *InstallInfo, installed, downloads, backups bool) erro
 
 	if downloads {
 		switch ii.Origin {
-		case data.VangoghGogOrigin:
+		case data.VangoghOrigin:
 			if err := revealDownloads(id); err != nil {
 				return err
 			}
@@ -94,7 +94,7 @@ func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) er
 	var err error
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		revealPath, err = originOsInstalledPath(id, ii, rdx)
 	case data.SteamOrigin:
 		revealPath, err = data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx)

@@ -44,7 +44,7 @@ type InstallInfo struct {
 func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) error {
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 
 		if originData.ProductDetails == nil {
 			return errors.New("cannot sync nil product details for " + id)
@@ -261,7 +261,7 @@ func unmarshalInstalledInfo(lines ...string) ([]InstallInfo, error) {
 func setInstallInfoDefaults(request *InstallInfo, availableOperatingSystems []vangogh_integration.OperatingSystem) {
 
 	if request.Origin == data.UnknownOrigin {
-		request.Origin = data.VangoghGogOrigin
+		request.Origin = data.VangoghOrigin
 	}
 
 	if request.OperatingSystem == vangogh_integration.AnyOperatingSystem {

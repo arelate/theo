@@ -44,7 +44,7 @@ func InstallHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
-		Origin:          data.VangoghGogOrigin,
+		Origin:          data.VangoghOrigin,
 		KeepDownloads:   q.Has("keep-downloads"),
 		NoSteamShortcut: q.Has("no-steam-shortcut"),
 		verbose:         q.Has("verbose"),
@@ -132,7 +132,7 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable) (*data.Origi
 	var err error
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		originData.ProductDetails, err = getProductDetails(id, rdx, true)
 		if err != nil {
 			return nil, err
@@ -164,7 +164,7 @@ func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginD
 	var err error
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		if originData.ProductDetails == nil {
 			return errors.New("nil productDetails")
 		}
@@ -203,7 +203,7 @@ func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginD
 func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		if err := Download(id, ii, nil, rdx); err != nil {
 			return err
 		}
@@ -244,7 +244,7 @@ func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx 
 func originPostInstall(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		if !ii.KeepDownloads {
 			if err := RemoveDownloads(id, ii, rdx); err != nil {
 				return err
@@ -585,7 +585,7 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 		} else {
 			return "", err
 		}
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
 		osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(ii.OperatingSystem, ii.LangCode))

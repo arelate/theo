@@ -110,7 +110,7 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 	}
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		if err = checkProductType(id, rdx, ii.force); err != nil {
 			return err
 		}

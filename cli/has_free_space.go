@@ -22,7 +22,7 @@ func originHasFreeSpace(
 	var totalEstimatedBytes int64
 
 	switch ii.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		dls := originData.ProductDetails.DownloadLinks.
 			FilterOperatingSystems(ii.OperatingSystem).
 			FilterLanguageCodes(ii.LangCode).

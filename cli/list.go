@@ -164,7 +164,7 @@ func listInstalled(ii *InstallInfo) error {
 			infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
 
 			switch installedInfo.Origin {
-			case data.VangoghGogOrigin:
+			case data.VangoghOrigin:
 				pfxDt := "type: "
 				if len(installedInfo.DownloadTypes) > 1 {
 					pfxDt = "types: "
@@ -273,7 +273,7 @@ func listTasks(id string, ii *InstallInfo) error {
 	tasksSummary := make(map[string][]string)
 
 	switch installedInfo.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		tasksSummary, err = listGogInfoPlayTasks(id, installedInfo, rdx)
 	case data.SteamOrigin:
 		tasksSummary, err = listSteamAppInfoTasks(id, rdx, ii.force)

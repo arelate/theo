@@ -128,7 +128,7 @@ func AbsPrefixDir(id string, origin Origin, rdx redux.Readable) (string, error) 
 	switch origin {
 	case SteamOrigin:
 		prefixesDir = Pwd.AbsRelDirPath(SteamPrefixes, Wine)
-	case VangoghGogOrigin:
+	case VangoghOrigin:
 		prefixesDir = Pwd.AbsRelDirPath(Prefixes, Wine)
 	default:
 		return "", origin.ErrUnsupportedOrigin()

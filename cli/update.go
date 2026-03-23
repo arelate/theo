@@ -152,7 +152,7 @@ func originIsInstalledInfoUpdated(id string, installedInfo *InstallInfo, rdx red
 	var latestVersion string
 
 	switch installedInfo.Origin {
-	case data.VangoghGogOrigin:
+	case data.VangoghOrigin:
 		latestProductDetails, err := getProductDetails(id, rdx, true)
 		if err != nil {
 			return false, err
