@@ -353,9 +353,10 @@ func listSteamAppInfoTasks(steamAppId string, rdx redux.Writeable, force bool) (
 
 	steamLaunchConfigTasks := make(map[string][]string)
 
-	for _, lc := range launchConfigs {
+	for ii, lc := range launchConfigs {
 
 		list := make([]string, 0)
+
 		if lc.Executable != "" {
 			list = append(list, "executable:"+lc.Executable)
 		}
@@ -372,7 +373,11 @@ func listSteamAppInfoTasks(steamAppId string, rdx redux.Writeable, force bool) (
 			list = append(list, "workingdir:"+lc.WorkingDir)
 		}
 
-		steamLaunchConfigTasks["description:"+lc.Description] = list
+		if lc.Description != "" {
+			steamLaunchConfigTasks["description:"+lc.Description] = list
+		} else {
+			steamLaunchConfigTasks["index:"+strconv.Itoa(ii)] = list
+		}
 	}
 
 	return steamLaunchConfigTasks, nil
