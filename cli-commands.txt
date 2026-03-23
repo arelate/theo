@@ -103,7 +103,7 @@ setup-wine
 steam-fix
     id*^
     os={operating-systems^}
-    steam-appid
+    appid
     revert
 
 steam-shortcut

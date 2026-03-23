@@ -483,7 +483,7 @@ func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTa
 	return osExec(steamAppId, ii.OperatingSystem, et)
 }
 
-func getSteamLaunchConfigs(steamAppId string, appInfoKv steam_vdf.ValveDataFile) ([]*steam_integration.LaunchConfig, error) {
+func steamGetLaunchConfigs(steamAppId string, appInfoKv steam_vdf.ValveDataFile) ([]*steam_integration.LaunchConfig, error) {
 
 	appInfoClKv, err := appInfoKv.At(steamAppId, "config", "launch")
 	if err != nil {
@@ -536,7 +536,7 @@ func getSteamLaunchConfigs(steamAppId string, appInfoKv steam_vdf.ValveDataFile)
 
 func steamDefaultTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable) (*execTask, error) {
 
-	steamLaunchConfigs, err := getSteamLaunchConfigs(steamAppId, appInfoKv)
+	steamLaunchConfigs, err := steamGetLaunchConfigs(steamAppId, appInfoKv)
 	if err != nil {
 		return nil, err
 	}
@@ -598,7 +598,7 @@ func steamDefaultTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *
 
 func steamNamedTask(steamAppId, task string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable) (*execTask, error) {
 
-	steamLaunchConfigs, err := getSteamLaunchConfigs(steamAppId, appInfoKv)
+	steamLaunchConfigs, err := steamGetLaunchConfigs(steamAppId, appInfoKv)
 	if err != nil {
 		return nil, err
 	}

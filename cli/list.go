@@ -346,7 +346,7 @@ func listSteamAppInfoTasks(steamAppId string, rdx redux.Writeable, force bool) (
 		return nil, err
 	}
 
-	launchConfigs, err := getSteamLaunchConfigs(steamAppId, appInfoKv)
+	launchConfigs, err := steamGetLaunchConfigs(steamAppId, appInfoKv)
 	if err != nil {
 		return nil, err
 	}

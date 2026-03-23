@@ -29,13 +29,13 @@ func SteamFixHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 	}
 
-	fixSteamAppId := q.Has("steam-appid")
+	fixAppId := q.Has("appid")
 	revert := q.Has("revert")
 
-	return SteamFix(id, ii, fixSteamAppId, revert)
+	return SteamFix(id, ii, fixAppId, revert)
 }
 
-func SteamFix(steamAppId string, ii *InstallInfo, fixSteamAppId, revert bool) error {
+func SteamFix(steamAppId string, ii *InstallInfo, fixAppId, revert bool) error {
 
 	sfa := nod.Begin("applying Steam fixes...")
 	defer sfa.Done()
@@ -45,7 +45,7 @@ func SteamFix(steamAppId string, ii *InstallInfo, fixSteamAppId, revert bool) er
 		return err
 	}
 
-	if fixSteamAppId {
+	if fixAppId {
 		if err = steamAppIdFix(steamAppId, ii, rdx, revert); err != nil {
 			return err
 		}
@@ -66,13 +66,19 @@ func steamAppIdFix(steamAppId string, request *InstallInfo, rdx redux.Writeable,
 		return err
 	}
 
-	var steamAppInstallDir string
-	steamAppInstallDir, err = data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
+	appInfoKv, err := steamGetAppInfoKv(steamAppId, rdx, ii.force)
 	if err != nil {
 		return err
 	}
 
-	absSteamAppIdTxtPath := filepath.Join(steamAppInstallDir, steamAppIdTxt)
+	defaultSteamEt, err := steamDefaultTask(steamAppId, appInfoKv, ii, rdx)
+	if err != nil {
+		return err
+	}
+
+	exeDir, _ := filepath.Split(defaultSteamEt.exe)
+
+	absSteamAppIdTxtPath := filepath.Join(exeDir, steamAppIdTxt)
 
 	switch revert {
 	case true:
