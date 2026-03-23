@@ -460,7 +460,7 @@ func macOsExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integr
 
 	absExePath := filepath.Join(absExeRootDir, exePath)
 
-	et.name = pt.Name
+	et.title = pt.Name
 	et.exe = absExePath
 	et.workDir = filepath.Join(absExeRootDir, pt.WorkingDir)
 

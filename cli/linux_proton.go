@@ -36,7 +36,7 @@ const (
 
 func linuxProtonExecTask(id string, et *execTask) error {
 
-	lwra := nod.Begin(" running %s with Proton, please wait...", et.name)
+	lwra := nod.Begin(" running %s with Proton, please wait...", et.title)
 	defer lwra.Done()
 
 	if et.verbose && len(et.env) > 0 {

@@ -130,7 +130,7 @@ func steamReduceAppInfo(steamAppId string, appInfoKv steam_vdf.ValveDataFile, rd
 	}
 
 	var appInfoName string
-	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {
+	if ain, ok := appInfoKv.Val(steamAppId, "common", "title"); ok {
 		appInfoName = ain
 	}
 

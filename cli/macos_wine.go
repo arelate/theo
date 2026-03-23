@@ -34,7 +34,7 @@ func macOsInitPrefix(absPrefixDir string, verbose bool) error {
 
 func macOsWineExecTask(id string, et *execTask) error {
 
-	mwra := nod.Begin(" running %s with WINE, please wait...", et.name)
+	mwra := nod.Begin(" running %s with WINE, please wait...", et.title)
 	defer mwra.Done()
 
 	if et.verbose && len(et.env) > 0 {

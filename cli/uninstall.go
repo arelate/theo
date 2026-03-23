@@ -105,7 +105,7 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 			}
 		}
 
-		// account for macOS bundle name
+		// account for macOS bundle title
 		if installInfo.OperatingSystem == vangogh_integration.MacOS {
 			if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" && !strings.Contains(bundleName, "/") {
 				installedAppParentDir := strings.TrimSuffix(installedAppDir, bundleName)

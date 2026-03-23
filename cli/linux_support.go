@@ -185,7 +185,7 @@ func linuxReveal(path string) error {
 
 func nixRunExecTask(et *execTask) error {
 
-	nreta := nod.Begin(" running %s...", et.name)
+	nreta := nod.Begin(" running %s...", et.title)
 	defer nreta.Done()
 
 	if data.CurrentOs() == vangogh_integration.MacOS &&
@@ -308,7 +308,7 @@ func linuxExecTaskGogGameInfo(absGogGameInfoPath string, gogGameInfo *gog_integr
 
 	absExePath := filepath.Join(absGogGameInfoDir, exePath)
 
-	et.name = pt.Name
+	et.title = pt.Name
 	et.exe = absExePath
 	et.workDir = filepath.Join(absGogGameInfoDir, pt.WorkingDir)
 

@@ -315,7 +315,7 @@ func listPlayTasks(id string, ii *InstallInfo) error {
 				list = append(list, "workingDir:"+pt.WorkingDir)
 			}
 
-			playTasksSummary["name:"+pt.Name] = list
+			playTasksSummary["title:"+pt.Name] = list
 		}
 	case data.SteamOrigin:
 		panic("not implemented")

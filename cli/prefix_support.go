@@ -74,10 +74,11 @@ func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.
 		innoSetupDirArg := strings.Replace(innoSetupDirArgTemplate, "{dir}", prefixDstDir, 1)
 
 		et := &execTask{
-			name:    link.LocalFilename,
-			exe:     absInstallerPath,
-			workDir: downloadsDir,
-			prefix:  absPrefixDir,
+			title:           link.LocalFilename,
+			operatingSystem: ii.OperatingSystem,
+			exe:             absInstallerPath,
+			workDir:         downloadsDir,
+			prefix:          absPrefixDir,
 			args: []string{
 				innoSetupVerySilentArg,
 				innoSetupNoRestartArg,

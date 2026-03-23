@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -44,6 +43,7 @@ func RunHandler(u *url.URL) error {
 	}
 
 	et := &execTask{
+		operatingSystem: ii.OperatingSystem,
 		workDir:         q.Get("work-dir"),
 		verbose:         q.Has("verbose"),
 		playTask:        q.Get("playtask"),
@@ -118,7 +118,7 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 			return err
 		}
 	case data.SteamOrigin:
-		if err = steamRun(id, ii, rdx, et); err != nil {
+		if err = steamRun(id, ii, rdx); err != nil {
 			return err
 		}
 	default:
@@ -243,7 +243,7 @@ func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 
 			absExePath := filepath.Join(absPrefixDir, exe)
 			if _, err = os.Stat(absExePath); err == nil {
-				et.name = exe
+				et.title = exe
 				et.exe = absExePath
 			}
 
@@ -391,7 +391,7 @@ func osExecTaskDefaultLauncher(absDefaultLauncherPath string, operatingSystem va
 
 	_, defaultLauncherFilename := filepath.Split(absDefaultLauncherPath)
 
-	et.name = defaultLauncherFilename
+	et.title = defaultLauncherFilename
 
 	eggia := nod.Begin(" running %s...", defaultLauncherFilename)
 	defer eggia.Done()
@@ -450,7 +450,7 @@ func windowsToNixPath(wp string) string {
 	return strings.Replace(wp, "\\", "/", -1)
 }
 
-func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
+func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable) error {
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
 	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
@@ -469,15 +469,16 @@ func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTa
 		return err
 	}
 
-	et, err = steamExecTask(steamAppId, appInfoKv, ii, rdx, et)
+	var steamLcEt *execTask
+	steamLcEt, err = steamDefaultExecTask(steamAppId, appInfoKv, ii, rdx)
 	if err != nil {
 		return err
 	}
 
-	return osExec(steamAppId, ii.OperatingSystem, et)
+	return osExec(steamAppId, ii.OperatingSystem, steamLcEt)
 }
 
-func steamExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable, et *execTask) (*execTask, error) {
+func getSteamExecTasks(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable) ([]*execTask, error) {
 
 	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, ii.OperatingSystem, rdx)
 	if err != nil {
@@ -489,8 +490,6 @@ func steamExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *Ins
 		return nil, err
 	}
 
-	et.prefix = absPrefixDir
-
 	var appInfoName string
 	if ain, ok := appInfoKv.Val(steamAppId, "common", "name"); ok {
 		appInfoName = ain
@@ -501,60 +500,83 @@ func steamExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *Ins
 		return nil, err
 	}
 
-	// TODO: better detect default launch task
+	ets := make([]*execTask, 0, len(appInfoClKv.Values))
+
 	for _, lcKv := range appInfoClKv.Values {
 
-		var osList []vangogh_integration.OperatingSystem
+		et := &execTask{
+			prefix: absPrefixDir,
+		}
+
+		if lcExe, ok := lcKv.Values.Val("executable"); ok {
+			et.exe = filepath.Join(steamAppInstallDir, windowsToNixPath(lcExe))
+		}
+
+		if lcArgs, ok := lcKv.Values.Val("arguments"); ok {
+			et.args = append(et.args, strings.Split(lcArgs, " ")...)
+		}
+
+		if lcWd, ok := lcKv.Values.Val("workingdir"); ok {
+			et.workDir = filepath.Join(steamAppInstallDir, windowsToNixPath(lcWd))
+		}
+
+		if lcDesc, ok := lcKv.Values.Val("description"); ok && lcDesc != "" {
+			et.title = lcDesc
+		} else {
+			et.title = appInfoName
+		}
+
+		if lcType, ok := lcKv.Values.Val("type"); ok {
+			et.steamLcType = lcType
+		}
 
 		if lol, ok := lcKv.Values.Val("config", "oslist"); ok {
-			osList = vangogh_integration.ParseManyOperatingSystems(strings.Split(lol, ","))
-		} else {
-			osList = []vangogh_integration.OperatingSystem{vangogh_integration.Windows}
-		}
-
-		if slices.Contains(osList, ii.OperatingSystem) {
-
-			var exe string
-			if lcExe, ok := lcKv.Values.Val("executable"); ok {
-				exe = lcExe
-			}
-
-			if exe == "" {
-				continue
-			}
-
-			switch ii.OperatingSystem {
-			case vangogh_integration.MacOS:
-				fallthrough
-			case vangogh_integration.Linux:
-				exe = windowsToNixPath(exe)
-			case vangogh_integration.Windows:
-				switch data.CurrentOs() {
-				case vangogh_integration.MacOS:
-					fallthrough
-				case vangogh_integration.Linux:
-					exe = windowsToNixPath(exe)
-				default:
-					return nil, data.CurrentOs().ErrUnsupported()
-				}
+			osList := vangogh_integration.ParseManyOperatingSystems(strings.Split(lol, ","))
+			switch len(osList) {
+			case 0:
+				return nil, errors.New("no steam launch config found for " + steamAppId)
+			case 1:
+				et.operatingSystem = osList[0]
 			default:
-				return nil, data.CurrentOs().ErrUnsupported()
+				return nil, errors.New("more than one steam launch config found for " + steamAppId)
 			}
 
-			et.name = appInfoName
-			et.exe = filepath.Join(steamAppInstallDir, exe)
-
-			if workingDir, ok := lcKv.Values.Val("workingdir"); ok {
-				et.workDir = filepath.Join(steamAppInstallDir, windowsToNixPath(workingDir))
-			}
-
-			if arguments, ok := lcKv.Values.Val("arguments"); ok {
-				et.args = append(et.args, strings.Split(arguments, " ")...)
-			}
-
-			break
+		} else {
+			// some appinfo launch tasks don't indicate oslist for Windows games
+			et.operatingSystem = vangogh_integration.Windows
 		}
+
+		if loa, ok := lcKv.Values.Val("config", "osarch"); ok {
+			et.osArch = loa
+		}
+
+		if lbk, ok := lcKv.Values.Val("config", "BetaKey"); ok {
+			et.betaKey = lbk
+		}
+
+		ets = append(ets, et)
 	}
 
-	return et, nil
+	return ets, nil
+}
+
+func steamDefaultExecTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *InstallInfo, rdx redux.Readable) (*execTask, error) {
+
+	steamExecTasks, err := getSteamExecTasks(steamAppId, appInfoKv, ii, rdx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, set := range steamExecTasks {
+
+		if set.operatingSystem != ii.OperatingSystem ||
+			set.exe == "" ||
+			set.osArch == "32" {
+			continue
+		}
+
+		return set, nil
+	}
+
+	return nil, errors.New("cannot determine default steam launch config for " + steamAppId)
 }

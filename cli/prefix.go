@@ -49,8 +49,9 @@ func PrefixHandler(u *url.URL) error {
 	}
 
 	et := &execTask{
-		exe:     q.Get("exe"),
-		verbose: q.Has("verbose"),
+		exe:             q.Get("exe"),
+		operatingSystem: vangogh_integration.Windows,
+		verbose:         q.Has("verbose"),
 	}
 
 	if q.Has("env") {
@@ -144,7 +145,7 @@ func Prefix(id string,
 	if et.exe != "" {
 		switch run {
 		case true:
-			et.name = filepath.Base(et.exe)
+			et.title = filepath.Base(et.exe)
 			return osExec(id, vangogh_integration.Windows, et)
 		default:
 			if err = prefixSetExe(id, ii.Origin, et.exe, rdx); err != nil {
@@ -186,7 +187,7 @@ func Prefix(id string,
 			return errors.New("unknown prefix WINE program " + program)
 		}
 
-		et.name = program
+		et.title = program
 		et.exe = program
 
 		if err = osExec(id, vangogh_integration.Windows, et); err != nil {
@@ -240,7 +241,7 @@ func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *
 	var wineDownloadsDir string
 	wineDownloadsDir = data.Pwd.AbsRelDirPath(data.BinDownloads, data.Wine)
 
-	et.name = requestedWineBinary.String()
+	et.title = requestedWineBinary.String()
 	et.exe = filepath.Join(wineDownloadsDir, wbFilename)
 
 	if args, ok := wine_integration.WineBinariesCodesArgs[wineBinary]; ok {
@@ -254,7 +255,7 @@ func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *
 	switch wineBinary {
 	case wine_integration.DxEndUserRuntimeCode:
 
-		originalName := et.name
+		originalName := et.title
 
 		dxSetupDir, _ := filepath.Split(wine_integration.DxSetupPath)
 		absDxUnpackDir := filepath.Join(absPrefixDir, prefixRelDriveCDir, dxSetupDir)
@@ -265,7 +266,7 @@ func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *
 			}
 		}
 
-		et.name = "extract: " + originalName
+		et.title = "extract: " + originalName
 
 		// extract to {prefix}/drive_c/DirectX
 		if err := osExec(id, vangogh_integration.Windows, et); err != nil {
@@ -275,7 +276,7 @@ func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *
 		// Set execTask to run DXSetup.exe on func exit
 		et.exe = filepath.Join(absPrefixDir, prefixRelDriveCDir, wine_integration.DxSetupPath)
 		et.args = wine_integration.DxSetupArgs
-		et.name = "install: " + originalName
+		et.title = "install: " + originalName
 
 	default:
 		// do nothing
@@ -366,11 +367,12 @@ func prefixModRetina(id string, origin data.Origin, revert bool, rdx redux.Write
 	}
 
 	et := &execTask{
-		exe:     regeditBin,
-		workDir: absDriveCroot,
-		prefix:  absPrefixDir,
-		args:    []string{absRegPath},
-		verbose: verbose,
+		exe:             regeditBin,
+		operatingSystem: vangogh_integration.Windows,
+		workDir:         absDriveCroot,
+		prefix:          absPrefixDir,
+		args:            []string{absRegPath},
+		verbose:         verbose,
 	}
 
 	switch data.CurrentOs() {
