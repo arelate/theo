@@ -1,17 +1,29 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json/v2"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/steamcmd"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/author"
+	"github.com/boggydigital/coost"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
+)
+
+const (
+	egsCookiesFilename = "egs-cookies.json"
+	getVerifyTokenKey  = "get-verify-token"
 )
 
 func ConnectHandler(u *url.URL) error {
@@ -59,7 +71,7 @@ func Connect(urlStr, username, password, cookie string, origin data.Origin, rese
 		}
 		return steamSetupConnection(username, rdx, reset)
 	case data.EpicGamesOrigin:
-		return epicGamesSetupConnection(cookie)
+		return epicGamesSetupConnection(cookie, reset)
 	default:
 		return origin.ErrUnsupportedOrigin()
 	}
@@ -207,6 +219,9 @@ func vangoghUpdateSessionToken(password string, rdx redux.Writeable) error {
 
 func steamSetupConnection(username string, rdx redux.Writeable, reset bool) error {
 
+	ssca := nod.Begin("connecting to Steam...")
+	defer ssca.Done()
+
 	if err := rdx.MustHave(data.SteamProperties()...); err != nil {
 		return err
 	}
@@ -254,6 +269,185 @@ func steamResetConnection(rdx redux.Writeable) error {
 	return steamcmd.Logout(absSteamCmdPath)
 }
 
-func epicGamesSetupConnection(cookie string) error {
+func epicGamesGetClient() (*http.Client, error) {
+
+	egsCookieDir := data.Pwd.AbsRelDirPath(data.EgsCookie, data.Metadata)
+	egsCookiePath := filepath.Join(egsCookieDir, egsCookiesFilename)
+
+	jar, err := coost.Read(egs_integration.HostUrl(), egsCookiePath)
+	if err != nil {
+		return nil, err
+	}
+
+	client := http.DefaultClient
+	client.Jar = jar
+
+	return client, nil
+}
+
+func epicGamesSetupConnection(cookieStr string, reset bool) error {
+
+	egsca := nod.Begin("connecting to EGS...")
+	defer egsca.Done()
+
+	var err error
+
+	if reset {
+		if err = epicGamesResetConnection(); err != nil {
+			return err
+		}
+	}
+
+	var accessToken string
+
+	if cookieStr != "" {
+		if accessToken, err = epicGamesGetAccessToken(cookieStr); err != nil {
+			return err
+		}
+	}
+
+	return epicGamesVerifyToken(accessToken)
+}
+
+func epicGamesGetAccessToken(cookieStr string) (string, error) {
+
+	eggata := nod.Begin("getting EGS access token...")
+	defer eggata.Done()
+
+	egsCookieDir := data.Pwd.AbsRelDirPath(data.EgsCookie, data.Metadata)
+	egsCookiePath := filepath.Join(egsCookieDir, egsCookiesFilename)
+
+	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
+	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	if err != nil {
+		return "", err
+	}
+
+	if err = coost.Import(cookieStr, egs_integration.HostUrl(), egsCookiePath); err != nil {
+		return "", err
+	}
+
+	if kvVerifyToken.Has(getVerifyTokenKey) {
+		if err = kvVerifyToken.Cut(getVerifyTokenKey); err != nil {
+			return "", err
+		}
+	}
+
+	var client *http.Client
+	client, err = epicGamesGetClient()
+	if err != nil {
+		return "", err
+	}
+
+	var arr *egs_integration.GetApiRedirectResponse
+	arr, err = egs_integration.GetApiRedirect(client)
+	if err != nil {
+		return "", err
+	}
+
+	var ptr *egs_integration.PostTokenResponse
+	ptr, err = egs_integration.PostToken(arr.AuthorizationCode, client)
+	if err != nil {
+		return "", err
+	}
+
+	if ptr.AccessToken == "" {
+		return "", errors.New("failed to get epic games access token")
+	}
+
+	return ptr.AccessToken, nil
+}
+
+func epicGamesGetStoredVerifyToken() (string, error) {
+
+	eggsvta := nod.Begin("getting stored EGS access token...")
+	defer eggsvta.Done()
+
+	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
+	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	if err != nil {
+		return "", err
+	}
+
+	var rcVerifyToken io.ReadCloser
+	rcVerifyToken, err = kvVerifyToken.Get(getVerifyTokenKey)
+	if err != nil {
+		return "", err
+	}
+
+	var gvt egs_integration.GetVerifyTokenResponse
+	if err = json.UnmarshalRead(rcVerifyToken, &gvt); err != nil {
+		return "", err
+	}
+
+	return gvt.Token, nil
+}
+
+func epicGamesVerifyToken(accessToken string) error {
+
+	gvta := nod.Begin("verifying EGS token...")
+	defer gvta.Done()
+
+	client, err := epicGamesGetClient()
+	if err != nil {
+		return err
+	}
+
+	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
+	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	if err != nil {
+		return err
+	}
+
+	if accessToken == "" {
+		if accessToken, err = epicGamesGetStoredVerifyToken(); err != nil {
+			return err
+		}
+	}
+
+	if accessToken == "" {
+		return errors.New("empty access token, re-connect EGS")
+	}
+
+	var vtr *egs_integration.GetVerifyTokenResponse
+	vtr, err = egs_integration.GetVerifyToken(accessToken, client)
+	if err != nil {
+		return err
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err = json.MarshalWrite(buf, &vtr); err != nil {
+		return err
+	}
+
+	return kvVerifyToken.Set(getVerifyTokenKey, buf)
+}
+
+func epicGamesResetConnection() error {
+
+	egrc := nod.Begin("resetting EGS connection...")
+	defer egrc.Done()
+
+	egsCookieDir := data.Pwd.AbsRelDirPath(data.EgsCookie, data.Metadata)
+	egsCookiePath := filepath.Join(egsCookieDir, egsCookiesFilename)
+
+	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
+	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(egsCookiePath); err == nil {
+		if err = os.Remove(egsCookiePath); err != nil {
+			return nil
+		}
+	}
+
+	if kvVerifyToken.Has(getVerifyTokenKey) {
+		if err = kvVerifyToken.Cut(getVerifyTokenKey); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

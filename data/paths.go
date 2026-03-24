@@ -34,6 +34,8 @@ const (
 	ProductDetails     pathways.RelDir = "product-details"      // Metadata
 	ManualUrlChecksums pathways.RelDir = "manual-url-checksums" // Metadata
 	SteamAppInfo       pathways.RelDir = "steam-appinfo"        // Metadata
+	EgsCookie          pathways.RelDir = "egs-cookie"           // Metadata
+	EgsVerifyToken     pathways.RelDir = "egs-verify-token"     // Metadata
 	Inventory          pathways.RelDir = "_inventory"           // InstalledApps
 	PrefixArchive      pathways.RelDir = "_prefix-archive"      // Backups
 	BinDownloads       pathways.RelDir = "_downloads"           // Wine, SteamCmd
@@ -82,6 +84,8 @@ func InitPathways() error {
 		Redux:              {Metadata},
 		ProductDetails:     {Metadata},
 		ManualUrlChecksums: {Metadata},
+		EgsCookie:          {Metadata},
+		EgsVerifyToken:     {Metadata},
 		Inventory:          {InstalledApps},
 		BinUnpacks:         {Wine, SteamCmd},
 		BinDownloads:       {Wine, SteamCmd},
