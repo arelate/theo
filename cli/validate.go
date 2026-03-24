@@ -77,21 +77,20 @@ func ValidateHandler(u *url.URL) error {
 		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
 	}
 
-	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
-	if err != nil {
-		return err
-	}
-
-	return Validate(id, ii, manualUrlFilter, rdx)
+	return Validate(id, ii, manualUrlFilter...)
 }
 
 func Validate(id string,
 	ii *InstallInfo,
-	manualUrlFilter []string,
-	rdx redux.Writeable) error {
+	manualUrlFilter ...string) error {
 
 	va := nod.NewProgress("validating downloads...")
 	defer va.Done()
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
+	if err != nil {
+		return err
+	}
 
 	productDetails, err := getProductDetails(id, rdx, ii.force)
 	if err != nil {
@@ -112,7 +111,7 @@ func Validate(id string,
 
 		ii.force = true
 
-		if err = Download(id, ii, mismatchedManualUrls, rdx); err != nil {
+		if err = Download(id, ii, mismatchedManualUrls...); err != nil {
 			return err
 		}
 

@@ -23,6 +23,8 @@ download
     lang-code&={language-codes^}
     download-type&={download-types^}
     manual-url-filter&
+    steam
+    epic-games
     force
 
 install

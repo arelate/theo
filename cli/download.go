@@ -37,10 +37,19 @@ func DownloadHandler(u *url.URL) error {
 	}
 
 	ii := &InstallInfo{
+		Origin:          data.VangoghOrigin,
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
 		force:           q.Has("force"),
+	}
+
+	if q.Has("steam") {
+		ii.Origin = data.SteamOrigin
+	}
+
+	if q.Has("epic-games") {
+		ii.Origin = data.EpicGamesOrigin
 	}
 
 	var manualUrlFilter []string
@@ -48,21 +57,20 @@ func DownloadHandler(u *url.URL) error {
 		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
 	}
 
-	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
-	if err != nil {
-		return err
-	}
-
-	return Download(id, ii, manualUrlFilter, rdx)
+	return Download(id, ii, manualUrlFilter...)
 }
 
 func Download(id string,
 	ii *InstallInfo,
-	manualUrlFilter []string,
-	rdx redux.Writeable) error {
+	manualUrlFilter ...string) error {
 
-	da := nod.NewProgress("downloading from the server...")
+	da := nod.NewProgress("downloading product data...")
 	defer da.Done()
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
+	if err != nil {
+		return err
+	}
 
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
@@ -70,15 +78,12 @@ func Download(id string,
 		ii.DownloadTypes,
 		true)
 
-	// always get the latest product details for download purposes
-	productDetails, err := getProductDetails(id, rdx, true)
+	originData, err := originGetData(id, ii, rdx)
 	if err != nil {
 		return err
 	}
 
-	setInstallInfoDefaults(ii, productDetails.OperatingSystems)
-
-	if err = downloadProductFiles(id, productDetails, ii, manualUrlFilter, rdx); err != nil {
+	if err = originDownloadData(id, ii, originData, manualUrlFilter, rdx); err != nil {
 		return err
 	}
 
@@ -87,22 +92,32 @@ func Download(id string,
 	return nil
 }
 
-func downloadProductFiles(id string,
-	productDetails *vangogh_integration.ProductDetails,
+func originDownloadData(id string,
 	ii *InstallInfo,
+	originData *data.OriginData,
 	manualUrlFilter []string,
 	rdx redux.Readable) error {
 
-	gpdla := nod.Begin(" downloading %s...", productDetails.Title)
-	defer gpdla.Done()
+	odda := nod.Begin(" downloading %s: %s...", ii.Origin, id)
+	defer odda.Done()
+
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		return vangoghDownloadData(id, ii, originData, rdx, manualUrlFilter...)
+	case data.SteamOrigin:
+		return steamDownloadData(id, ii, originData, rdx)
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
+	}
+}
+
+func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable, manualUrlFilter ...string) error {
 
 	if err := rdx.MustHave(data.VangoghProperties()...); err != nil {
 		return err
 	}
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
-
-	originData := new(data.OriginData{ProductDetails: productDetails})
 
 	if err := originHasFreeSpace(id, downloadsDir, ii, originData, manualUrlFilter); err != nil {
 		return err
@@ -114,7 +129,7 @@ func downloadProductFiles(id string,
 		dc.SetAuthorizationBearer(token)
 	}
 
-	dls := productDetails.DownloadLinks.
+	dls := originData.ProductDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
 		FilterDownloadTypes(ii.DownloadTypes...)
@@ -163,4 +178,14 @@ func downloadProductFiles(id string,
 	}
 
 	return nil
+}
+
+func steamDownloadData(steamAppId string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
+	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
+
+	if err := originHasFreeSpace(steamAppId, steamAppsDir, ii, originData, nil); err != nil {
+		return err
+	}
+
+	return steamUpdateApp(steamAppId, ii.OperatingSystem, rdx)
 }

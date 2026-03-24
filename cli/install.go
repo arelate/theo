@@ -102,6 +102,18 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
+	if err = Download(id, ii); err != nil {
+		return err
+	}
+
+	if err = Validate(id, ii); err != nil {
+		return err
+	}
+
+	if err = osPreInstallActions(id, ii, rdx); err != nil {
+		return err
+	}
+
 	if err = originInstall(id, ii, originData, rdx); err != nil {
 		return err
 	}
@@ -204,13 +216,6 @@ func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx 
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		if err := Download(id, ii, nil, rdx); err != nil {
-			return err
-		}
-
-		if err := Validate(id, ii, nil, rdx); err != nil {
-			return err
-		}
 
 		if originData.ProductDetails == nil {
 			return errors.New("nil productDetails")
@@ -220,20 +225,7 @@ func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx 
 			return err
 		}
 	case data.SteamOrigin:
-
-		steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
-
-		if err := originHasFreeSpace(id, steamAppsDir, ii, originData, nil); err != nil {
-			return err
-		}
-
-		if err := osPreInstallActions(id, ii, rdx); err != nil {
-			return err
-		}
-
-		if err := steamUpdateApp(id, ii.OperatingSystem, rdx); err != nil {
-			return err
-		}
+		// do nothing - SteamCMD app update during Download is equivalent to installation
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -290,10 +282,9 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 
 	// installation:
 	// 1. check available space
-	// 2. perform pre-install actions (e.g. make setup executable on Linux)
-	// 3. get protected locations files (e.g. Desktop shortcuts on Linux)
-	// 4. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
-	// 5. perform post-unpack actions (e.g. reduce bundleName on macOS)
+	// 2. get protected locations files (e.g. Desktop shortcuts on Linux)
+	// 3. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
+	// 4. perform post-unpack actions (e.g. reduce bundleName on macOS)
 	// 5. uninstall if installed directory exists and forcing install (will be used for updates)
 	// 6. create inventory of unpacked files
 	// 7. place (move unpacked to install folder)
@@ -309,17 +300,12 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 	}
 
 	// 2
-	if err := osPreInstallActions(id, ii, rdx); err != nil {
-		return err
-	}
-
-	// 3
 	preInstallFiles, err := osGetProtectedLocationsFiles(ii)
 	if err != nil {
 		return err
 	}
 
-	// 4
+	// 3
 	unpackDir, err := osGetUnpackDir(id, ii, rdx)
 	if err != nil {
 		return err
@@ -329,12 +315,12 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		return err
 	}
 
-	// 5
+	// 4
 	if err = osPostUnpackActions(id, ii, dls, unpackDir, rdx); err != nil {
 		return err
 	}
 
-	// 6
+	// 5
 	absInstalledDir, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
@@ -346,7 +332,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		}
 	}
 
-	// 7
+	// 6
 	unpackedInventory, err := osGetInventory(id, ii, dls, rdx, unpackDir)
 	if err != nil {
 		return err
@@ -356,17 +342,17 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		return err
 	}
 
-	// 8
+	// 7
 	if err = osPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
-	// 9
+	// 8
 	if err = osPostInstallActions(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
-	// 10
+	// 9
 	postInstallFiles, err := osGetProtectedLocationsFiles(ii)
 	if err != nil {
 		return err
@@ -376,7 +362,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		return err
 	}
 
-	// 11
+	// 10
 	if err = os.RemoveAll(unpackDir); err != nil {
 		return err
 	}
