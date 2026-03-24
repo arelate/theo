@@ -36,6 +36,7 @@ const (
 	SteamAppInfo       pathways.RelDir = "steam-appinfo"        // Metadata
 	EgsCookie          pathways.RelDir = "egs-cookie"           // Metadata
 	EgsVerifyToken     pathways.RelDir = "egs-verify-token"     // Metadata
+	AvailableProducts  pathways.RelDir = "available-products"   // Metadata
 	Inventory          pathways.RelDir = "_inventory"           // InstalledApps
 	PrefixArchive      pathways.RelDir = "_prefix-archive"      // Backups
 	BinDownloads       pathways.RelDir = "_downloads"           // Wine, SteamCmd
@@ -86,6 +87,7 @@ func InitPathways() error {
 		ManualUrlChecksums: {Metadata},
 		EgsCookie:          {Metadata},
 		EgsVerifyToken:     {Metadata},
+		AvailableProducts:  {Metadata},
 		Inventory:          {InstalledApps},
 		BinUnpacks:         {Wine, SteamCmd},
 		BinDownloads:       {Wine, SteamCmd},

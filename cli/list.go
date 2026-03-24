@@ -4,6 +4,7 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"slices"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
+	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
@@ -106,7 +108,84 @@ func List(availableProducts, installed, tasks, steamShortcuts bool,
 }
 
 func listAvailableProducts(ii *InstallInfo) error {
+
+	lapa := nod.Begin("listing available products...")
+	defer lapa.Done()
+
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		return vangoghListAvailableProducts(ii.force)
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
+	}
+}
+
+func vangoghListAvailableProducts(force bool) error {
+
+	vlapa := nod.Begin("listing available vangogh products...")
+	defer vlapa.Done()
+
+	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
+	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
+	if err != nil {
+		return err
+	}
+
+	vangoghApKey := fmt.Sprintf("%s-%s", data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
+
+	if !kvAvailableProducts.Has(vangoghApKey) || force {
+		if err = vangoghGetAvailableProducts(kvAvailableProducts); err != nil {
+			return err
+		}
+	}
+
+	rcAvailableProducts, err := kvAvailableProducts.Get(vangoghApKey)
+	if err != nil {
+		return err
+	}
+	defer rcAvailableProducts.Close()
+
+	var availableProducts []vangogh_integration.AvailableProduct
+	if err = json.UnmarshalRead(rcAvailableProducts, &availableProducts); err != nil {
+		return err
+	}
+
+	summary := make(map[string][]string)
+
+	for _, ap := range availableProducts {
+		title := fmt.Sprintf("%d: %s %v", ap.Id, ap.Title, ap.OperatingSystems)
+		summary[title] = []string{}
+	}
+
+	vlapa.EndWithSummary("vangogh products available for installation", summary)
+
 	return nil
+}
+
+func vangoghGetAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
+
+	vgapa := nod.Begin(" getting vangogh available products...")
+	defer vgapa.Done()
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.VangoghProperties()...)
+	if err != nil {
+		return err
+	}
+
+	req, err := data.VangoghRequest(http.MethodGet, data.ApiAvailableProducts, nil, rdx)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	vangoghApKey := fmt.Sprintf("%s-%s", data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
+
+	return kvAvailableProducts.Set(vangoghApKey, resp.Body)
 }
 
 func listInstalled(ii *InstallInfo) error {

@@ -346,7 +346,7 @@ func epicGamesGetAccessToken(cookieStr string) (string, error) {
 	}
 
 	var ptr *egs_integration.PostTokenResponse
-	ptr, err = egs_integration.PostToken(arr.AuthorizationCode, client)
+	ptr, err = egs_integration.PostToken(arr.AuthorizationCode, egs_integration.GrantTypeAuthorizationCode, client)
 	if err != nil {
 		return "", err
 	}

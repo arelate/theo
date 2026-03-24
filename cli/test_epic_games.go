@@ -279,7 +279,7 @@ func listManifests(appId string) error {
 
 	fmt.Println("PostToken")
 
-	postTokenResponse, err := egs_integration.PostToken(apiRedirectResponse.AuthorizationCode, client)
+	postTokenResponse, err := egs_integration.PostToken(apiRedirectResponse.AuthorizationCode, egs_integration.GrantTypeAuthorizationCode, client)
 	if err != nil {
 		return err
 	}
