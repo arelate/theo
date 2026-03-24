@@ -112,57 +112,66 @@ func listAvailableProducts(ii *InstallInfo) error {
 	lapa := nod.Begin("listing available products...")
 	defer lapa.Done()
 
+	var availableProducts []vangogh_integration.AvailableProduct
+	var err error
+
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		return vangoghListAvailableProducts(ii.force)
+		availableProducts, err = vangoghGetAvailableProducts(ii.force)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
+
+	if err != nil {
+		return err
+	}
+
+	apSummary := make(map[string][]string)
+
+	for _, ap := range availableProducts {
+		title := fmt.Sprintf("%s (%d) os:%v", ap.Title, ap.Id, ap.OperatingSystems)
+		apSummary[title] = []string{}
+	}
+
+	lapa.EndWithSummary("available products:", apSummary)
+
+	return nil
 }
 
-func vangoghListAvailableProducts(force bool) error {
+func vangoghGetAvailableProducts(force bool) ([]vangogh_integration.AvailableProduct, error) {
 
-	vlapa := nod.Begin("listing available vangogh products...")
+	vlapa := nod.Begin("getting available vangogh products...")
 	defer vlapa.Done()
 
 	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
 	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	vangoghApKey := fmt.Sprintf("%s-%s", data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
 
 	if !kvAvailableProducts.Has(vangoghApKey) || force {
-		if err = vangoghGetAvailableProducts(kvAvailableProducts); err != nil {
-			return err
+		if err = vangoghFetchAvailableProducts(kvAvailableProducts); err != nil {
+			return nil, err
 		}
 	}
 
 	rcAvailableProducts, err := kvAvailableProducts.Get(vangoghApKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rcAvailableProducts.Close()
 
 	var availableProducts []vangogh_integration.AvailableProduct
 	if err = json.UnmarshalRead(rcAvailableProducts, &availableProducts); err != nil {
-		return err
+		return nil, err
 	}
 
-	summary := make(map[string][]string)
-
-	for _, ap := range availableProducts {
-		title := fmt.Sprintf("%d: %s %v", ap.Id, ap.Title, ap.OperatingSystems)
-		summary[title] = []string{}
-	}
-
-	vlapa.EndWithSummary("vangogh products available for installation", summary)
-
-	return nil
+	return availableProducts, nil
 }
 
-func vangoghGetAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
+func vangoghFetchAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
 
 	vgapa := nod.Begin(" getting vangogh available products...")
 	defer vgapa.Done()
