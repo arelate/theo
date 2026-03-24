@@ -129,7 +129,7 @@ func listAvailableProducts(ii *InstallInfo) error {
 	apSummary := make(map[string][]string)
 
 	for _, ap := range availableProducts {
-		title := fmt.Sprintf(" - %s (%s:%d) os:%v", ap.Title, ii.Origin, ap.Id, ap.OperatingSystems)
+		title := fmt.Sprintf(" - %s (%s: %d) os:%v", ap.Title, ii.Origin, ap.Id, ap.OperatingSystems)
 		apSummary[title] = []string{}
 	}
 
