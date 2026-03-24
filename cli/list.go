@@ -31,6 +31,7 @@ func ListHandler(u *url.URL) error {
 
 	q := u.Query()
 
+	availableProducts := q.Has("available-products")
 	installed := q.Has("installed")
 	tasks := q.Has("tasks")
 	steamShortcuts := q.Has("steam-shortcuts")
@@ -48,22 +49,36 @@ func ListHandler(u *url.URL) error {
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
+		Origin:          data.VangoghOrigin,
+		force:           q.Has("force"),
+	}
+
+	if q.Has("steam") {
+		ii.Origin = data.SteamOrigin
+	} else if q.Has("epic-games") {
+		ii.Origin = data.EpicGamesOrigin
 	}
 
 	id := q.Get(vangogh_integration.IdProperty)
-	allKeyValues := q.Has("all-key-values")
+	allShortcutKeys := q.Has("all-shortcut-keys")
 
-	return List(installed, tasks, steamShortcuts, ii, id, allKeyValues)
+	return List(availableProducts, installed, tasks, steamShortcuts, ii, id, allShortcutKeys)
 }
 
-func List(installed, tasks, steamShortcuts bool,
+func List(availableProducts, installed, tasks, steamShortcuts bool,
 	installInfo *InstallInfo,
-	id string, allKeyValues bool) error {
+	id string, allShortcutKeys bool) error {
 
-	if installed || tasks || steamShortcuts {
+	if availableProducts || installed || tasks || steamShortcuts {
 		// do nothing
 	} else {
 		return errors.New("you need to specify at least one category to list")
+	}
+
+	if availableProducts {
+		if err := listAvailableProducts(installInfo); err != nil {
+			return err
+		}
 	}
 
 	if installed {
@@ -82,11 +97,15 @@ func List(installed, tasks, steamShortcuts bool,
 	}
 
 	if steamShortcuts {
-		if err := listSteamShortcuts(allKeyValues); err != nil {
+		if err := listSteamShortcuts(allShortcutKeys); err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+func listAvailableProducts(ii *InstallInfo) error {
 	return nil
 }
 
@@ -383,7 +402,7 @@ func listSteamAppInfoTasks(steamAppId string, rdx redux.Writeable, force bool) (
 	return steamLaunchConfigTasks, nil
 }
 
-func listSteamShortcuts(allKeyValues bool) error {
+func listSteamShortcuts(allShortcutKeys bool) error {
 	lssa := nod.Begin("listing Steam shortcuts for all users...")
 	defer lssa.Done()
 
@@ -403,7 +422,7 @@ func listSteamShortcuts(allKeyValues bool) error {
 	}
 
 	for _, loginUser := range loginUsers {
-		if err := listUserShortcuts(loginUser, allKeyValues); err != nil {
+		if err = listUserShortcuts(loginUser, allShortcutKeys); err != nil {
 			return err
 		}
 	}
@@ -411,7 +430,7 @@ func listSteamShortcuts(allKeyValues bool) error {
 	return nil
 }
 
-func listUserShortcuts(loginUser string, allKeyValues bool) error {
+func listUserShortcuts(loginUser string, allShortcutKeys bool) error {
 
 	lusa := nod.Begin("listing shortcuts for %s...", loginUser)
 	defer lusa.Done()
@@ -439,7 +458,7 @@ func listUserShortcuts(loginUser string, allKeyValues bool) error {
 		for _, kv := range shortcut.Values {
 
 			var addKeyValue bool
-			switch allKeyValues {
+			switch allShortcutKeys {
 			case true:
 				addKeyValue = true
 			case false:
@@ -463,13 +482,13 @@ func fmtHoursMinutes(minutes int64) string {
 	hours := minutes / 60
 	remainingMinutes := minutes - 60*hours
 
-	var fmtHoursMinutes string
+	var fhm string
 	if remainingMinutes > 0 {
-		fmtHoursMinutes = strconv.FormatInt(remainingMinutes, 10) + " min(s)"
+		fhm = strconv.FormatInt(remainingMinutes, 10) + " min(s)"
 	}
 	if hours > 0 {
-		fmtHoursMinutes = strconv.FormatInt(hours, 10) + "hr(s) " + fmtHoursMinutes
+		fhm = strconv.FormatInt(hours, 10) + "hr(s) " + fhm
 	}
 
-	return fmtHoursMinutes
+	return fhm
 }

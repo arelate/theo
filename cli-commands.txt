@@ -38,13 +38,17 @@ install
     force
 
 list
+    id
+    available-products
     installed
     tasks
     steam-shortcuts
+    all-shortcut-keys
     os={operating-systems^}
     lang-code={language-codes^}
-    id
-    all-key-values
+    steam
+    epic-games
+    force
 
 prefix
     id^*
