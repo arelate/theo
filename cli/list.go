@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json/v2"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -118,6 +120,8 @@ func listAvailableProducts(ii *InstallInfo) error {
 	switch ii.Origin {
 	case data.VangoghOrigin:
 		availableProducts, err = vangoghGetAvailableProducts(ii.force)
+	case data.EpicGamesOrigin:
+		availableProducts, err = egsGetAvailableProducts(ii)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -138,6 +142,10 @@ func listAvailableProducts(ii *InstallInfo) error {
 	return nil
 }
 
+func originAvailableProductsKey(origin data.Origin, operatingSystem vangogh_integration.OperatingSystem) string {
+	return fmt.Sprintf("%s-%s", origin, operatingSystem)
+}
+
 func vangoghGetAvailableProducts(force bool) ([]vangogh_integration.AvailableProduct, error) {
 
 	vlapa := nod.Begin("getting available vangogh products...")
@@ -149,7 +157,7 @@ func vangoghGetAvailableProducts(force bool) ([]vangogh_integration.AvailablePro
 		return nil, err
 	}
 
-	vangoghApKey := fmt.Sprintf("%s-%s", data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
+	vangoghApKey := originAvailableProductsKey(data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
 
 	if !kvAvailableProducts.Has(vangoghApKey) || force {
 		if err = vangoghFetchAvailableProducts(kvAvailableProducts); err != nil {
@@ -173,7 +181,7 @@ func vangoghGetAvailableProducts(force bool) ([]vangogh_integration.AvailablePro
 
 func vangoghFetchAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
 
-	vgapa := nod.Begin(" getting vangogh available products...")
+	vgapa := nod.Begin(" fetching vangogh available products...")
 	defer vgapa.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.VangoghProperties()...)
@@ -192,9 +200,75 @@ func vangoghFetchAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
 	}
 	defer resp.Body.Close()
 
-	vangoghApKey := fmt.Sprintf("%s-%s", data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
+	vangoghApKey := originAvailableProductsKey(data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
 
 	return kvAvailableProducts.Set(vangoghApKey, resp.Body)
+}
+
+func egsGetAvailableProducts(ii *InstallInfo) ([]vangogh_integration.AvailableProduct, error) {
+
+	switch ii.OperatingSystem {
+	case vangogh_integration.AnyOperatingSystem:
+		return nil, errors.New("listing EGS available products requires a specific operating system")
+	case vangogh_integration.Linux:
+		return nil, errors.New("listing EGS available products is not available for Linux")
+	default:
+		// do nothing
+	}
+
+	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
+	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, err
+	}
+
+	egsOsApKey := originAvailableProductsKey(ii.Origin, ii.OperatingSystem)
+
+	if !kvAvailableProducts.Has(egsOsApKey) || ii.force {
+		if err = egsFetchAvailableProducts(ii, kvAvailableProducts); err != nil {
+			return nil, err
+		}
+	}
+
+	var availableProducts []vangogh_integration.AvailableProduct
+	// TODO: read and decode available products
+
+	return availableProducts, nil
+}
+
+func egsFetchAvailableProducts(ii *InstallInfo, kvAvailableProducts kevlar.KeyValues) error {
+
+	efapa := nod.Begin(" fetching EGS available products...")
+	defer efapa.Done()
+
+	var err error
+
+	var client *http.Client
+	if client, err = egsGetClient(); err != nil {
+		return err
+	}
+
+	var token string
+	if token, err = egsGetStoredToken(); err != nil {
+		return err
+	}
+	if err = egsVerifyToken(token); err != nil {
+		return err
+	}
+
+	gameAssets, err := egs_integration.GetGameAssets(egs_integration.Platform(ii.OperatingSystem), token, client)
+	if err != nil {
+		return err
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err = json.MarshalWrite(buf, &gameAssets); err != nil {
+		return err
+	}
+
+	egsOsApKey := originAvailableProductsKey(ii.Origin, ii.OperatingSystem)
+
+	return kvAvailableProducts.Set(egsOsApKey, buf)
 }
 
 func listInstalled(ii *InstallInfo) error {
@@ -224,7 +298,8 @@ func listInstalled(ii *InstallInfo) error {
 
 		var installedDate string
 		if ids, ok := rdx.GetLastVal(data.InstallDateProperty, id); ok && ids != "" {
-			if installDate, err := time.Parse(time.RFC3339, ids); err == nil {
+			var installDate time.Time
+			if installDate, err = time.Parse(time.RFC3339, ids); err == nil {
 				installedDate = installDate.Local().Format(time.DateTime)
 			} else {
 				return err

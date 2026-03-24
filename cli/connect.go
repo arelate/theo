@@ -71,7 +71,7 @@ func Connect(urlStr, username, password, cookie string, origin data.Origin, rese
 		}
 		return steamSetupConnection(username, rdx, reset)
 	case data.EpicGamesOrigin:
-		return epicGamesSetupConnection(cookie, reset)
+		return egsSetupConnection(cookie, reset)
 	default:
 		return origin.ErrUnsupportedOrigin()
 	}
@@ -269,7 +269,7 @@ func steamResetConnection(rdx redux.Writeable) error {
 	return steamcmd.Logout(absSteamCmdPath)
 }
 
-func epicGamesGetClient() (*http.Client, error) {
+func egsGetClient() (*http.Client, error) {
 
 	cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
 	egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
@@ -285,7 +285,7 @@ func epicGamesGetClient() (*http.Client, error) {
 	return client, nil
 }
 
-func epicGamesSetupConnection(cookieStr string, reset bool) error {
+func egsSetupConnection(cookieStr string, reset bool) error {
 
 	egsca := nod.Begin("connecting to EGS...")
 	defer egsca.Done()
@@ -293,7 +293,7 @@ func epicGamesSetupConnection(cookieStr string, reset bool) error {
 	var err error
 
 	if reset {
-		if err = epicGamesResetConnection(); err != nil {
+		if err = egsResetConnection(); err != nil {
 			return err
 		}
 	}
@@ -301,15 +301,15 @@ func epicGamesSetupConnection(cookieStr string, reset bool) error {
 	var accessToken string
 
 	if cookieStr != "" {
-		if accessToken, err = epicGamesGetAccessToken(cookieStr); err != nil {
+		if accessToken, err = egsGetAccessToken(cookieStr); err != nil {
 			return err
 		}
 	}
 
-	return epicGamesVerifyToken(accessToken)
+	return egsVerifyToken(accessToken)
 }
 
-func epicGamesGetAccessToken(cookieStr string) (string, error) {
+func egsGetAccessToken(cookieStr string) (string, error) {
 
 	eggata := nod.Begin("getting EGS access token...")
 	defer eggata.Done()
@@ -334,7 +334,7 @@ func epicGamesGetAccessToken(cookieStr string) (string, error) {
 	}
 
 	var client *http.Client
-	client, err = epicGamesGetClient()
+	client, err = egsGetClient()
 	if err != nil {
 		return "", err
 	}
@@ -352,15 +352,15 @@ func epicGamesGetAccessToken(cookieStr string) (string, error) {
 	}
 
 	if ptr.AccessToken == "" {
-		return "", errors.New("failed to get epic games access token")
+		return "", errors.New("failed to get EGS access token")
 	}
 
 	return ptr.AccessToken, nil
 }
 
-func epicGamesGetStoredVerifyToken() (string, error) {
+func egsGetStoredToken() (string, error) {
 
-	eggsvta := nod.Begin("getting stored EGS access token...")
+	eggsvta := nod.Begin("getting stored EGS token...")
 	defer eggsvta.Done()
 
 	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
@@ -383,12 +383,12 @@ func epicGamesGetStoredVerifyToken() (string, error) {
 	return gvt.Token, nil
 }
 
-func epicGamesVerifyToken(accessToken string) error {
+func egsVerifyToken(token string) error {
 
 	gvta := nod.Begin("verifying EGS token...")
 	defer gvta.Done()
 
-	client, err := epicGamesGetClient()
+	client, err := egsGetClient()
 	if err != nil {
 		return err
 	}
@@ -399,18 +399,18 @@ func epicGamesVerifyToken(accessToken string) error {
 		return err
 	}
 
-	if accessToken == "" {
-		if accessToken, err = epicGamesGetStoredVerifyToken(); err != nil {
+	if token == "" {
+		if token, err = egsGetStoredToken(); err != nil {
 			return err
 		}
 	}
 
-	if accessToken == "" {
+	if token == "" {
 		return errors.New("empty access token, re-connect EGS")
 	}
 
 	var vtr *egs_integration.GetVerifyTokenResponse
-	vtr, err = egs_integration.GetVerifyToken(accessToken, client)
+	vtr, err = egs_integration.GetVerifyToken(token, client)
 	if err != nil {
 		return err
 	}
@@ -423,7 +423,7 @@ func epicGamesVerifyToken(accessToken string) error {
 	return kvTokens.Set(egsTokenKey, buf)
 }
 
-func epicGamesResetConnection() error {
+func egsResetConnection() error {
 
 	egrc := nod.Begin("resetting EGS connection...")
 	defer egrc.Done()

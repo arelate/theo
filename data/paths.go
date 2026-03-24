@@ -37,6 +37,7 @@ const (
 	Cookies            pathways.RelDir = "_cookies"             // Metadata
 	Tokens             pathways.RelDir = "_tokens"              // Metadata
 	AvailableProducts  pathways.RelDir = "available-products"   // Metadata
+	GameAssets         pathways.RelDir = "game-assets"          // Metadata
 	Inventory          pathways.RelDir = "_inventory"           // InstalledApps
 	PrefixArchive      pathways.RelDir = "_prefix-archive"      // Backups
 	BinDownloads       pathways.RelDir = "_downloads"           // Wine, SteamCmd
@@ -88,6 +89,7 @@ func InitPathways() error {
 		Cookies:            {Metadata},
 		Tokens:             {Metadata},
 		AvailableProducts:  {Metadata},
+		GameAssets:         {Metadata},
 		Inventory:          {InstalledApps},
 		BinUnpacks:         {Wine, SteamCmd},
 		BinDownloads:       {Wine, SteamCmd},
