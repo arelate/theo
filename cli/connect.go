@@ -23,7 +23,7 @@ import (
 
 const (
 	egsCookiesFilename = "egs-cookies.json"
-	getVerifyTokenKey  = "get-verify-token"
+	egsTokenKey        = "egs-token"
 )
 
 func ConnectHandler(u *url.URL) error {
@@ -271,8 +271,8 @@ func steamResetConnection(rdx redux.Writeable) error {
 
 func epicGamesGetClient() (*http.Client, error) {
 
-	egsCookieDir := data.Pwd.AbsRelDirPath(data.EgsCookie, data.Metadata)
-	egsCookiePath := filepath.Join(egsCookieDir, egsCookiesFilename)
+	cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
+	egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
 
 	jar, err := coost.Read(egs_integration.HostUrl(), egsCookiePath)
 	if err != nil {
@@ -314,11 +314,11 @@ func epicGamesGetAccessToken(cookieStr string) (string, error) {
 	eggata := nod.Begin("getting EGS access token...")
 	defer eggata.Done()
 
-	egsCookieDir := data.Pwd.AbsRelDirPath(data.EgsCookie, data.Metadata)
-	egsCookiePath := filepath.Join(egsCookieDir, egsCookiesFilename)
+	cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
+	egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
 
-	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
-	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
+	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
 	if err != nil {
 		return "", err
 	}
@@ -327,8 +327,8 @@ func epicGamesGetAccessToken(cookieStr string) (string, error) {
 		return "", err
 	}
 
-	if kvVerifyToken.Has(getVerifyTokenKey) {
-		if err = kvVerifyToken.Cut(getVerifyTokenKey); err != nil {
+	if kvTokens.Has(egsTokenKey) {
+		if err = kvTokens.Cut(egsTokenKey); err != nil {
 			return "", err
 		}
 	}
@@ -363,20 +363,20 @@ func epicGamesGetStoredVerifyToken() (string, error) {
 	eggsvta := nod.Begin("getting stored EGS access token...")
 	defer eggsvta.Done()
 
-	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
-	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
+	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
 	if err != nil {
 		return "", err
 	}
 
-	var rcVerifyToken io.ReadCloser
-	rcVerifyToken, err = kvVerifyToken.Get(getVerifyTokenKey)
+	var rcEgsToken io.ReadCloser
+	rcEgsToken, err = kvTokens.Get(egsTokenKey)
 	if err != nil {
 		return "", err
 	}
 
 	var gvt egs_integration.GetVerifyTokenResponse
-	if err = json.UnmarshalRead(rcVerifyToken, &gvt); err != nil {
+	if err = json.UnmarshalRead(rcEgsToken, &gvt); err != nil {
 		return "", err
 	}
 
@@ -393,8 +393,8 @@ func epicGamesVerifyToken(accessToken string) error {
 		return err
 	}
 
-	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
-	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
+	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
 	if err != nil {
 		return err
 	}
@@ -420,7 +420,7 @@ func epicGamesVerifyToken(accessToken string) error {
 		return err
 	}
 
-	return kvVerifyToken.Set(getVerifyTokenKey, buf)
+	return kvTokens.Set(egsTokenKey, buf)
 }
 
 func epicGamesResetConnection() error {
@@ -428,11 +428,11 @@ func epicGamesResetConnection() error {
 	egrc := nod.Begin("resetting EGS connection...")
 	defer egrc.Done()
 
-	egsCookieDir := data.Pwd.AbsRelDirPath(data.EgsCookie, data.Metadata)
-	egsCookiePath := filepath.Join(egsCookieDir, egsCookiesFilename)
+	cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
+	egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
 
-	egsVerifyTokenDir := data.Pwd.AbsRelDirPath(data.EgsVerifyToken, data.Metadata)
-	kvVerifyToken, err := kevlar.New(egsVerifyTokenDir, kevlar.JsonExt)
+	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
+	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
 	if err != nil {
 		return err
 	}
@@ -443,8 +443,8 @@ func epicGamesResetConnection() error {
 		}
 	}
 
-	if kvVerifyToken.Has(getVerifyTokenKey) {
-		if err = kvVerifyToken.Cut(getVerifyTokenKey); err != nil {
+	if kvTokens.Has(egsTokenKey) {
+		if err = kvTokens.Cut(egsTokenKey); err != nil {
 			return err
 		}
 	}
