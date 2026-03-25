@@ -65,7 +65,7 @@ func Download(id string,
 	originData *data.OriginData,
 	manualUrlFilter ...string) error {
 
-	da := nod.NewProgress("downloading product data...")
+	da := nod.Begin("downloading product data...")
 	defer da.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -90,9 +90,36 @@ func Download(id string,
 		return err
 	}
 
-	da.Increment()
-
 	return nil
+}
+
+func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) (*data.OriginData, error) {
+
+	originData := new(data.OriginData)
+	var err error
+
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		originData.ProductDetails, err = vangoghGetProductDetails(id, rdx, force)
+		if err != nil {
+			return nil, err
+		}
+	case data.SteamOrigin:
+		originData.AppInfoKv, err = steamGetAppInfoKv(id, rdx, force)
+		if err != nil {
+			return nil, err
+		}
+	case data.EpicGamesOrigin:
+		return nil, errors.New("not implemented")
+	default:
+		return nil, ii.Origin.ErrUnsupportedOrigin()
+	}
+
+	if err = ii.reduceOriginData(id, originData); err != nil {
+		return nil, err
+	}
+
+	return originData, nil
 }
 
 func originDownloadData(id string,
@@ -109,6 +136,8 @@ func originDownloadData(id string,
 		return vangoghDownloadData(id, ii, originData, rdx, manualUrlFilter...)
 	case data.SteamOrigin:
 		return steamDownloadData(id, ii, originData, rdx)
+	case data.EpicGamesOrigin:
+		return egsDownloadChunks(id, ii, originData)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -191,4 +220,8 @@ func steamDownloadData(steamAppId string, ii *InstallInfo, originData *data.Orig
 	}
 
 	return steamUpdateApp(steamAppId, ii.OperatingSystem, rdx)
+}
+
+func egsDownloadChunks(catalogItemId string, ii *InstallInfo, originData *data.OriginData) error {
+	return nil
 }

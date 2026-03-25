@@ -138,33 +138,6 @@ func Install(id string, ii *InstallInfo) error {
 	return nil
 }
 
-func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) (*data.OriginData, error) {
-
-	originData := new(data.OriginData)
-	var err error
-
-	switch ii.Origin {
-	case data.VangoghOrigin:
-		originData.ProductDetails, err = getProductDetails(id, rdx, force)
-		if err != nil {
-			return nil, err
-		}
-	case data.SteamOrigin:
-		originData.AppInfoKv, err = steamGetAppInfoKv(id, rdx, force)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, ii.Origin.ErrUnsupportedOrigin()
-	}
-
-	if err = ii.reduceOriginData(id, originData); err != nil {
-		return nil, err
-	}
-
-	return originData, nil
-}
-
 func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
 
 	if ii.NoSteamShortcut {

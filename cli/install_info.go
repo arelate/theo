@@ -106,7 +106,8 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 		} else {
 			return err
 		}
-
+	case data.EpicGamesOrigin:
+		// do nothing
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}

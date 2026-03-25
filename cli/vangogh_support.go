@@ -15,9 +15,9 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_integration.ProductDetails, error) {
+func vangoghGetProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_integration.ProductDetails, error) {
 
-	gpda := nod.NewProgress(" getting product details for %s...", id)
+	gpda := nod.NewProgress(" getting vangogh product details for %s...", id)
 	defer gpda.Done()
 
 	productDetailsDir := data.Pwd.AbsRelDirPath(data.ProductDetails, vangogh_integration.Metadata)
@@ -28,7 +28,7 @@ func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_int
 	}
 
 	var pd *vangogh_integration.ProductDetails
-	if pd, err = readLocalProductDetails(id, kvProductDetails); err != nil {
+	if pd, err = vangoghReadLocalProductDetails(id, kvProductDetails); err != nil {
 		return nil, err
 	} else if pd != nil && !force {
 		gpda.EndWithResult("read local")
@@ -39,21 +39,21 @@ func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_int
 		return nil, err
 	}
 
-	productDetails, err := fetchRemoteProductDetails(id, rdx, kvProductDetails)
+	productDetails, err := vangoghFetchRemoteProductDetails(id, rdx, kvProductDetails)
 	if err != nil {
 		return nil, err
 	}
 
 	gpda.EndWithResult("fetched remote")
 
-	if err = reduceProductDetails(id, productDetails, rdx); err != nil {
+	if err = vangoghReduceProductDetails(id, productDetails, rdx); err != nil {
 		return nil, err
 	}
 
 	return productDetails, nil
 }
 
-func readLocalProductDetails(id string, kvProductDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
+func vangoghReadLocalProductDetails(id string, kvProductDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
 
 	if has := kvProductDetails.Has(id); !has {
 		return nil, nil
@@ -73,9 +73,9 @@ func readLocalProductDetails(id string, kvProductDetails kevlar.KeyValues) (*van
 	return &productDetails, nil
 }
 
-func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
+func vangoghFetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails kevlar.KeyValues) (*vangogh_integration.ProductDetails, error) {
 
-	fra := nod.Begin(" fetching remote product details for %s...", id)
+	fra := nod.Begin(" fetching vangogh product details from the origin for %s...", id)
 	defer fra.Done()
 
 	query := url.Values{
@@ -113,9 +113,9 @@ func fetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDetails k
 	return &productDetails, nil
 }
 
-func reduceProductDetails(id string, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
+func vangoghReduceProductDetails(id string, productDetails *vangogh_integration.ProductDetails, rdx redux.Writeable) error {
 
-	rpda := nod.Begin(" reducing product details...")
+	rpda := nod.Begin(" reducing vangogh product details...")
 	defer rpda.Done()
 
 	propertyValues := make(map[string][]string)
@@ -187,4 +187,63 @@ func reduceProductDetails(id string, productDetails *vangogh_integration.Product
 	}
 
 	return nil
+}
+
+func vangoghGetAvailableProducts(force bool) ([]vangogh_integration.AvailableProduct, error) {
+
+	vlapa := nod.Begin("getting available vangogh products...")
+	defer vlapa.Done()
+
+	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
+	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, err
+	}
+
+	vangoghApKey := originAvailableProductsKey(data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
+
+	if !kvAvailableProducts.Has(vangoghApKey) || force {
+		if err = vangoghFetchAvailableProducts(kvAvailableProducts); err != nil {
+			return nil, err
+		}
+	}
+
+	rcAvailableProducts, err := kvAvailableProducts.Get(vangoghApKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rcAvailableProducts.Close()
+
+	var availableProducts []vangogh_integration.AvailableProduct
+	if err = json.UnmarshalRead(rcAvailableProducts, &availableProducts); err != nil {
+		return nil, err
+	}
+
+	return availableProducts, nil
+}
+
+func vangoghFetchAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
+
+	vgapa := nod.Begin(" fetching vangogh available products...")
+	defer vgapa.Done()
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.VangoghProperties()...)
+	if err != nil {
+		return err
+	}
+
+	req, err := data.VangoghRequest(http.MethodGet, data.ApiAvailableProducts, nil, rdx)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	vangoghApKey := originAvailableProductsKey(data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
+
+	return kvAvailableProducts.Set(vangoghApKey, resp.Body)
 }

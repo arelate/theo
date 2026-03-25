@@ -1,21 +1,17 @@
 package cli
 
 import (
-	"bytes"
 	"encoding/json/v2"
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/steamcmd"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/author"
-	"github.com/boggydigital/coost"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
@@ -269,22 +265,6 @@ func steamResetConnection(rdx redux.Writeable) error {
 	return steamcmd.Logout(absSteamCmdPath)
 }
 
-func egsGetClient() (*http.Client, error) {
-
-	cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
-	egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
-
-	jar, err := coost.Read(egs_integration.HostUrl(), egsCookiePath)
-	if err != nil {
-		return nil, err
-	}
-
-	client := http.DefaultClient
-	client.Jar = jar
-
-	return client, nil
-}
-
 func egsSetupConnection(cookieStr string, reset bool) error {
 
 	egsca := nod.Begin("connecting to EGS...")
@@ -307,120 +287,6 @@ func egsSetupConnection(cookieStr string, reset bool) error {
 	}
 
 	return egsVerifyToken(accessToken)
-}
-
-func egsGetAccessToken(cookieStr string) (string, error) {
-
-	eggata := nod.Begin("getting EGS access token...")
-	defer eggata.Done()
-
-	cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
-	egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
-
-	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
-	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
-	if err != nil {
-		return "", err
-	}
-
-	if err = coost.Import(cookieStr, egs_integration.HostUrl(), egsCookiePath); err != nil {
-		return "", err
-	}
-
-	if kvTokens.Has(egsTokenKey) {
-		if err = kvTokens.Cut(egsTokenKey); err != nil {
-			return "", err
-		}
-	}
-
-	var client *http.Client
-	client, err = egsGetClient()
-	if err != nil {
-		return "", err
-	}
-
-	var arr *egs_integration.GetApiRedirectResponse
-	arr, err = egs_integration.GetApiRedirect(client)
-	if err != nil {
-		return "", err
-	}
-
-	var ptr *egs_integration.PostTokenResponse
-	ptr, err = egs_integration.PostToken(arr.AuthorizationCode, egs_integration.GrantTypeAuthorizationCode, client)
-	if err != nil {
-		return "", err
-	}
-
-	if ptr.AccessToken == "" {
-		return "", errors.New("failed to get EGS access token")
-	}
-
-	return ptr.AccessToken, nil
-}
-
-func egsGetStoredToken() (string, error) {
-
-	eggsvta := nod.Begin("getting stored EGS token...")
-	defer eggsvta.Done()
-
-	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
-	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
-	if err != nil {
-		return "", err
-	}
-
-	var rcEgsToken io.ReadCloser
-	rcEgsToken, err = kvTokens.Get(egsTokenKey)
-	if err != nil {
-		return "", err
-	}
-
-	var gvt egs_integration.GetVerifyTokenResponse
-	if err = json.UnmarshalRead(rcEgsToken, &gvt); err != nil {
-		return "", err
-	}
-
-	return gvt.Token, nil
-}
-
-func egsVerifyToken(token string) error {
-
-	gvta := nod.Begin("verifying EGS token...")
-	defer gvta.Done()
-
-	client, err := egsGetClient()
-	if err != nil {
-		return err
-	}
-
-	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
-	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
-	if err != nil {
-		return err
-	}
-
-	if token == "" {
-		if token, err = egsGetStoredToken(); err != nil {
-			return err
-		}
-	}
-
-	if token == "" {
-		return errors.New("empty access token, re-connect EGS")
-	}
-
-	var vtr *egs_integration.GetVerifyTokenResponse
-	vtr, err = egs_integration.GetVerifyToken(token, client)
-	if err != nil {
-		return err
-	}
-
-	buf := bytes.NewBuffer(nil)
-	if err = json.MarshalWrite(buf, &vtr); err != nil {
-		return err
-	}
-
-	return kvTokens.Set(egsTokenKey, buf)
 }
 
 func egsResetConnection() error {

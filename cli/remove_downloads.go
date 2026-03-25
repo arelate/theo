@@ -62,7 +62,7 @@ func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	productDetails, err := getProductDetails(id, rdx, ii.force)
+	productDetails, err := vangoghGetProductDetails(id, rdx, ii.force)
 	if err != nil {
 		return err
 	}

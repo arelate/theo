@@ -136,7 +136,7 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 
 func checkProductType(id string, rdx redux.Writeable, force bool) error {
 
-	productDetails, err := getProductDetails(id, rdx, force)
+	productDetails, err := vangoghGetProductDetails(id, rdx, force)
 	if err != nil {
 		return err
 	}
