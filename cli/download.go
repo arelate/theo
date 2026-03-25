@@ -116,6 +116,11 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 		if gameAsset, err = egsGetGameAsset(id, ii); err != nil {
 			return nil, err
 		}
+		if originData.CatalogItem, err = egsGetCatalogItem(gameAsset, ii, rdx); err != nil {
+			return nil, err
+		}
+
+		// the data items below must be the latest version from the origin when downloading, don't remove force parameter
 		if originData.GameManifest, err = egsGetGameManifest(gameAsset, ii, force); err != nil {
 			return nil, err
 		}
