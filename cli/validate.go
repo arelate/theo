@@ -2,14 +2,17 @@ package cli
 
 import (
 	"crypto/md5"
+	"crypto/sha1"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
@@ -111,6 +114,8 @@ func Validate(id string,
 		return vangoghValidateData(id, ii, originData, rdx, manualUrlFilter...)
 	case data.SteamOrigin:
 		return steamValidateData(id, ii, rdx)
+	case data.EpicGamesOrigin:
+		return egsValidateChunks(id, ii, originData)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -264,4 +269,55 @@ func isSameResult(exp ValidationResult, results []ValidationResult) bool {
 		}
 	}
 	return true
+}
+
+func egsValidateChunks(appName string, ii *InstallInfo, originData *data.OriginData) error {
+
+	evca := nod.NewProgress("validating EGS chunks for %s-%s...", appName, ii.OperatingSystem)
+	defer evca.Done()
+
+	if err := egsValidateSupportedPlatform(ii); err != nil {
+		return err
+	}
+
+	evca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
+
+	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
+
+	for _, chunk := range originData.Manifest.ChunkList.Chunks {
+
+		chunkPath := chunk.Path(originData.Manifest.Metadata.FeatureLevel)
+
+		absChunkFilename := filepath.Join(absChunksDownloadsDir, chunkPath)
+
+		chunkFile, err := os.Open(absChunkFilename)
+		if err != nil {
+			return err
+		}
+
+		chunkReader, err := egs_integration.ReadChunk(chunkFile)
+		if err != nil {
+			return err
+		}
+
+		chunkData, err := io.ReadAll(chunkReader)
+		if err != nil {
+			return err
+		}
+
+		shaSum := sha1.Sum(chunkData)
+
+		expectedShaSum := fmt.Sprintf("%x", chunk.ShaHash)
+		actualShaSum := fmt.Sprintf("%x", shaSum)
+
+		if expectedShaSum != actualShaSum {
+			return errors.New("failed validation for " + chunkPath)
+		}
+
+		evca.Increment()
+	}
+
+	evca.EndWithResult("valid")
+
+	return nil
 }

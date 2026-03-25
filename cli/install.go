@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"maps"
 	"net/url"
 	"os"
@@ -10,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -189,16 +192,13 @@ func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx 
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-
-		if originData.ProductDetails == nil {
-			return errors.New("nil productDetails")
-		}
-
 		if err := vangoghUnpackPlace(id, ii, originData, rdx); err != nil {
 			return err
 		}
 	case data.SteamOrigin:
-		// do nothing - SteamCMD app update during Download is equivalent to installation
+	// do nothing - SteamCMD app update during Download is equivalent to installation
+	case data.EpicGamesOrigin:
+
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -570,6 +570,9 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 		}
 
 		return filepath.Join(osLangInstalledAppsDir, installedPath), nil
+	//case data.EpicGamesOrigin:
+	//egsAppsDir := data.Pwd.AbsDirPath(data.EgsApps)
+
 	default:
 		return "", ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -621,4 +624,77 @@ func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, r
 
 	return shortcutAssets, nil
 
+}
+
+func egsAssembleChunks(appName string, ii *InstallInfo, originData *data.OriginData) error {
+
+	eaca := nod.Begin("assembling EGS chunks into files for %s-%s", appName, ii.OperatingSystem)
+	defer eaca.Done()
+
+	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
+
+	//originOsInstalledPath()
+
+	for _, chunkedFile := range originData.Manifest.FileList.List {
+		if err := egsAssembleFile(appName, &chunkedFile, originData.Manifest.Metadata.FeatureLevel, absChunksDownloadsDir); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func egsAssembleFile(manifestId string, f *egs_integration.File, featureLevel uint32, chunksDir string) error {
+
+	var err error
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	outputDir := filepath.Join(homeDir, "Downloads", "epic", "output", strings.TrimSuffix(manifestId, ".manifest"))
+
+	absOutputFilename := filepath.Join(outputDir, f.Filename)
+	absOutputDir, _ := filepath.Split(absOutputFilename)
+
+	if _, err = os.Stat(absOutputDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(absOutputDir, 0775); err != nil {
+			return err
+		}
+	}
+
+	outFile, err := os.Create(absOutputFilename)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	for _, part := range f.Parts {
+
+		chunkPath := filepath.Join(chunksDir, filepath.Base(part.Chunk.Path(featureLevel)))
+		var chunkFile *os.File
+		chunkFile, err = os.Open(chunkPath)
+		if err != nil {
+			return err
+		}
+
+		var chunkReader io.Reader
+		chunkReader, err = egs_integration.ReadChunk(chunkFile)
+		if err != nil {
+			return nil
+		}
+
+		var chunkData []byte
+		chunkData, err = io.ReadAll(chunkReader)
+		if err != nil {
+			return err
+		}
+
+		if _, err = io.Copy(outFile, bytes.NewReader(chunkData[part.Offset:part.Offset+part.Size])); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

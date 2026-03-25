@@ -2,6 +2,7 @@ package data
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +22,8 @@ const (
 	Backups       pathways.AbsDir = "backups"
 	Downloads     pathways.AbsDir = "downloads"
 	InstalledApps pathways.AbsDir = "installed-apps"
-	SteamApps     pathways.AbsDir = "steam-apps" // InstalledApps
+	SteamApps     pathways.AbsDir = "steam-apps"
+	EgsApps       pathways.AbsDir = "egs-apps"
 	Logs          pathways.AbsDir = "logs"
 	Metadata      pathways.AbsDir = "metadata"
 	Wine          pathways.AbsDir = "wine"
@@ -214,4 +216,8 @@ func AbsSteamAppInstallDir(steamAppId string, operatingSystem vangogh_integratio
 	steamAppsDir := Pwd.AbsDirPath(SteamApps)
 
 	return filepath.Join(steamAppsDir, operatingSystem.String(), pathways.Sanitize(steamAppName)), nil
+}
+
+func AbsChunksDownloadDir(appName string, operatingSystem vangogh_integration.OperatingSystem) string {
+	return filepath.Join(Pwd.AbsDirPath(Downloads), fmt.Sprintf("%s-%s", appName, operatingSystem))
 }

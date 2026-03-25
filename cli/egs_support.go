@@ -17,6 +17,7 @@ import (
 	"github.com/boggydigital/coost"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/redux"
 )
 
 func egsGetClient() (*http.Client, error) {
@@ -160,7 +161,7 @@ func egsValidateSupportedPlatform(ii *InstallInfo) error {
 	}
 }
 
-func egsGetAvailableProducts(ii *InstallInfo) ([]vangogh_integration.AvailableProduct, error) {
+func egsGetAvailableProducts(ii *InstallInfo, rdx redux.Writeable) ([]vangogh_integration.AvailableProduct, error) {
 
 	if err := egsValidateSupportedPlatform(ii); err != nil {
 		return nil, err
@@ -182,10 +183,10 @@ func egsGetAvailableProducts(ii *InstallInfo) ([]vangogh_integration.AvailablePr
 		}
 	}
 
-	return egsGameAssetsAvailableProducts(gameAssets, ii)
+	return egsGameAssetsAvailableProducts(gameAssets, ii, rdx)
 }
 
-func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, ii *InstallInfo) ([]vangogh_integration.AvailableProduct, error) {
+func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, ii *InstallInfo, rdx redux.Writeable) ([]vangogh_integration.AvailableProduct, error) {
 
 	if err := egsValidateSupportedPlatform(ii); err != nil {
 		return nil, err
@@ -195,7 +196,7 @@ func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, ii *
 
 	for _, gameAsset := range gameAssets {
 
-		catalogItem, err := egsGetCatalogItem(&gameAsset, ii)
+		catalogItem, err := egsGetCatalogItem(&gameAsset, ii, rdx)
 		if err != nil {
 			return nil, err
 		}
@@ -289,7 +290,7 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 	return kvAvailableProducts.Set(egsOsApKey, buf)
 }
 
-func egsGetCatalogItem(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (*egs_integration.CatalogItem, error) {
+func egsGetCatalogItem(gameAsset *egs_integration.GameAsset, ii *InstallInfo, rdx redux.Writeable) (*egs_integration.CatalogItem, error) {
 
 	catalogItemsDir := data.Pwd.AbsRelDirPath(data.CatalogItems, data.Metadata)
 	kvCatalogItems, err := kevlar.New(catalogItemsDir, kevlar.JsonExt)
@@ -299,7 +300,7 @@ func egsGetCatalogItem(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (*
 
 	if !kvCatalogItems.Has(gameAsset.CatalogItemId) || ii.force {
 
-		if err = egsFetchCatalogItem(gameAsset, kvCatalogItems); err != nil {
+		if err = egsFetchCatalogItem(gameAsset, kvCatalogItems, rdx); err != nil {
 			return nil, err
 		}
 	}
@@ -318,7 +319,7 @@ func egsGetCatalogItem(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (*
 	return &catalogItem, nil
 }
 
-func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems kevlar.KeyValues) error {
+func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems kevlar.KeyValues, rdx redux.Writeable) error {
 
 	efcia := nod.Begin(" fetching catalog item %s...", gameAsset.CatalogItemId)
 	defer efcia.Done()
@@ -344,6 +345,10 @@ func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems ke
 
 	buf := bytes.NewBuffer(nil)
 	if err = json.MarshalWrite(buf, &catalogItem); err != nil {
+		return err
+	}
+
+	if err = egsReduceCatalogItem(gameAsset.AppName, catalogItem, rdx); err != nil {
 		return err
 	}
 
@@ -556,4 +561,17 @@ func egsFetchManifest(key string, manifestUrl *url.URL, client *http.Client, kvM
 	}
 
 	return kvManifests.Set(key, resp.Body)
+}
+
+func egsReduceCatalogItem(appName string, catalogItem *egs_integration.CatalogItem, rdx redux.Writeable) error {
+
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
+		return err
+	}
+
+	if err := rdx.ReplaceValues(vangogh_integration.TitleProperty, appName, catalogItem.Title); err != nil {
+		return err
+	}
+
+	return nil
 }

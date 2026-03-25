@@ -113,11 +113,16 @@ func listAvailableProducts(ii *InstallInfo) error {
 	var availableProducts []vangogh_integration.AvailableProduct
 	var err error
 
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
 	switch ii.Origin {
 	case data.VangoghOrigin:
 		availableProducts, err = vangoghGetAvailableProducts(ii.force)
 	case data.EpicGamesOrigin:
-		availableProducts, err = egsGetAvailableProducts(ii)
+		availableProducts, err = egsGetAvailableProducts(ii, rdx)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}

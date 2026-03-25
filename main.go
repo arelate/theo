@@ -54,7 +54,6 @@ func main() {
 		"setup-wine":       cli.SetupWineHandler,
 		"steam-fix":        cli.SteamFixHandler,
 		"steam-shortcut":   cli.SteamShortcutHandler,
-		"test-epic-games":  cli.TestEpicGamesHandler,
 		"uninstall":        cli.UninstallHandler,
 		"update":           cli.UpdateHandler,
 		"validate":         cli.ValidateHandler,

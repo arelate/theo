@@ -246,8 +246,7 @@ func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginD
 		return err
 	}
 
-	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
-	absChunksDownloadsDir := filepath.Join(downloadsDir, appName, ii.OperatingSystem.String())
+	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
 
 	dc := dolo.DefaultClient
 
