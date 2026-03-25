@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json/v2"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -419,4 +420,80 @@ func egsGetGameAsset(appName string, ii *InstallInfo) (*egs_integration.GameAsse
 	}
 
 	return nil, errors.New("game asset not found for appName " + appName)
+}
+
+func egsGetGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (*egs_integration.GameManifest, error) {
+
+	eggma := nod.Begin("getting EGS game manifest...")
+	defer eggma.Done()
+
+	if err := egsValidateSupportedPlatform(ii); err != nil {
+		return nil, err
+	}
+
+	gameManifestsDir := data.Pwd.AbsRelDirPath(data.GameManifests, data.Metadata)
+	kvGameManifests, err := kevlar.New(gameManifestsDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, err
+	}
+
+	osAppNameKey := fmt.Sprintf("%s-%s", gameAsset.AppName, ii.OperatingSystem)
+
+	if !kvGameManifests.Has(osAppNameKey) || ii.force {
+		if err = egsFetchGameManifest(gameAsset, ii, kvGameManifests); err != nil {
+			return nil, err
+		}
+	}
+
+	rcGameManifest, err := kvGameManifests.Get(osAppNameKey)
+	if err != nil {
+		return nil, err
+	}
+	defer rcGameManifest.Close()
+
+	var gameManifest egs_integration.GameManifest
+	if err = json.UnmarshalRead(rcGameManifest, &gameManifest); err != nil {
+		return nil, err
+	}
+
+	return &gameManifest, nil
+}
+
+func egsFetchGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo, kvGameManifests kevlar.KeyValues) error {
+
+	efgma := nod.Begin(" fetching game manifest %s-%s...", gameAsset.AppName, ii.OperatingSystem)
+	defer efgma.Done()
+
+	token, err := egsGetStoredToken()
+	if err != nil {
+		return err
+	}
+
+	if err = egsVerifyToken(token); err != nil {
+		return err
+	}
+
+	client, err := egsGetClient()
+	if err != nil {
+		return err
+	}
+
+	gameManifest, err := egs_integration.GetGameManifest(
+		gameAsset.Namespace,
+		gameAsset.CatalogItemId,
+		gameAsset.AppName,
+		egs_integration.Platform(ii.OperatingSystem),
+		token, client)
+	if err != nil {
+		return err
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err = json.MarshalWrite(buf, &gameManifest); err != nil {
+		return err
+	}
+
+	osAppNameKey := fmt.Sprintf("%s-%s", gameAsset.AppName, ii.OperatingSystem)
+
+	return kvGameManifests.Set(osAppNameKey, buf)
 }

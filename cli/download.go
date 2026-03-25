@@ -100,19 +100,19 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		originData.ProductDetails, err = vangoghGetProductDetails(id, rdx, force)
-		if err != nil {
+		if originData.ProductDetails, err = vangoghGetProductDetails(id, rdx, force); err != nil {
 			return nil, err
 		}
 	case data.SteamOrigin:
-		originData.AppInfoKv, err = steamGetAppInfoKv(id, rdx, force)
-		if err != nil {
+		if originData.AppInfoKv, err = steamGetAppInfoKv(id, rdx, force); err != nil {
 			return nil, err
 		}
 	case data.EpicGamesOrigin:
 
-		originData.GameAsset, err = egsGetGameAsset(id, ii)
-		if err != nil {
+		if originData.GameAsset, err = egsGetGameAsset(id, ii); err != nil {
+			return nil, err
+		}
+		if originData.GameManifest, err = egsGetGameManifest(originData.GameAsset, ii); err != nil {
 			return nil, err
 		}
 
