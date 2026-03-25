@@ -146,15 +146,21 @@ func egsVerifyToken(token string) error {
 	return kvTokens.Set(egsTokenKey, buf)
 }
 
-func egsGetAvailableProducts(ii *InstallInfo) ([]vangogh_integration.AvailableProduct, error) {
-
+func egsValidateSupportedPlatform(ii *InstallInfo) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.AnyOperatingSystem:
-		return nil, errors.New("listing EGS available products requires a specific operating system")
+		return errors.New("EGS operations require specific operating system")
 	case vangogh_integration.Linux:
-		return nil, errors.New("listing EGS available products is not available for Linux")
+		return errors.New("EGS does not support Linux")
 	default:
-		// do nothing
+		return nil
+	}
+}
+
+func egsGetAvailableProducts(ii *InstallInfo) ([]vangogh_integration.AvailableProduct, error) {
+
+	if err := egsValidateSupportedPlatform(ii); err != nil {
+		return nil, err
 	}
 
 	gameAssets, err := egsReadLocalGameAssets(ii)
@@ -177,6 +183,10 @@ func egsGetAvailableProducts(ii *InstallInfo) ([]vangogh_integration.AvailablePr
 }
 
 func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, ii *InstallInfo) ([]vangogh_integration.AvailableProduct, error) {
+
+	if err := egsValidateSupportedPlatform(ii); err != nil {
+		return nil, err
+	}
 
 	catalogItemsDir := data.Pwd.AbsRelDirPath(data.CatalogItems, data.Metadata)
 	kvCatalogItems, err := kevlar.New(catalogItemsDir, kevlar.JsonExt)
@@ -237,6 +247,10 @@ func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, ii *
 
 func egsReadLocalGameAssets(ii *InstallInfo) ([]egs_integration.GameAsset, error) {
 
+	if err := egsValidateSupportedPlatform(ii); err != nil {
+		return nil, err
+	}
+
 	egsOsApKey := originAvailableProductsKey(ii.Origin, ii.OperatingSystem)
 
 	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
@@ -269,6 +283,10 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 	defer efapa.Done()
 
 	var err error
+
+	if err = egsValidateSupportedPlatform(ii); err != nil {
+		return err
+	}
 
 	var client *http.Client
 	if client, err = egsGetClient(); err != nil {
@@ -305,8 +323,13 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 }
 
 func egsFetchCatalogItems(ii *InstallInfo, gameAssets []egs_integration.GameAsset, token string, client *http.Client, kvCatalogItems kevlar.KeyValues) error {
+
 	efcia := nod.NewProgress(" fetching EGS catalog items...")
 	defer efcia.Done()
+
+	if err := egsValidateSupportedPlatform(ii); err != nil {
+		return err
+	}
 
 	efcia.TotalInt(len(gameAssets))
 
@@ -365,6 +388,10 @@ func egsGetGameAsset(appName string, ii *InstallInfo) (*egs_integration.GameAsse
 
 	egga := nod.Begin("getting EGS game asset...")
 	defer egga.Done()
+
+	if err := egsValidateSupportedPlatform(ii); err != nil {
+		return nil, err
+	}
 
 	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
 	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
