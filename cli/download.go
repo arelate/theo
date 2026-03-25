@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/dolo"
@@ -109,13 +112,14 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 		}
 	case data.EpicGamesOrigin:
 
-		if originData.GameAsset, err = egsGetGameAsset(id, ii); err != nil {
+		var gameAsset *egs_integration.GameAsset
+		if gameAsset, err = egsGetGameAsset(id, ii); err != nil {
 			return nil, err
 		}
-		if originData.GameManifest, err = egsGetGameManifest(originData.GameAsset, ii, force); err != nil {
+		if originData.GameManifest, err = egsGetGameManifest(gameAsset, ii, force); err != nil {
 			return nil, err
 		}
-		if originData.Manifest, err = egsGetManifest(originData.GameAsset.AppName, originData.GameManifest, ii.OperatingSystem, force); err != nil {
+		if originData.Manifest, err = egsGetManifest(gameAsset.AppName, originData.GameManifest, ii.OperatingSystem, force); err != nil {
 			return nil, err
 		}
 
@@ -231,5 +235,46 @@ func steamDownloadData(steamAppId string, ii *InstallInfo, originData *data.Orig
 }
 
 func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginData) error {
-	return errors.New("not implemented")
+
+	edca := nod.NewProgress("downloading EGS chunks...")
+	edca.Done()
+
+	edca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
+
+	cdnUrls, err := originData.GameManifest.Urls()
+	if err != nil {
+		return err
+	}
+
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+	absChunksDownloadsDir := filepath.Join(downloadsDir, appName, ii.OperatingSystem.String())
+
+	dc := dolo.DefaultClient
+
+	var cdnUrl *url.URL
+	for _, cu := range cdnUrls {
+		cdnUrl = cu
+		break
+	}
+
+	if cdnUrl == nil {
+		return errors.New("downloading EGS chunks requires CDN url")
+	}
+
+	originalPath := strings.TrimSuffix(cdnUrl.Path, filepath.Base(cdnUrl.Path))
+	cdnUrl.RawQuery = ""
+
+	for _, chunk := range originData.Manifest.ChunkList.Chunks {
+
+		chunkPath := chunk.Path(originData.Manifest.Metadata.FeatureLevel)
+		cdnUrl.Path = path.Join(originalPath, chunkPath)
+
+		if err = dc.Download(cdnUrl, ii.force, nil, absChunksDownloadsDir, chunkPath); err != nil {
+			return err
+		}
+
+		edca.Increment()
+	}
+
+	return nil
 }

@@ -9,7 +9,7 @@ import (
 type OriginData struct {
 	ProductDetails *vangogh_integration.ProductDetails
 	AppInfoKv      steam_vdf.ValveDataFile
-	GameAsset      *egs_integration.GameAsset
-	GameManifest   *egs_integration.GameManifest
-	Manifest       *egs_integration.Manifest
+	//GameAsset      *egs_integration.GameAsset
+	GameManifest *egs_integration.GameManifest
+	Manifest     *egs_integration.Manifest
 }
