@@ -34,6 +34,7 @@ install
     download-type&={download-types^}
     keep-downloads
     steam
+    epic-games
     no-steam-shortcut
     env&
     verbose
