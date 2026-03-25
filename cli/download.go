@@ -110,6 +110,12 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 			return nil, err
 		}
 	case data.EpicGamesOrigin:
+
+		originData.GameAsset, err = egsGetGameAsset(id, ii)
+		if err != nil {
+			return nil, err
+		}
+
 		return nil, errors.New("not implemented")
 	default:
 		return nil, ii.Origin.ErrUnsupportedOrigin()

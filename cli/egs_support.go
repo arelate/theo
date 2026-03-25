@@ -195,7 +195,7 @@ func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, oper
 		}
 
 		ap := vangogh_integration.AvailableProduct{
-			Id:               catalogItem.Id,
+			Id:               gameAsset.AppName,
 			Title:            catalogItem.Title,
 			OperatingSystems: []vangogh_integration.OperatingSystem{operatingSystem},
 		}
@@ -337,4 +337,37 @@ func egsReadLocalCatalogItem(catalogItemId string, kvCatalogItems kevlar.KeyValu
 	}
 
 	return &catalogItem, nil
+}
+
+func egsGetGameAsset(appName string, ii *InstallInfo) (*egs_integration.GameAsset, error) {
+
+	egga := nod.Begin("getting EGS game asset...")
+	defer egga.Done()
+
+	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
+	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, err
+	}
+
+	egsOsApKey := originAvailableProductsKey(ii.Origin, ii.OperatingSystem)
+
+	if !kvAvailableProducts.Has(egsOsApKey) || ii.force {
+		if err = egsFetchGameAssets(ii); err != nil {
+			return nil, err
+		}
+	}
+
+	gameAssets, err := egsReadLocalGameAssets(ii)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, gameAsset := range gameAssets {
+		if gameAsset.AppName == appName {
+			return &gameAsset, nil
+		}
+	}
+
+	return nil, errors.New("game asset not found for appName " + appName)
 }

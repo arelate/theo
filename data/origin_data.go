@@ -10,4 +10,5 @@ type OriginData struct {
 	ProductDetails *vangogh_integration.ProductDetails
 	AppInfoKv      steam_vdf.ValveDataFile
 	GameAsset      *egs_integration.GameAsset
+	Manifest       *egs_integration.Manifest
 }
