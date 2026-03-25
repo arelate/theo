@@ -173,10 +173,10 @@ func egsGetAvailableProducts(ii *InstallInfo) ([]vangogh_integration.AvailablePr
 		}
 	}
 
-	return egsGameAssetsAvailableProducts(gameAssets, ii.OperatingSystem)
+	return egsGameAssetsAvailableProducts(gameAssets, ii)
 }
 
-func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, operatingSystem vangogh_integration.OperatingSystem) ([]vangogh_integration.AvailableProduct, error) {
+func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, ii *InstallInfo) ([]vangogh_integration.AvailableProduct, error) {
 
 	catalogItemsDir := data.Pwd.AbsRelDirPath(data.CatalogItems, data.Metadata)
 	kvCatalogItems, err := kevlar.New(catalogItemsDir, kevlar.JsonExt)
@@ -186,7 +186,36 @@ func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, oper
 
 	availableProducts := make([]vangogh_integration.AvailableProduct, 0, len(gameAssets))
 
+	var token string
+	var client *http.Client
+
 	for _, gameAsset := range gameAssets {
+
+		if !kvCatalogItems.Has(gameAsset.CatalogItemId) || ii.force {
+
+			if token == "" {
+				token, err = egsGetStoredToken()
+				if err != nil {
+					return nil, err
+				}
+
+				if err = egsVerifyToken(token); err != nil {
+					return nil, err
+				}
+			}
+
+			if client == nil {
+				client, err = egsGetClient()
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			if err = egsFetchCatalogItem(gameAsset.Namespace, gameAsset.CatalogItemId, token, client, kvCatalogItems); err != nil {
+				return nil, err
+			}
+
+		}
 
 		var catalogItem *egs_integration.CatalogItem
 		catalogItem, err = egsReadLocalCatalogItem(gameAsset.CatalogItemId, kvCatalogItems)
@@ -197,7 +226,7 @@ func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, oper
 		ap := vangogh_integration.AvailableProduct{
 			Id:               gameAsset.AppName,
 			Title:            catalogItem.Title,
-			OperatingSystems: []vangogh_integration.OperatingSystem{operatingSystem},
+			OperatingSystems: []vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		}
 
 		availableProducts = append(availableProducts, ap)
@@ -272,17 +301,7 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 		return err
 	}
 
-	if err = kvAvailableProducts.Set(egsOsApKey, buf); err != nil {
-		return err
-	}
-
-	catalogItemsDir := data.Pwd.AbsRelDirPath(data.CatalogItems, data.Metadata)
-	kvCatalogItems, err := kevlar.New(catalogItemsDir, kevlar.JsonExt)
-	if err != nil {
-		return err
-	}
-
-	return egsFetchCatalogItems(ii, gameAssets, token, client, kvCatalogItems)
+	return kvAvailableProducts.Set(egsOsApKey, buf)
 }
 
 func egsFetchCatalogItems(ii *InstallInfo, gameAssets []egs_integration.GameAsset, token string, client *http.Client, kvCatalogItems kevlar.KeyValues) error {
@@ -309,6 +328,9 @@ func egsFetchCatalogItems(ii *InstallInfo, gameAssets []egs_integration.GameAsse
 }
 
 func egsFetchCatalogItem(namespace string, catalogItemId string, token string, client *http.Client, kvCatalogItems kevlar.KeyValues) error {
+
+	efcia := nod.Begin(" fetching catalog item %s...", catalogItemId)
+	defer efcia.Done()
 
 	catalogItem, err := egs_integration.GetCatalogItem(namespace, catalogItemId, token, client)
 	if err != nil {
