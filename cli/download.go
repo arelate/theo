@@ -112,11 +112,13 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 		if originData.GameAsset, err = egsGetGameAsset(id, ii); err != nil {
 			return nil, err
 		}
-		if originData.GameManifest, err = egsGetGameManifest(originData.GameAsset, ii); err != nil {
+		if originData.GameManifest, err = egsGetGameManifest(originData.GameAsset, ii, force); err != nil {
+			return nil, err
+		}
+		if originData.Manifest, err = egsGetManifest(originData.GameAsset.AppName, originData.GameManifest, ii.OperatingSystem, force); err != nil {
 			return nil, err
 		}
 
-		return nil, errors.New("not implemented")
 	default:
 		return nil, ii.Origin.ErrUnsupportedOrigin()
 	}
@@ -228,6 +230,6 @@ func steamDownloadData(steamAppId string, ii *InstallInfo, originData *data.Orig
 	return steamUpdateApp(steamAppId, ii.OperatingSystem, rdx)
 }
 
-func egsDownloadChunks(catalogItemId string, ii *InstallInfo, originData *data.OriginData) error {
-	return nil
+func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginData) error {
+	return errors.New("not implemented")
 }

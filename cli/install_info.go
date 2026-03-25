@@ -108,8 +108,9 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 		}
 	case data.EpicGamesOrigin:
 
-		if originData.GameAsset != nil {
-			ii.Version = originData.GameAsset.BuildVersion
+		if originData.Manifest != nil &&
+			originData.Manifest.Metadata != nil {
+			ii.Version = originData.Manifest.Metadata.BuildVersion
 		}
 
 	default:

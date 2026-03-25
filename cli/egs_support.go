@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/arelate/southern_light/egs_integration"
@@ -189,47 +191,11 @@ func egsGameAssetsAvailableProducts(gameAssets []egs_integration.GameAsset, ii *
 		return nil, err
 	}
 
-	catalogItemsDir := data.Pwd.AbsRelDirPath(data.CatalogItems, data.Metadata)
-	kvCatalogItems, err := kevlar.New(catalogItemsDir, kevlar.JsonExt)
-	if err != nil {
-		return nil, err
-	}
-
 	availableProducts := make([]vangogh_integration.AvailableProduct, 0, len(gameAssets))
-
-	var token string
-	var client *http.Client
 
 	for _, gameAsset := range gameAssets {
 
-		if !kvCatalogItems.Has(gameAsset.CatalogItemId) || ii.force {
-
-			if token == "" {
-				token, err = egsGetStoredToken()
-				if err != nil {
-					return nil, err
-				}
-
-				if err = egsVerifyToken(token); err != nil {
-					return nil, err
-				}
-			}
-
-			if client == nil {
-				client, err = egsGetClient()
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			if err = egsFetchCatalogItem(gameAsset.Namespace, gameAsset.CatalogItemId, token, client, kvCatalogItems); err != nil {
-				return nil, err
-			}
-
-		}
-
-		var catalogItem *egs_integration.CatalogItem
-		catalogItem, err = egsReadLocalCatalogItem(gameAsset.CatalogItemId, kvCatalogItems)
+		catalogItem, err := egsGetCatalogItem(&gameAsset, ii)
 		if err != nil {
 			return nil, err
 		}
@@ -323,40 +289,55 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 	return kvAvailableProducts.Set(egsOsApKey, buf)
 }
 
-func egsFetchCatalogItems(ii *InstallInfo, gameAssets []egs_integration.GameAsset, token string, client *http.Client, kvCatalogItems kevlar.KeyValues) error {
+func egsGetCatalogItem(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (*egs_integration.CatalogItem, error) {
 
-	efcia := nod.NewProgress(" fetching EGS catalog items...")
+	catalogItemsDir := data.Pwd.AbsRelDirPath(data.CatalogItems, data.Metadata)
+	kvCatalogItems, err := kevlar.New(catalogItemsDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, err
+	}
+
+	if !kvCatalogItems.Has(gameAsset.CatalogItemId) || ii.force {
+
+		if err = egsFetchCatalogItem(gameAsset, kvCatalogItems); err != nil {
+			return nil, err
+		}
+	}
+
+	rcCatalogItem, err := kvCatalogItems.Get(gameAsset.CatalogItemId)
+	if err != nil {
+		return nil, err
+	}
+	defer rcCatalogItem.Close()
+
+	var catalogItem egs_integration.CatalogItem
+	if err = json.UnmarshalRead(rcCatalogItem, &catalogItem); err != nil {
+		return nil, err
+	}
+
+	return &catalogItem, nil
+}
+
+func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems kevlar.KeyValues) error {
+
+	efcia := nod.Begin(" fetching catalog item %s...", gameAsset.CatalogItemId)
 	defer efcia.Done()
 
-	if err := egsValidateSupportedPlatform(ii); err != nil {
+	token, err := egsGetStoredToken()
+	if err != nil {
 		return err
 	}
 
-	efcia.TotalInt(len(gameAssets))
-
-	for _, gameAsset := range gameAssets {
-
-		if kvCatalogItems.Has(gameAsset.CatalogItemId) && !ii.force {
-			efcia.Increment()
-			continue
-		}
-
-		if err := egsFetchCatalogItem(gameAsset.Namespace, gameAsset.CatalogItemId, token, client, kvCatalogItems); err != nil {
-			return err
-		}
-
-		efcia.Increment()
+	if err = egsVerifyToken(token); err != nil {
+		return err
 	}
 
-	return nil
-}
+	client, err := egsGetClient()
+	if err != nil {
+		return err
+	}
 
-func egsFetchCatalogItem(namespace string, catalogItemId string, token string, client *http.Client, kvCatalogItems kevlar.KeyValues) error {
-
-	efcia := nod.Begin(" fetching catalog item %s...", catalogItemId)
-	defer efcia.Done()
-
-	catalogItem, err := egs_integration.GetCatalogItem(namespace, catalogItemId, token, client)
+	catalogItem, err := egs_integration.GetCatalogItem(gameAsset.Namespace, gameAsset.CatalogItemId, token, client)
 	if err != nil {
 		return err
 	}
@@ -366,7 +347,7 @@ func egsFetchCatalogItem(namespace string, catalogItemId string, token string, c
 		return err
 	}
 
-	return kvCatalogItems.Set(catalogItemId, buf)
+	return kvCatalogItems.Set(gameAsset.CatalogItemId, buf)
 }
 
 func egsReadLocalCatalogItem(catalogItemId string, kvCatalogItems kevlar.KeyValues) (*egs_integration.CatalogItem, error) {
@@ -422,7 +403,7 @@ func egsGetGameAsset(appName string, ii *InstallInfo) (*egs_integration.GameAsse
 	return nil, errors.New("game asset not found for appName " + appName)
 }
 
-func egsGetGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (*egs_integration.GameManifest, error) {
+func egsGetGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo, force bool) (*egs_integration.GameManifest, error) {
 
 	eggma := nod.Begin("getting EGS game manifest...")
 	defer eggma.Done()
@@ -439,8 +420,8 @@ func egsGetGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (
 
 	osAppNameKey := fmt.Sprintf("%s-%s", gameAsset.AppName, ii.OperatingSystem)
 
-	if !kvGameManifests.Has(osAppNameKey) || ii.force {
-		if err = egsFetchGameManifest(gameAsset, ii, kvGameManifests); err != nil {
+	if !kvGameManifests.Has(osAppNameKey) || force {
+		if err = egsFetchGameManifest(osAppNameKey, gameAsset, ii.OperatingSystem, kvGameManifests); err != nil {
 			return nil, err
 		}
 	}
@@ -459,9 +440,9 @@ func egsGetGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo) (
 	return &gameManifest, nil
 }
 
-func egsFetchGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo, kvGameManifests kevlar.KeyValues) error {
+func egsFetchGameManifest(key string, gameAsset *egs_integration.GameAsset, operatingSystem vangogh_integration.OperatingSystem, kvGameManifests kevlar.KeyValues) error {
 
-	efgma := nod.Begin(" fetching game manifest %s-%s...", gameAsset.AppName, ii.OperatingSystem)
+	efgma := nod.Begin(" fetching game manifest %s...", key)
 	defer efgma.Done()
 
 	token, err := egsGetStoredToken()
@@ -482,7 +463,7 @@ func egsFetchGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo,
 		gameAsset.Namespace,
 		gameAsset.CatalogItemId,
 		gameAsset.AppName,
-		egs_integration.Platform(ii.OperatingSystem),
+		egs_integration.Platform(operatingSystem),
 		token, client)
 	if err != nil {
 		return err
@@ -493,7 +474,86 @@ func egsFetchGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo,
 		return err
 	}
 
-	osAppNameKey := fmt.Sprintf("%s-%s", gameAsset.AppName, ii.OperatingSystem)
+	return kvGameManifests.Set(key, buf)
+}
 
-	return kvGameManifests.Set(osAppNameKey, buf)
+func egsGetManifest(appName string, gameManifest *egs_integration.GameManifest, operatingSystem vangogh_integration.OperatingSystem, force bool) (*egs_integration.Manifest, error) {
+
+	egma := nod.Begin("getting EGS manifest...")
+	defer egma.Done()
+
+	manifestsDir := data.Pwd.AbsRelDirPath(data.Manifests, data.Metadata)
+	kvManifests, err := kevlar.New(manifestsDir, egs_integration.ManifestExt)
+	if err != nil {
+		return nil, err
+	}
+
+	osAppNameKey := fmt.Sprintf("%s-%s", appName, operatingSystem)
+
+	if !kvManifests.Has(osAppNameKey) || force {
+		if err = egsFetchManifests(osAppNameKey, gameManifest, kvManifests); err != nil {
+			return nil, err
+		}
+	}
+
+	absManifestFilename := filepath.Join(manifestsDir, osAppNameKey+egs_integration.ManifestExt)
+
+	manifestFile, err := os.Open(absManifestFilename)
+	if err != nil {
+		return nil, err
+	}
+	defer manifestFile.Close()
+
+	return egs_integration.ReadBinaryManifest(manifestFile)
+}
+
+func egsFetchManifests(key string, gameManifest *egs_integration.GameManifest, kvManifests kevlar.KeyValues) error {
+
+	efma := nod.Begin(" fetching manifests for %s...", key)
+	defer efma.Done()
+
+	manifestUrls, err := gameManifest.Urls()
+	if err != nil {
+		return err
+	}
+
+	client, err := egsGetClient()
+	if err != nil {
+		return err
+	}
+
+	var downloaded bool
+
+	for _, manifestUrl := range manifestUrls {
+		if err = egsFetchManifest(key, manifestUrl, client, kvManifests); err == nil {
+			downloaded = true
+			break
+		}
+	}
+
+	if !downloaded {
+		return errors.New("unable to successfully download at least one manifest")
+	}
+
+	return nil
+}
+
+func egsFetchManifest(key string, manifestUrl *url.URL, client *http.Client, kvManifests kevlar.KeyValues) error {
+
+	req, err := http.NewRequest(http.MethodGet, manifestUrl.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.New(resp.Status)
+	}
+
+	return kvManifests.Set(key, resp.Body)
 }

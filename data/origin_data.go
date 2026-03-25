@@ -11,4 +11,5 @@ type OriginData struct {
 	AppInfoKv      steam_vdf.ValveDataFile
 	GameAsset      *egs_integration.GameAsset
 	GameManifest   *egs_integration.GameManifest
+	Manifest       *egs_integration.Manifest
 }
