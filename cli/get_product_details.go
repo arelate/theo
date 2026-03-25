@@ -27,11 +27,12 @@ func getProductDetails(id string, rdx redux.Writeable, force bool) (*vangogh_int
 		return nil, err
 	}
 
-	if dm, err := readLocalProductDetails(id, kvProductDetails); err != nil {
+	var pd *vangogh_integration.ProductDetails
+	if pd, err = readLocalProductDetails(id, kvProductDetails); err != nil {
 		return nil, err
-	} else if dm != nil && !force {
+	} else if pd != nil && !force {
 		gpda.EndWithResult("read local")
-		return dm, nil
+		return pd, nil
 	}
 
 	if err = vangoghValidateSessionToken(rdx); err != nil {

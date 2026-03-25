@@ -47,7 +47,7 @@ func steamFetchAppInfo(steamAppId string, kvSteamAppInfo kevlar.KeyValues, rdx r
 	defer scaia.Done()
 
 	if kvSteamAppInfo.Has(steamAppId) && !force {
-		scaia.EndWithResult("already exist")
+		scaia.EndWithResult("read local")
 		return nil
 	}
 
@@ -120,7 +120,45 @@ func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
-	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername)
+	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername, false)
+}
+
+func steamValidateApp(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
+
+	var steamAppName string
+	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
+		steamAppName = san
+	} else {
+		return errors.New("cannot resolve Steam app title")
+	}
+
+	var steamUsername string
+	if sun, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && sun != "" {
+		steamUsername = sun
+	} else {
+		return errors.New("cannot resolve Steam username")
+	}
+
+	scaua := nod.Begin("updating and verifying %s (%s) for %s with SteamCMD, please wait...", steamAppName, steamAppId, operatingSystem)
+	defer scaua.Done()
+
+	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, operatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(steamAppInstallDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(steamAppInstallDir, 0755); err != nil {
+			return err
+		}
+	}
+
+	absSteamCmdPath, err := data.AbsSteamCmdBinPath(data.CurrentOs())
+	if err != nil {
+		return err
+	}
+
+	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername, true)
 }
 
 func steamReduceAppInfo(steamAppId string, appInfoKv steam_vdf.ValveDataFile, rdx redux.Writeable) error {

@@ -82,11 +82,6 @@ func Install(id string, ii *InstallInfo) error {
 		ii.DownloadTypes,
 		true)
 
-	originData, err := originGetData(id, ii, rdx)
-	if err != nil {
-		return err
-	}
-
 	// don't check existing installations for DLCs, Extras
 	if slices.Contains(ii.DownloadTypes, vangogh_integration.Installer) && !ii.force {
 		var ok bool
@@ -102,7 +97,12 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if err = Download(id, ii); err != nil {
+	originData, err := originGetData(id, ii, rdx, true)
+	if err != nil {
+		return err
+	}
+
+	if err = Download(id, ii, originData); err != nil {
 		return err
 	}
 
@@ -138,19 +138,19 @@ func Install(id string, ii *InstallInfo) error {
 	return nil
 }
 
-func originGetData(id string, ii *InstallInfo, rdx redux.Writeable) (*data.OriginData, error) {
+func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) (*data.OriginData, error) {
 
 	originData := new(data.OriginData)
 	var err error
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		originData.ProductDetails, err = getProductDetails(id, rdx, true)
+		originData.ProductDetails, err = getProductDetails(id, rdx, force)
 		if err != nil {
 			return nil, err
 		}
 	case data.SteamOrigin:
-		originData.AppInfoKv, err = steamGetAppInfoKv(id, rdx, true)
+		originData.AppInfoKv, err = steamGetAppInfoKv(id, rdx, force)
 		if err != nil {
 			return nil, err
 		}

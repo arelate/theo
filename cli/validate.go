@@ -66,10 +66,19 @@ func ValidateHandler(u *url.URL) error {
 	}
 
 	ii := &InstallInfo{
+		Origin:          data.VangoghOrigin,
 		OperatingSystem: os,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
 		force:           q.Has("force"),
+	}
+
+	if q.Has("steam") {
+		ii.Origin = data.SteamOrigin
+	}
+
+	if q.Has("epic-games") {
+		ii.Origin = data.EpicGamesOrigin
 	}
 
 	var manualUrlFilter []string
@@ -84,7 +93,7 @@ func Validate(id string,
 	ii *InstallInfo,
 	manualUrlFilter ...string) error {
 
-	va := nod.NewProgress("validating downloads...")
+	va := nod.Begin("validating %s: %s...", ii.Origin, id)
 	defer va.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -92,10 +101,28 @@ func Validate(id string,
 		return err
 	}
 
-	productDetails, err := getProductDetails(id, rdx, ii.force)
+	originData, err := originGetData(id, ii, rdx, false)
 	if err != nil {
 		return err
 	}
+
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		return vangoghValidateData(id, ii, originData, rdx, manualUrlFilter...)
+	case data.SteamOrigin:
+		return steamValidateData(id, ii, rdx)
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
+	}
+}
+
+func steamValidateData(steamAppId string, ii *InstallInfo, rdx redux.Readable) error {
+	return steamUpdateApp(steamAppId, ii.OperatingSystem, rdx)
+}
+
+func vangoghValidateData(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable, manualUrlFilter ...string) error {
+	va := nod.NewProgress("validating downloads...")
+	defer va.Done()
 
 	manualUrlChecksums, err := getManualUrlChecksums(id, rdx, ii.force)
 	if err != nil {
@@ -103,7 +130,7 @@ func Validate(id string,
 	}
 
 	var mismatchedManualUrls []string
-	if mismatchedManualUrls, err = validateLinks(id, ii, manualUrlFilter, productDetails, manualUrlChecksums); err != nil {
+	if mismatchedManualUrls, err = vangoghValidateLinks(id, ii, manualUrlFilter, originData.ProductDetails, manualUrlChecksums); err != nil {
 		return err
 	} else if len(mismatchedManualUrls) > 0 {
 
@@ -111,11 +138,11 @@ func Validate(id string,
 
 		ii.force = true
 
-		if err = Download(id, ii, mismatchedManualUrls...); err != nil {
+		if err = Download(id, ii, nil, mismatchedManualUrls...); err != nil {
 			return err
 		}
 
-		if _, err = validateLinks(id, ii, manualUrlFilter, productDetails, manualUrlChecksums); err != nil {
+		if _, err = vangoghValidateLinks(id, ii, manualUrlFilter, originData.ProductDetails, manualUrlChecksums); err != nil {
 			return err
 		}
 	}
@@ -123,7 +150,7 @@ func Validate(id string,
 	return nil
 }
 
-func validateLinks(id string,
+func vangoghValidateLinks(id string,
 	ii *InstallInfo,
 	manualUrlFilter []string,
 	productDetails *vangogh_integration.ProductDetails,
@@ -154,7 +181,7 @@ func validateLinks(id string,
 			continue
 		}
 
-		vr, err := validateLink(id, &dl, manualUrlChecksums[dl.ManualUrl], downloadsDir)
+		vr, err := vangoghValidateLink(id, &dl, manualUrlChecksums[dl.ManualUrl], downloadsDir)
 		if err != nil {
 			vla.Error(err)
 		}
@@ -171,7 +198,7 @@ func validateLinks(id string,
 	return mismatchedManualUrls, nil
 }
 
-func validateLink(id string, link *vangogh_integration.ProductDownloadLink, manualUrlMd5 string, downloadsDir string) (ValidationResult, error) {
+func vangoghValidateLink(id string, link *vangogh_integration.ProductDownloadLink, manualUrlMd5 string, downloadsDir string) (ValidationResult, error) {
 
 	dla := nod.NewProgress(" - %s...", link.LocalFilename)
 	defer dla.Done()

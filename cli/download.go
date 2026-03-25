@@ -57,11 +57,12 @@ func DownloadHandler(u *url.URL) error {
 		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
 	}
 
-	return Download(id, ii, manualUrlFilter...)
+	return Download(id, ii, nil, manualUrlFilter...)
 }
 
 func Download(id string,
 	ii *InstallInfo,
+	originData *data.OriginData,
 	manualUrlFilter ...string) error {
 
 	da := nod.NewProgress("downloading product data...")
@@ -78,9 +79,11 @@ func Download(id string,
 		ii.DownloadTypes,
 		true)
 
-	originData, err := originGetData(id, ii, rdx)
-	if err != nil {
-		return err
+	if originData == nil {
+		originData, err = originGetData(id, ii, rdx, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err = originDownloadData(id, ii, originData, manualUrlFilter, rdx); err != nil {
