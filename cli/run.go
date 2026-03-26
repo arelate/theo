@@ -659,9 +659,15 @@ func egsRun(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.W
 		return err
 	}
 
+	absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
+	if err != nil {
+		return err
+	}
+
 	launchDir, launchFile := filepath.Split(originData.Manifest.Metadata.LaunchExe)
 
 	et.title = launchFile
+	et.prefix = absPrefixDir
 	et.exe = filepath.Join(installedPath, originData.Manifest.Metadata.LaunchExe)
 	et.workDir = filepath.Join(installedPath, launchDir)
 

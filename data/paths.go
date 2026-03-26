@@ -49,6 +49,7 @@ const (
 	BinUnpacks         pathways.RelDir = "_binaries"            // Wine, SteamCmd
 	Prefixes           pathways.RelDir = "_prefixes"            // Wine
 	SteamPrefixes      pathways.RelDir = "_steam-prefixes"      // Wine
+	EgsPrefixes        pathways.RelDir = "_egs-prefixes"        // Wine
 	UmuConfigs         pathways.RelDir = "_umu-configs"         // Wine
 )
 
@@ -103,6 +104,7 @@ func InitPathways() error {
 		BinDownloads:       {Wine, SteamCmd},
 		Prefixes:           {Wine},
 		SteamPrefixes:      {Wine},
+		EgsPrefixes:        {Wine},
 		UmuConfigs:         {Wine},
 	} {
 		for _, ad := range ads {
@@ -142,10 +144,12 @@ func AbsPrefixDir(id string, origin Origin, rdx redux.Readable) (string, error) 
 
 	var prefixesDir string
 	switch origin {
-	case SteamOrigin:
-		prefixesDir = Pwd.AbsRelDirPath(SteamPrefixes, Wine)
 	case VangoghOrigin:
 		prefixesDir = Pwd.AbsRelDirPath(Prefixes, Wine)
+	case SteamOrigin:
+		prefixesDir = Pwd.AbsRelDirPath(SteamPrefixes, Wine)
+	case EpicGamesOrigin:
+		prefixesDir = Pwd.AbsRelDirPath(EgsPrefixes, Wine)
 	default:
 		return "", origin.ErrUnsupportedOrigin()
 	}
