@@ -16,7 +16,6 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
 )
@@ -109,16 +108,25 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 		return err
 	}
 
+	originData, err := originGetData(id, ii, rdx, false)
+	if err != nil {
+		return err
+	}
+
 	switch ii.Origin {
 	case data.VangoghOrigin:
 		if err = checkProductType(id, rdx, ii.force); err != nil {
 			return err
 		}
-		if err = osRun(id, ii, rdx, et); err != nil {
+		if err = vangoghRun(id, ii, rdx, et); err != nil {
 			return err
 		}
 	case data.SteamOrigin:
-		if err = steamRun(id, ii, rdx, et); err != nil {
+		if err = steamRun(id, ii, originData, rdx, et); err != nil {
+			return err
+		}
+	case data.EpicGamesOrigin:
+		if err = egsRun(id, ii, originData, rdx, et); err != nil {
 			return err
 		}
 	default:
@@ -211,7 +219,7 @@ func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) e
 	return nil
 }
 
-func osRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
+func vangoghRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
 
 	var err error
 	if err = osConfirmRunnability(ii.OperatingSystem); err != nil {
@@ -450,30 +458,15 @@ func windowsToNixPath(wp string) string {
 	return strings.Replace(wp, "\\", "/", -1)
 }
 
-func steamRun(steamAppId string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
+func steamRun(steamAppId string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable, et *execTask) error {
 
-	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
-	kvSteamAppInfo, err := kevlar.New(steamAppInfoDir, steam_vdf.Ext)
-	if err != nil {
-		return err
-	}
-
-	appInfoRc, err := kvSteamAppInfo.Get(steamAppId)
-	if err != nil {
-		return err
-	}
-	defer appInfoRc.Close()
-
-	appInfoKv, err := steam_vdf.ReadText(appInfoRc)
-	if err != nil {
-		return err
-	}
+	var err error
 
 	switch et.task {
 	case "":
-		et, err = steamDefaultTask(steamAppId, appInfoKv, ii, rdx)
+		et, err = steamDefaultTask(steamAppId, originData.AppInfoKv, ii, rdx)
 	default:
-		et, err = steamNamedTask(steamAppId, et.task, appInfoKv, ii, rdx)
+		et, err = steamNamedTask(steamAppId, et.task, originData.AppInfoKv, ii, rdx)
 	}
 
 	if err != nil {
@@ -657,4 +650,20 @@ func steamNamedTask(steamAppId, task string, appInfoKv steam_vdf.ValveDataFile, 
 	}
 
 	return nil, errors.New("named steam launch config not found for " + steamAppId)
+}
+
+func egsRun(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable, et *execTask) error {
+
+	installedPath, err := originOsInstalledPath(id, ii, rdx)
+	if err != nil {
+		return err
+	}
+
+	launchDir, launchFile := filepath.Split(originData.Manifest.Metadata.LaunchExe)
+
+	et.title = launchFile
+	et.exe = filepath.Join(installedPath, originData.Manifest.Metadata.LaunchExe)
+	et.workDir = filepath.Join(installedPath, launchDir)
+
+	return osExec(id, ii.OperatingSystem, et)
 }
