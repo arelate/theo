@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -122,7 +123,10 @@ func listAvailableProducts(ii *InstallInfo) error {
 	case data.VangoghOrigin:
 		availableProducts, err = vangoghGetAvailableProducts(ii.force)
 	case data.EpicGamesOrigin:
-		availableProducts, err = egsGetAvailableProducts(ii, rdx)
+		var osGameAssets map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset
+		osGameAssets, err = egsGetGameAssets(ii.force)
+
+		availableProducts, err = egsGameAssetsAvailableProducts(osGameAssets, ii, rdx)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}

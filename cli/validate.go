@@ -276,10 +276,6 @@ func egsValidateChunks(appName string, ii *InstallInfo, originData *data.OriginD
 	evca := nod.NewProgress("validating EGS chunks for %s-%s...", appName, ii.OperatingSystem)
 	defer evca.Done()
 
-	if err := egsValidateSupportedPlatform(ii); err != nil {
-		return err
-	}
-
 	evca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
 
 	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)

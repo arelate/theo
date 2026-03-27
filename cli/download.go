@@ -112,6 +112,10 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 		}
 	case data.EpicGamesOrigin:
 
+		if err = egsValidateSupportedPlatform(ii); err != nil {
+			return nil, err
+		}
+
 		var gameAsset *egs_integration.GameAsset
 		if gameAsset, err = egsGetGameAsset(id, ii); err != nil {
 			return nil, err

@@ -200,7 +200,27 @@ func egsValidateSupportedPlatform(ii *InstallInfo) error {
 	}
 }
 
-func egsGetAvailableProducts(ii *InstallInfo, rdx redux.Writeable) ([]vangogh_integration.AvailableProduct, error) {
+func egsGameAssetOperatingSystems(appName string, force bool) ([]vangogh_integration.OperatingSystem, error) {
+
+	osGameAssets, err := egsGetGameAssets(force)
+	if err != nil {
+		return nil, err
+	}
+
+	operatingSystems := make([]vangogh_integration.OperatingSystem, 0, 2)
+
+	for sos, gameAssets := range osGameAssets {
+		for _, gameAsset := range gameAssets {
+			if gameAsset.AppName == appName {
+				operatingSystems = append(operatingSystems, sos)
+			}
+		}
+	}
+
+	return operatingSystems, nil
+}
+
+func egsGetGameAssets(force bool) (map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset, error) {
 
 	osGameAssets := make(map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset)
 
@@ -210,8 +230,8 @@ func egsGetAvailableProducts(ii *InstallInfo, rdx redux.Writeable) ([]vangogh_in
 			return nil, err
 		}
 
-		if len(gameAssets) == 0 || ii.force {
-			if err = egsFetchGameAssets(ii); err != nil {
+		if len(gameAssets) == 0 || force {
+			if err = egsFetchGameAssets(sos); err != nil {
 				return nil, err
 			}
 
@@ -224,7 +244,7 @@ func egsGetAvailableProducts(ii *InstallInfo, rdx redux.Writeable) ([]vangogh_in
 		osGameAssets[sos] = gameAssets
 	}
 
-	return egsGameAssetsAvailableProducts(osGameAssets, ii, rdx)
+	return osGameAssets, nil
 }
 
 func availableProductIndex(appName string, availableProducts []vangogh_integration.AvailableProduct) int {
@@ -236,17 +256,14 @@ func availableProductIndex(appName string, availableProducts []vangogh_integrati
 	return -1
 }
 
-func egsGameAssetsAvailableProducts(osGameAssets map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset,
+func egsGameAssetsAvailableProducts(
+	osGameAssets map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset,
 	ii *InstallInfo,
 	rdx redux.Writeable) ([]vangogh_integration.AvailableProduct, error) {
 
 	availableProducts := make([]vangogh_integration.AvailableProduct, 0)
 
 	for operatingSystem, gameAssets := range osGameAssets {
-
-		if ii.OperatingSystem != vangogh_integration.AnyOperatingSystem && ii.OperatingSystem != operatingSystem {
-			continue
-		}
 
 		for _, gameAsset := range gameAssets {
 
@@ -263,9 +280,20 @@ func egsGameAssetsAvailableProducts(osGameAssets map[vangogh_integration.Operati
 					Title:            catalogItem.Title,
 					OperatingSystems: []vangogh_integration.OperatingSystem{operatingSystem},
 				}
+
 				availableProducts = append(availableProducts, ap)
 			}
 		}
+	}
+
+	if ii.OperatingSystem != vangogh_integration.AnyOperatingSystem {
+		osAvailableProducts := make([]vangogh_integration.AvailableProduct, 0, len(availableProducts))
+		for _, ap := range availableProducts {
+			if slices.Contains(ap.OperatingSystems, ii.OperatingSystem) {
+				osAvailableProducts = append(osAvailableProducts, ap)
+			}
+		}
+		availableProducts = osAvailableProducts
 	}
 
 	return availableProducts, nil
@@ -303,16 +331,12 @@ func egsReadLocalGameAssets(operatingSystem vangogh_integration.OperatingSystem)
 	return gameAssets, nil
 }
 
-func egsFetchGameAssets(ii *InstallInfo) error {
+func egsFetchGameAssets(operatingSystem vangogh_integration.OperatingSystem) error {
 
 	efapa := nod.Begin(" fetching EGS game assets...")
 	defer efapa.Done()
 
 	var err error
-
-	if err = egsValidateSupportedPlatform(ii); err != nil {
-		return err
-	}
 
 	var client *http.Client
 	if client, err = egsGetClient(); err != nil {
@@ -328,7 +352,7 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 		return err
 	}
 
-	gameAssets, err := egs_integration.GetGameAssets(egs_integration.Platform(ii.OperatingSystem), ptr.AccessToken, client)
+	gameAssets, err := egs_integration.GetGameAssets(egs_integration.Platform(operatingSystem), ptr.AccessToken, client)
 	if err != nil {
 		return err
 	}
@@ -338,7 +362,7 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 		return err
 	}
 
-	egsOsApKey := originAvailableProductsKey(ii.Origin, ii.OperatingSystem)
+	egsOsApKey := originAvailableProductsKey(data.EpicGamesOrigin, operatingSystem)
 
 	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
 	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
@@ -364,18 +388,7 @@ func egsGetCatalogItem(gameAsset *egs_integration.GameAsset, ii *InstallInfo, rd
 		}
 	}
 
-	rcCatalogItem, err := kvCatalogItems.Get(gameAsset.CatalogItemId)
-	if err != nil {
-		return nil, err
-	}
-	defer rcCatalogItem.Close()
-
-	var catalogItem egs_integration.CatalogItem
-	if err = json.UnmarshalRead(rcCatalogItem, &catalogItem); err != nil {
-		return nil, err
-	}
-
-	return &catalogItem, nil
+	return egsReadLocalCatalogItem(gameAsset.CatalogItemId, kvCatalogItems)
 }
 
 func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems kevlar.KeyValues, rdx redux.Writeable) error {
@@ -435,32 +448,19 @@ func egsGetGameAsset(appName string, ii *InstallInfo) (*egs_integration.GameAsse
 	egga := nod.Begin("getting EGS game asset...")
 	defer egga.Done()
 
-	if err := egsValidateSupportedPlatform(ii); err != nil {
-		return nil, err
-	}
-
-	availableProductsDir := data.Pwd.AbsRelDirPath(data.AvailableProducts, data.Metadata)
-	kvAvailableProducts, err := kevlar.New(availableProductsDir, kevlar.JsonExt)
+	osGameAssets, err := egsGetGameAssets(ii.force)
 	if err != nil {
 		return nil, err
 	}
 
-	egsOsApKey := originAvailableProductsKey(ii.Origin, ii.OperatingSystem)
-
-	if !kvAvailableProducts.Has(egsOsApKey) || ii.force {
-		if err = egsFetchGameAssets(ii); err != nil {
-			return nil, err
+	for sos, gameAssets := range osGameAssets {
+		if ii.OperatingSystem != vangogh_integration.AnyOperatingSystem && ii.OperatingSystem != sos {
+			continue
 		}
-	}
-
-	gameAssets, err := egsReadLocalGameAssets(ii.OperatingSystem)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, gameAsset := range gameAssets {
-		if gameAsset.AppName == appName {
-			return &gameAsset, nil
+		for _, gameAsset := range gameAssets {
+			if gameAsset.AppName == appName {
+				return &gameAsset, nil
+			}
 		}
 	}
 
