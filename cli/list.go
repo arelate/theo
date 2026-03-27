@@ -110,8 +110,6 @@ func listAvailableProducts(ii *InstallInfo) error {
 	lapa := nod.Begin("listing available products...")
 	defer lapa.Done()
 
-	setInstallInfoDefaults(ii, []vangogh_integration.OperatingSystem{vangogh_integration.Windows, vangogh_integration.MacOS})
-
 	var availableProducts []vangogh_integration.AvailableProduct
 	var err error
 
