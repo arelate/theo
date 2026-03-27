@@ -189,17 +189,6 @@ func egsVerifyToken() error {
 	return nil
 }
 
-func egsValidateSupportedPlatform(ii *InstallInfo) error {
-	switch ii.OperatingSystem {
-	case vangogh_integration.AnyOperatingSystem:
-		return errors.New("EGS operations require specific operating system")
-	case vangogh_integration.Linux:
-		return errors.New("EGS does not support Linux")
-	default:
-		return nil
-	}
-}
-
 func egsGameAssetOperatingSystems(appName string, force bool) ([]vangogh_integration.OperatingSystem, error) {
 
 	osGameAssets, err := egsGetGameAssets(force)
@@ -207,7 +196,7 @@ func egsGameAssetOperatingSystems(appName string, force bool) ([]vangogh_integra
 		return nil, err
 	}
 
-	operatingSystems := make([]vangogh_integration.OperatingSystem, 0, 2)
+	operatingSystems := make([]vangogh_integration.OperatingSystem, 0)
 
 	for sos, gameAssets := range osGameAssets {
 		for _, gameAsset := range gameAssets {
@@ -472,9 +461,9 @@ func egsGetGameManifest(gameAsset *egs_integration.GameAsset, ii *InstallInfo, f
 	eggma := nod.Begin("getting EGS game manifest...")
 	defer eggma.Done()
 
-	if err := egsValidateSupportedPlatform(ii); err != nil {
-		return nil, err
-	}
+	//if err := egsValidateSupportedPlatform(ii); err != nil {
+	//	return nil, err
+	//}
 
 	gameManifestsDir := data.Pwd.AbsRelDirPath(data.GameManifests, data.Metadata)
 	kvGameManifests, err := kevlar.New(gameManifestsDir, kevlar.JsonExt)
