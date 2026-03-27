@@ -278,15 +278,13 @@ func egsSetupConnection(cookieStr string, reset bool) error {
 		}
 	}
 
-	var accessToken string
-
 	if cookieStr != "" {
-		if accessToken, err = egsGetAccessToken(cookieStr); err != nil {
+		if err = egsGetAccessToken(cookieStr); err != nil {
 			return err
 		}
 	}
 
-	return egsVerifyToken(accessToken)
+	return egsVerifyToken()
 }
 
 func egsResetConnection() error {

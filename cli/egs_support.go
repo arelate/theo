@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
@@ -36,7 +37,7 @@ func egsGetClient() (*http.Client, error) {
 	return client, nil
 }
 
-func egsGetAccessToken(cookieStr string) (string, error) {
+func egsGetAccessToken(cookieStr string) error {
 
 	eggata := nod.Begin("getting EGS access token...")
 	defer eggata.Done()
@@ -47,70 +48,109 @@ func egsGetAccessToken(cookieStr string) (string, error) {
 	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
 	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	if err = coost.Import(cookieStr, egs_integration.HostUrl(), egsCookiePath); err != nil {
-		return "", err
+		return err
 	}
 
 	if kvTokens.Has(egsTokenKey) {
 		if err = kvTokens.Cut(egsTokenKey); err != nil {
-			return "", err
+			return err
 		}
 	}
 
 	var client *http.Client
 	client, err = egsGetClient()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	var arr *egs_integration.GetApiRedirectResponse
 	arr, err = egs_integration.GetApiRedirect(client)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	var ptr *egs_integration.PostTokenResponse
-	ptr, err = egs_integration.PostToken(arr.AuthorizationCode, egs_integration.GrantTypeAuthorizationCode, client)
-	if err != nil {
-		return "", err
-	}
-
-	if ptr.AccessToken == "" {
-		return "", errors.New("failed to get EGS access token")
-	}
-
-	return ptr.AccessToken, nil
+	return egsPostToken(arr.AuthorizationCode, egs_integration.GrantTypeAuthorizationCode)
 }
 
-func egsGetStoredToken() (string, error) {
+func egsRefreshToken() error {
+	erta := nod.Begin("refreshing EGS token...")
+	defer erta.Done()
 
-	eggsvta := nod.Begin("getting stored EGS token...")
-	defer eggsvta.Done()
+	ptr, err := egsGetStoredPostTokenResponse()
+	if err != nil {
+		return err
+	}
+
+	if ptr.RefreshToken == "" {
+		return errors.New("refresh token not present")
+	}
+
+	return egsPostToken(ptr.RefreshToken, egs_integration.GrantTypeRefreshToken)
+}
+
+func egsPostToken(token string, grantType egs_integration.GrantType) error {
+
+	var err error
+
+	var client *http.Client
+	client, err = egsGetClient()
+	if err != nil {
+		return err
+	}
 
 	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
 	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
 	if err != nil {
-		return "", err
+		return err
+	}
+
+	var ptr *egs_integration.PostTokenResponse
+	ptr, err = egs_integration.PostToken(token, grantType, client)
+	if err != nil {
+		return err
+	}
+
+	if ptr.AccessToken == "" {
+		return errors.New("failed to get EGS access token")
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err = json.MarshalWrite(buf, &ptr); err != nil {
+		return err
+	}
+
+	return kvTokens.Set(egsTokenKey, buf)
+}
+
+func egsGetStoredPostTokenResponse() (*egs_integration.PostTokenResponse, error) {
+	egsptr := nod.Begin("getting stored EGS post token response...")
+	defer egsptr.Done()
+
+	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
+	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
+	if err != nil {
+		return nil, err
 	}
 
 	var rcEgsToken io.ReadCloser
 	rcEgsToken, err = kvTokens.Get(egsTokenKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var gvt egs_integration.GetVerifyTokenResponse
-	if err = json.UnmarshalRead(rcEgsToken, &gvt); err != nil {
-		return "", err
+	var ptr egs_integration.PostTokenResponse
+	if err = json.UnmarshalRead(rcEgsToken, &ptr); err != nil {
+		return nil, err
 	}
 
-	return gvt.Token, nil
+	return &ptr, nil
 }
 
-func egsVerifyToken(token string) error {
+func egsVerifyToken() error {
 
 	gvta := nod.Begin("verifying EGS token...")
 	defer gvta.Done()
@@ -120,34 +160,32 @@ func egsVerifyToken(token string) error {
 		return err
 	}
 
-	tokensDir := data.Pwd.AbsRelDirPath(data.Tokens, data.Metadata)
-	kvTokens, err := kevlar.New(tokensDir, kevlar.JsonExt)
-	if err != nil {
+	var ptr *egs_integration.PostTokenResponse
+	if ptr, err = egsGetStoredPostTokenResponse(); err != nil {
 		return err
 	}
 
-	if token == "" {
-		if token, err = egsGetStoredToken(); err != nil {
-			return err
-		}
-	}
-
-	if token == "" {
+	if ptr.AccessToken == "" {
 		return errors.New("empty access token, re-connect EGS")
 	}
 
 	var vtr *egs_integration.GetVerifyTokenResponse
-	vtr, err = egs_integration.GetVerifyToken(token, client)
+	vtr, err = egs_integration.GetVerifyToken(ptr.AccessToken, client)
 	if err != nil {
 		return err
 	}
 
-	buf := bytes.NewBuffer(nil)
-	if err = json.MarshalWrite(buf, &vtr); err != nil {
-		return err
+	if vtr.ExpiresAt.Sub(time.Now()) < time.Minute*30 {
+		if err = egsRefreshToken(); err != nil {
+			return err
+		}
 	}
 
-	return kvTokens.Set(egsTokenKey, buf)
+	if vtr.Token == "" {
+		return errors.New("empty access token, re-connect EGS")
+	}
+
+	return nil
 }
 
 func egsValidateSupportedPlatform(ii *InstallInfo) error {
@@ -261,15 +299,16 @@ func egsFetchGameAssets(ii *InstallInfo) error {
 		return err
 	}
 
-	var token string
-	if token, err = egsGetStoredToken(); err != nil {
-		return err
-	}
-	if err = egsVerifyToken(token); err != nil {
+	if err = egsVerifyToken(); err != nil {
 		return err
 	}
 
-	gameAssets, err := egs_integration.GetGameAssets(egs_integration.Platform(ii.OperatingSystem), token, client)
+	ptr, err := egsGetStoredPostTokenResponse()
+	if err != nil {
+		return err
+	}
+
+	gameAssets, err := egs_integration.GetGameAssets(egs_integration.Platform(ii.OperatingSystem), ptr.AccessToken, client)
 	if err != nil {
 		return err
 	}
@@ -324,12 +363,12 @@ func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems ke
 	efcia := nod.Begin(" fetching catalog item %s...", gameAsset.CatalogItemId)
 	defer efcia.Done()
 
-	token, err := egsGetStoredToken()
-	if err != nil {
+	if err := egsVerifyToken(); err != nil {
 		return err
 	}
 
-	if err = egsVerifyToken(token); err != nil {
+	ptr, err := egsGetStoredPostTokenResponse()
+	if err != nil {
 		return err
 	}
 
@@ -338,7 +377,7 @@ func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems ke
 		return err
 	}
 
-	catalogItem, err := egs_integration.GetCatalogItem(gameAsset.Namespace, gameAsset.CatalogItemId, token, client)
+	catalogItem, err := egs_integration.GetCatalogItem(gameAsset.Namespace, gameAsset.CatalogItemId, ptr.AccessToken, client)
 	if err != nil {
 		return err
 	}
@@ -450,12 +489,12 @@ func egsFetchGameManifest(key string, gameAsset *egs_integration.GameAsset, oper
 	efgma := nod.Begin(" fetching game manifest %s...", key)
 	defer efgma.Done()
 
-	token, err := egsGetStoredToken()
-	if err != nil {
+	if err := egsVerifyToken(); err != nil {
 		return err
 	}
 
-	if err = egsVerifyToken(token); err != nil {
+	ptr, err := egsGetStoredPostTokenResponse()
+	if err != nil {
 		return err
 	}
 
@@ -469,7 +508,7 @@ func egsFetchGameManifest(key string, gameAsset *egs_integration.GameAsset, oper
 		gameAsset.CatalogItemId,
 		gameAsset.AppName,
 		egs_integration.Platform(operatingSystem),
-		token, client)
+		ptr.AccessToken, client)
 	if err != nil {
 		return err
 	}
