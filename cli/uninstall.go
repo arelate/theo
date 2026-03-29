@@ -68,7 +68,7 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 
 	switch installInfo.Origin {
 	case data.VangoghOrigin:
-		if err = osUninstallProduct(id, installInfo, rdx); err != nil {
+		if err = vangoghUninstallProduct(id, installInfo, rdx); err != nil {
 			return err
 		}
 
@@ -129,7 +129,7 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 	return nil
 }
 
-func osUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
+func vangoghUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	oupa := nod.Begin(" uninstalling %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer oupa.Done()

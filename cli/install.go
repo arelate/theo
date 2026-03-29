@@ -246,10 +246,14 @@ func originPostInstall(id string, ii *InstallInfo, originData *data.OriginData, 
 					return err
 				}
 			}
-
 		default:
 			// do nothing
 		}
+
+		if err := egsRemoveChunks(id, ii.OperatingSystem, originData); err != nil {
+			return err
+		}
+
 	default:
 		// do nothing
 	}
@@ -288,7 +292,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		ii.DownloadableContent = slices.Collect(maps.Keys(dlcNames))
 	}
 
-	// installation:
+	// vangogh installation:
 	// 1. check available space
 	// 2. get protected locations files (e.g. Desktop shortcuts on Linux)
 	// 3. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
@@ -308,23 +312,23 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 	}
 
 	// 2
-	preInstallFiles, err := osGetProtectedLocationsFiles(ii)
+	preInstallFiles, err := vangoghGetProtectedLocationsFiles(ii)
 	if err != nil {
 		return err
 	}
 
 	// 3
-	unpackDir, err := osGetUnpackDir(id, ii, rdx)
+	unpackDir, err := vangoghGetUnpackDir(id, ii, rdx)
 	if err != nil {
 		return err
 	}
 
-	if err = osUnpackInstallers(id, ii, dls, rdx, unpackDir); err != nil {
+	if err = vangoghUnpackInstallers(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
 	// 4
-	if err = osPostUnpackActions(id, ii, dls, unpackDir, rdx); err != nil {
+	if err = vangoghPostUnpackActions(id, ii, dls, unpackDir, rdx); err != nil {
 		return err
 	}
 
@@ -335,13 +339,13 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 	}
 
 	if _, err = os.Stat(absInstalledDir); err == nil && ii.force {
-		if err = osUninstallProduct(id, ii, rdx); err != nil {
+		if err = vangoghUninstallProduct(id, ii, rdx); err != nil {
 			return err
 		}
 	}
 
 	// 6
-	unpackedInventory, err := osGetInventory(id, ii, dls, rdx, unpackDir)
+	unpackedInventory, err := vangoghGetInventory(id, ii, dls, rdx, unpackDir)
 	if err != nil {
 		return err
 	}
@@ -351,17 +355,17 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 	}
 
 	// 7
-	if err = osPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir); err != nil {
+	if err = vangoghPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
 	// 8
-	if err = osPostInstallActions(id, ii, dls, rdx, unpackDir); err != nil {
+	if err = vangoghPostInstallActions(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
 	// 9
-	postInstallFiles, err := osGetProtectedLocationsFiles(ii)
+	postInstallFiles, err := vangoghGetProtectedLocationsFiles(ii)
 	if err != nil {
 		return err
 	}
@@ -395,7 +399,7 @@ func osPreInstallActions(id string, ii *InstallInfo, rdx redux.Readable) error {
 	}
 }
 
-func osGetProtectedLocationsFiles(ii *InstallInfo) ([]string, error) {
+func vangoghGetProtectedLocationsFiles(ii *InstallInfo) ([]string, error) {
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.Linux:
@@ -405,7 +409,7 @@ func osGetProtectedLocationsFiles(ii *InstallInfo) ([]string, error) {
 	}
 }
 
-func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
+func vangoghGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
 	unpackDir := filepath.Join(data.Pwd.AbsDirPath(data.Temp), id)
 
@@ -429,7 +433,7 @@ func osGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string, err
 	return unpackDir, nil
 }
 
-func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
+func vangoghUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
 
 	if _, err := os.Stat(unpackDir); err == nil {
 		if ii.force {
@@ -466,7 +470,7 @@ func osUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.Prod
 	}
 }
 
-func osPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string, rdx redux.Writeable) error {
+func vangoghPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string, rdx redux.Writeable) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		return macOsReduceBundleNameProperty(id, dls, unpackDir, rdx)
@@ -477,7 +481,7 @@ func osPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integration.Pro
 	}
 }
 
-func osGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) ([]string, error) {
+func vangoghGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) ([]string, error) {
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
@@ -487,7 +491,7 @@ func osGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductD
 	}
 }
 
-func osPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
+func vangoghPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Writeable, unpackDir string) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		return macOsPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir, ii.force)
@@ -545,7 +549,7 @@ func placeUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLink, abs
 	return nil
 }
 
-func osPostInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+func vangoghPostInstallActions(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		return macOsPostInstallActions(id, ii, dls, rdx, unpackDir, ii.force)

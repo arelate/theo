@@ -623,3 +623,28 @@ func egsReduceCatalogItem(appName string, catalogItem *egs_integration.CatalogIt
 
 	return nil
 }
+
+func egsRemoveChunks(appName string, operatingSystem vangogh_integration.OperatingSystem, originData *data.OriginData) error {
+
+	erca := nod.NewProgress("removing EGS chunks...")
+	defer erca.Done()
+
+	erca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
+
+	featureLevel := originData.Manifest.Metadata.FeatureLevel
+	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, operatingSystem)
+
+	for _, chunk := range originData.Manifest.ChunkList.Chunks {
+		absChunkPath := filepath.Join(absChunksDownloadsDir, chunk.Path(featureLevel))
+		if _, err := os.Stat(absChunkPath); os.IsNotExist(err) {
+			erca.Increment()
+			continue
+		}
+		if err := os.Remove(absChunkPath); err != nil {
+			return err
+		}
+		erca.Increment()
+	}
+
+	return os.RemoveAll(absChunksDownloadsDir)
+}
