@@ -90,18 +90,7 @@ func revealInstalled(id string, request *InstallInfo) error {
 
 func currentOsRevealInstalled(id string, ii *InstallInfo, rdx redux.Readable) error {
 
-	var revealPath string
-	var err error
-
-	switch ii.Origin {
-	case data.VangoghOrigin:
-		revealPath, err = originOsInstalledPath(id, ii, rdx)
-	case data.SteamOrigin:
-		revealPath, err = data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx)
-	default:
-		return ii.Origin.ErrUnsupportedOrigin()
-	}
-
+	revealPath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
 	}

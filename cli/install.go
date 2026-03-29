@@ -577,12 +577,6 @@ func removeNewFiles(oldSet, newSet []string) error {
 func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
 
 	switch ii.Origin {
-	case data.SteamOrigin:
-		if steamAppInstallDir, err := data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx); err == nil {
-			return steamAppInstallDir, nil
-		} else {
-			return "", err
-		}
 	case data.VangoghOrigin:
 		installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
@@ -609,6 +603,12 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 		}
 
 		return filepath.Join(osLangInstalledAppsDir, installedPath), nil
+	case data.SteamOrigin:
+		if steamAppInstallDir, err := data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx); err == nil {
+			return steamAppInstallDir, nil
+		} else {
+			return "", err
+		}
 	case data.EpicGamesOrigin:
 		egsAppsDir := data.Pwd.AbsDirPath(data.EgsApps)
 
