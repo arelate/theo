@@ -116,6 +116,18 @@ func originUninstall(id string, installInfo *InstallInfo, rdx redux.Writeable) e
 		if err = steamcmd.AppUninstall(absSteamCmdPath, id, installInfo.OperatingSystem, installedAppDir); err != nil {
 			return err
 		}
+	case data.EpicGamesOrigin:
+
+		var originData *data.OriginData
+		originData, err = originGetData(id, installInfo, rdx, false)
+		if err != nil {
+			return err
+		}
+
+		if err = egsUninstall(id, installInfo, originData, rdx); err != nil {
+			return err
+		}
+
 	default:
 		return installInfo.Origin.ErrUnsupportedOrigin()
 	}

@@ -649,6 +649,28 @@ func egsRemoveChunks(appName string, operatingSystem vangogh_integration.Operati
 	return os.RemoveAll(absChunksDownloadsDir)
 }
 
-func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData) error {
+func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
+
+	eua := nod.NewProgress("uninstalling EGS %s...", appName)
+	defer eua.Done()
+
+	eua.TotalInt(len(originData.Manifest.FileList.List))
+
+	installedPath, err := originOsInstalledPath(appName, ii, rdx)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range originData.Manifest.FileList.List {
+		absFilePath := filepath.Join(installedPath, file.Filename)
+		if _, err = os.Stat(absFilePath); os.IsNotExist(err) {
+			eua.Increment()
+			continue
+		}
+		if err = os.Remove(absFilePath); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
