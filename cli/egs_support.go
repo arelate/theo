@@ -170,16 +170,16 @@ func egsVerifyToken() error {
 		return errors.New("empty access token, re-connect EGS")
 	}
 
+	if ptr.ExpiresAt.Sub(time.Now()) < time.Minute*30 {
+		if err = egsRefreshToken(); err != nil {
+			return err
+		}
+	}
+
 	var vtr *egs_integration.GetVerifyTokenResponse
 	vtr, err = egs_integration.GetVerifyToken(ptr.AccessToken, client)
 	if err != nil {
 		return err
-	}
-
-	if vtr.ExpiresAt.Sub(time.Now()) < time.Minute*30 {
-		if err = egsRefreshToken(); err != nil {
-			return err
-		}
 	}
 
 	if vtr.Token == "" {
