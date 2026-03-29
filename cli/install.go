@@ -159,17 +159,13 @@ func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginD
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		if originData.ProductDetails == nil {
-			return errors.New("nil productDetails")
+		if originData.ProductDetails != nil {
+			pda, err = vangoghShortcutAssets(originData.ProductDetails, rdx)
+			if err != nil {
+				return err
+			}
 		}
-
-		pda, err = vangoghShortcutAssets(originData.ProductDetails, rdx)
-		if err != nil {
-			return err
-		}
-
 		lp = defaultLogoPosition()
-
 	case data.SteamOrigin:
 		if originData.AppInfoKv != nil {
 			pda, err = steamShortcutAssets(id, originData.AppInfoKv)
@@ -183,7 +179,13 @@ func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginD
 			}
 		}
 	case data.EpicGamesOrigin:
-		// do nothing, to be implemented later
+		if originData.CatalogItem != nil {
+			pda, err = egsShortcutAssets(originData.CatalogItem)
+			if err != nil {
+				return err
+			}
+		}
+		lp = defaultLogoPosition()
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/arelate/southern_light/egs_integration"
+	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/coost"
@@ -682,4 +683,30 @@ func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData, 
 	}
 
 	return nil
+}
+
+func egsShortcutAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid.Asset]*url.URL, error) {
+
+	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
+
+	for _, keyImage := range catalogItem.KeyImages {
+
+		var asset steam_grid.Asset
+
+		switch keyImage.Type {
+		case "DieselGameBox":
+			asset = steam_grid.LibraryHero
+		case "DieselGameBoxTall":
+			asset = steam_grid.LibraryCapsule
+		}
+
+		if u, err := url.Parse(keyImage.Url); err == nil {
+			shortcutAssets[asset] = u
+		} else {
+			return nil, err
+		}
+	}
+
+	return shortcutAssets, nil
+
 }
