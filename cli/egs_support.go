@@ -695,7 +695,7 @@ func egsShortcutAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid
 
 		switch keyImage.Type {
 		case "DieselGameBox":
-			asset = steam_grid.LibraryHero
+			asset = steam_grid.Header
 		case "DieselGameBoxTall":
 			asset = steam_grid.LibraryCapsule
 		}
