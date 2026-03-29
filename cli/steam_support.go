@@ -262,7 +262,7 @@ func steamAppInfoAsset(appInfoKv steam_vdf.ValveDataFile, preferredPath []string
 
 func steamLogoPosition(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (*logoPosition, error) {
 
-	shortcutLogoPosition := new(logoPosition)
+	shortcutLogoPosition := defaultLogoPosition()
 
 	if pinnedPosition, err := steamAppInfoAsset(appInfoKv,
 		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "pinned_position"}); err == nil {
@@ -272,7 +272,7 @@ func steamLogoPosition(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (*l
 	}
 
 	if wps, err := steamAppInfoAsset(appInfoKv,
-		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "width_pct"}); err == nil {
+		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "width_pct"}); err == nil && wps != "" {
 
 		var wpf float64
 		if wpf, err = strconv.ParseFloat(wps, 64); err == nil {
@@ -286,7 +286,7 @@ func steamLogoPosition(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (*l
 	}
 
 	if hps, err := steamAppInfoAsset(appInfoKv,
-		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "height_pct"}); err == nil {
+		[]string{steamAppId, "common", "library_assets_full", "library_logo", "logo_position", "height_pct"}); err == nil && hps != "" {
 
 		var hpf float64
 		if hpf, err = strconv.ParseFloat(hps, 64); err == nil {
