@@ -60,8 +60,30 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		return err
 	}
 
-	var installedAppDir string
-	installedAppDir, err = originOsInstalledPath(id, installInfo, rdx)
+	if err = originUninstall(id, installInfo, rdx); err != nil {
+		return err
+	}
+
+	if purge {
+		if err = originPurgeInstallation(id, installInfo, rdx); err != nil {
+			return err
+		}
+	}
+
+	if err = unpinInstallInfo(id, installInfo, rdx); err != nil {
+		return err
+	}
+
+	if err = removeSteamShortcut(id, rdx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func originUninstall(id string, installInfo *InstallInfo, rdx redux.Writeable) error {
+
+	installedAppDir, err := originOsInstalledPath(id, installInfo, rdx)
 	if err != nil {
 		return err
 	}
@@ -98,32 +120,32 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		return installInfo.Origin.ErrUnsupportedOrigin()
 	}
 
-	if purge {
-		if _, err = os.Stat(installedAppDir); err == nil {
-			if err = os.RemoveAll(installedAppDir); err != nil {
-				return err
-			}
-		}
+	return nil
+}
 
-		// account for macOS bundle title
-		if installInfo.OperatingSystem == vangogh_integration.MacOS {
-			if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" && !strings.Contains(bundleName, "/") {
-				installedAppParentDir := strings.TrimSuffix(installedAppDir, bundleName)
-				if _, err = os.Stat(installedAppParentDir); err == nil {
-					if err = os.RemoveAll(installedAppParentDir); err != nil {
-						return err
-					}
+func originPurgeInstallation(id string, installInfo *InstallInfo, rdx redux.Readable) error {
+
+	installedAppDir, err := originOsInstalledPath(id, installInfo, rdx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(installedAppDir); err == nil {
+		if err = os.RemoveAll(installedAppDir); err != nil {
+			return err
+		}
+	}
+
+	// account for macOS bundle title
+	if installInfo.OperatingSystem == vangogh_integration.MacOS {
+		if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" && !strings.Contains(bundleName, "/") {
+			installedAppParentDir := strings.TrimSuffix(installedAppDir, bundleName)
+			if _, err = os.Stat(installedAppParentDir); err == nil {
+				if err = os.RemoveAll(installedAppParentDir); err != nil {
+					return err
 				}
 			}
 		}
-	}
-
-	if err = unpinInstallInfo(id, installInfo, rdx); err != nil {
-		return err
-	}
-
-	if err = removeSteamShortcut(id, rdx); err != nil {
-		return err
 	}
 
 	return nil

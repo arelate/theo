@@ -648,3 +648,7 @@ func egsRemoveChunks(appName string, operatingSystem vangogh_integration.Operati
 
 	return os.RemoveAll(absChunksDownloadsDir)
 }
+
+func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData) error {
+	return nil
+}
