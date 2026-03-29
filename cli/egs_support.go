@@ -672,5 +672,14 @@ func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData, 
 		}
 	}
 
+	var installedFiles []string
+	if installedFiles, err = relWalkDir(installedPath); err == nil && len(installedFiles) == 0 {
+		if err = os.RemoveAll(installedPath); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+
 	return nil
 }
