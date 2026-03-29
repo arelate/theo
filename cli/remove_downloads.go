@@ -51,7 +51,7 @@ func RemoveDownloadsHandler(u *url.URL) error {
 
 func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 
-	rda := nod.NewProgress("removing downloads...")
+	rda := nod.Begin("removing downloads...")
 	defer rda.Done()
 
 	vangogh_integration.PrintParams([]string{id},
@@ -60,23 +60,41 @@ func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 		ii.DownloadTypes,
 		true)
 
-	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
-
-	productDetails, err := vangoghGetProductDetails(id, rdx, ii.force)
+	originData, err := originGetData(id, ii, rdx, false)
 	if err != nil {
 		return err
 	}
 
-	if err = removeProductDownloadLinks(id, productDetails, ii, downloadsDir); err != nil {
+	if err = originRemoveDownloads(id, ii, originData, rdx); err != nil {
 		return err
 	}
-
-	rda.Increment()
 
 	return nil
 }
 
-func removeProductDownloadLinks(id string,
+func originRemoveDownloads(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
+
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		if err := vangoghRemoveProductDownloadLinks(id, originData.ProductDetails, ii, downloadsDir); err != nil {
+			return err
+		}
+	case data.SteamOrigin:
+	// do nothing
+	case data.EpicGamesOrigin:
+		if err := egsRemoveChunks(id, ii.OperatingSystem, originData); err != nil {
+			return err
+		}
+	default:
+		return ii.Origin.ErrUnsupportedOrigin()
+	}
+
+	return nil
+}
+
+func vangoghRemoveProductDownloadLinks(id string,
 	productDetails *vangogh_integration.ProductDetails,
 	ii *InstallInfo,
 	downloadsDir string) error {

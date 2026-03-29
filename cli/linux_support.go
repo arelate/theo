@@ -124,7 +124,7 @@ func linuxPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 
 		installedAppPath, err := originOsInstalledPath(id, ii, rdx)
 
-		if err = placeUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
+		if err = vangoghPlaceUnpackedLinkPayload(&link, absUnpackedPath, installedAppPath); err != nil {
 			return err
 		}
 	}

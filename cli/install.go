@@ -1,11 +1,7 @@
 package cli
 
 import (
-	"bytes"
-	"crypto/sha1"
 	"errors"
-	"fmt"
-	"io"
 	"maps"
 	"net/url"
 	"os"
@@ -14,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -135,6 +130,12 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
+	if !ii.KeepDownloads {
+		if err = RemoveDownloads(id, ii, rdx); err != nil {
+			return err
+		}
+	}
+
 	if err = pinInstallInfo(id, ii, rdx); err != nil {
 		return err
 	}
@@ -224,38 +225,10 @@ func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx 
 func originPostInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
 
 	switch ii.Origin {
-	case data.VangoghOrigin:
-		if !ii.KeepDownloads {
-			if err := RemoveDownloads(id, ii, rdx); err != nil {
-				return err
-			}
-		}
 	case data.EpicGamesOrigin:
-		switch ii.OperatingSystem {
-		case vangogh_integration.MacOS:
-
-			installedPath, err := originOsInstalledPath(id, ii, rdx)
-			if err != nil {
-				return err
-			}
-
-			manifestLaunchExe := originData.Manifest.Metadata.LaunchExe
-
-			absLaunchExePath := filepath.Join(installedPath, manifestLaunchExe)
-
-			if _, err = os.Stat(absLaunchExePath); err == nil {
-				if err = chmodExecutable(absLaunchExePath); err != nil {
-					return err
-				}
-			}
-		default:
-			// do nothing
-		}
-
-		if err := egsRemoveChunks(id, ii.OperatingSystem, originData); err != nil {
+		if err := egsChmodLauncherExe(id, ii, originData, rdx); err != nil {
 			return err
 		}
-
 	default:
 		// do nothing
 	}
@@ -513,7 +486,7 @@ func vangoghPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integrati
 	}
 }
 
-func placeUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLink, absUnpackedPath, absInstallationPath string) error {
+func vangoghPlaceUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLink, absUnpackedPath, absInstallationPath string) error {
 
 	mpda := nod.Begin(" placing unpacked %s files...", link.LocalFilename)
 	defer mpda.Done()
@@ -675,134 +648,4 @@ func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, r
 
 	return shortcutAssets, nil
 
-}
-
-func egsAssembleChunks(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
-
-	eaca := nod.NewProgress("assembling EGS chunks into files for %s-%s...", appName, ii.OperatingSystem)
-	defer eaca.Done()
-
-	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
-
-	installedPath, err := originOsInstalledPath(appName, ii, rdx)
-	if err != nil {
-		return err
-	}
-
-	eaca.TotalInt(len(originData.Manifest.FileList.List))
-
-	for _, chunkedFile := range originData.Manifest.FileList.List {
-		if err = egsAssembleFile(&chunkedFile, originData.Manifest.Metadata.FeatureLevel, absChunksDownloadsDir, installedPath); err != nil {
-			return err
-		}
-
-		eaca.Increment()
-	}
-
-	return nil
-}
-
-func egsAssembleFile(chunkedFile *egs_integration.File, featureLevel uint32, chunksDir, installedPath string) error {
-
-	var err error
-
-	absOutputFilename := filepath.Join(installedPath, chunkedFile.Filename)
-	absOutputDir, _ := filepath.Split(absOutputFilename)
-
-	if _, err = os.Stat(absOutputDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(absOutputDir, 0775); err != nil {
-			return err
-		}
-	}
-
-	outFile, err := os.Create(absOutputFilename)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-
-	for _, part := range chunkedFile.Parts {
-
-		if err = egsWriteChunkPart(&part, featureLevel, chunksDir, outFile); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func egsWriteChunkPart(part *egs_integration.ChunkPart, featureLevel uint32, chunksDir string, outFile *os.File) error {
-
-	chunkPath := filepath.Join(chunksDir, part.Chunk.Path(featureLevel))
-
-	var chunkFile *os.File
-	chunkFile, err := os.Open(chunkPath)
-	if err != nil {
-		return err
-	}
-	defer chunkFile.Close()
-
-	var chunkReader io.Reader
-	chunkReader, err = egs_integration.ReadChunk(chunkFile)
-	if err != nil {
-		return nil
-	}
-
-	var chunkData []byte
-	chunkData, err = io.ReadAll(chunkReader)
-	if err != nil {
-		return err
-	}
-
-	if _, err = io.Copy(outFile, bytes.NewReader(chunkData[part.Offset:part.Offset+part.Size])); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func egsValidateAssembly(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
-
-	evaa := nod.NewProgress("validating assembled files for %s-%s...", appName, ii.Origin)
-	defer evaa.Done()
-
-	installedPath, err := originOsInstalledPath(appName, ii, rdx)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range originData.Manifest.FileList.List {
-		if err = egsValidateAssembledFile(installedPath, &file); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func egsValidateAssembledFile(installedDir string, assembledFile *egs_integration.File) error {
-
-	var err error
-
-	absFilename := filepath.Join(installedDir, assembledFile.Filename)
-
-	inputFile, err := os.Open(absFilename)
-	if err != nil {
-		return err
-	}
-
-	inputData, err := io.ReadAll(inputFile)
-	if err != nil {
-		return err
-	}
-
-	shaSum := sha1.Sum(inputData)
-	actualShaSum := fmt.Sprintf("%x", shaSum)
-	expectedShaSum := fmt.Sprintf("%x", assembledFile.ShaHash)
-
-	if actualShaSum != expectedShaSum {
-		return errors.New("failed validation for " + assembledFile.Filename)
-	}
-
-	return nil
 }

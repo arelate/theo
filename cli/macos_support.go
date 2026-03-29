@@ -157,7 +157,7 @@ func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 
 		absBundlePath, err := originOsInstalledPath(id, ii, rdx)
 
-		if err = placeUnpackedLinkPayload(&link, absUnpackedPayloadPath, absBundlePath); err != nil {
+		if err = vangoghPlaceUnpackedLinkPayload(&link, absUnpackedPayloadPath, absBundlePath); err != nil {
 			return err
 		}
 

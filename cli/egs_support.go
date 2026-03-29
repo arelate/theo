@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/json/v2"
 	"errors"
 	"fmt"
@@ -627,7 +628,7 @@ func egsReduceCatalogItem(appName string, catalogItem *egs_integration.CatalogIt
 
 func egsRemoveChunks(appName string, operatingSystem vangogh_integration.OperatingSystem, originData *data.OriginData) error {
 
-	erca := nod.NewProgress("removing EGS chunks...")
+	erca := nod.NewProgress(" removing EGS chunks...")
 	defer erca.Done()
 
 	erca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
@@ -709,4 +710,161 @@ func egsShortcutAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid
 
 	return shortcutAssets, nil
 
+}
+
+func egsAssembleChunks(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
+
+	eaca := nod.NewProgress("assembling EGS chunks into files for %s-%s...", appName, ii.OperatingSystem)
+	defer eaca.Done()
+
+	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
+
+	installedPath, err := originOsInstalledPath(appName, ii, rdx)
+	if err != nil {
+		return err
+	}
+
+	eaca.TotalInt(len(originData.Manifest.FileList.List))
+
+	for _, chunkedFile := range originData.Manifest.FileList.List {
+		if err = egsAssembleFile(&chunkedFile, originData.Manifest.Metadata.FeatureLevel, absChunksDownloadsDir, installedPath); err != nil {
+			return err
+		}
+
+		eaca.Increment()
+	}
+
+	return nil
+}
+
+func egsAssembleFile(chunkedFile *egs_integration.File, featureLevel uint32, chunksDir, installedPath string) error {
+
+	var err error
+
+	absOutputFilename := filepath.Join(installedPath, chunkedFile.Filename)
+	absOutputDir, _ := filepath.Split(absOutputFilename)
+
+	if _, err = os.Stat(absOutputDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(absOutputDir, 0775); err != nil {
+			return err
+		}
+	}
+
+	outFile, err := os.Create(absOutputFilename)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	for _, part := range chunkedFile.Parts {
+
+		if err = egsWriteChunkPart(&part, featureLevel, chunksDir, outFile); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func egsWriteChunkPart(part *egs_integration.ChunkPart, featureLevel uint32, chunksDir string, outFile *os.File) error {
+
+	chunkPath := filepath.Join(chunksDir, part.Chunk.Path(featureLevel))
+
+	var chunkFile *os.File
+	chunkFile, err := os.Open(chunkPath)
+	if err != nil {
+		return err
+	}
+	defer chunkFile.Close()
+
+	var chunkReader io.Reader
+	chunkReader, err = egs_integration.ReadChunk(chunkFile)
+	if err != nil {
+		return nil
+	}
+
+	var chunkData []byte
+	chunkData, err = io.ReadAll(chunkReader)
+	if err != nil {
+		return err
+	}
+
+	if _, err = io.Copy(outFile, bytes.NewReader(chunkData[part.Offset:part.Offset+part.Size])); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func egsValidateAssembly(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
+
+	evaa := nod.NewProgress("validating assembled files for %s-%s...", appName, ii.Origin)
+	defer evaa.Done()
+
+	installedPath, err := originOsInstalledPath(appName, ii, rdx)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range originData.Manifest.FileList.List {
+		if err = egsValidateAssembledFile(installedPath, &file); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func egsValidateAssembledFile(installedDir string, assembledFile *egs_integration.File) error {
+
+	var err error
+
+	absFilename := filepath.Join(installedDir, assembledFile.Filename)
+
+	inputFile, err := os.Open(absFilename)
+	if err != nil {
+		return err
+	}
+
+	inputData, err := io.ReadAll(inputFile)
+	if err != nil {
+		return err
+	}
+
+	shaSum := sha1.Sum(inputData)
+	actualShaSum := fmt.Sprintf("%x", shaSum)
+	expectedShaSum := fmt.Sprintf("%x", assembledFile.ShaHash)
+
+	if actualShaSum != expectedShaSum {
+		return errors.New("failed validation for " + assembledFile.Filename)
+	}
+
+	return nil
+}
+
+func egsChmodLauncherExe(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
+
+	switch ii.OperatingSystem {
+
+	case vangogh_integration.MacOS:
+
+		installedPath, err := originOsInstalledPath(id, ii, rdx)
+		if err != nil {
+			return err
+		}
+
+		manifestLaunchExe := originData.Manifest.Metadata.LaunchExe
+
+		absLaunchExePath := filepath.Join(installedPath, manifestLaunchExe)
+
+		if _, err = os.Stat(absLaunchExePath); err == nil {
+			if err = chmodExecutable(absLaunchExePath); err != nil {
+				return err
+			}
+		}
+	default:
+		// do nothing
+	}
+
+	return nil
 }
