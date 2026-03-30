@@ -692,19 +692,17 @@ func egsShortcutAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid
 
 	for _, keyImage := range catalogItem.KeyImages {
 
-		var assets []steam_grid.Asset
+		var asset steam_grid.Asset
 
 		switch keyImage.Type {
 		case "DieselGameBox":
-			assets = []steam_grid.Asset{steam_grid.Header, steam_grid.LibraryHero}
+			asset = steam_grid.Header
 		case "DieselGameBoxTall":
-			assets = []steam_grid.Asset{steam_grid.LibraryCapsule}
+			asset = steam_grid.LibraryCapsule
 		}
 
 		if u, err := url.Parse(keyImage.Url); err == nil {
-			for _, asset := range assets {
-				shortcutAssets[asset] = u
-			}
+			shortcutAssets[asset] = u
 		} else {
 			return nil, err
 		}
@@ -785,7 +783,6 @@ func egsWriteChunkPart(part *egs_integration.ChunkPart, featureLevel uint32, chu
 		return nil
 	}
 
-	// TODO: replace this with io.Copy
 	var chunkData []byte
 	chunkData, err = io.ReadAll(chunkReader)
 	if err != nil {

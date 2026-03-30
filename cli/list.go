@@ -123,9 +123,6 @@ func listAvailableProducts(ii *InstallInfo) error {
 	case data.VangoghOrigin:
 		availableProducts, err = vangoghGetAvailableProducts(ii.force)
 	case data.EpicGamesOrigin:
-
-		// TODO: This doesn't work when no data is present
-
 		var osGameAssets map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset
 		osGameAssets, err = egsGetGameAssets(ii.force)
 
