@@ -151,6 +151,8 @@ func SteamShortcut(id string, ii *InstallInfo, sgo *steamGridOptions, remove boo
 		return err
 	}
 
+	// TODO: Add ability to use origin to set origin-specific values
+
 	switch remove {
 	case false:
 		if err = addSteamShortcut(id, ii, rdx, sgo); err != nil {
