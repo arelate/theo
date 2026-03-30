@@ -801,6 +801,8 @@ func egsValidateAssembly(appName string, ii *InstallInfo, originData *data.Origi
 	evaa := nod.NewProgress("validating assembled files for %s-%s...", appName, ii.Origin)
 	defer evaa.Done()
 
+	evaa.TotalInt(len(originData.Manifest.FileList.List))
+
 	installedPath, err := originOsInstalledPath(appName, ii, rdx)
 	if err != nil {
 		return err
@@ -810,6 +812,8 @@ func egsValidateAssembly(appName string, ii *InstallInfo, originData *data.Origi
 		if err = egsValidateAssembledFile(installedPath, &file); err != nil {
 			return err
 		}
+
+		evaa.Increment()
 	}
 
 	return nil
@@ -826,13 +830,13 @@ func egsValidateAssembledFile(installedDir string, assembledFile *egs_integratio
 		return err
 	}
 
-	inputData, err := io.ReadAll(inputFile)
-	if err != nil {
+	shaSum := sha1.New()
+
+	if _, err = io.Copy(shaSum, inputFile); err != nil {
 		return err
 	}
 
-	shaSum := sha1.Sum(inputData)
-	actualShaSum := fmt.Sprintf("%x", shaSum)
+	actualShaSum := fmt.Sprintf("%x", shaSum.Sum(nil))
 	expectedShaSum := fmt.Sprintf("%x", assembledFile.ShaHash)
 
 	if actualShaSum != expectedShaSum {

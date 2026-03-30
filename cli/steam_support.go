@@ -336,10 +336,6 @@ func steamAppInfoSize(steamAppId string, operatingSystem vangogh_integration.Ope
 		return 0, err
 	}
 
-	//if err = depotsKv.WriteString(os.Stdout, 0, steam_vdf.VdfNewLines, steam_vdf.VdfTabsIndent); err != nil {
-	//	return 0, err
-	//}
-
 	var estimatedBytes int64
 
 	for _, depotKv := range depotsKv.Values {

@@ -296,15 +296,14 @@ func egsValidateChunks(appName string, ii *InstallInfo, originData *data.OriginD
 			return err
 		}
 
-		chunkData, err := io.ReadAll(chunkReader)
-		if err != nil {
+		shaSum := sha1.New()
+
+		if _, err = io.Copy(shaSum, chunkReader); err != nil {
 			return err
 		}
 
-		shaSum := sha1.Sum(chunkData)
-
 		expectedShaSum := fmt.Sprintf("%x", chunk.ShaHash)
-		actualShaSum := fmt.Sprintf("%x", shaSum)
+		actualShaSum := fmt.Sprintf("%x", shaSum.Sum(nil))
 
 		if expectedShaSum != actualShaSum {
 			return errors.New("failed validation for " + chunkPath)
