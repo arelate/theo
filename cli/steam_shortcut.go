@@ -79,6 +79,10 @@ func SteamShortcutHandler(u *url.URL) error {
 		force:           q.Has("force"),
 	}
 
+	if q.Has("origin") {
+		ii.Origin = data.ParseOrigin(q.Get("origin"))
+	}
+
 	var err error
 
 	if q.Has("header") {
@@ -151,20 +155,22 @@ func SteamShortcut(id string, ii *InstallInfo, sgo *steamGridOptions, remove boo
 		return err
 	}
 
-	// TODO: Add ability to use origin to set origin-specific values
-
-	switch remove {
-	case false:
-		if err = addSteamShortcut(id, ii, rdx, sgo); err != nil {
-			return err
-		}
-	case true:
-		if err = removeSteamShortcut(id, rdx); err != nil {
-			return err
-		}
+	if remove {
+		return removeSteamShortcut(id, rdx)
 	}
 
-	return nil
+	switch ii.Origin {
+	case data.UnknownOrigin:
+		return addSteamShortcut(id, ii, rdx, sgo)
+	default:
+		var originData *data.OriginData
+		originData, err = originGetData(id, ii, rdx, false)
+		if err != nil {
+			return err
+		}
+
+		return originAddSteamShortcut(id, ii, originData, rdx)
+	}
 }
 
 func addSteamShortcut(id string, ii *InstallInfo, rdx redux.Writeable, sgo *steamGridOptions) error {

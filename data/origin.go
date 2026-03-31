@@ -31,6 +31,15 @@ func (o Origin) String() string {
 	return originStrings[UnknownOrigin]
 }
 
+func ParseOrigin(originStr string) Origin {
+	for org, str := range originStrings {
+		if str == originStr {
+			return org
+		}
+	}
+	return UnknownOrigin
+}
+
 func (o Origin) ErrUnsupportedOrigin() error {
 	return errors.New("unsupported origin: " + o.String())
 }

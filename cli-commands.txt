@@ -119,7 +119,7 @@ steam-shortcut
     id^*
     os={operating-systems^}
     lang-code={language-codes^}
-    origin={origins^}
+    origin={origins}
     header
     capsule
     hero
