@@ -215,7 +215,7 @@ func egsGameAssetOperatingSystems(appName string, force bool) ([]vangogh_integra
 	return operatingSystems, nil
 }
 
-func egsGetGameAssets(force bool) (map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset, error) {
+func egsGetGameAssets(update bool) (map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset, error) {
 
 	osGameAssets := make(map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset)
 
@@ -225,7 +225,7 @@ func egsGetGameAssets(force bool) (map[vangogh_integration.OperatingSystem][]egs
 			return nil, err
 		}
 
-		if len(gameAssets) == 0 || force {
+		if len(gameAssets) == 0 || update {
 			if err = egsFetchGameAssets(sos); err != nil {
 				return nil, err
 			}

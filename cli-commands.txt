@@ -57,6 +57,7 @@ list
     lang-code={language-codes^}
     steam
     epic-games
+    update
     force
 
 prefix

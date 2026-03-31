@@ -60,15 +60,17 @@ func ListHandler(u *url.URL) error {
 		ii.Origin = data.EpicGamesOrigin
 	}
 
+	update := q.Has("update")
+
 	id := q.Get(vangogh_integration.IdProperty)
 	allShortcutKeys := q.Has("all-shortcut-keys")
 
-	return List(availableProducts, installed, tasks, steamShortcuts, ii, id, allShortcutKeys)
+	return List(availableProducts, installed, tasks, steamShortcuts, ii, id, allShortcutKeys, update)
 }
 
 func List(availableProducts, installed, tasks, steamShortcuts bool,
 	installInfo *InstallInfo,
-	id string, allShortcutKeys bool) error {
+	id string, allShortcutKeys bool, update bool) error {
 
 	if availableProducts || installed || tasks || steamShortcuts {
 		// do nothing
@@ -77,7 +79,7 @@ func List(availableProducts, installed, tasks, steamShortcuts bool,
 	}
 
 	if availableProducts {
-		if err := listAvailableProducts(installInfo); err != nil {
+		if err := listAvailableProducts(installInfo, update); err != nil {
 			return err
 		}
 	}
@@ -106,7 +108,7 @@ func List(availableProducts, installed, tasks, steamShortcuts bool,
 	return nil
 }
 
-func listAvailableProducts(ii *InstallInfo) error {
+func listAvailableProducts(ii *InstallInfo, update bool) error {
 
 	lapa := nod.Begin("listing available products...")
 	defer lapa.Done()
@@ -119,14 +121,16 @@ func listAvailableProducts(ii *InstallInfo) error {
 		return err
 	}
 
+	fetchAvailable := update || ii.force
+
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		if availableProducts, err = vangoghGetAvailableProducts(ii.force); err != nil {
+		if availableProducts, err = vangoghGetAvailableProducts(fetchAvailable); err != nil {
 			return err
 		}
 	case data.EpicGamesOrigin:
 		var osGameAssets map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset
-		osGameAssets, err = egsGetGameAssets(ii.force)
+		osGameAssets, err = egsGetGameAssets(fetchAvailable)
 		if err != nil {
 			return err
 		}
