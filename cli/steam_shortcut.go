@@ -277,6 +277,9 @@ func createSteamShortcut(loginUser string, id string, ii *InstallInfo, rdx redux
 
 	launchOptions = append(launchOptions, strings.Replace(runTemplate, "{id}", id, 1))
 	launchOptions = append(launchOptions, strings.Replace(osTemplate, "{operating-system}", ii.OperatingSystem.String(), 1))
+	if ii.LangCode != langCodeDefault {
+		launchOptions = append(launchOptions, strings.Replace(langCodeTemplate, "{lang-code}", ii.LangCode, 1))
+	}
 
 	installedPath, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
