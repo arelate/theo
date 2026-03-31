@@ -24,20 +24,24 @@ import (
 	"github.com/boggydigital/redux"
 )
 
+var egsClient *http.Client
+
 func egsGetClient() (*http.Client, error) {
 
-	cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
-	egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
+	if egsClient == nil {
+		cookiesDir := data.Pwd.AbsRelDirPath(data.Cookies, data.Metadata)
+		egsCookiePath := filepath.Join(cookiesDir, egsCookiesFilename)
 
-	jar, err := coost.Read(egs_integration.HostUrl(), egsCookiePath)
-	if err != nil {
-		return nil, err
+		jar, err := coost.Read(egs_integration.HostUrl(), egsCookiePath)
+		if err != nil {
+			return nil, err
+		}
+
+		egsClient = http.DefaultClient
+		egsClient.Jar = jar
 	}
 
-	client := http.DefaultClient
-	client.Jar = jar
-
-	return client, nil
+	return egsClient, nil
 }
 
 func egsGetAccessToken(cookieStr string) error {
