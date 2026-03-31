@@ -305,7 +305,7 @@ func egsReadLocalGameAssets(operatingSystem vangogh_integration.OperatingSystem)
 	}
 
 	if !kvAvailableProducts.Has(egsOsApKey) {
-		return nil, errors.New("no EGS game assets found for " + operatingSystem.String())
+		return nil, nil
 	}
 
 	rcGameAssets, err := kvAvailableProducts.Get(egsOsApKey)

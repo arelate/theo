@@ -121,18 +121,21 @@ func listAvailableProducts(ii *InstallInfo) error {
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		availableProducts, err = vangoghGetAvailableProducts(ii.force)
+		if availableProducts, err = vangoghGetAvailableProducts(ii.force); err != nil {
+			return err
+		}
 	case data.EpicGamesOrigin:
 		var osGameAssets map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset
 		osGameAssets, err = egsGetGameAssets(ii.force)
+		if err != nil {
+			return err
+		}
 
-		availableProducts, err = egsGameAssetsAvailableProducts(osGameAssets, ii, rdx)
+		if availableProducts, err = egsGameAssetsAvailableProducts(osGameAssets, ii, rdx); err != nil {
+			return err
+		}
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
-	}
-
-	if err != nil {
-		return err
 	}
 
 	apSummary := make(map[string][]string)
