@@ -44,6 +44,7 @@ func main() {
 		"backup-metadata":  cli.BackupMetadataHandler,
 		"connect":          cli.ConnectHandler,
 		"download":         cli.DownloadHandler,
+		"fetch-data":       cli.FetchDataHandler,
 		"install":          cli.InstallHandler,
 		"list":             cli.ListHandler,
 		"prefix":           cli.PrefixHandler,

@@ -27,6 +27,12 @@ download
     epic-games
     force
 
+fetch-data
+    id^*
+    os={operating-systems^}
+    steam
+    epic-games
+
 install
     id^
     os={operating-systems^}
