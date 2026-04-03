@@ -203,23 +203,15 @@ func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx 
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		if err := vangoghUnpackPlace(id, ii, originData, rdx); err != nil {
-			return err
-		}
+		return vangoghUnpackPlace(id, ii, originData, rdx)
 	case data.SteamOrigin:
-	// do nothing - SteamCMD app update during Download is equivalent to installation
+		// do nothing - SteamCMD app update during Download is equivalent to installation
+		return nil
 	case data.EpicGamesOrigin:
-		if err := egsAssembleChunks(id, ii, originData, rdx); err != nil {
-			return err
-		}
-		if err := egsValidateAssembly(id, ii, originData, rdx); err != nil {
-			return err
-		}
+		return egsAssembleValidateChunks(id, ii, originData, rdx)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
-
-	return nil
 }
 
 func originPostInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
@@ -282,7 +274,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 	// 1
 	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
-	if err := originHasFreeSpace(id, installedAppsDir, ii, originData, nil); err != nil {
+	if err := originHasFreeSpace(id, installedAppsDir, ii, originData); err != nil {
 		return err
 	}
 

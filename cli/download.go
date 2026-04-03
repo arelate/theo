@@ -240,7 +240,7 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 func steamDownloadData(steamAppId string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
 	steamAppsDir := data.Pwd.AbsDirPath(data.SteamApps)
 
-	if err := originHasFreeSpace(steamAppId, steamAppsDir, ii, originData, nil); err != nil {
+	if err := originHasFreeSpace(steamAppId, steamAppsDir, ii, originData); err != nil {
 		return err
 	}
 
@@ -254,7 +254,7 @@ func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginD
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	if err := originHasFreeSpace(appName, downloadsDir, ii, originData, nil); err != nil {
+	if err := originHasFreeSpace(appName, downloadsDir, ii, originData); err != nil {
 		return err
 	}
 

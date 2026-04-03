@@ -894,3 +894,22 @@ func egsManifestSize(manifest *egs_integration.Manifest) int64 {
 
 	return totalEstimatedBytes
 }
+
+func egsAssembleValidateChunks(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
+
+	egsAppsDir := data.Pwd.AbsDirPath(data.EgsApps)
+
+	if err := originHasFreeSpace(appName, egsAppsDir, ii, originData); err != nil {
+		return err
+	}
+
+	if err := egsAssembleChunks(appName, ii, originData, rdx); err != nil {
+		return err
+	}
+
+	if err := egsValidateAssembly(appName, ii, originData, rdx); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -16,7 +16,7 @@ func originHasFreeSpace(
 	targetPath string,
 	ii *InstallInfo,
 	originData *data.OriginData,
-	manualUrlFilter []string) error {
+	manualUrlFilter ...string) error {
 
 	var totalEstimatedBytes int64
 	var err error
