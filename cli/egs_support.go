@@ -876,3 +876,11 @@ func egsChmodLauncherExe(id string, ii *InstallInfo, originData *data.OriginData
 
 	return nil
 }
+
+func egsManifestVersion(manifest *egs_integration.Manifest) string {
+	if manifest != nil &&
+		manifest.Metadata != nil {
+		return manifest.Metadata.BuildVersion
+	}
+	return ""
+}

@@ -151,25 +151,21 @@ func originIsInstalledInfoUpdated(id string, installedInfo *InstallInfo, rdx red
 	installedVersion := installedInfo.Version
 	var latestVersion string
 
+	originData, err := originGetData(id, installedInfo, rdx, true)
+	if err != nil {
+		return false, err
+	}
+
 	switch installedInfo.Origin {
 	case data.VangoghOrigin:
-		latestProductDetails, err := vangoghGetProductDetails(id, rdx, true)
-		if err != nil {
-			return false, err
-		}
-
-		latestVersion = productDetailsVersion(latestProductDetails, installedInfo)
+		latestVersion = productDetailsVersion(originData.ProductDetails, installedInfo)
 	case data.SteamOrigin:
-
-		latestAppInfoKv, err := steamGetAppInfoKv(id, rdx, true)
+		latestVersion, err = steamAppInfoVersion(id, originData.AppInfoKv)
 		if err != nil {
 			return false, err
 		}
-
-		latestVersion, err = steamAppInfoVersion(id, latestAppInfoKv)
-		if err != nil {
-			return false, err
-		}
+	case data.EpicGamesOrigin:
+		latestVersion = egsManifestVersion(originData.Manifest)
 	default:
 		return false, installedInfo.Origin.ErrUnsupportedOrigin()
 	}

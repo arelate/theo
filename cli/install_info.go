@@ -108,10 +108,7 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 		}
 	case data.EpicGamesOrigin:
 
-		if originData.Manifest != nil &&
-			originData.Manifest.Metadata != nil {
-			ii.Version = originData.Manifest.Metadata.BuildVersion
-		}
+		ii.Version = egsManifestVersion(originData.Manifest)
 
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
