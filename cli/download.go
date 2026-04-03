@@ -176,7 +176,7 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	if err := originHasFreeSpace(id, downloadsDir, ii, originData, manualUrlFilter); err != nil {
+	if err := originHasFreeSpace(id, downloadsDir, ii, originData, manualUrlFilter...); err != nil {
 		return err
 	}
 
