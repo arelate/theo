@@ -884,3 +884,13 @@ func egsManifestVersion(manifest *egs_integration.Manifest) string {
 	}
 	return ""
 }
+
+func egsManifestSize(manifest *egs_integration.Manifest) int64 {
+	var totalEstimatedBytes int64
+
+	for _, file := range manifest.FileList.List {
+		totalEstimatedBytes += int64(file.Size)
+	}
+
+	return totalEstimatedBytes
+}

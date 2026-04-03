@@ -252,14 +252,18 @@ func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginD
 	edca := nod.NewProgress("downloading EGS chunks...")
 	edca.Done()
 
+	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
+
+	if err := originHasFreeSpace(appName, absChunksDownloadsDir, ii, originData, nil); err != nil {
+		return err
+	}
+
 	edca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
 
 	cdnUrls, err := originData.GameManifest.Urls()
 	if err != nil {
 		return err
 	}
-
-	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
 
 	dc := dolo.DefaultClient
 

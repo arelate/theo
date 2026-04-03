@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -246,4 +247,22 @@ func vangoghFetchAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
 	vangoghApKey := originAvailableProductsKey(data.VangoghOrigin, vangogh_integration.AnyOperatingSystem)
 
 	return kvAvailableProducts.Set(vangoghApKey, resp.Body)
+}
+
+func vangoghProductDetailsSize(productDetails *vangogh_integration.ProductDetails, ii *InstallInfo, manualUrlFilter ...string) int64 {
+	var totalEstimatedBytes int64
+
+	dls := productDetails.DownloadLinks.
+		FilterOperatingSystems(ii.OperatingSystem).
+		FilterLanguageCodes(ii.LangCode).
+		FilterDownloadTypes(ii.DownloadTypes...)
+
+	for _, dl := range dls {
+		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
+			continue
+		}
+		totalEstimatedBytes += dl.EstimatedBytes
+	}
+
+	return totalEstimatedBytes
 }

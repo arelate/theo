@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"path/filepath"
-	"slices"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -20,31 +19,23 @@ func originHasFreeSpace(
 	manualUrlFilter []string) error {
 
 	var totalEstimatedBytes int64
+	var err error
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		dls := originData.ProductDetails.DownloadLinks.
-			FilterOperatingSystems(ii.OperatingSystem).
-			FilterLanguageCodes(ii.LangCode).
-			FilterDownloadTypes(ii.DownloadTypes...)
-
-		for _, dl := range dls {
-			if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
-				continue
-			}
-			totalEstimatedBytes += dl.EstimatedBytes
-		}
+		totalEstimatedBytes = vangoghProductDetailsSize(originData.ProductDetails, ii, manualUrlFilter...)
 	case data.SteamOrigin:
-		if appInfoEstimatedBytes, err := steamAppInfoSize(id, ii.OperatingSystem, originData.AppInfoKv); err == nil {
-			totalEstimatedBytes = appInfoEstimatedBytes
-		} else {
+		if totalEstimatedBytes, err = steamAppInfoSize(id, ii.OperatingSystem, originData.AppInfoKv); err != nil {
 			return err
 		}
+	case data.EpicGamesOrigin:
+		totalEstimatedBytes = egsManifestSize(originData.Manifest)
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}
 
-	if ok, err := hasFreeSpaceForBytes(targetPath, totalEstimatedBytes); err != nil {
+	var ok bool
+	if ok, err = hasFreeSpaceForBytes(targetPath, totalEstimatedBytes); err != nil {
 		return err
 	} else if !ok && !ii.force {
 		return fmt.Errorf("not enough space for %s at %s", id, targetPath)
