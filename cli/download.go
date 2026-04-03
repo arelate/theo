@@ -252,9 +252,9 @@ func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginD
 	edca := nod.NewProgress("downloading EGS chunks...")
 	edca.Done()
 
-	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
-	if err := originHasFreeSpace(appName, absChunksDownloadsDir, ii, originData, nil); err != nil {
+	if err := originHasFreeSpace(appName, downloadsDir, ii, originData, nil); err != nil {
 		return err
 	}
 
@@ -276,6 +276,8 @@ func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginD
 	if cdnUrl == nil {
 		return errors.New("downloading EGS chunks requires CDN url")
 	}
+
+	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
 
 	originalPath := strings.TrimSuffix(cdnUrl.Path, filepath.Base(cdnUrl.Path))
 	cdnUrl.RawQuery = ""
