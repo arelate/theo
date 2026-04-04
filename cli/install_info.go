@@ -109,6 +109,7 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 	case data.EpicGamesOrigin:
 
 		ii.Version = egsManifestVersion(originData.Manifest)
+		ii.EstimatedBytes = egsManifestSize(originData.Manifest)
 
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
