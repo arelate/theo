@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -180,13 +181,25 @@ func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginD
 			}
 		}
 	case data.EpicGamesOrigin:
+
+		var gamesDbProduct *gog_integration.GamesDbProduct
+		gamesDbProduct, err = gogGetGamesDbEpic(id, false)
+		if err != nil {
+			return err
+		}
+
 		if originData.CatalogItem != nil {
-			pda, err = egsShortcutAssets(id, originData, rdx)
+			pda, err = egsShortcutAssets(gamesDbProduct, originData.CatalogItem, rdx)
 			if err != nil {
 				return err
 			}
 		}
-		lp = defaultLogoPosition()
+
+		lp, err = egsLogoPosition(gamesDbProduct, rdx)
+		if err != nil {
+			return err
+		}
+
 	default:
 		return ii.Origin.ErrUnsupportedOrigin()
 	}

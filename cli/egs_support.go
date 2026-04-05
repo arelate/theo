@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/arelate/southern_light/egs_integration"
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -690,22 +691,44 @@ func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData, 
 	return nil
 }
 
-func egsShortcutAssets(id string, originData *data.OriginData, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, error) {
-
-	gamesDbProduct, err := gogGetGamesDbEpic(id, false)
-	if err != nil {
-		return nil, err
-	}
+func egsShortcutAssets(gamesDbProduct *gog_integration.GamesDbProduct, catalogItem *egs_integration.CatalogItem, rdx redux.Writeable) (map[steam_grid.Asset]*url.URL, error) {
 
 	if steamAppId := gogGamesDbSteamAppId(gamesDbProduct); steamAppId != "" {
-		return steamShortcutAssets(steamAppId, originData.AppInfoKv)
+
+		appInfo, err := steamGetAppInfoKv(steamAppId, rdx, false)
+		if err != nil {
+			return nil, err
+		}
+
+		return steamShortcutAssets(steamAppId, appInfo)
 	}
 
 	if gogId := gogGamesDbGogId(gamesDbProduct); gogId != "" {
-		return vangoghShortcutAssets(originData.ProductDetails, rdx)
+
+		productDetails, err := vangoghGetProductDetails(gogId, rdx, false)
+		if err != nil {
+			return nil, err
+		}
+
+		return vangoghShortcutAssets(productDetails, rdx)
 	}
 
-	return egsCatalogItemAssets(originData.CatalogItem)
+	return egsCatalogItemAssets(catalogItem)
+}
+
+func egsLogoPosition(gamesDbProduct *gog_integration.GamesDbProduct, rdx redux.Writeable) (*logoPosition, error) {
+
+	if steamAppId := gogGamesDbSteamAppId(gamesDbProduct); steamAppId != "" {
+
+		appInfo, err := steamGetAppInfoKv(steamAppId, rdx, false)
+		if err != nil {
+			return nil, err
+		}
+
+		return steamLogoPosition(steamAppId, appInfo)
+	}
+
+	return defaultLogoPosition(), nil
 }
 
 func egsCatalogItemAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid.Asset]*url.URL, error) {
