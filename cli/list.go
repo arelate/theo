@@ -149,7 +149,8 @@ func listAvailableProducts(ii *InstallInfo, update bool) error {
 		apSummary[title] = []string{}
 	}
 
-	lapa.EndWithSummary("available products:", apSummary)
+	msg := fmt.Sprintf("found %d product(s):", len(availableProducts))
+	lapa.EndWithSummary(msg, apSummary)
 
 	return nil
 }
