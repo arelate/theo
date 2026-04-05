@@ -84,20 +84,15 @@ func egsGetAccessToken(cookieStr string) error {
 	return egsPostToken(arr.AuthorizationCode, egs_integration.GrantTypeAuthorizationCode)
 }
 
-func egsRefreshToken() error {
+func egsRefreshToken(refreshToken string) error {
 	erta := nod.Begin("refreshing EGS token...")
 	defer erta.Done()
 
-	ptr, err := egsGetStoredPostTokenResponse()
-	if err != nil {
-		return err
-	}
-
-	if ptr.RefreshToken == "" {
+	if refreshToken == "" {
 		return errors.New("refresh token not present")
 	}
 
-	return egsPostToken(ptr.RefreshToken, egs_integration.GrantTypeRefreshToken)
+	return egsPostToken(refreshToken, egs_integration.GrantTypeRefreshToken)
 }
 
 func egsPostToken(token string, grantType egs_integration.GrantType) error {
@@ -149,6 +144,7 @@ func egsGetStoredPostTokenResponse() (*egs_integration.PostTokenResponse, error)
 	if err != nil {
 		return nil, err
 	}
+	defer rcEgsToken.Close()
 
 	var ptr egs_integration.PostTokenResponse
 	if err = json.UnmarshalRead(rcEgsToken, &ptr); err != nil {
@@ -158,42 +154,43 @@ func egsGetStoredPostTokenResponse() (*egs_integration.PostTokenResponse, error)
 	return &ptr, nil
 }
 
-func egsVerifyToken() error {
+func egsVerifyToken(client *http.Client) (*egs_integration.PostTokenResponse, error) {
 
 	gvta := nod.Begin("verifying EGS token...")
 	defer gvta.Done()
 
-	client, err := egsGetClient()
-	if err != nil {
-		return err
-	}
-
 	var ptr *egs_integration.PostTokenResponse
+	var err error
+
 	if ptr, err = egsGetStoredPostTokenResponse(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if ptr.AccessToken == "" {
-		return errors.New("empty access token, re-connect EGS")
+		return nil, errors.New("empty access token, re-connect EGS")
 	}
 
 	if ptr.ExpiresAt.Sub(time.Now()) < time.Minute*30 {
-		if err = egsRefreshToken(); err != nil {
-			return err
+		if err = egsRefreshToken(ptr.RefreshToken); err != nil {
+			return nil, err
+		}
+
+		if ptr, err = egsGetStoredPostTokenResponse(); err != nil {
+			return nil, err
 		}
 	}
 
 	var vtr *egs_integration.GetVerifyTokenResponse
 	vtr, err = egs_integration.GetVerifyToken(ptr.AccessToken, client)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if vtr.Token == "" {
-		return errors.New("empty access token, re-connect EGS")
+		return nil, errors.New("empty access token, re-connect EGS")
 	}
 
-	return nil
+	return ptr, nil
 }
 
 func egsGameAssetOperatingSystems(appName string, force bool) ([]vangogh_integration.OperatingSystem, error) {
@@ -332,18 +329,12 @@ func egsFetchGameAssets(operatingSystem vangogh_integration.OperatingSystem) err
 	efapa := nod.Begin(" fetching EGS game assets...")
 	defer efapa.Done()
 
-	var err error
-
-	var client *http.Client
-	if client, err = egsGetClient(); err != nil {
+	client, err := egsGetClient()
+	if err != nil {
 		return err
 	}
 
-	if err = egsVerifyToken(); err != nil {
-		return err
-	}
-
-	ptr, err := egsGetStoredPostTokenResponse()
+	ptr, err := egsVerifyToken(client)
 	if err != nil {
 		return err
 	}
@@ -392,16 +383,12 @@ func egsFetchCatalogItem(gameAsset *egs_integration.GameAsset, kvCatalogItems ke
 	efcia := nod.Begin(" fetching catalog item %s...", gameAsset.CatalogItemId)
 	defer efcia.Done()
 
-	if err := egsVerifyToken(); err != nil {
-		return err
-	}
-
-	ptr, err := egsGetStoredPostTokenResponse()
+	client, err := egsGetClient()
 	if err != nil {
 		return err
 	}
 
-	client, err := egsGetClient()
+	ptr, err := egsVerifyToken(client)
 	if err != nil {
 		return err
 	}
@@ -505,16 +492,12 @@ func egsFetchGameManifest(key string, gameAsset *egs_integration.GameAsset, oper
 	efgma := nod.Begin(" fetching game manifest %s...", key)
 	defer efgma.Done()
 
-	if err := egsVerifyToken(); err != nil {
-		return err
-	}
-
-	ptr, err := egsGetStoredPostTokenResponse()
+	client, err := egsGetClient()
 	if err != nil {
 		return err
 	}
 
-	client, err := egsGetClient()
+	ptr, err := egsVerifyToken(client)
 	if err != nil {
 		return err
 	}

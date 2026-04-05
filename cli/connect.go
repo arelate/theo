@@ -284,7 +284,13 @@ func egsSetupConnection(cookieStr string, reset bool) error {
 		}
 	}
 
-	return egsVerifyToken()
+	client, err := egsGetClient()
+	if err != nil {
+		return err
+	}
+
+	_, err = egsVerifyToken(client)
+	return err
 }
 
 func egsResetConnection() error {
