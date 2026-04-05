@@ -181,7 +181,7 @@ func originAddSteamShortcut(id string, ii *InstallInfo, originData *data.OriginD
 		}
 	case data.EpicGamesOrigin:
 		if originData.CatalogItem != nil {
-			pda, err = egsShortcutAssets(originData.CatalogItem)
+			pda, err = egsShortcutAssets(id, originData, rdx)
 			if err != nil {
 				return err
 			}

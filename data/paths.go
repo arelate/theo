@@ -43,6 +43,7 @@ const (
 	CatalogItems       pathways.RelDir = "catalog-items"        // Metadata
 	GameManifests      pathways.RelDir = "game-manifests"       // Metadata
 	Manifests          pathways.RelDir = "manifests"            // Metadata
+	GamesDB            pathways.RelDir = "gamesdb"              // Metadata
 	Inventory          pathways.RelDir = "_inventory"           // InstalledApps
 	PrefixArchive      pathways.RelDir = "_prefix-archive"      // Backups
 	BinDownloads       pathways.RelDir = "_downloads"           // Wine, SteamCmd
@@ -99,6 +100,7 @@ func InitPathways() error {
 		CatalogItems:       {Metadata},
 		GameManifests:      {Metadata},
 		Manifests:          {Metadata},
+		GamesDB:            {Metadata},
 		Inventory:          {InstalledApps},
 		BinUnpacks:         {Wine, SteamCmd},
 		BinDownloads:       {Wine, SteamCmd},

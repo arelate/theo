@@ -690,7 +690,25 @@ func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData, 
 	return nil
 }
 
-func egsShortcutAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid.Asset]*url.URL, error) {
+func egsShortcutAssets(id string, originData *data.OriginData, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, error) {
+
+	gamesDbProduct, err := gogGetGamesDbEpic(id, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if steamAppId := gogGamesDbSteamAppId(gamesDbProduct); steamAppId != "" {
+		return steamShortcutAssets(steamAppId, originData.AppInfoKv)
+	}
+
+	if gogId := gogGamesDbGogId(gamesDbProduct); gogId != "" {
+		return vangoghShortcutAssets(originData.ProductDetails, rdx)
+	}
+
+	return egsCatalogItemAssets(originData.CatalogItem)
+}
+
+func egsCatalogItemAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid.Asset]*url.URL, error) {
 
 	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
 
@@ -713,7 +731,6 @@ func egsShortcutAssets(catalogItem *egs_integration.CatalogItem) (map[steam_grid
 	}
 
 	return shortcutAssets, nil
-
 }
 
 func egsAssembleChunks(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable) error {
