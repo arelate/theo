@@ -38,7 +38,6 @@ fix
     os={operating-systems^}
     lang-code&={language-codes^}
     steam-appid
-    epicportal-arg
     revert
 
 install
