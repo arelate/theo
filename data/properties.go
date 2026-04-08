@@ -18,9 +18,13 @@ const (
 	PlaytimeMinutesProperty      = "playtime-minutes"
 	TotalPlaytimeMinutesProperty = "total-playtime-minutes"
 
-	PrefixEnvProperty = "prefix-env"
-	PrefixExeProperty = "prefix-exe"
-	PrefixArgProperty = "prefix-arg"
+	//PrefixExeProperty = "prefix-exe"
+	//PrefixArgProperty = "prefix-arg"
+	//PrefixEnvProperty = "prefix-env"
+
+	LaunchOptionsExeProperty = "launch-options-exe"
+	LaunchOptionsArgProperty = "launch-options-arg"
+	LaunchOptionsEnvProperty = "launch-options-env"
 
 	WineBinariesVersionsProperty = "wine-binaries-versions"
 )
@@ -63,9 +67,9 @@ func AllProperties() []string {
 			LastRunDateProperty,
 			PlaytimeMinutesProperty,
 			TotalPlaytimeMinutesProperty,
-			PrefixEnvProperty,
-			PrefixExeProperty,
-			PrefixArgProperty,
+			LaunchOptionsExeProperty,
+			LaunchOptionsArgProperty,
+			LaunchOptionsEnvProperty,
 			WineBinariesVersionsProperty,
 		}...)
 

@@ -33,6 +33,14 @@ fetch-data
     steam
     epic-games
 
+fix
+    id*^
+    os={operating-systems^}
+    lang-code&={language-codes^}
+    steam-appid
+    epicportal-arg
+    revert
+
 install
     id^
     os={operating-systems^}
@@ -45,6 +53,15 @@ install
     env&
     verbose
     force
+
+launch-options
+    id^*
+    os={operating-systems^}
+    lang-code={language-codes^}
+    env&
+    arg&
+    exe
+    reset
 
 list
     id
@@ -63,20 +80,12 @@ list
 prefix
     id^*
     lang-code={language-codes^}
-    env&
-    arg&
     exe
+    arg&
+    env&
     program={wine-programs}
     mod={prefix-mods}
     install-wine-binary={wine-binaries-codes}
-    default-env
-    delete-env
-    delete-exe
-    delete-arg
-    info
-    archive
-    remove
-    run
     verbose
     force
 
@@ -115,12 +124,6 @@ setup-steamcmd
 
 setup-wine
     force
-
-steam-fix
-    id*^
-    os={operating-systems^}
-    appid
-    revert
 
 steam-shortcut
     id^*

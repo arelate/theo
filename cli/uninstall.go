@@ -74,6 +74,10 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		return err
 	}
 
+	if err = LaunchOptions(id, installInfo, new(execTask), true); err != nil {
+		return err
+	}
+
 	if err = removeSteamShortcut(id, rdx); err != nil {
 		return err
 	}
@@ -170,22 +174,6 @@ func vangoghUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) er
 
 	if err := removeInventoriedFiles(id, ii, rdx); err != nil {
 		return err
-	}
-
-	switch ii.OperatingSystem {
-	case vangogh_integration.Windows:
-		switch data.CurrentOs() {
-		case vangogh_integration.MacOS:
-			fallthrough
-		case vangogh_integration.Linux:
-			if err := prefixDeleteProperty(id, ii.LangCode, data.PrefixEnvProperty, rdx, ii.force); err != nil {
-				return err
-			}
-		default:
-			return data.CurrentOs().ErrUnsupported()
-		}
-	default:
-		// do nothing
 	}
 
 	return nil

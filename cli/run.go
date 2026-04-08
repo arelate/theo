@@ -3,8 +3,6 @@ package cli
 import (
 	"errors"
 	"net/url"
-	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -235,32 +233,6 @@ func vangoghRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) er
 			return err
 		}
 
-		var prefixName string
-		prefixName, err = data.GetPrefixName(id, rdx)
-		if err != nil {
-			return err
-		}
-
-		langPrefixName := path.Join(prefixName, ii.LangCode)
-
-		if env, ok := rdx.GetAllValues(data.PrefixEnvProperty, langPrefixName); ok {
-			et.env = mergeEnv(et.env, env)
-		}
-
-		if exe, ok := rdx.GetLastVal(data.PrefixExeProperty, langPrefixName); ok {
-
-			absExePath := filepath.Join(absPrefixDir, exe)
-			if _, err = os.Stat(absExePath); err == nil {
-				et.title = exe
-				et.exe = absExePath
-			}
-
-		}
-
-		if arg, ok := rdx.GetAllValues(data.PrefixArgProperty, langPrefixName); ok {
-			et.args = append(et.args, arg...)
-		}
-
 		if et.exe != "" {
 			return osExec(id, ii.OperatingSystem, et)
 		}
@@ -290,6 +262,10 @@ func vangoghRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) er
 		if et, err = osExecTaskGogGameInfo(absGogGameInfoPath, ii.OperatingSystem, et); err != nil {
 			return err
 		}
+	}
+
+	if err = osApplyLaunchOptions(id, ii, et, rdx); err != nil {
+		return err
 	}
 
 	return osExec(id, ii.OperatingSystem, et)
@@ -430,10 +406,6 @@ func osExecTaskDefaultLauncher(absDefaultLauncherPath string, operatingSystem va
 
 func osExec(id string, operatingSystem vangogh_integration.OperatingSystem, et *execTask) error {
 
-	if !et.noFix {
-		et = fixExecTask(id, operatingSystem, et)
-	}
-
 	switch operatingSystem {
 	case vangogh_integration.MacOS:
 		fallthrough
@@ -465,11 +437,17 @@ func steamRun(steamAppId string, ii *InstallInfo, originData *data.OriginData, r
 	switch et.task {
 	case "":
 		et, err = steamDefaultTask(steamAppId, originData.AppInfoKv, ii, rdx)
+		if err != nil {
+			return err
+		}
 	default:
 		et, err = steamNamedTask(steamAppId, et.task, originData.AppInfoKv, ii, rdx)
+		if err != nil {
+			return err
+		}
 	}
 
-	if err != nil {
+	if err = osApplyLaunchOptions(steamAppId, ii, et, rdx); err != nil {
 		return err
 	}
 
@@ -652,14 +630,14 @@ func steamNamedTask(steamAppId, task string, appInfoKv steam_vdf.ValveDataFile, 
 	return nil, errors.New("named steam launch config not found for " + steamAppId)
 }
 
-func egsRun(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable, et *execTask) error {
+func egsRun(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable, et *execTask) error {
 
-	installedPath, err := originOsInstalledPath(id, ii, rdx)
+	installedPath, err := originOsInstalledPath(appName, ii, rdx)
 	if err != nil {
 		return err
 	}
 
-	absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
+	absPrefixDir, err := data.AbsPrefixDir(appName, ii.Origin, rdx)
 	if err != nil {
 		return err
 	}
@@ -669,7 +647,40 @@ func egsRun(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.W
 	et.title = launchFile
 	et.prefix = absPrefixDir
 	et.exe = filepath.Join(installedPath, originData.Manifest.Metadata.LaunchExe)
+	if originData.Manifest.Metadata.LaunchCommand != "" {
+		et.args = append(et.args, originData.Manifest.Metadata.LaunchCommand)
+	}
 	et.workDir = filepath.Join(installedPath, launchDir)
 
-	return osExec(id, ii.OperatingSystem, et)
+	if err = osApplyLaunchOptions(appName, ii, et, rdx); err != nil {
+		return err
+	}
+
+	return osExec(appName, ii.OperatingSystem, et)
+}
+
+func osApplyLaunchOptions(id string, ii *InstallInfo, et *execTask, rdx redux.Readable) error {
+
+	if err := rdx.MustHave(
+		data.LaunchOptionsExeProperty,
+		data.LaunchOptionsArgProperty,
+		data.LaunchOptionsEnvProperty); err != nil {
+		return err
+	}
+
+	appOsLangCode := data.AppOsLangCode(id, ii.OperatingSystem, ii.LangCode)
+
+	if exe, ok := rdx.GetLastVal(data.LaunchOptionsExeProperty, appOsLangCode); ok && exe != "" {
+		et.exe = exe
+	}
+
+	if args, ok := rdx.GetLastVal(data.LaunchOptionsArgProperty, appOsLangCode); ok && len(args) > 0 {
+		et.args = append(et.args, args)
+	}
+
+	if env, ok := rdx.GetLastVal(data.LaunchOptionsEnvProperty, appOsLangCode); ok && len(env) > 0 {
+		et.env = append(et.env, env)
+	}
+
+	return nil
 }

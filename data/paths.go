@@ -139,6 +139,10 @@ func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode st
 	return strings.Join([]string{operatingSystem.String(), langCode}, "-")
 }
 
+func AppOsLangCode(id string, operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
+	return strings.Join([]string{id, operatingSystem.String(), langCode}, "-")
+}
+
 func AbsPrefixDir(id string, origin Origin, rdx redux.Readable) (string, error) {
 	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return "", err

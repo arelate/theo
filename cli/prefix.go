@@ -3,9 +3,7 @@ package cli
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
-	"maps"
 	"net/url"
 	"os"
 	"path"
@@ -16,20 +14,9 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
-	"github.com/boggydigital/backups"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
 )
-
-var osEnvDefaults = map[vangogh_integration.OperatingSystem][]string{
-	vangogh_integration.MacOS: {
-		"CX_GRAPHICS_BACKEND=d3dmetal", // other values: dxmt, dxvk, wined3d
-		"WINEMSYNC=1",
-		"WINEESYNC=0",
-		"ROSETTA_ADVERTISE_AVX=1",
-		// "MTL_HUD_ENABLED=1", // not a candidate for default value, adding for reference
-	},
-}
 
 func PrefixHandler(u *url.URL) error {
 
@@ -48,10 +35,10 @@ func PrefixHandler(u *url.URL) error {
 		force:           q.Has("force"),
 	}
 
-	et := &execTask{
+	et := new(execTask{
 		exe:     q.Get("exe"),
 		verbose: q.Has("verbose"),
-	}
+	})
 
 	if q.Has("env") {
 		et.env = strings.Split(q.Get("env"), ",")
@@ -65,33 +52,14 @@ func PrefixHandler(u *url.URL) error {
 	program := q.Get("program")
 	wineBinary := q.Get("install-wine-binary")
 
-	defaultEnv := q.Has("default-env")
-	deleteEnv := q.Has("delete-env")
-
-	deleteExe := q.Has("delete-exe")
-
-	deleteArg := q.Has("delete-arg")
-
-	info := q.Has("info")
-	archive := q.Has("archive")
-	remove := q.Has("remove")
-
-	run := q.Has("run")
-
 	return Prefix(id, ii,
 		mod, program, wineBinary,
-		defaultEnv, deleteEnv, deleteExe, deleteArg,
-		info, archive, remove,
-		run,
 		et)
 }
 
 func Prefix(id string,
 	request *InstallInfo,
 	mod, program, wineBinary string,
-	defaultEnv, deleteEnv, deleteExe, deleteArg bool,
-	info, archive, remove bool,
-	run bool,
 	et *execTask) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -111,58 +79,9 @@ func Prefix(id string,
 
 	et.prefix = absPrefixDir
 
-	if deleteEnv {
-		if err = prefixDeleteProperty(id, ii.LangCode, data.PrefixEnvProperty, rdx, ii.force); err != nil {
-			return err
-		}
-	}
-
-	if defaultEnv {
-		if err = prefixDefaultEnv(id, ii.LangCode, rdx); err != nil {
-			return err
-		}
-	}
-
-	if deleteExe {
-		if err = prefixDeleteProperty(id, ii.LangCode, data.PrefixExeProperty, rdx, ii.force); err != nil {
-			return err
-		}
-	}
-
-	if deleteArg {
-		if err = prefixDeleteProperty(id, ii.LangCode, data.PrefixArgProperty, rdx, ii.force); err != nil {
-			return err
-		}
-	}
-
-	if len(et.env) > 0 {
-		if err = prefixSetEnv(id, ii.LangCode, et.env, rdx); err != nil {
-			return err
-		}
-	}
-
 	if et.exe != "" {
-		switch run {
-		case true:
-			et.title = filepath.Base(et.exe)
-			return osExec(id, vangogh_integration.Windows, et)
-		default:
-			if err = prefixSetExe(id, ii.Origin, et.exe, rdx); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(et.args) > 0 {
-		if err = prefixSetArgs(id, ii.LangCode, et.args, rdx); err != nil {
-			return err
-		}
-	}
-
-	if info {
-		if err = prefixInfo(id, ii.LangCode, rdx); err != nil {
-			return err
-		}
+		et.title = filepath.Base(et.exe)
+		return osExec(id, vangogh_integration.Windows, et)
 	}
 
 	if mod != "" {
@@ -197,18 +116,6 @@ func Prefix(id string,
 
 	if wineBinary != "" {
 		if err = prefixInstallBinary(id, wineBinary, absPrefixDir, et); err != nil {
-			return err
-		}
-	}
-
-	if archive {
-		if err = prefixArchiveProduct(id, ii.Origin); err != nil {
-			return err
-		}
-	}
-
-	if remove {
-		if err = prefixRemoveProduct(id, ii, rdx); err != nil {
 			return err
 		}
 	}
@@ -284,50 +191,6 @@ func prefixInstallBinary(id string, wineBinary string, absPrefixDir string, et *
 	return osExec(id, vangogh_integration.Windows, et)
 }
 
-func prefixArchiveProduct(id string, origin data.Origin) error {
-
-	appa := nod.Begin("archiving prefix for %s...", id)
-	defer appa.Done()
-
-	rdx, err := redux.NewReader(data.AbsReduxDir(), vangogh_integration.TitleProperty)
-	if err != nil {
-		return err
-	}
-
-	prefixArchiveDir := data.Pwd.AbsRelDirPath(data.PrefixArchive, data.Backups)
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	absPrefixNameArchiveDir := filepath.Join(prefixArchiveDir, prefixName)
-
-	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(absPrefixNameArchiveDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(absPrefixNameArchiveDir, 0755); err != nil {
-			return err
-		}
-	}
-
-	if err = backups.Compress(absPrefixDir, absPrefixNameArchiveDir); err != nil {
-		return err
-	}
-
-	return prefixCleanupProductArchive(absPrefixNameArchiveDir)
-}
-
-func prefixCleanupProductArchive(absPrefixNameArchiveDir string) error {
-	cppa := nod.NewProgress(" cleaning up old prefix archives...")
-	defer cppa.Done()
-
-	return backups.Cleanup(absPrefixNameArchiveDir, true, cppa)
-}
-
 func prefixModRetina(id string, origin data.Origin, revert bool, rdx redux.Writeable, verbose, force bool) error {
 
 	mpa := nod.Begin("modding retina in prefix for %s...", id)
@@ -338,7 +201,7 @@ func prefixModRetina(id string, origin data.Origin, revert bool, rdx redux.Write
 		return nil
 	}
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty, data.PrefixEnvProperty, data.PrefixExeProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
 		return err
 	}
 
@@ -398,278 +261,4 @@ func createRegFile(absPath string, content []byte) error {
 	}
 
 	return nil
-}
-
-func prefixRemoveProduct(id string, ii *InstallInfo, rdx redux.Readable) error {
-	rppa := nod.Begin(" removing installed files from prefix for %s...", id)
-	defer rppa.Done()
-
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return err
-	}
-
-	absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(absPrefixDir); os.IsNotExist(err) {
-		rppa.EndWithResult("not present")
-		return nil
-	}
-
-	if !ii.force {
-		rppa.EndWithResult("found prefix, use -force to remove")
-		return nil
-	}
-
-	relInventoryFiles, err := readInventory(id, ii, rdx)
-	if os.IsNotExist(err) {
-		rppa.EndWithResult("installed files inventory not found")
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	if err = prefixRemoveInstalledFiles(absPrefixDir, relInventoryFiles...); err != nil {
-		return err
-	}
-
-	if err = prefixRemoveDirs(absPrefixDir, relInventoryFiles...); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func prefixRemoveInstalledFiles(absPrefixDir string, relFiles ...string) error {
-	rpifa := nod.NewProgress(" removing inventoried files in prefix...")
-	defer rpifa.Done()
-
-	rpifa.TotalInt(len(relFiles))
-
-	for _, relFile := range relFiles {
-
-		absInventoryFile := filepath.Join(absPrefixDir, relFile)
-		if stat, err := os.Stat(absInventoryFile); err == nil && !stat.IsDir() {
-			if err = os.Remove(absInventoryFile); err != nil {
-				return err
-			}
-		}
-
-		rpifa.Increment()
-	}
-
-	return nil
-}
-
-func prefixRemoveDirs(absPrefixDir string, relFiles ...string) error {
-	rpda := nod.NewProgress(" removing prefix empty directories...")
-	defer rpda.Done()
-
-	rpda.TotalInt(len(relFiles))
-
-	// filepath.Walk adds files in lexical order and for removal we want to reverse that to attempt to remove
-	// leafs first, roots last
-	slices.Reverse(relFiles)
-
-	for _, relFile := range relFiles {
-
-		absDir := filepath.Join(absPrefixDir, relFile)
-		if stat, err := os.Stat(absDir); err == nil && stat.IsDir() {
-			// TODO: replace with walker
-			//var empty bool
-			//if empty, err = osIsDirEmpty(absDir); empty && err == nil {
-			//	if err = os.RemoveAll(absDir); err != nil {
-			//		return err
-			//	}
-			//} else if err != nil {
-			//	return err
-			//}
-		}
-
-		rpda.Increment()
-	}
-
-	return nil
-}
-
-func prefixSetEnv(id, langCode string, env []string, rdx redux.Writeable) error {
-
-	spea := nod.Begin("setting %s...", data.PrefixEnvProperty)
-	defer spea.Done()
-
-	newEnvs := make(map[string][]string)
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	if err = rdx.MustHave(data.PrefixEnvProperty); err != nil {
-		return err
-	}
-
-	curEnv, _ := rdx.GetAllValues(data.PrefixEnvProperty, path.Join(prefixName, langCode))
-	newEnvs[path.Join(prefixName, langCode)] = mergeEnv(curEnv, env)
-
-	if err = rdx.BatchReplaceValues(data.PrefixEnvProperty, newEnvs); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func mergeEnv(env1 []string, env2 []string) []string {
-	de1, de2 := decodeEnv(env1), decodeEnv(env2)
-	maps.Copy(de1, de2)
-	return encodeEnv(de1)
-}
-
-func decodeEnv(env []string) map[string]string {
-	de := make(map[string]string, len(env))
-	for _, e := range env {
-		if k, v, ok := strings.Cut(e, "="); ok {
-			de[k] = v
-		}
-	}
-	return de
-}
-
-func encodeEnv(de map[string]string) []string {
-	ee := make([]string, 0, len(de))
-	for k, v := range de {
-		ee = append(ee, k+"="+v)
-	}
-	return ee
-}
-
-func prefixSetExe(id string, origin data.Origin, exe string, rdx redux.Writeable) error {
-
-	spepa := nod.Begin("setting %s...", data.PrefixExeProperty)
-	defer spepa.Done()
-
-	if strings.HasPrefix(exe, ".") ||
-		strings.HasPrefix(exe, "/") {
-		spepa.EndWithResult("exe path must be relative and cannot start with . or /")
-		return nil
-	}
-
-	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
-	if err != nil {
-		return err
-	}
-
-	absExePath := filepath.Join(absPrefixDir, prefixRelDriveCDir, exe)
-	if _, err = os.Stat(absExePath); err != nil {
-		return err
-	}
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	if err = rdx.MustHave(data.PrefixExeProperty); err != nil {
-		return err
-	}
-
-	return rdx.ReplaceValues(data.PrefixExeProperty, prefixName, exe)
-}
-
-func prefixSetArgs(id, langCode string, args []string, rdx redux.Writeable) error {
-
-	spepa := nod.Begin("setting %s...", data.PrefixArgProperty)
-	defer spepa.Done()
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	langPrefixName := path.Join(prefixName, langCode)
-
-	if err = rdx.MustHave(data.PrefixArgProperty); err != nil {
-		return err
-	}
-
-	return rdx.ReplaceValues(data.PrefixArgProperty, langPrefixName, args...)
-}
-
-func prefixInfo(id, langCode string, rdx redux.Readable) error {
-
-	pia := nod.Begin("looking up prefix details...")
-	defer pia.Done()
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-	langPrefixName := path.Join(prefixName, langCode)
-
-	summary := make(map[string][]string)
-
-	properties := []string{data.PrefixEnvProperty, data.PrefixExeProperty, data.PrefixArgProperty}
-
-	if err = rdx.MustHave(data.PrefixEnvProperty, data.PrefixExeProperty, data.PrefixArgProperty); err != nil {
-		return err
-	}
-
-	for _, p := range properties {
-		if values, ok := rdx.GetAllValues(p, langPrefixName); ok {
-			for _, value := range values {
-				summary[langPrefixName] = append(summary[langPrefixName], fmt.Sprintf("%s:%s", p, value))
-			}
-		}
-	}
-
-	if len(summary) == 0 {
-		pia.EndWithResult("found nothing")
-	} else {
-		pia.EndWithSummary("results:", summary)
-	}
-
-	return nil
-}
-
-func prefixDefaultEnv(id, langCode string, rdx redux.Writeable) error {
-
-	pdea := nod.Begin("defaulting prefix environment variables...")
-	defer pdea.Done()
-
-	if err := rdx.MustHave(vangogh_integration.TitleProperty, data.PrefixEnvProperty); err != nil {
-		return err
-	}
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	langPrefixName := path.Join(prefixName, langCode)
-
-	return rdx.ReplaceValues(data.PrefixEnvProperty, langPrefixName, osEnvDefaults[data.CurrentOs()]...)
-}
-
-func prefixDeleteProperty(id, langCode, property string, rdx redux.Writeable, force bool) error {
-	pdea := nod.Begin("deleting %s...", property)
-	defer pdea.Done()
-
-	if !force {
-		pdea.EndWithResult("this operation requires -force flag")
-		return nil
-	}
-
-	if err := rdx.MustHave(vangogh_integration.TitleProperty, property); err != nil {
-		return err
-	}
-
-	prefixName, err := data.GetPrefixName(id, rdx)
-	if err != nil {
-		return err
-	}
-
-	langPrefixName := path.Join(prefixName, langCode)
-
-	return rdx.CutKeys(property, langPrefixName)
 }

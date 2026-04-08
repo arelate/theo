@@ -14,7 +14,11 @@ import (
 
 const steamAppIdTxt = "steam_appid.txt"
 
-func SteamFixHandler(u *url.URL) error {
+type fixes struct {
+	steamAppId bool
+}
+
+func FixHandler(u *url.URL) error {
 
 	q := u.Query()
 
@@ -29,15 +33,18 @@ func SteamFixHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 	}
 
-	fixAppId := q.Has("appid")
+	fx := new(fixes{
+		steamAppId: q.Has("steam-appid"),
+	})
+
 	revert := q.Has("revert")
 
-	return SteamFix(id, ii, fixAppId, revert)
+	return Fix(id, ii, fx, revert)
 }
 
-func SteamFix(steamAppId string, ii *InstallInfo, fixAppId, revert bool) error {
+func Fix(id string, ii *InstallInfo, fx *fixes, revert bool) error {
 
-	sfa := nod.Begin("applying Steam fixes...")
+	sfa := nod.Begin("applying fixes...")
 	defer sfa.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -45,8 +52,8 @@ func SteamFix(steamAppId string, ii *InstallInfo, fixAppId, revert bool) error {
 		return err
 	}
 
-	if fixAppId {
-		if err = steamAppIdFix(steamAppId, ii, rdx, revert); err != nil {
+	if fx.steamAppId {
+		if err = fixSteamAppId(id, ii, rdx, revert); err != nil {
 			return err
 		}
 	}
@@ -54,10 +61,10 @@ func SteamFix(steamAppId string, ii *InstallInfo, fixAppId, revert bool) error {
 	return nil
 }
 
-func steamAppIdFix(steamAppId string, request *InstallInfo, rdx redux.Writeable, revert bool) error {
+func fixSteamAppId(steamAppId string, request *InstallInfo, rdx redux.Writeable, revert bool) error {
 
-	saifa := nod.Begin(" applying steam-appid.txt fix...")
-	defer saifa.Done()
+	fsaia := nod.Begin(" applying steam-appid.txt fix...")
+	defer fsaia.Done()
 
 	// https://partner.steamgames.com/doc/sdk/api
 
@@ -83,7 +90,7 @@ func steamAppIdFix(steamAppId string, request *InstallInfo, rdx redux.Writeable,
 	switch revert {
 	case true:
 		if err = os.Remove(absSteamAppIdTxtPath); os.IsNotExist(err) {
-			saifa.EndWithResult("not present")
+			fsaia.EndWithResult("not present")
 		} else if err != nil {
 			return err
 		}
@@ -100,7 +107,7 @@ func steamAppIdFix(steamAppId string, request *InstallInfo, rdx redux.Writeable,
 				return err
 			}
 		} else if os.IsExist(err) {
-			saifa.EndWithResult("already exists")
+			fsaia.EndWithResult("already exists")
 		}
 	}
 
