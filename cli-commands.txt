@@ -63,11 +63,12 @@ launch-options
     reset
 
 list
-    id
+    id^
     available-products
     installed
-    tasks
+    launch-options
     steam-shortcuts
+    tasks
     all-shortcut-keys
     os={operating-systems^}
     lang-code={language-codes^}

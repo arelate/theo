@@ -28,14 +28,35 @@ var steamShortcutPrintedKeys = []string{
 	"LaunchOptions",
 }
 
+type listTarget int
+
+const (
+	ListTargetUnknown listTarget = iota
+	ListTargetAvailableProducts
+	ListTargetInstalled
+	ListTargetLaunchOptions
+	ListTargetSteamShortcuts
+	ListTargetTasks
+)
+
 func ListHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	availableProducts := q.Has("available-products")
-	installed := q.Has("installed")
-	tasks := q.Has("tasks")
-	steamShortcuts := q.Has("steam-shortcuts")
+	id := q.Get(vangogh_integration.IdProperty)
+
+	lt := ListTargetUnknown
+	if q.Has("available-products") {
+		lt = ListTargetAvailableProducts
+	} else if q.Has("installed") {
+		lt = ListTargetInstalled
+	} else if q.Has("launch-options") {
+		lt = ListTargetLaunchOptions
+	} else if q.Has("steam-shortcuts") {
+		lt = ListTargetSteamShortcuts
+	} else if q.Has("tasks") {
+		lt = ListTargetTasks
+	}
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
 	if q.Has(vangogh_integration.OperatingSystemsProperty) {
@@ -50,7 +71,7 @@ func ListHandler(u *url.URL) error {
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
-		Origin:          data.VangoghOrigin,
+		Origin:          data.UnknownOrigin,
 		force:           q.Has("force"),
 	}
 
@@ -62,50 +83,35 @@ func ListHandler(u *url.URL) error {
 
 	update := q.Has("update")
 
-	id := q.Get(vangogh_integration.IdProperty)
 	allShortcutKeys := q.Has("all-shortcut-keys")
 
-	return List(availableProducts, installed, tasks, steamShortcuts, ii, id, allShortcutKeys, update)
+	return List(lt, ii, id, allShortcutKeys, update)
 }
 
-func List(availableProducts, installed, tasks, steamShortcuts bool,
+func List(lt listTarget,
 	installInfo *InstallInfo,
 	id string, allShortcutKeys bool, update bool) error {
 
-	if availableProducts || installed || tasks || steamShortcuts {
-		// do nothing
-	} else {
-		return errors.New("you need to specify at least one category to list")
-	}
-
-	if availableProducts {
-		if err := listAvailableProducts(installInfo, update); err != nil {
-			return err
-		}
-	}
-
-	if installed {
-		if err := listInstalled(installInfo); err != nil {
-			return err
-		}
-	}
-
-	if tasks {
+	switch lt {
+	case ListTargetAvailableProducts:
+		return listAvailableProducts(installInfo, update)
+	case ListTargetInstalled:
+		return listInstalled(installInfo)
+	case ListTargetLaunchOptions:
+		return listLaunchOptions(id, installInfo)
+	case ListTargetSteamShortcuts:
+		return listSteamShortcuts(allShortcutKeys)
+	case ListTargetTasks:
 		if id == "" {
 			return errors.New("listing tasks requires product id")
 		}
-		if err := listTasks(id, installInfo); err != nil {
-			return err
-		}
-	}
 
-	if steamShortcuts {
-		if err := listSteamShortcuts(allShortcutKeys); err != nil {
-			return err
-		}
+		return listTasks(id, installInfo)
+	case ListTargetUnknown:
+		return errors.New("you need to specify at least one category to list")
+	default:
+		return errors.New("unknown list target")
 	}
-
-	return nil
 }
 
 func listAvailableProducts(ii *InstallInfo, update bool) error {
@@ -325,7 +331,47 @@ func listInstalled(ii *InstallInfo) error {
 	return nil
 }
 
-func listTasks(id string, ii *InstallInfo) error {
+func listLaunchOptions(id string, request *InstallInfo) error {
+
+	lloa := nod.Begin("listing launch options for %s...", id)
+	defer lloa.Done()
+
+	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
+	if err != nil {
+		return err
+	}
+
+	installedInfo, err := matchInstalledInfo(id, request, rdx)
+	if err != nil {
+		return err
+	}
+
+	appOsLangCode := data.AppOsLangCode(id, installedInfo.OperatingSystem, installedInfo.LangCode)
+
+	summary := make(map[string][]string)
+
+	launchOptionsProperties := []string{
+		data.LaunchOptionsExeProperty,
+		data.LaunchOptionsArgProperty,
+		data.LaunchOptionsEnvProperty,
+	}
+
+	for _, lop := range launchOptionsProperties {
+		if values, ok := rdx.GetAllValues(lop, appOsLangCode); ok && len(values) > 0 {
+			summary[lop] = values
+		}
+	}
+
+	if len(summary) > 0 {
+		lloa.EndWithSummary("found launch options:", summary)
+	} else {
+		lloa.EndWithResult("nothing found")
+	}
+
+	return nil
+}
+
+func listTasks(id string, request *InstallInfo) error {
 
 	lpta := nod.Begin("listing tasks for %s...", id)
 	defer lpta.Done()
@@ -335,7 +381,7 @@ func listTasks(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	installedInfo, err := matchInstalledInfo(id, ii, rdx)
+	installedInfo, err := matchInstalledInfo(id, request, rdx)
 	if err != nil {
 		return err
 	}
@@ -346,7 +392,7 @@ func listTasks(id string, ii *InstallInfo) error {
 	case data.VangoghOrigin:
 		tasksSummary, err = listGogInfoPlayTasks(id, installedInfo, rdx)
 	case data.SteamOrigin:
-		tasksSummary, err = listSteamAppInfoTasks(id, rdx, ii.force)
+		tasksSummary, err = listSteamAppInfoTasks(id, rdx, installedInfo.force)
 	default:
 		err = installedInfo.Origin.ErrUnsupportedOrigin()
 	}
