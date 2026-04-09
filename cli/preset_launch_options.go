@@ -50,23 +50,51 @@ func PresetLaunchOptions(id string, request *InstallInfo, rdx redux.Writeable) e
 	}
 
 	switch id {
-	case "1456460669": // Baldur's Gate 3
-		switch ii.OperatingSystem {
-		case vangogh_integration.MacOS:
-			dir, fn := filepath.Split(et.exe)
-			if fn == "Baldur's Gate 3" {
-				et.exe = filepath.Join(dir, "Baldur's Gate 3 GOG")
-			}
-		default:
-			// do nothing
-		}
-	case "be23672deb69402781cd47cc2919caf4": // Marvel's Spider-Man Remastered
-		return LaunchOptions(id, ii, new(execTask{args: []string{"-EpicPortal"}}), false)
-	case "241300": // Card City Nights 2
+	case "1456460669":
+		// Baldur's Gate 3
+		return presetBaldursGate3Exe(ii, et)
+	case "be23672deb69402781cd47cc2919caf4":
+		// Marvel's Spider-Man Remastered
+		return presetEpicPortalArg(id, ii)
+	case "cd231060e6744ffb97684767b07d2b77":
+		// Ghost of Tsushima DIRECTOR'S CUT
+		return presetEpicPortalArg(id, ii)
+	case "eb2c955d6a494dfb9b7e09e0145668a1":
+		// Marvel’s Spider-Man: Miles Morales
+		return presetEpicPortalArg(id, ii)
+	case "0c6db5941ac8420aabbd8510e94e7d9a":
+		// Marvel’s Spider-Man 2
+		return presetEpicPortalArg(id, ii)
+	case "2efe99166b8847e9bcd80c571b05e1b6":
+		// Horizon Forbidden West™ Complete Edition
+		return presetEpicPortalArg(id, ii)
+	case "Kiwi":
+		// Tetris® Effect: Connected
+		return presetEpicPortalArg(id, ii)
+	case "241300":
+		// Card City Nights 2
 		return fixSteamAppId(id, ii, rdx, false)
 	default:
 		ploa.EndWithResult("no preset found for " + id)
 	}
 
 	return nil
+}
+
+func presetBaldursGate3Exe(ii *InstallInfo, et *execTask) error {
+	switch ii.OperatingSystem {
+	case vangogh_integration.MacOS:
+		dir, fn := filepath.Split(et.exe)
+		if fn == "Baldur's Gate 3" {
+			et.exe = filepath.Join(dir, "Baldur's Gate 3 GOG")
+		}
+	default:
+		// do nothing
+	}
+
+	return nil
+}
+
+func presetEpicPortalArg(appName string, ii *InstallInfo) error {
+	return LaunchOptions(appName, ii, new(execTask{args: []string{"-EpicPortal"}}), false)
 }
