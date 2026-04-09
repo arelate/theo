@@ -70,11 +70,11 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		}
 	}
 
-	if err = unpinInstallInfo(id, installInfo, rdx); err != nil {
+	if err = LaunchOptions(id, installInfo, new(execTask), true); err != nil {
 		return err
 	}
 
-	if err = LaunchOptions(id, installInfo, new(execTask), true); err != nil {
+	if err = unpinInstallInfo(id, installInfo, rdx); err != nil {
 		return err
 	}
 
