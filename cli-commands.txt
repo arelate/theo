@@ -57,9 +57,9 @@ launch-options
     id^*
     os={operating-systems^}
     lang-code={language-codes^}
-    env&
-    arg&
     exe
+    arg&
+    env&
     reset
 
 list
@@ -88,6 +88,12 @@ prefix
     install-wine-binary={wine-binaries-codes}
     verbose
     force
+
+preset-launch-options
+    id^*
+    os={operating-systems^}
+    lang-code={language-codes^}
+    reset
 
 remove-downloads
     id^*

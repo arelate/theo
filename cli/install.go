@@ -141,6 +141,10 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
+	if err = PresetLaunchOptions(id, ii, false); err != nil {
+		return err
+	}
+
 	idInstalledDate := map[string][]string{id: {time.Now().UTC().Format(time.RFC3339)}}
 	if err = rdx.BatchReplaceValues(data.InstallDateProperty, idInstalledDate); err != nil {
 		return err
