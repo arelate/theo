@@ -93,7 +93,6 @@ preset-launch-options
     id^*
     os={operating-systems^}
     lang-code={language-codes^}
-    reset
 
 remove-downloads
     id^*

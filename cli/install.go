@@ -141,7 +141,7 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if err = PresetLaunchOptions(id, ii, false); err != nil {
+	if err = PresetLaunchOptions(id, ii, rdx); err != nil {
 		return err
 	}
 

@@ -111,24 +111,16 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	switch ii.Origin {
-	case data.VangoghOrigin:
-		if err = checkProductType(id, rdx, ii.force); err != nil {
-			return err
-		}
-		if err = vangoghRun(id, ii, rdx, et); err != nil {
-			return err
-		}
-	case data.SteamOrigin:
-		if err = steamRun(id, ii, originData, rdx, et); err != nil {
-			return err
-		}
-	case data.EpicGamesOrigin:
-		if err = egsRun(id, ii, originData, rdx, et); err != nil {
-			return err
-		}
-	default:
-		return ii.Origin.ErrUnsupportedOrigin()
+	if et, err = originGetExecTask(id, ii, originData, et, rdx); err != nil {
+		return err
+	}
+
+	if err = osApplyLaunchOptions(id, ii, et, rdx); err != nil {
+		return err
+	}
+
+	if err = osExec(id, ii.OperatingSystem, et); err != nil {
+		return err
 	}
 
 	playSessionDuration := time.Since(playSessionStart)
@@ -207,6 +199,33 @@ func updateTotalPlaytime(rdx redux.Writeable, id string) error {
 	}
 }
 
+func originGetExecTask(id string, ii *InstallInfo, originData *data.OriginData, et *execTask, rdx redux.Writeable) (*execTask, error) {
+
+	var err error
+
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		if err = checkProductType(id, rdx, ii.force); err != nil {
+			return nil, err
+		}
+		if et, err = vangoghGetExecTask(id, ii, rdx, et); err != nil {
+			return nil, err
+		}
+	case data.SteamOrigin:
+		if et, err = steamGetExecTask(id, ii, originData, rdx, et); err != nil {
+			return nil, err
+		}
+	case data.EpicGamesOrigin:
+		if et, err = egsGetExecTask(id, ii, originData, rdx, et); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, ii.Origin.ErrUnsupportedOrigin()
+	}
+
+	return et, nil
+}
+
 func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) error {
 	if operatingSystem == vangogh_integration.MacOS && data.CurrentOs() != vangogh_integration.MacOS {
 		return errors.New("running macOS versions is only supported on macOS")
@@ -217,11 +236,11 @@ func osConfirmRunnability(operatingSystem vangogh_integration.OperatingSystem) e
 	return nil
 }
 
-func vangoghRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) error {
+func vangoghGetExecTask(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) (*execTask, error) {
 
 	var err error
 	if err = osConfirmRunnability(ii.OperatingSystem); err != nil {
-		return err
+		return nil, err
 	}
 
 	if ii.OperatingSystem == vangogh_integration.Windows && data.CurrentOs() != vangogh_integration.Windows {
@@ -230,11 +249,11 @@ func vangoghRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) er
 		if absPrefixDir, err = data.AbsPrefixDir(id, ii.Origin, rdx); err == nil {
 			et.prefix = absPrefixDir
 		} else {
-			return err
+			return nil, err
 		}
 
 		if et.exe != "" {
-			return osExec(id, ii.OperatingSystem, et)
+			return et, nil
 		}
 	}
 
@@ -243,7 +262,7 @@ func vangoghRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) er
 	case false:
 		absGogGameInfoPath, err = osFindGogGameInfo(id, ii, rdx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	case true:
 		// do nothing
@@ -253,22 +272,18 @@ func vangoghRun(id string, ii *InstallInfo, rdx redux.Readable, et *execTask) er
 	case "":
 		var absDefaultLauncherPath string
 		if absDefaultLauncherPath, err = osFindDefaultLauncher(id, ii, rdx); err != nil {
-			return err
+			return nil, err
 		}
 		if et, err = osExecTaskDefaultLauncher(absDefaultLauncherPath, ii.OperatingSystem, et); err != nil {
-			return err
+			return nil, err
 		}
 	default:
 		if et, err = osExecTaskGogGameInfo(absGogGameInfoPath, ii.OperatingSystem, et); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	if err = osApplyLaunchOptions(id, ii, et, rdx); err != nil {
-		return err
-	}
-
-	return osExec(id, ii.OperatingSystem, et)
+	return et, nil
 }
 
 func osFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {
@@ -430,7 +445,7 @@ func windowsToNixPath(wp string) string {
 	return strings.Replace(wp, "\\", "/", -1)
 }
 
-func steamRun(steamAppId string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable, et *execTask) error {
+func steamGetExecTask(steamAppId string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable, et *execTask) (*execTask, error) {
 
 	var err error
 
@@ -438,20 +453,16 @@ func steamRun(steamAppId string, ii *InstallInfo, originData *data.OriginData, r
 	case "":
 		et, err = steamDefaultTask(steamAppId, originData.AppInfoKv, ii, rdx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	default:
 		et, err = steamNamedTask(steamAppId, et.task, originData.AppInfoKv, ii, rdx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	if err = osApplyLaunchOptions(steamAppId, ii, et, rdx); err != nil {
-		return err
-	}
-
-	return osExec(steamAppId, ii.OperatingSystem, et)
+	return et, nil
 }
 
 func steamGetLaunchConfigs(steamAppId string, appInfoKv steam_vdf.ValveDataFile) ([]*steam_integration.LaunchConfig, error) {
@@ -630,16 +641,16 @@ func steamNamedTask(steamAppId, task string, appInfoKv steam_vdf.ValveDataFile, 
 	return nil, errors.New("named steam launch config not found for " + steamAppId)
 }
 
-func egsRun(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable, et *execTask) error {
+func egsGetExecTask(appName string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable, et *execTask) (*execTask, error) {
 
 	installedPath, err := originOsInstalledPath(appName, ii, rdx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	absPrefixDir, err := data.AbsPrefixDir(appName, ii.Origin, rdx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	launchDir, launchFile := filepath.Split(originData.Manifest.Metadata.LaunchExe)
@@ -652,11 +663,7 @@ func egsRun(appName string, ii *InstallInfo, originData *data.OriginData, rdx re
 	}
 	et.workDir = filepath.Join(installedPath, launchDir)
 
-	if err = osApplyLaunchOptions(appName, ii, et, rdx); err != nil {
-		return err
-	}
-
-	return osExec(appName, ii.OperatingSystem, et)
+	return et, nil
 }
 
 func osApplyLaunchOptions(id string, ii *InstallInfo, et *execTask, rdx redux.Readable) error {
