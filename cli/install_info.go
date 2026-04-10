@@ -26,19 +26,20 @@ var (
 )
 
 type InstallInfo struct {
-	OperatingSystem     vangogh_integration.OperatingSystem `json:"os"`
-	LangCode            string                              `json:"lang-code"`
-	Origin              data.Origin                         `json:"origin"`
-	DownloadTypes       []vangogh_integration.DownloadType  `json:"download-types"`
-	DownloadableContent []string                            `json:"dlc"`
-	Version             string                              `json:"version"`
-	TimeUpdated         string                              `json:"time-updated,omitempty"`
-	EstimatedBytes      int64                               `json:"estimated-bytes"`
-	KeepDownloads       bool                                `json:"keep-downloads"`
-	NoSteamShortcut     bool                                `json:"no-steam-shortcut"`
-	Env                 []string                            `json:"env"`
-	verbose             bool                                // won't be serialized
-	force               bool                                // won't be serialized
+	OperatingSystem        vangogh_integration.OperatingSystem `json:"os"`
+	LangCode               string                              `json:"lang-code"`
+	Origin                 data.Origin                         `json:"origin"`
+	DownloadTypes          []vangogh_integration.DownloadType  `json:"download-types"`
+	DownloadableContent    []string                            `json:"dlc"`
+	Version                string                              `json:"version"`
+	TimeUpdated            string                              `json:"time-updated,omitempty"`
+	EstimatedBytes         int64                               `json:"estimated-bytes"`
+	KeepDownloads          bool                                `json:"keep-downloads"`
+	NoSteamShortcut        bool                                `json:"no-steam-shortcut"`
+	NoPresentLaunchOptions bool                                `json:"no-preset-launch-options"`
+	Env                    []string                            `json:"env"`
+	verbose                bool                                // won't be serialized
+	force                  bool                                // won't be serialized
 }
 
 func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) error {

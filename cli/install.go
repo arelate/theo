@@ -42,14 +42,15 @@ func InstallHandler(u *url.URL) error {
 	}
 
 	ii := &InstallInfo{
-		OperatingSystem: operatingSystem,
-		LangCode:        langCode,
-		DownloadTypes:   downloadTypes,
-		Origin:          data.VangoghOrigin,
-		KeepDownloads:   q.Has("keep-downloads"),
-		NoSteamShortcut: q.Has("no-steam-shortcut"),
-		verbose:         q.Has("verbose"),
-		force:           q.Has("force"),
+		OperatingSystem:        operatingSystem,
+		LangCode:               langCode,
+		DownloadTypes:          downloadTypes,
+		Origin:                 data.VangoghOrigin,
+		KeepDownloads:          q.Has("keep-downloads"),
+		NoSteamShortcut:        q.Has("no-steam-shortcut"),
+		NoPresentLaunchOptions: q.Has("no-preset-launch-options"),
+		verbose:                q.Has("verbose"),
+		force:                  q.Has("force"),
 	}
 
 	if q.Has("steam") {
@@ -64,12 +65,10 @@ func InstallHandler(u *url.URL) error {
 		ii.Env = strings.Split(q.Get("env"), ",")
 	}
 
-	presetLaunchOptions := !q.Has("no-preset-launch-options")
-
-	return Install(id, ii, presetLaunchOptions)
+	return Install(id, ii)
 }
 
-func Install(id string, ii *InstallInfo, presetLaunchOptions bool) error {
+func Install(id string, ii *InstallInfo) error {
 
 	ia := nod.Begin("installing %s...", id)
 	defer ia.Done()
@@ -143,7 +142,7 @@ func Install(id string, ii *InstallInfo, presetLaunchOptions bool) error {
 		return err
 	}
 
-	if presetLaunchOptions {
+	if !ii.NoPresentLaunchOptions {
 		if err = PresetLaunchOptions(id, ii, rdx); err != nil {
 			return err
 		}
