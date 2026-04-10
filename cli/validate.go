@@ -276,7 +276,7 @@ func egsValidateChunks(appName string, ii *InstallInfo, originData *data.OriginD
 	evca := nod.NewProgress("validating EGS chunks for %s-%s...", appName, ii.OperatingSystem)
 	defer evca.Done()
 
-	evca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
+	evca.Total(uint64(egsManifestSize(originData.Manifest)))
 
 	absChunksDownloadsDir := data.AbsChunksDownloadDir(appName, ii.OperatingSystem)
 
@@ -309,7 +309,7 @@ func egsValidateChunks(appName string, ii *InstallInfo, originData *data.OriginD
 			return errors.New("failed validation for " + chunkPath)
 		}
 
-		evca.Increment()
+		evca.Progress(chunk.FileSize)
 	}
 
 	evca.EndWithResult("valid")

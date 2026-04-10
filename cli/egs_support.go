@@ -751,14 +751,14 @@ func egsAssembleChunks(appName string, ii *InstallInfo, originData *data.OriginD
 		return err
 	}
 
-	eaca.TotalInt(len(originData.Manifest.FileList.List))
+	eaca.Total(uint64(egsManifestSize(originData.Manifest)))
 
 	for _, chunkedFile := range originData.Manifest.FileList.List {
 		if err = egsAssembleFile(&chunkedFile, originData.Manifest.Metadata.FeatureLevel, absChunksDownloadsDir, installedPath); err != nil {
 			return err
 		}
 
-		eaca.Increment()
+		eaca.Progress(chunkedFile.Size)
 	}
 
 	return nil
@@ -828,7 +828,7 @@ func egsValidateAssembly(appName string, ii *InstallInfo, originData *data.Origi
 	evaa := nod.NewProgress("validating assembled files for %s-%s...", appName, ii.Origin)
 	defer evaa.Done()
 
-	evaa.TotalInt(len(originData.Manifest.FileList.List))
+	evaa.Total(uint64(egsManifestSize(originData.Manifest)))
 
 	installedPath, err := originOsInstalledPath(appName, ii, rdx)
 	if err != nil {
@@ -840,7 +840,7 @@ func egsValidateAssembly(appName string, ii *InstallInfo, originData *data.Origi
 			return err
 		}
 
-		evaa.Increment()
+		evaa.Progress(file.Size)
 	}
 
 	return nil

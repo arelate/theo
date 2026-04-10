@@ -258,7 +258,7 @@ func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginD
 		return err
 	}
 
-	edca.TotalInt(len(originData.Manifest.ChunkList.Chunks))
+	edca.Total(uint64(egsManifestSize(originData.Manifest)))
 
 	cdnUrls, err := originData.GameManifest.Urls()
 	if err != nil {
@@ -291,7 +291,7 @@ func egsDownloadChunks(appName string, ii *InstallInfo, originData *data.OriginD
 			return err
 		}
 
-		edca.Increment()
+		edca.Progress(chunk.FileSize)
 	}
 
 	return nil
