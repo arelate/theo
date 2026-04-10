@@ -53,7 +53,9 @@ func RunHandler(u *url.URL) error {
 	}
 
 	if q.Has("arg") {
-		et.args = strings.Split(q.Get("arg"), ",")
+		for _, arg := range strings.Split(q.Get("arg"), ",") {
+			et.args = append(et.args, strings.TrimPrefix(arg, "\\"))
+		}
 	}
 
 	if q.Has("proton-runtime") {
