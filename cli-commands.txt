@@ -49,6 +49,7 @@ install
     steam
     epic-games
     no-steam-shortcut
+    no-preset-launch-options
     env&
     verbose
     force

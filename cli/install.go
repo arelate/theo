@@ -64,10 +64,12 @@ func InstallHandler(u *url.URL) error {
 		ii.Env = strings.Split(q.Get("env"), ",")
 	}
 
-	return Install(id, ii)
+	presetLaunchOptions := !q.Has("no-preset-launch-options")
+
+	return Install(id, ii, presetLaunchOptions)
 }
 
-func Install(id string, ii *InstallInfo) error {
+func Install(id string, ii *InstallInfo, presetLaunchOptions bool) error {
 
 	ia := nod.Begin("installing %s...", id)
 	defer ia.Done()
@@ -141,8 +143,10 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if err = PresetLaunchOptions(id, ii, rdx); err != nil {
-		return err
+	if presetLaunchOptions {
+		if err = PresetLaunchOptions(id, ii, rdx); err != nil {
+			return err
+		}
 	}
 
 	idInstalledDate := map[string][]string{id: {time.Now().UTC().Format(time.RFC3339)}}
