@@ -2,12 +2,17 @@ package cli
 
 import (
 	"encoding/json/v2"
+	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/arelate/southern_light/gog_integration"
+	"github.com/arelate/southern_light/steam_grid"
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/redux"
 )
 
 func gogGetGamesDbEpic(appName string, force bool) (*gog_integration.GamesDbProduct, error) {
@@ -54,4 +59,63 @@ func gogFetchGamesDbEpic(appName string, kvGamesDb kevlar.KeyValues) error {
 	defer resp.Body.Close()
 
 	return kvGamesDb.Set(appName, resp.Body)
+}
+
+func gogShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, error) {
+
+	shortcutAssets := make(map[steam_grid.Asset]*url.URL)
+
+	for _, asset := range steam_grid.ShortcutAssets {
+
+		var imageId string
+		var imageType vangogh_integration.ImageType
+
+		switch asset {
+		case steam_grid.Header:
+			imageId = productDetails.Images.Image
+			imageType = vangogh_integration.Image
+		case steam_grid.LibraryCapsule:
+			imageId = productDetails.Images.VerticalImage
+			imageType = vangogh_integration.VerticalImage
+		case steam_grid.LibraryHero:
+			if productDetails.Images.Hero != "" {
+				imageId = productDetails.Images.Hero
+				imageType = vangogh_integration.Hero
+			} else {
+				imageId = productDetails.Images.Background
+				imageType = vangogh_integration.Background
+			}
+		case steam_grid.LibraryLogo:
+			imageId = productDetails.Images.Logo
+			imageType = vangogh_integration.Logo
+		case steam_grid.ClientIcon:
+			if productDetails.Images.IconSquare != "" {
+				imageId = productDetails.Images.IconSquare
+				imageType = vangogh_integration.IconSquare
+			} else {
+				imageId = productDetails.Images.Icon
+				imageType = vangogh_integration.Icon
+			}
+		default:
+			return nil, errors.New("unexpected shortcut asset " + asset.String())
+		}
+
+		if imageId != "" {
+
+			imageExt, err := vangogh_integration.ImagePropertyExt(imageType)
+			if err != nil {
+				return nil, err
+			}
+
+			gogImageUrl, err := gog_integration.ImageUrl(imageId, imageExt)
+			if err != nil {
+				return nil, err
+			}
+
+			shortcutAssets[asset] = gogImageUrl
+		}
+	}
+
+	return shortcutAssets, nil
+
 }

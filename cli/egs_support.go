@@ -715,7 +715,7 @@ func egsShortcutAssets(gamesDbProduct *gog_integration.GamesDbProduct, catalogIt
 	}
 
 	if productDetails != nil {
-		return vangoghShortcutAssets(productDetails, rdx)
+		return gogShortcutAssets(productDetails, rdx)
 	}
 
 	return egsCatalogItemAssets(catalogItem)
