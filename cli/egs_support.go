@@ -26,6 +26,7 @@ import (
 )
 
 var egsClient *http.Client
+var egsTokenVerifiedRecently bool
 
 func egsGetClient() (*http.Client, error) {
 
@@ -170,7 +171,12 @@ func egsVerifyToken(client *http.Client) (*egs_integration.PostTokenResponse, er
 		return nil, errors.New("empty access token, re-connect EGS")
 	}
 
-	if ptr.ExpiresAt.Sub(time.Now()) < time.Minute*30 {
+	if egsTokenVerifiedRecently {
+		gvta.EndWithResult("verified recently")
+		return ptr, nil
+	}
+
+	if ptr.ExpiresAt.Sub(time.Now()) < time.Hour {
 		if err = egsRefreshToken(ptr.RefreshToken); err != nil {
 			return nil, err
 		}
@@ -188,6 +194,10 @@ func egsVerifyToken(client *http.Client) (*egs_integration.PostTokenResponse, er
 
 	if vtr.Token == "" {
 		return nil, errors.New("empty access token, re-connect EGS")
+	}
+
+	if ptr.ExpiresAt.Sub(time.Now()) > time.Hour*3 {
+		egsTokenVerifiedRecently = true
 	}
 
 	return ptr, nil
