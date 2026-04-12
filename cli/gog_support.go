@@ -55,21 +55,3 @@ func gogFetchGamesDbEpic(appName string, kvGamesDb kevlar.KeyValues) error {
 
 	return kvGamesDb.Set(appName, resp.Body)
 }
-
-func gogGamesDbSteamAppId(product *gog_integration.GamesDbProduct) string {
-	for _, release := range product.Game.Releases {
-		if release.PlatformId == "steam" {
-			return release.ExternalId
-		}
-	}
-	return ""
-}
-
-func gogGamesDbGogId(product *gog_integration.GamesDbProduct) string {
-	for _, release := range product.Game.Releases {
-		if release.PlatformId == "gog" {
-			return release.ExternalId
-		}
-	}
-	return ""
-}

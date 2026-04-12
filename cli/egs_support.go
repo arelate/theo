@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/arelate/southern_light/egs_integration"
@@ -686,17 +687,19 @@ func egsUninstall(appName string, ii *InstallInfo, originData *data.OriginData, 
 
 func egsShortcutAssets(gamesDbProduct *gog_integration.GamesDbProduct, catalogItem *egs_integration.CatalogItem, rdx redux.Writeable) (map[steam_grid.Asset]*url.URL, error) {
 
-	if steamAppId := gogGamesDbSteamAppId(gamesDbProduct); steamAppId != "" {
+	if steamAppId := gamesDbProduct.GetSteamAppId(); steamAppId > 0 {
 
-		appInfo, err := steamGetAppInfoKv(steamAppId, rdx, false)
+		sais := strconv.FormatInt(int64(steamAppId), 10)
+
+		appInfo, err := steamGetAppInfoKv(sais, rdx, false)
 		if err != nil {
 			return nil, err
 		}
 
-		return steamShortcutAssets(steamAppId, appInfo)
+		return steamShortcutAssets(sais, appInfo)
 	}
 
-	if gogId := gogGamesDbGogId(gamesDbProduct); gogId != "" {
+	if gogId := gamesDbProduct.GetGogId(); gogId != "" {
 
 		productDetails, err := vangoghGetProductDetails(gogId, rdx, false)
 		if err != nil {
@@ -706,19 +709,30 @@ func egsShortcutAssets(gamesDbProduct *gog_integration.GamesDbProduct, catalogIt
 		return vangoghShortcutAssets(productDetails, rdx)
 	}
 
+	productDetails, err := vangogh_integration.ProductDetailsFromGamesDbProduct(gamesDbProduct)
+	if err != nil {
+		return nil, err
+	}
+
+	if productDetails != nil {
+		return vangoghShortcutAssets(productDetails, rdx)
+	}
+
 	return egsCatalogItemAssets(catalogItem)
 }
 
 func egsLogoPosition(gamesDbProduct *gog_integration.GamesDbProduct, rdx redux.Writeable) (*logoPosition, error) {
 
-	if steamAppId := gogGamesDbSteamAppId(gamesDbProduct); steamAppId != "" {
+	if steamAppId := gamesDbProduct.GetSteamAppId(); steamAppId > 0 {
 
-		appInfo, err := steamGetAppInfoKv(steamAppId, rdx, false)
+		sais := strconv.FormatInt(int64(steamAppId), 10)
+
+		appInfo, err := steamGetAppInfoKv(sais, rdx, false)
 		if err != nil {
 			return nil, err
 		}
 
-		return steamLogoPosition(steamAppId, appInfo)
+		return steamLogoPosition(sais, appInfo)
 	}
 
 	return defaultLogoPosition(), nil
