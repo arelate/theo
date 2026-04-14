@@ -3,7 +3,6 @@ package data
 const (
 	ApiAuthUserPath            = "/api/auth-user"
 	ApiAuthSessionPath         = "/api/auth-session"
-	ApiHealthPath              = "/api/health"
 	ApiAvailableProducts       = "/api/available-products"
 	ApiProductDetailsPath      = "/api/product-details"
 	ApiManualUrlChecksums      = "/api/manual-url-checksums"

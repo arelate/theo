@@ -151,11 +151,11 @@ func vangoghValidateSessionToken(rdx redux.Readable) error {
 
 	utcNow := time.Now().UTC()
 
-	if utcNow.Before(ste.Expires.Add(-1 * time.Hour * 24)) {
+	if utcNow.Before(ste.Expires.Add(-1 * time.Hour * author.SessionNearExpirationHours)) {
 		tsa.EndWithResult("session is valid")
 		return nil
 	} else {
-		msg := "vangogh session expires soon, connect to update"
+		msg := "vangogh session expired or expires soon, connect to update"
 		tsa.EndWithResult(msg)
 		return errors.New(msg)
 	}
