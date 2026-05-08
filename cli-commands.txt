@@ -110,8 +110,7 @@ reveal
     backups
 
 run
-    name^
-    id
+    id^
     os={operating-systems^}
     lang-code={language-codes^}
     env&

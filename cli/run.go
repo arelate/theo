@@ -21,7 +21,6 @@ func RunHandler(u *url.URL) error {
 	q := u.Query()
 
 	id := q.Get(vangogh_integration.IdProperty)
-	name := q.Get("name")
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
 	if q.Has(vangogh_integration.OperatingSystemsProperty) {
@@ -77,19 +76,14 @@ func RunHandler(u *url.URL) error {
 		et.protonOptions = strings.Split(q.Get("proton-options"), ",")
 	}
 
-	return Run(id, name, ii, et)
+	return Run(id, ii, et)
 }
 
-func Run(id, name string, request *InstallInfo, et *execTask) error {
+func Run(id string, request *InstallInfo, et *execTask) error {
 
 	playSessionStart := time.Now()
 
-	title := id
-	if name != "" {
-		title = name
-	}
-
-	ra := nod.NewProgress("running product %s...", title)
+	ra := nod.NewProgress("running product %s...", id)
 	defer ra.Done()
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
@@ -97,19 +91,22 @@ func Run(id, name string, request *InstallInfo, et *execTask) error {
 		return err
 	}
 
-	if name != "" && id != "" {
-		return errors.New("need id or name, not both")
-	}
+	ii, err := matchInstalledInfo(id, request, rdx)
 
-	if name != "" {
-		id, err = installedIdFromNameFragment(name, rdx)
+	if errors.Is(err, ErrInstallInfoNotFound) {
+
+		// try to reverse-find id assuming we got the title fragment as id
+		id, err = installedIdFromNameFragment(id, rdx)
 		if err != nil {
 			return err
 		}
-	}
 
-	ii, err := matchInstalledInfo(id, request, rdx)
-	if err != nil {
+		ii, err = matchInstalledInfo(id, request, rdx)
+		if err != nil {
+			return err
+		}
+
+	} else if err != nil {
 		return err
 	}
 
@@ -170,7 +167,7 @@ func installedIdFromNameFragment(name string, rdx redux.Readable) (string, error
 
 	switch len(ids) {
 	case 0:
-		return "", errors.New("no installed product title matches " + name)
+		return "", errors.New("no installed product title matches name: " + name)
 	case 1:
 		return ids[0], nil
 	default:
