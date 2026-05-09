@@ -597,7 +597,7 @@ func egsGetManifest(appName string, gameManifest *egs_integration.GameManifest, 
 	}
 	defer manifestFile.Close()
 
-	return egs_integration.ReadBinaryManifest(manifestFile)
+	return egs_integration.ReadManifest(manifestFile)
 }
 
 func egsFetchManifests(key string, gameManifest *egs_integration.GameManifest, kvManifests kevlar.KeyValues) error {
