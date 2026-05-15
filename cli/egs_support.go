@@ -30,6 +30,7 @@ import (
 const (
 	egsCookiesFilename = "egs-cookies.json"
 	egsTokenKey        = "egs-token"
+	jsonCatalogItemPfx = "{\"id\""
 )
 
 var egsClient *http.Client
@@ -466,12 +467,27 @@ func egsReadLocalCatalogItem(catalogItemId string, kvCatalogItems kevlar.KeyValu
 	}
 	defer rcCatalogItem.Close()
 
-	var catalogItemMap map[string]egs_integration.CatalogItem
-	if err = json.UnmarshalRead(rcCatalogItem, &catalogItemMap); err != nil {
+	buf := bytes.NewBuffer(nil)
+	if _, err = io.Copy(buf, rcCatalogItem); err != nil {
 		return nil, err
 	}
 
-	return new(catalogItemMap[catalogItemId]), nil
+	jsonCatalogItem := strings.HasPrefix(buf.String(), jsonCatalogItemPfx)
+
+	switch jsonCatalogItem {
+	case true:
+		var catalogItem egs_integration.CatalogItem
+		if err = json.UnmarshalRead(buf, &catalogItem); err != nil {
+			return nil, err
+		}
+		return &catalogItem, nil
+	default:
+		var catalogItemMap map[string]egs_integration.CatalogItem
+		if err = json.UnmarshalRead(buf, &catalogItemMap); err != nil {
+			return nil, err
+		}
+		return new(catalogItemMap[catalogItemId]), nil
+	}
 }
 
 func egsGetGameAsset(appName string, ii *InstallInfo) (*egs_integration.GameAsset, error) {
