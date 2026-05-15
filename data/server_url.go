@@ -37,7 +37,7 @@ func VangoghUrl(path string, data url.Values, rdx redux.Readable) (*url.URL, err
 	return u, nil
 }
 
-func VangoghRequest(method, path string, data url.Values, rdx redux.Readable) (*http.Request, error) {
+func VangoghApiRequest(method, path string, data url.Values, rdx redux.Readable) (*http.Request, error) {
 
 	u, err := VangoghUrl(path, data, rdx)
 	if err != nil {

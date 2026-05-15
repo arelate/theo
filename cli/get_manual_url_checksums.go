@@ -77,7 +77,7 @@ func fetchRemoteManualUrlChecksums(id string, rdx redux.Readable, kvManualUrlChe
 		vangogh_integration.IdProperty: {id},
 	}
 
-	req, err := data.VangoghRequest(http.MethodGet, data.ApiManualUrlChecksums, query, rdx)
+	req, err := data.VangoghApiRequest(http.MethodGet, data.ApiManualUrlChecksums, query, rdx)
 	if err != nil {
 		return nil, err
 	}

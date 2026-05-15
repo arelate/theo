@@ -68,7 +68,7 @@ func downloadSteamCmdBinaries(operatingSystem vangogh_integration.OperatingSyste
 	dc := dolo.DefaultClient
 
 	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
-		dc.SetAuthorizationBearer(token)
+		dc.SetCookies(map[string]string{"Session": token})
 	}
 
 	relSteamCmdFilename := filepath.Base(steamcmd.Urls[operatingSystem])

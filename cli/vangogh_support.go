@@ -92,7 +92,7 @@ func vangoghFetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDe
 		vangogh_integration.IdProperty: {id},
 	}
 
-	req, err := data.VangoghRequest(http.MethodGet, data.ApiProductDetailsPath, query, rdx)
+	req, err := data.VangoghApiRequest(http.MethodGet, data.ApiProductDetailsPath, query, rdx)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func vangoghFetchAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
 		return err
 	}
 
-	req, err := data.VangoghRequest(http.MethodGet, data.ApiAvailableProducts, nil, rdx)
+	req, err := data.VangoghApiRequest(http.MethodGet, data.ApiAvailableProducts, nil, rdx)
 	if err != nil {
 		return err
 	}
@@ -393,7 +393,7 @@ func vangoghValidateSessionToken(rdx redux.Readable) error {
 		return err
 	}
 
-	req, err := data.VangoghRequest(http.MethodPost, data.ApiAuthSessionPath, nil, rdx)
+	req, err := data.VangoghApiRequest(http.MethodPost, data.ApiAuthSessionPath, nil, rdx)
 	if err != nil {
 		return err
 	}
@@ -452,7 +452,7 @@ func vangoghUpdateSessionToken(password string, rdx redux.Writeable) error {
 	usernamePassword.Set(author.UsernameParam, username)
 	usernamePassword.Set(author.PasswordParam, password)
 
-	req, err := data.VangoghRequest(http.MethodPost, data.ApiAuthUserPath, usernamePassword, rdx)
+	req, err := data.VangoghApiRequest(http.MethodPost, data.ApiAuthUserPath, usernamePassword, rdx)
 	if err != nil {
 		return err
 	}
@@ -769,7 +769,7 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 	dc := dolo.DefaultClient
 
 	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
-		dc.SetAuthorizationBearer(token)
+		dc.SetCookies(map[string]string{"Session": token})
 	}
 
 	dls := originData.ProductDetails.DownloadLinks.
