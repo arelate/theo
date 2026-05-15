@@ -1,6 +1,6 @@
 module github.com/arelate/theo
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/arelate/southern_light v0.4.66
