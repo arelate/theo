@@ -178,17 +178,12 @@ func unpinInstallInfo(id string, request *InstallInfo, rdx redux.Writeable) erro
 		return err
 	}
 
-	installedInfo, err := matchInstalledInfo(id, request, rdx)
+	iiLine, err := firstMatchInstalledInfoLine(id, request, rdx)
 	if err != nil {
 		return err
 	}
 
-	buf := new(bytes.Buffer)
-	if err = json.MarshalWrite(buf, installedInfo); err != nil {
-		return err
-	}
-
-	return rdx.CutValues(data.InstallInfoProperty, id, buf.String())
+	return rdx.CutValues(data.InstallInfoProperty, id, iiLine)
 }
 
 func hasInstallInfo(id string, request *InstallInfo, rdx redux.Readable) (bool, error) {
@@ -208,6 +203,32 @@ func hasInstallInfo(id string, request *InstallInfo, rdx redux.Readable) (bool, 
 	return false, nil
 }
 
+func firstMatchInstalledInfoLine(id string, request *InstallInfo, rdx redux.Readable) (string, error) {
+
+	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
+		return "", err
+	}
+
+	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
+
+		for _, line := range installedInfoLines {
+			ii, err := unmarshalInstalledInfoLine(line)
+			if err != nil {
+				return "", err
+			}
+
+			if ii.Matches(request) {
+				return line, nil
+			}
+		}
+
+	} else {
+		return "", ErrInstallInfoNotFound
+	}
+
+	return "", ErrInstallInfoNotFound
+}
+
 func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*InstallInfo, error) {
 
 	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
@@ -219,7 +240,7 @@ func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*I
 	if installedInfoLines, ok := rdx.GetAllValues(data.InstallInfoProperty, id); ok {
 
 		var err error
-		if installedInfo, err = unmarshalInstalledInfo(installedInfoLines...); err != nil {
+		if installedInfo, err = unmarshalInstalledInfoLines(installedInfoLines...); err != nil {
 			return nil, err
 		}
 
@@ -246,21 +267,25 @@ func matchInstalledInfo(id string, request *InstallInfo, rdx redux.Readable) (*I
 
 }
 
-func unmarshalInstalledInfo(lines ...string) ([]InstallInfo, error) {
+func unmarshalInstalledInfoLines(lines ...string) ([]InstallInfo, error) {
 
 	installedInfo := make([]InstallInfo, 0, len(lines))
 
 	for _, line := range lines {
-		var ii InstallInfo
-
-		if err := json.UnmarshalRead(strings.NewReader(line), &ii); err != nil {
+		ii, err := unmarshalInstalledInfoLine(line)
+		if err != nil {
 			return nil, err
 		}
-
 		installedInfo = append(installedInfo, ii)
 	}
 
 	return installedInfo, nil
+}
+
+func unmarshalInstalledInfoLine(line string) (InstallInfo, error) {
+	var ii InstallInfo
+	err := json.UnmarshalRead(strings.NewReader(line), &ii)
+	return ii, err
 }
 
 func setInstallInfoDefaults(request *InstallInfo, availableOperatingSystems []vangogh_integration.OperatingSystem) {
