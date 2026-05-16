@@ -60,18 +60,19 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		return err
 	}
 
-	if err = originUninstall(id, installInfo, rdx); err != nil {
-		return err
+	switch purge {
+	case true:
+		if err = originPurgeInstallation(id, installInfo, rdx); err != nil {
+			return err
+		}
+	default:
+		if err = originUninstall(id, installInfo, rdx); err != nil {
+			return err
+		}
 	}
 
 	if err = originPostUninstall(id, installInfo, rdx); err != nil {
 		return err
-	}
-
-	if purge {
-		if err = originPurgeInstallation(id, installInfo, rdx); err != nil {
-			return err
-		}
 	}
 
 	if err = LaunchOptions(id, installInfo, new(execTask), true); err != nil {
