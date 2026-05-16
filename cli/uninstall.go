@@ -71,7 +71,7 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		}
 	}
 
-	if err = originPostUninstall(id, installInfo, rdx); err != nil {
+	if err = originPostUninstall(id, installInfo, rdx, purge); err != nil {
 		return err
 	}
 
@@ -172,10 +172,17 @@ func originPurgeInstallation(id string, installInfo *InstallInfo, rdx redux.Read
 	return nil
 }
 
-func originPostUninstall(id string, ii *InstallInfo, rdx redux.Writeable) error {
+func originPostUninstall(id string, ii *InstallInfo, rdx redux.Writeable, purge bool) error {
 	switch ii.Origin {
 	case data.EpicGamesOrigin:
-		return egsUninstallDownloadableContent(id, ii, rdx)
+		switch purge {
+		case true:
+			return nil
+		default:
+			// purge already removed main product installation directory where DLC was installed,
+			// so only uninstall DLC if purge was not set
+			return egsUninstallDownloadableContent(id, ii, rdx)
+		}
 	default:
 		return nil
 	}
