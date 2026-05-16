@@ -50,8 +50,8 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		return err
 	}
 
-	if !request.force {
-		ua.EndWithResult("uninstall requires -force parameter")
+	if !request.force || !purge {
+		ua.EndWithResult("uninstall requires force or purge parameter")
 		return nil
 	}
 
