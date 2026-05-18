@@ -783,6 +783,10 @@ func egsCatalogItemAssets(catalogItem *egs_integration.CatalogItem) (map[steam_g
 			asset = steam_grid.Header
 		case "DieselGameBoxTall":
 			asset = steam_grid.LibraryCapsule
+		case "DieselGameBoxLogo":
+			asset = steam_grid.LibraryLogo
+		default:
+			return nil, errors.New("unknown key image type: " + keyImage.Type)
 		}
 
 		if u, err := url.Parse(keyImage.Url); err == nil {
