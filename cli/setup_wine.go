@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json/v2"
 	"errors"
 	"net/http"
@@ -297,7 +299,19 @@ func unpackWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 
 		wba := nod.Begin(" - %s...", wineBinary.Title)
 
-		if err := untar(srcPath, dstPath, "--strip-components=1"); err != nil {
+		tarFiles, err := tarTf(srcPath)
+		if err != nil {
+			return err
+		}
+
+		scOption := "--strip-components=1"
+		if len(tarFiles) > 0 {
+			if strings.HasPrefix(tarFiles[0], "./") {
+				scOption = "--strip-components=2"
+			}
+		}
+
+		if err = untar(srcPath, dstPath, scOption); err != nil {
 			return err
 		}
 
@@ -392,4 +406,30 @@ func untar(srcPath, dstPath string, options ...string) error {
 	cmd := exec.Command("tar", args...)
 
 	return cmd.Run()
+}
+
+func tarTf(srcPath string) ([]string, error) {
+
+	buf := bytes.NewBuffer(nil)
+
+	cmd := exec.Command("tar", "tf", srcPath)
+	cmd.Stdout = buf
+
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(buf)
+
+	var lines []string
+
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return lines, nil
 }
