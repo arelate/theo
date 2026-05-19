@@ -63,6 +63,10 @@ func RunHandler(u *url.URL) error {
 			et.protonRuntime = wine_integration.UmuProton
 		case "proton-ge":
 			et.protonRuntime = wine_integration.ProtonGe
+		case "proton-cachyos":
+			et.protonRuntime = wine_integration.ProtonCachyOs
+		case "proton-em":
+			et.protonRuntime = wine_integration.ProtonEm
 		}
 	}
 

@@ -180,19 +180,6 @@ func AbsInventoryFilename(id, langCode string, operatingSystem vangogh_integrati
 	}
 }
 
-func RelToUserDataHome(path string) (string, error) {
-	udhd, err := UserDataHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	if strings.HasPrefix(path, udhd) {
-		return strings.Replace(path, udhd, "~Data", 1), nil
-	} else {
-		return path, nil
-	}
-}
-
 func AbsSteamCmdBinPath(operatingSystem vangogh_integration.OperatingSystem) (string, error) {
 	switch operatingSystem {
 	case vangogh_integration.MacOS:

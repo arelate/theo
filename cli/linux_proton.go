@@ -55,7 +55,7 @@ func linuxProtonExecTask(id string, et *execTask) error {
 		return err
 	}
 
-	absProtonPath, err := getProtonRuntimePath(et, rdx)
+	absProtonPath, err := linuxProtonRuntimePath(et, rdx)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func linuxInitPrefix(absPrefixDir string, _ bool) error {
 	return nil
 }
 
-func getProtonRuntimePath(et *execTask, rdx redux.Readable) (string, error) {
+func linuxProtonRuntimePath(et *execTask, rdx redux.Readable) (string, error) {
 
 	if et.steamProtonRuntime != "" {
 
