@@ -57,7 +57,13 @@ func ProtonLatestReleasePath(runtime string, rdx redux.Readable) (string, error)
 		return "", errors.New("proton version not found, please run setup-wine")
 	}
 
-	absProtonPath := filepath.Join(Pwd.AbsRelDirPath(BinUnpacks, Wine), pathways.Sanitize(runtime), latestProtonVersion, latestProtonVersion)
+	var absProtonPath string
+
+	switch runtime {
+	default:
+		absProtonPath = filepath.Join(Pwd.AbsRelDirPath(BinUnpacks, Wine), pathways.Sanitize(runtime), latestProtonVersion)
+	}
+
 	if _, err := os.Stat(absProtonPath); err == nil {
 		return absProtonPath, nil
 	}

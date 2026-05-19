@@ -297,7 +297,7 @@ func unpackWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 
 		wba := nod.Begin(" - %s...", wineBinary.Title)
 
-		if err := untar(srcPath, dstPath); err != nil {
+		if err := untar(srcPath, dstPath, "--strip-components=1"); err != nil {
 			return err
 		}
 
@@ -376,7 +376,7 @@ func cleanupUnpackedWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 	return nil
 }
 
-func untar(srcPath, dstPath string) error {
+func untar(srcPath, dstPath string, options ...string) error {
 
 	if _, err := os.Stat(dstPath); err != nil {
 		if err = os.MkdirAll(dstPath, 0755); err != nil {
@@ -384,6 +384,12 @@ func untar(srcPath, dstPath string) error {
 		}
 	}
 
-	cmd := exec.Command("tar", "-xf", srcPath, "-C", dstPath)
+	args := []string{"-xf", srcPath, "-C", dstPath}
+	if len(options) > 0 {
+		args = append(args, options...)
+	}
+
+	cmd := exec.Command("tar", args...)
+
 	return cmd.Run()
 }
