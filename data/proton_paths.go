@@ -11,7 +11,7 @@ import (
 	"github.com/boggydigital/redux"
 )
 
-const relUmuRunPath = "umu/umu-run"
+const relUmuRunPath = "umu-run"
 
 func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 
