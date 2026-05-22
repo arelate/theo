@@ -7,7 +7,7 @@ const (
 	ApiProductDetailsPath     = "/api/product-details"
 	ApiManualUrlChecksums     = "/api/manual-url-checksums"
 	ApiWineBinariesVersions   = "/api/wine-binaries-versions"
-	ApiFilesPath              = "/api/files"
+	ApiFilePath               = "/api/file"
 	ApiWineBinaryFilePath     = "/api/wine-binary-file"
 	ApiSteamCmdBinaryFilePath = "/api/steamcmd-binary-file"
 	ApiImagePath              = "/api/image"

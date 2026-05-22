@@ -806,7 +806,7 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 			"download-type": {dl.DownloadType.String()},
 		}
 
-		fileUrl, err := data.VangoghUrl(data.ApiFilesPath, query, rdx)
+		fileUrl, err := data.VangoghUrl(data.ApiFilePath, query, rdx)
 		if err != nil {
 			fa.EndWithResult(err.Error())
 			continue
