@@ -331,7 +331,7 @@ func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, r
 				"id": {imageId},
 			}
 
-			vangoghImageUrl, err := data.VangoghUrl(data.HttpImagePath, imageQuery, rdx)
+			vangoghImageUrl, err := data.VangoghUrl(data.ApiImagePath, imageQuery, rdx)
 			if err != nil {
 				return nil, err
 			}
@@ -769,7 +769,7 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 	dc := dolo.DefaultClient
 
 	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
-		dc.SetCookies(map[string]string{"Session": token})
+		dc.SetAuthorizationBearer(token)
 	}
 
 	dls := originData.ProductDetails.DownloadLinks.
@@ -806,7 +806,7 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 			"download-type": {dl.DownloadType.String()},
 		}
 
-		fileUrl, err := data.VangoghUrl(data.HttpFilesPath, query, rdx)
+		fileUrl, err := data.VangoghUrl(data.ApiFilesPath, query, rdx)
 		if err != nil {
 			fa.EndWithResult(err.Error())
 			continue

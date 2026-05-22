@@ -46,6 +46,7 @@ type steamGridOptions struct {
 	name         string
 	assets       map[steam_grid.Asset]*url.URL
 	logoPosition *logoPosition
+	bearerToken  string
 }
 
 type logoPosition struct {
@@ -244,7 +245,7 @@ func addSteamShortcutsForUser(loginUser string,
 		}
 	}
 
-	if err = fetchSteamGridImages(loginUser, shortcut.AppId, sgo.assets, ii.force); err != nil {
+	if err = fetchSteamGridImages(loginUser, shortcut.AppId, sgo, ii.force); err != nil {
 		return err
 	}
 
@@ -305,7 +306,7 @@ func createSteamShortcut(loginUser string, id string, ii *InstallInfo, rdx redux
 	return shortcut, nil
 }
 
-func fetchSteamGridImages(loginUser string, shortcutId uint32, gridAssets map[steam_grid.Asset]*url.URL, force bool) error {
+func fetchSteamGridImages(loginUser string, shortcutId uint32, sgo *steamGridOptions, force bool) error {
 
 	dsa := nod.Begin(" downloading Steam grid images...")
 	defer dsa.Done()
@@ -318,7 +319,11 @@ func fetchSteamGridImages(loginUser string, shortcutId uint32, gridAssets map[st
 	absSteamGridPath := filepath.Join(udhd, "Steam", "userdata", loginUser, "config", "grid")
 	dc := dolo.DefaultClient
 
-	for asset, assetUrl := range gridAssets {
+	if sgo.bearerToken != "" {
+		dc.SetAuthorizationBearer(sgo.bearerToken)
+	}
+
+	for asset, assetUrl := range sgo.assets {
 		dstFilename := steam_grid.ImageFilename(shortcutId, asset)
 		if err = dc.Download(assetUrl, force, nil, absSteamGridPath, dstFilename); err != nil {
 			dsa.Error(err)

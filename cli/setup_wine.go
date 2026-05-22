@@ -167,7 +167,7 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 		vangogh_integration.OperatingSystemsProperty: {binary.OS.String()},
 	}
 
-	wineBinaryUrl, err := data.VangoghUrl(data.HttpWineBinaryFilePath, query, rdx)
+	wineBinaryUrl, err := data.VangoghUrl(data.ApiWineBinaryFilePath, query, rdx)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 	dc := dolo.DefaultClient
 
 	if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
-		dc.SetCookies(map[string]string{"Session": token})
+		dc.SetAuthorizationBearer(token)
 	}
 
 	return dc.Download(wineBinaryUrl, force, dwba, wineDownloads, binary.Filename)

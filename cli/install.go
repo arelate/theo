@@ -177,6 +177,7 @@ func originAddSteamShortcut(id, forId string, ii *InstallInfo, originData *data.
 
 	var pda map[steam_grid.Asset]*url.URL
 	var lp *logoPosition
+	var authToken string
 	var err error
 
 	switch ii.Origin {
@@ -188,6 +189,9 @@ func originAddSteamShortcut(id, forId string, ii *InstallInfo, originData *data.
 			}
 		}
 		lp = defaultLogoPosition()
+		if token, ok := rdx.GetLastVal(data.VangoghSessionTokenProperty, data.VangoghSessionTokenProperty); ok && token != "" {
+			authToken = token
+		}
 	case data.SteamOrigin:
 		if originData.AppInfoKv != nil {
 			pda, err = steamShortcutAssets(id, originData.AppInfoKv)
@@ -223,6 +227,7 @@ func originAddSteamShortcut(id, forId string, ii *InstallInfo, originData *data.
 	sgo := &steamGridOptions{
 		assets:       pda,
 		logoPosition: lp,
+		bearerToken:  authToken,
 	}
 
 	if forId == "" {
