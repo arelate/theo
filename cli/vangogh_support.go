@@ -948,7 +948,8 @@ func vangoghValidateData(id string, ii *InstallInfo, originData *data.OriginData
 	va := nod.NewProgress("validating downloads...")
 	defer va.Done()
 
-	manualUrlChecksums, err := getManualUrlChecksums(id, rdx, ii.force)
+	// always request new manual-url-checksums to avoid potentially reusing existing stale data
+	manualUrlChecksums, err := getManualUrlChecksums(id, rdx, true)
 	if err != nil {
 		return err
 	}
