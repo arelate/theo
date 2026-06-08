@@ -60,6 +60,9 @@ func PresetLaunchOptions(id string, request *InstallInfo, rdx redux.Writeable) e
 	case "241300":
 		// Card City Nights 2
 		return fixSteamAppId(id, ii, rdx, false)
+	case "3035120":
+		// Is This Seat Taken?
+		return fixSteamAppId(id, ii, rdx, false)
 	default:
 		// do nothing
 	}
