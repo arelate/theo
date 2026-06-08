@@ -954,6 +954,9 @@ func vangoghValidateData(id string, ii *InstallInfo, originData *data.OriginData
 		return err
 	}
 
+	// TODO: currently this never returns an error, consider replacing redownload loop with an error
+	// and a parameter `no-validation`
+
 	var mismatchedManualUrls []string
 	if mismatchedManualUrls, err = vangoghValidateLinks(id, ii, manualUrlFilter, originData.ProductDetails, manualUrlChecksums); err != nil {
 		return err
