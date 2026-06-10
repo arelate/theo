@@ -304,11 +304,28 @@ func unpackWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 			return err
 		}
 
-		scOption := "--strip-components=1"
-		if len(tarFiles) > 0 {
-			if strings.HasPrefix(tarFiles[0], "./") {
-				scOption = "--strip-components=2"
+		var scOption string
+
+		ext := filepath.Ext(wineBinary.Filename)
+		switch ext {
+		case ".xz":
+			fallthrough
+		case ".gz":
+			if filepath.Ext(strings.TrimSuffix(wineBinary.Filename, ext)) == ".tar" {
+				switch data.CurrentOs() {
+				case vangogh_integration.Linux:
+					scOption = "--strip-components=1"
+					if len(tarFiles) > 0 {
+						if strings.HasPrefix(tarFiles[0], "./") {
+							scOption = "--strip-components=2"
+						}
+					}
+				default:
+					// do nothing
+				}
 			}
+		default:
+			// do nothing
 		}
 
 		if err = untar(srcPath, dstPath, scOption); err != nil {
@@ -399,8 +416,10 @@ func untar(srcPath, dstPath string, options ...string) error {
 	}
 
 	args := []string{"-xf", srcPath, "-C", dstPath}
-	if len(options) > 0 {
-		args = append(args, options...)
+	for _, opt := range options {
+		if opt != "" {
+			args = append(args, opt)
+		}
 	}
 
 	cmd := exec.Command("tar", args...)
