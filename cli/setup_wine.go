@@ -306,6 +306,8 @@ func unpackWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 
 		var scOption string
 
+		// TODO: refactor this
+
 		ext := filepath.Ext(wineBinary.Filename)
 		switch ext {
 		case ".xz":

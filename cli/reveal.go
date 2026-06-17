@@ -42,6 +42,10 @@ func RevealHandler(u *url.URL) error {
 
 func Reveal(id string, ii *InstallInfo, installed, downloads, backups bool) error {
 
+	if !(installed || downloads || backups) {
+		return errors.New("reveal requires target: installed, downloads, backups")
+	}
+
 	if installed {
 		if err := revealInstalled(id, ii); err != nil {
 			return err
@@ -75,7 +79,8 @@ func revealInstalled(id string, request *InstallInfo) error {
 
 	rdx, err := redux.NewReader(data.AbsReduxDir(),
 		data.InstallInfoProperty,
-		vangogh_integration.TitleProperty)
+		vangogh_integration.TitleProperty,
+		data.BundleNameProperty)
 	if err != nil {
 		return err
 	}
