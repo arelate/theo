@@ -63,22 +63,13 @@ func PresetLaunchOptions(id string, request *InstallInfo, rdx redux.Writeable) e
 	case "3035120":
 		// Is This Seat Taken?
 		return fixSteamAppId(id, ii, rdx, false)
-	case "d36336f190094951873ed6138ac208d8":
-		// Sifu
-		return presetEpicStandaloneMode(id, ii)
-	case "7e988ba04889404197fdf06c994326ed":
-		// The Last of Us™ Part I
-		return presetEpicStandaloneMode(id, ii)
-	case "831cd8c0c25b4615ade419ecb4f50e42":
-		// The Last of Us™ Part II Remastered
-		return presetEpicStandaloneMode(id, ii)
 	default:
 		// do nothing
 	}
 
 	switch ii.Origin {
 	case data.EpicGamesOrigin:
-		return presetEpicPortalArg(id, ii)
+		return presetEpicStandaloneMode(id, ii)
 	default:
 		// do nothing
 	}
