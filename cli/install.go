@@ -3,7 +3,6 @@ package cli
 import (
 	"errors"
 	"net/url"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -286,22 +285,6 @@ func osPreInstallActions(id string, ii *InstallInfo, rdx redux.Readable) error {
 	default:
 		return nil
 	}
-}
-
-func removeNewFiles(oldSet, newSet []string) error {
-
-	for _, pidf := range newSet {
-
-		if slices.Contains(oldSet, pidf) {
-			continue
-		}
-
-		if err := os.Remove(pidf); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {

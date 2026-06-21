@@ -40,7 +40,7 @@ func linuxUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 		absUnpackDir := filepath.Join(unpackDir, link.LocalFilename)
 
 		if err := linuxExtractInstallerData(linkInstallerPath, absUnpackDir); err != nil {
-			return nil
+			return err
 		}
 	}
 
