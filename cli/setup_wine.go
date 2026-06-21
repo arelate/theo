@@ -411,32 +411,75 @@ func cleanupUnpackedWineBinaries(wbd []vangogh_integration.WineBinaryDetails,
 
 func untar(srcPath, dstPath string, options ...string) error {
 
-	if _, err := os.Stat(dstPath); err != nil {
-		if err = os.MkdirAll(dstPath, 0755); err != nil {
-			return err
-		}
+	tarPath, err := exec.LookPath("tar")
+	if err != nil {
+		return err
 	}
 
-	args := []string{"-xf", srcPath, "-C", dstPath}
+	args := []string{"-xf", srcPath}
+
+	if dstPath != "" {
+		if _, err = os.Stat(dstPath); err != nil {
+			if err = os.MkdirAll(dstPath, 0755); err != nil {
+				return err
+			}
+		}
+		args = append(args, "-C", dstPath)
+	}
+
 	for _, opt := range options {
 		if opt != "" {
 			args = append(args, opt)
 		}
 	}
 
-	cmd := exec.Command("tar", args...)
+	cmd := exec.Command(tarPath, args...)
+
+	return cmd.Run()
+}
+
+func unzip(srcPath, dstPath string, options ...string) error {
+
+	unzipPath, err := exec.LookPath("unzip")
+	if err != nil {
+		return err
+	}
+
+	args := []string{srcPath}
+
+	if dstPath != "" {
+		if _, err = os.Stat(dstPath); err != nil {
+			if err = os.MkdirAll(dstPath, 0755); err != nil {
+				return err
+			}
+		}
+		args = append(args, "-d", dstPath)
+	}
+
+	for _, opt := range options {
+		if opt != "" {
+			args = append(args, opt)
+		}
+	}
+
+	cmd := exec.Command(unzipPath, args...)
 
 	return cmd.Run()
 }
 
 func tarTf(srcPath string) ([]string, error) {
 
+	tarPath, err := exec.LookPath("tar")
+	if err != nil {
+		return nil, err
+	}
+
 	buf := bytes.NewBuffer(nil)
 
-	cmd := exec.Command("tar", "tf", srcPath)
+	cmd := exec.Command(tarPath, "tf", srcPath)
 	cmd.Stdout = buf
 
-	if err := cmd.Run(); err != nil {
+	if err = cmd.Run(); err != nil {
 		return nil, err
 	}
 

@@ -60,7 +60,7 @@ func linuxExtractInstallerData(linkInstallerPath, absUnpackDir string) error {
 
 	absDataPath := filepath.Join(absUnpackDir, DataFn)
 
-	return untar(absDataPath, absUnpackDir)
+	return unzip(absDataPath, absUnpackDir)
 }
 
 func linuxPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
