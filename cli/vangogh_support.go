@@ -517,15 +517,13 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 
 	// vangogh installation:
 	// 1. check available space
-	// 2. get protected locations files (e.g. Desktop shortcuts on Linux)
-	// 3. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
-	// 4. perform post-unpack actions (e.g. reduce bundleName on macOS)
-	// 5. uninstall if installed directory exists and forcing install (will be used for updates)
-	// 6. create inventory of unpacked files
-	// 7. place (move unpacked to install folder)
-	// 8. perform post-install actions (e.g. run post-install script and remove xattrs on macOS)
-	// 9. cleanup protected locations
-	// 10. cleanup unpack directory
+	// 2. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
+	// 3. perform post-unpack actions (e.g. reduce bundleName on macOS)
+	// 4. uninstall if installed directory exists and forcing install (will be used for updates)
+	// 5. create inventory of unpacked files
+	// 6. place (move unpacked to install folder)
+	// 7. perform post-install actions (e.g. run post-install script and remove xattrs on macOS)
+	// 8. cleanup unpack directory
 
 	// 1
 	installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
@@ -535,12 +533,6 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 	}
 
 	// 2
-	preInstallFiles, err := vangoghGetProtectedLocationsFiles(ii)
-	if err != nil {
-		return err
-	}
-
-	// 3
 	unpackDir, err := vangoghGetUnpackDir(id, ii, rdx)
 	if err != nil {
 		return err
@@ -550,12 +542,12 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		return err
 	}
 
-	// 4
+	// 3
 	if err = vangoghPostUnpackActions(id, ii, dls, unpackDir, rdx); err != nil {
 		return err
 	}
 
-	// 5
+	// 4
 	absInstalledDir, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return err
@@ -567,7 +559,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		}
 	}
 
-	// 6
+	// 5
 	unpackedInventory, err := vangoghGetInventory(id, ii, dls, rdx, unpackDir)
 	if err != nil {
 		return err
@@ -577,27 +569,17 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		return err
 	}
 
-	// 7
+	// 6
 	if err = vangoghPlaceUnpackedFiles(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
-	// 8
+	// 7
 	if err = vangoghPostInstallActions(id, ii, dls, rdx, unpackDir); err != nil {
 		return err
 	}
 
-	// 9
-	postInstallFiles, err := vangoghGetProtectedLocationsFiles(ii)
-	if err != nil {
-		return err
-	}
-
-	if err = removeNewFiles(preInstallFiles, postInstallFiles); err != nil {
-		return err
-	}
-
-	// 10
+	// 8
 	if err = os.RemoveAll(unpackDir); err != nil {
 		return err
 	}
@@ -651,7 +633,7 @@ func vangoghUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration
 	case vangogh_integration.MacOS:
 		return macOsUnpackInstallers(id, dls, unpackDir, ii.force)
 	case vangogh_integration.Linux:
-		return linuxExecuteInstallers(id, dls, unpackDir)
+		return linuxUnpackInstallers(id, dls, unpackDir)
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
@@ -670,8 +652,6 @@ func vangoghPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integratio
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		return macOsReduceBundleNameProperty(id, dls, unpackDir, rdx)
-	case vangogh_integration.Linux:
-		return linuxRemoveMojoSetupDirs(id, dls, unpackDir)
 	default:
 		return nil
 	}
@@ -821,16 +801,6 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 	}
 
 	return nil
-}
-
-func vangoghGetProtectedLocationsFiles(ii *InstallInfo) ([]string, error) {
-
-	switch ii.OperatingSystem {
-	case vangogh_integration.Linux:
-		return linuxSnapshotDesktopFiles()
-	default:
-		return nil, nil
-	}
 }
 
 func vangoghRemoveProductDownloadLinks(id string,

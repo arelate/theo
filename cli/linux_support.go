@@ -17,19 +17,16 @@ import (
 )
 
 const (
-	desktopGlob  = "*.desktop"
-	mojosetupDir = ".mojosetup"
+	relLinuxGogGameInfoDir = "game"
+	linuxStartShFilename   = "start.sh"
+	shExt                  = ".sh"
+	relExtractedDataPath   = "data/noarch"
 )
-const relLinuxGogGameInfoDir = "game"
 
-const linuxStartShFilename = "start.sh"
+func linuxUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
 
-const shExt = ".sh"
-
-func linuxExecuteInstallers(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
-
-	leia := nod.Begin(" executing %s installers for %s...", vangogh_integration.Linux, id)
-	defer leia.Done()
+	luida := nod.Begin("unpacking %s installers for %s...", vangogh_integration.Linux, id)
+	defer luida.Done()
 
 	for _, link := range dls {
 
@@ -40,70 +37,30 @@ func linuxExecuteInstallers(id string, dls vangogh_integration.ProductDownloadLi
 		downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 		linkInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 
-		if err := chmodExecutable(linkInstallerPath); err != nil {
-			return err
-		}
-
 		absUnpackDir := filepath.Join(unpackDir, link.LocalFilename)
 
-		if err := linuxExecuteLinkInstaller(linkInstallerPath, absUnpackDir); err != nil {
-			return err
+		if err := linuxExtractInstallerData(linkInstallerPath, absUnpackDir); err != nil {
+			return nil
 		}
 	}
 
 	return nil
 }
 
-func linuxExecuteLinkInstaller(absInstallerPath, unpackDir string) error {
+func linuxExtractInstallerData(linkInstallerPath, absUnpackDir string) error {
 
-	_, fp := filepath.Split(absInstallerPath)
+	_, filename := filepath.Split(linkInstallerPath)
 
-	leia := nod.Begin(" executing %s, please wait...", fp)
-	defer leia.Done()
+	leida := nod.Begin(" extracting %s data...", filename)
+	defer leida.Done()
 
-	// https://www.reddit.com/r/linux_gaming/comments/42l258/fully_automated_gog_games_install_howto/
-	// tl;dr; those flags are required, but not sufficient. Installing installer and then DLC will
-	// normally trigger additional prompts. Details:
-	// Note how linuxSnapshotDesktopFiles is used pre- and post- install to remove
-	// .desktop files created by the installer. This is notable because if those files are not
-	// removed and DLCs are installed they will attempt to create the same files and will ask
-	// to confirm to overwrite, interrupting automated installation.
-	cmd := exec.Command(absInstallerPath, "--", "--i-agree-to-all-licenses", "--noreadme", "--nooptions", "--noprompt", "--destination", unpackDir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
-}
-
-func linuxRemoveMojoSetupDirs(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
-
-	lrmda := nod.Begin(" removing .mojosetup dirs for %s...", id)
-	defer lrmda.Done()
-
-	for _, link := range dls {
-
-		if !isLinkExecutable(&link, vangogh_integration.Linux) {
-			continue
-		}
-
-		if err := linuxRemoveLinkMojoSetupDir(&link, unpackDir); err != nil {
-			return err
-		}
+	if err := MojosetupExtract(new(ExtractOptions{Src: linkInstallerPath, Dst: absUnpackDir, Data: true})); err != nil {
+		return err
 	}
 
-	return nil
-}
+	absDataPath := filepath.Join(absUnpackDir, DataFn)
 
-func linuxRemoveLinkMojoSetupDir(link *vangogh_integration.ProductDownloadLink, unpackDir string) error {
-
-	mojosetupProductDir := filepath.Join(unpackDir, link.LocalFilename, mojosetupDir)
-	if _, err := os.Stat(mojosetupProductDir); err == nil {
-		if err = os.RemoveAll(mojosetupProductDir); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return untar(absDataPath, absUnpackDir)
 }
 
 func linuxPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
@@ -117,7 +74,7 @@ func linuxPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 			continue
 		}
 
-		absUnpackedPath := filepath.Join(unpackDir, link.LocalFilename)
+		absUnpackedPath := filepath.Join(unpackDir, link.LocalFilename, relExtractedDataPath)
 		if _, err := os.Stat(absUnpackedPath); os.IsNotExist(err) {
 			return ErrMissingExtractedPayload
 		}
@@ -143,39 +100,6 @@ func chmodExecutable(path string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
-}
-
-func linuxSnapshotDesktopFiles() ([]string, error) {
-
-	desktopFiles := make([]string, 0)
-
-	uhd, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	desktopDir := filepath.Join(uhd, "Desktop")
-
-	udhd, err := data.UserDataHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	applicationsDir := filepath.Join(udhd, "applications")
-
-	for _, dir := range []string{desktopDir, applicationsDir} {
-
-		globPath := filepath.Join(dir, desktopGlob)
-		var matches []string
-		matches, err = filepath.Glob(globPath)
-		if err != nil {
-			return nil, err
-		}
-
-		desktopFiles = append(desktopFiles, matches...)
-	}
-
-	return desktopFiles, nil
 }
 
 func linuxReveal(path string) error {
