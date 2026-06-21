@@ -7,9 +7,6 @@ import (
 )
 
 func CurrentOs() vangogh_integration.OperatingSystem {
-
-	return vangogh_integration.Linux
-
 	switch runtime.GOOS {
 	case "windows":
 		return vangogh_integration.Windows
