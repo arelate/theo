@@ -669,7 +669,7 @@ func egsFetchManifest(key string, manifestUrl *url.URL, client *http.Client, kvM
 
 func egsReduceCatalogItem(appName, catalogItemId string, kvCatalogItems kevlar.KeyValues, rdx redux.Writeable) error {
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty, vangogh_integration.RequiresGamesProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.EgsTitleProperty, vangogh_integration.EgsMainGameProperty); err != nil {
 		return err
 	}
 
@@ -687,7 +687,7 @@ func egsReduceCatalogItem(appName, catalogItemId string, kvCatalogItems kevlar.K
 
 	catalogItem := catalogItemMap[catalogItemId]
 
-	if err = rdx.ReplaceValues(vangogh_integration.TitleProperty, appName, catalogItem.Title); err != nil {
+	if err = rdx.ReplaceValues(vangogh_integration.EgsMainGameProperty, appName, catalogItem.Title); err != nil {
 		return err
 	}
 
@@ -701,7 +701,7 @@ func egsReduceCatalogItem(appName, catalogItemId string, kvCatalogItems kevlar.K
 		}
 
 		if len(mainGameItems) > 0 {
-			if err = rdx.ReplaceValues(vangogh_integration.RequiresGamesProperty, appName, mainGameItems...); err != nil {
+			if err = rdx.ReplaceValues(vangogh_integration.EgsMainGameProperty, appName, mainGameItems...); err != nil {
 				return err
 			}
 		}

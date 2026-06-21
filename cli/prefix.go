@@ -203,10 +203,6 @@ func prefixModRetina(id string, origin data.Origin, revert bool, rdx redux.Write
 		return nil
 	}
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return err
-	}
-
 	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
 	if err != nil {
 		return err

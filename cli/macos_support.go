@@ -106,7 +106,7 @@ func macOsReduceBundleNameProperty(id string, dls vangogh_integration.ProductDow
 	mrbna := nod.Begin(" reducing %s bundle names...", id)
 	defer mrbna.Done()
 
-	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.GogBundleNameProperty); err != nil {
 		return err
 	}
 
@@ -126,7 +126,7 @@ func macOsReduceBundleNameProperty(id string, dls vangogh_integration.ProductDow
 			continue
 		}
 
-		return rdx.ReplaceValues(data.BundleNameProperty, id, postInstallScript.bundleName)
+		return rdx.ReplaceValues(vangogh_integration.GogBundleNameProperty, id, postInstallScript.bundleName)
 	}
 
 	return nil
@@ -169,14 +169,10 @@ func macOsPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration
 	return nil
 }
 
-func macOsGetInventory(id string, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string, force bool) ([]string, error) {
+func macOsGetInventory(dls vangogh_integration.ProductDownloadLinks, unpackDir string, force bool) ([]string, error) {
 
 	mgia := nod.Begin(" creating inventory of unpacked files...")
 	defer mgia.Done()
-
-	if err := rdx.MustHave(data.BundleNameProperty); err != nil {
-		return nil, err
-	}
 
 	filesMap := make(map[string]any)
 

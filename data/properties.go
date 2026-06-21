@@ -10,17 +10,11 @@ const (
 
 	SteamUsernameProperty = "steam-username"
 
-	BundleNameProperty = "bundle-name"
-
 	InstallInfoProperty          = "install-info"
 	InstallDateProperty          = "install-date"
 	LastRunDateProperty          = "last-run-date"
 	PlaytimeMinutesProperty      = "playtime-minutes"
 	TotalPlaytimeMinutesProperty = "total-playtime-minutes"
-
-	//PrefixExeProperty = "prefix-exe"
-	//PrefixArgProperty = "prefix-arg"
-	//PrefixEnvProperty = "prefix-env"
 
 	LaunchOptionsExeProperty = "launch-options-exe"
 	LaunchOptionsArgProperty = "launch-options-arg"
@@ -49,20 +43,22 @@ func AllProperties() []string {
 	ap = append(ap, SteamProperties()...)
 	ap = append(ap,
 		[]string{
-			vangogh_integration.TitleProperty,
-			vangogh_integration.SteamAppIdProperty,
+			vangogh_integration.GogTitleProperty,
+			vangogh_integration.SteamTitleProperty,
+			vangogh_integration.EgsTitleProperty,
+			vangogh_integration.GogSteamAppIdProperty,
 			vangogh_integration.OperatingSystemsProperty,
-			vangogh_integration.DevelopersProperty,
-			vangogh_integration.PublishersProperty,
-			vangogh_integration.VerticalImageProperty,
-			vangogh_integration.ImageProperty,
-			vangogh_integration.HeroProperty,
-			vangogh_integration.LogoProperty,
-			vangogh_integration.IconProperty,
-			vangogh_integration.IconSquareProperty,
-			vangogh_integration.BackgroundProperty,
-			vangogh_integration.RequiresGamesProperty,
-			BundleNameProperty,
+			vangogh_integration.GogDevelopersProperty,
+			vangogh_integration.GogPublishersProperty,
+			vangogh_integration.GogVerticalImageProperty,
+			vangogh_integration.GogImageProperty,
+			vangogh_integration.GogHeroProperty,
+			vangogh_integration.GogLogoProperty,
+			vangogh_integration.GogIconProperty,
+			vangogh_integration.GogIconSquareProperty,
+			vangogh_integration.GogBackgroundProperty,
+			vangogh_integration.GogRequiresGamesProperty,
+			vangogh_integration.GogBundleNameProperty,
 			InstallInfoProperty,
 			InstallDateProperty,
 			LastRunDateProperty,

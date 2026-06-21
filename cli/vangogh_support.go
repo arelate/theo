@@ -136,18 +136,18 @@ func vangoghReduceProductDetails(id string, productDetails *vangogh_integration.
 	}
 
 	reductionProperties := []string{
-		vangogh_integration.SteamAppIdProperty,
-		vangogh_integration.TitleProperty,
+		vangogh_integration.GogSteamAppIdProperty,
+		vangogh_integration.GogTitleProperty,
 		vangogh_integration.OperatingSystemsProperty,
-		vangogh_integration.DevelopersProperty,
-		vangogh_integration.PublishersProperty,
-		vangogh_integration.VerticalImageProperty,
-		vangogh_integration.ImageProperty,
-		vangogh_integration.HeroProperty,
-		vangogh_integration.LogoProperty,
-		vangogh_integration.IconProperty,
-		vangogh_integration.IconSquareProperty,
-		vangogh_integration.BackgroundProperty,
+		vangogh_integration.GogDevelopersProperty,
+		vangogh_integration.GogPublishersProperty,
+		vangogh_integration.GogVerticalImageProperty,
+		vangogh_integration.GogImageProperty,
+		vangogh_integration.GogHeroProperty,
+		vangogh_integration.GogLogoProperty,
+		vangogh_integration.GogIconProperty,
+		vangogh_integration.GogIconSquareProperty,
+		vangogh_integration.GogBackgroundProperty,
 	}
 
 	for _, property := range reductionProperties {
@@ -155,29 +155,29 @@ func vangoghReduceProductDetails(id string, productDetails *vangogh_integration.
 		var values []string
 
 		switch property {
-		case vangogh_integration.SteamAppIdProperty:
+		case vangogh_integration.GogSteamAppIdProperty:
 			values = []string{productDetails.SteamAppId}
-		case vangogh_integration.TitleProperty:
+		case vangogh_integration.GogTitleProperty:
 			values = []string{productDetails.Title}
 		case vangogh_integration.OperatingSystemsProperty:
 			values = oss
-		case vangogh_integration.DevelopersProperty:
+		case vangogh_integration.GogDevelopersProperty:
 			values = productDetails.Developers
-		case vangogh_integration.PublishersProperty:
+		case vangogh_integration.GogPublishersProperty:
 			values = productDetails.Publishers
-		case vangogh_integration.VerticalImageProperty:
+		case vangogh_integration.GogVerticalImageProperty:
 			values = []string{productDetails.Images.VerticalImage}
-		case vangogh_integration.ImageProperty:
+		case vangogh_integration.GogImageProperty:
 			values = []string{productDetails.Images.Image}
-		case vangogh_integration.HeroProperty:
+		case vangogh_integration.GogHeroProperty:
 			values = []string{productDetails.Images.Hero}
-		case vangogh_integration.LogoProperty:
+		case vangogh_integration.GogLogoProperty:
 			values = []string{productDetails.Images.Logo}
-		case vangogh_integration.IconProperty:
+		case vangogh_integration.GogIconProperty:
 			values = []string{productDetails.Images.Icon}
-		case vangogh_integration.IconSquareProperty:
+		case vangogh_integration.GogIconSquareProperty:
 			values = []string{productDetails.Images.IconSquare}
-		case vangogh_integration.BackgroundProperty:
+		case vangogh_integration.GogBackgroundProperty:
 			values = []string{productDetails.Images.Background}
 		}
 
@@ -560,7 +560,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 	}
 
 	// 5
-	unpackedInventory, err := vangoghGetInventory(id, ii, dls, rdx, unpackDir)
+	unpackedInventory, err := vangoghGetInventory(ii, dls, unpackDir)
 	if err != nil {
 		return err
 	}
@@ -657,11 +657,11 @@ func vangoghPostUnpackActions(id string, ii *InstallInfo, dls vangogh_integratio
 	}
 }
 
-func vangoghGetInventory(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) ([]string, error) {
+func vangoghGetInventory(ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string) ([]string, error) {
 
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
-		return macOsGetInventory(id, dls, rdx, unpackDir, ii.force)
+		return macOsGetInventory(dls, unpackDir, ii.force)
 	default:
 		return getInventory(ii.OperatingSystem, dls, unpackDir)
 	}

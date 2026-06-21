@@ -132,10 +132,6 @@ func prefixPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integratio
 
 func prefixFindGlobFile(id string, ii *InstallInfo, rdx redux.Readable, globPattern string) (string, error) {
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return "", nil
-	}
-
 	installedAppDir, err := originOsInstalledPath(id, ii, rdx)
 	if err != nil {
 		return "", err

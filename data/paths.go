@@ -120,17 +120,24 @@ func InitPathways() error {
 	return nil
 }
 
-func GetPrefixName(id string, rdx redux.Readable) (string, error) {
+func GetTitleProperty(id string, rdx redux.Readable) (string, error) {
+	titleProperties := []string{
+		vangogh_integration.GogTitleProperty,
+		vangogh_integration.SteamTitleProperty,
+		vangogh_integration.EgsTitleProperty,
+	}
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
+	if err := rdx.MustHave(titleProperties...); err != nil {
 		return "", err
 	}
 
-	if title, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && title != "" {
-		return pathways.Sanitize(title), nil
-	} else {
-		return "", errors.New("product title is not defined: " + id)
+	for _, tp := range titleProperties {
+		if title, ok := rdx.GetLastVal(tp, id); ok && title != "" {
+			return title, nil
+		}
 	}
+
+	return "", errors.New("title property not found for " + id)
 }
 
 func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
@@ -142,9 +149,6 @@ func AppOsLangCode(id string, operatingSystem vangogh_integration.OperatingSyste
 }
 
 func AbsPrefixDir(id string, origin Origin, rdx redux.Readable) (string, error) {
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return "", err
-	}
 
 	var prefixesDir string
 	switch origin {
@@ -158,26 +162,24 @@ func AbsPrefixDir(id string, origin Origin, rdx redux.Readable) (string, error) 
 		return "", origin.ErrUnsupportedOrigin()
 	}
 
-	prefixName, err := GetPrefixName(id, rdx)
+	title, err := GetTitleProperty(id, rdx)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(prefixesDir, prefixName), nil
+	return filepath.Join(prefixesDir, pathways.Sanitize(title)), nil
 }
 
 func AbsInventoryFilename(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return "", err
-	}
 
 	osLangInventoryDir := filepath.Join(Pwd.AbsRelDirPath(Inventory, InstalledApps), OsLangCode(operatingSystem, langCode))
 
-	if title, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && title != "" {
-		return filepath.Join(osLangInventoryDir, pathways.Sanitize(title)+inventoryExt), nil
-	} else {
-		return "", errors.New("product title is undefined: " + id)
+	title, err := GetTitleProperty(id, rdx)
+	if err != nil {
+		return "", err
 	}
+
+	return filepath.Join(osLangInventoryDir, pathways.Sanitize(title)+inventoryExt), nil
 }
 
 func AbsSteamCmdBinPath(operatingSystem vangogh_integration.OperatingSystem) (string, error) {
@@ -195,17 +197,17 @@ func AbsSteamCmdBinPath(operatingSystem vangogh_integration.OperatingSystem) (st
 
 func AbsSteamAppInstallDir(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) (string, error) {
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SteamTitleProperty); err != nil {
 		return "", err
 	}
 
 	var steamAppName string
-	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
+	if san, ok := rdx.GetLastVal(vangogh_integration.SteamTitleProperty, steamAppId); ok && san != "" {
 		steamAppName = san
 	}
 
 	if steamAppName == "" {
-		return "", errors.New("cannot resolve Steam app name for " + steamAppId)
+		return "", errors.New("Steam app name not found for " + steamAppId)
 	}
 
 	steamAppsDir := Pwd.AbsDirPath(SteamApps)

@@ -258,18 +258,14 @@ func addSteamShortcutsForUser(loginUser string,
 
 func createSteamShortcut(loginUser string, id string, ii *InstallInfo, rdx redux.Readable, sgo *steamGridOptions) (*steam_integration.Shortcut, error) {
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
-		return nil, err
-	}
-
 	var title string
 	if sgo.name != "" {
 		title = sgo.name
 	} else {
-		if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
-			title = tp
-		} else {
-			return nil, errors.New("add-steam-shortcut: product is missing title")
+		var err error
+		title, err = data.GetTitleProperty(id, rdx)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -578,10 +574,10 @@ func removeSteamShortcutsForUser(id string, loginUser string, rdx redux.Readable
 	}
 
 	var title string
-	if tp, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && tp != "" {
-		title = tp
-	} else {
-		return errors.New("product is missing title")
+
+	title, err = data.GetTitleProperty(id, rdx)
+	if err != nil {
+		return err
 	}
 
 	shortcutId := steam_integration.ShortcutAppId(title)

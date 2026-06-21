@@ -72,6 +72,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	if err = cli.Migrate(); err != nil {
+		panic(err)
+	}
+
 	if err = defs.Serve(u); err != nil {
 		tsa.Error(err)
 		log.Fatalln(err)

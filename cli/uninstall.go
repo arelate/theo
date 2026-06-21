@@ -159,7 +159,7 @@ func originPurgeInstallation(id string, installInfo *InstallInfo, rdx redux.Read
 
 	// account for macOS bundle title
 	if installInfo.OperatingSystem == vangogh_integration.MacOS {
-		if bundleName, ok := rdx.GetLastVal(data.BundleNameProperty, id); ok && bundleName != "" && !strings.Contains(bundleName, "/") {
+		if bundleName, ok := rdx.GetLastVal(vangogh_integration.GogBundleNameProperty, id); ok && bundleName != "" && !strings.Contains(bundleName, "/") {
 			installedAppParentDir := strings.TrimSuffix(installedAppDir, bundleName)
 			if _, err = os.Stat(installedAppParentDir); err == nil {
 				if err = os.RemoveAll(installedAppParentDir); err != nil {

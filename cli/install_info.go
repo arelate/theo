@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -67,11 +68,11 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 		}
 
 		switch originData.ProductDetails.ProductType {
-		case vangogh_integration.DlcProductType:
+		case gog_integration.ProductTypeDlc:
 			return fmt.Errorf("install %s required product(s) to get this downloadable content", strings.Join(originData.ProductDetails.RequiresGames, ","))
-		case vangogh_integration.PackProductType:
+		case gog_integration.ProductTypePack:
 			return fmt.Errorf("install %s included product(s) to get this edition", strings.Join(originData.ProductDetails.IncludesGames, ","))
-		case vangogh_integration.GameProductType:
+		case gog_integration.ProductTypeGame:
 			// do nothing
 		default:
 			return errors.New("unknown product type " + originData.ProductDetails.ProductType)

@@ -152,7 +152,7 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 
 func installedIdFromNameFragment(name string, rdx redux.Readable) (string, error) {
 
-	if err := rdx.MustHave(data.InstallInfoProperty, vangogh_integration.TitleProperty); err != nil {
+	if err := rdx.MustHave(data.InstallInfoProperty); err != nil {
 		return "", err
 	}
 
@@ -161,11 +161,15 @@ func installedIdFromNameFragment(name string, rdx redux.Readable) (string, error
 	var titles []string
 
 	for id := range rdx.Keys(data.InstallInfoProperty) {
-		if title, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok {
-			if strings.Contains(strings.ToLower(title), name) {
-				ids = append(ids, id)
-				titles = append(titles, title)
-			}
+
+		title, err := data.GetTitleProperty(id, rdx)
+		if err != nil {
+			return "", err
+		}
+
+		if strings.Contains(strings.ToLower(title), name) {
+			ids = append(ids, id)
+			titles = append(titles, title)
 		}
 	}
 
@@ -187,13 +191,13 @@ func checkProductType(id string, rdx redux.Writeable, force bool) error {
 	}
 
 	switch productDetails.ProductType {
-	case vangogh_integration.GameProductType:
+	case gog_integration.ProductTypeGame:
 		// do nothing, proceed normally
 		return nil
-	case vangogh_integration.PackProductType:
+	case gog_integration.ProductTypePack:
 		return errors.New("cannot run a PACK product, please run included game(s): " +
 			strings.Join(productDetails.IncludesGames, ","))
-	case vangogh_integration.DlcProductType:
+	case gog_integration.ProductTypeDlc:
 		return errors.New("cannot run a DLC product, please run required game(s): " +
 			strings.Join(productDetails.RequiresGames, ","))
 	default:

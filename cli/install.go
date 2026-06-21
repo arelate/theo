@@ -291,31 +291,32 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
+
+		if err := rdx.MustHave(vangogh_integration.GogBundleNameProperty); err != nil {
+			return "", err
+		}
+
 		installedAppsDir := data.Pwd.AbsDirPath(data.InstalledApps)
 
 		osLangInstalledAppsDir := filepath.Join(installedAppsDir, data.OsLangCode(ii.OperatingSystem, ii.LangCode))
 
-		if err := rdx.MustHave(vangogh_integration.TitleProperty, data.BundleNameProperty); err != nil {
+		title, err := data.GetTitleProperty(id, rdx)
+		if err != nil {
 			return "", err
 		}
 
-		var installedPath string
-		if title, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, id); ok && title != "" {
-			installedPath = pathways.Sanitize(title)
-		} else {
-			return "", errors.New("product title not defined for: " + id)
-		}
+		appInstalledPath := pathways.Sanitize(title)
 
 		switch ii.OperatingSystem {
 		case vangogh_integration.MacOS:
-			if bundleName, sure := rdx.GetLastVal(data.BundleNameProperty, id); sure && bundleName != "" {
-				installedPath = filepath.Join(installedPath, bundleName)
+			if bundleName, sure := rdx.GetLastVal(vangogh_integration.GogBundleNameProperty, id); sure && bundleName != "" {
+				appInstalledPath = filepath.Join(appInstalledPath, bundleName)
 			}
 		default:
 			// do nothing
 		}
 
-		return filepath.Join(osLangInstalledAppsDir, installedPath), nil
+		return filepath.Join(osLangInstalledAppsDir, appInstalledPath), nil
 	case data.SteamOrigin:
 		if steamAppInstallDir, err := data.AbsSteamAppInstallDir(id, ii.OperatingSystem, rdx); err == nil {
 			return steamAppInstallDir, nil
@@ -330,11 +331,11 @@ func originOsInstalledPath(id string, ii *InstallInfo, rdx redux.Readable) (stri
 		var appTitlePath string
 
 		// for EGS DLCs - use main game item appName to set the installation directory
-		if requiresGame, ok := rdx.GetLastVal(vangogh_integration.RequiresGamesProperty, id); ok && requiresGame != "" {
+		if requiresGame, ok := rdx.GetLastVal(vangogh_integration.EgsMainGameProperty, id); ok && requiresGame != "" {
 			id = requiresGame
 		}
 
-		if title, sure := rdx.GetLastVal(vangogh_integration.TitleProperty, id); sure && title != "" {
+		if title, sure := rdx.GetLastVal(vangogh_integration.EgsTitleProperty, id); sure && title != "" {
 			appTitlePath = pathways.Sanitize(title)
 		} else {
 			return "", errors.New("product title not defined for: " + id)

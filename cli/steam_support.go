@@ -71,7 +71,7 @@ func steamFetchAppInfo(steamAppId string, kvSteamAppInfo kevlar.KeyValues, rdx r
 		return err
 	}
 
-	if !rdx.HasKey(vangogh_integration.TitleProperty, steamAppId) || force {
+	if !rdx.HasKey(vangogh_integration.SteamTitleProperty, steamAppId) || force {
 
 		var appInfoKv steam_vdf.ValveDataFile
 		appInfoKv, err = steam_vdf.ReadText(strings.NewReader(printedAppInfo))
@@ -90,7 +90,7 @@ func steamFetchAppInfo(steamAppId string, kvSteamAppInfo kevlar.KeyValues, rdx r
 func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
 
 	var steamAppName string
-	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
+	if san, ok := rdx.GetLastVal(vangogh_integration.SteamTitleProperty, steamAppId); ok && san != "" {
 		steamAppName = san
 	} else {
 		return errors.New("cannot resolve Steam app title")
@@ -128,7 +128,7 @@ func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.Opera
 func steamValidateApp(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
 
 	var steamAppName string
-	if san, ok := rdx.GetLastVal(vangogh_integration.TitleProperty, steamAppId); ok && san != "" {
+	if san, ok := rdx.GetLastVal(vangogh_integration.SteamTitleProperty, steamAppId); ok && san != "" {
 		steamAppName = san
 	} else {
 		return errors.New("cannot resolve Steam app title")
@@ -165,7 +165,7 @@ func steamValidateApp(steamAppId string, operatingSystem vangogh_integration.Ope
 
 func steamReduceAppInfo(steamAppId string, appInfoKv steam_vdf.ValveDataFile, rdx redux.Writeable) error {
 
-	if err := rdx.MustHave(vangogh_integration.TitleProperty); err != nil {
+	if err := rdx.MustHave(vangogh_integration.SteamTitleProperty); err != nil {
 		return err
 	}
 
@@ -174,7 +174,7 @@ func steamReduceAppInfo(steamAppId string, appInfoKv steam_vdf.ValveDataFile, rd
 		appInfoName = ain
 	}
 
-	if err := rdx.ReplaceValues(vangogh_integration.TitleProperty, steamAppId, appInfoName); err != nil {
+	if err := rdx.ReplaceValues(vangogh_integration.SteamTitleProperty, steamAppId, appInfoName); err != nil {
 		return err
 	}
 

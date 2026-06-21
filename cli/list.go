@@ -182,7 +182,10 @@ func listInstalled(ii *InstallInfo) error {
 	defer lia.Done()
 
 	rdx, err := redux.NewReader(data.AbsReduxDir(),
-		vangogh_integration.TitleProperty,
+		vangogh_integration.GogTitleProperty,
+		vangogh_integration.SteamTitleProperty,
+		vangogh_integration.EgsTitleProperty,
+		vangogh_integration.GogBundleNameProperty,
 		data.InstallInfoProperty,
 		data.InstallDateProperty,
 		data.LastRunDateProperty,
@@ -194,10 +197,6 @@ func listInstalled(ii *InstallInfo) error {
 	summary := make(map[string][]string)
 
 	installedIds := slices.Collect(rdx.Keys(data.InstallInfoProperty))
-	installedIds, err = rdx.Sort(installedIds, false, vangogh_integration.TitleProperty)
-	if err != nil {
-		return err
-	}
 
 	for _, id := range installedIds {
 
@@ -211,7 +210,7 @@ func listInstalled(ii *InstallInfo) error {
 			}
 		}
 
-		var title string
+		var titleLine string
 
 		filteredIds := make(map[string]any)
 
@@ -239,10 +238,13 @@ func listInstalled(ii *InstallInfo) error {
 
 			var installDir string
 
-			title = fmt.Sprintf("%s: %s", installedInfo.Origin, id)
-			if tp, sure := rdx.GetLastVal(vangogh_integration.TitleProperty, id); sure && tp != "" {
-				title = fmt.Sprintf("%s (%s)", tp, title)
-				installDir = pathways.Sanitize(tp)
+			titleLine = fmt.Sprintf("%s: %s", installedInfo.Origin, id)
+
+			if title, terr := data.GetTitleProperty(id, rdx); terr == nil && title != "" {
+				titleLine = fmt.Sprintf("%s (%s)", title, titleLine)
+				installDir = pathways.Sanitize(title)
+			} else if terr != nil {
+				return err
 			}
 
 			infoLines := make([]string, 0)
@@ -277,10 +279,10 @@ func listInstalled(ii *InstallInfo) error {
 				infoLines = append(infoLines, "size: "+vangogh_integration.FormatBytes(installedInfo.EstimatedBytes))
 			}
 
-			summary[title] = append(summary[title], strings.Join(infoLines, "; "))
+			summary[titleLine] = append(summary[titleLine], strings.Join(infoLines, "; "))
 
 			if len(installedInfo.DownloadableContent) > 0 {
-				summary[title] = append(summary[title], "- dlc: "+strings.Join(installedInfo.DownloadableContent, ", "))
+				summary[titleLine] = append(summary[titleLine], "- dlc: "+strings.Join(installedInfo.DownloadableContent, ", "))
 			}
 
 			if installedDate != "" {
@@ -288,7 +290,7 @@ func listInstalled(ii *InstallInfo) error {
 				if installDir != "" {
 					installStr += "; dir: " + installDir
 				}
-				summary[title] = append(summary[title], installStr)
+				summary[titleLine] = append(summary[titleLine], installStr)
 			}
 		}
 
@@ -328,7 +330,7 @@ func listInstalled(ii *InstallInfo) error {
 		}
 
 		if playtimeStr != "" {
-			summary[title] = append(summary[title], playtimeStr)
+			summary[titleLine] = append(summary[titleLine], playtimeStr)
 		}
 
 	}
