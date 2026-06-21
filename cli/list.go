@@ -244,7 +244,7 @@ func listInstalled(ii *InstallInfo) error {
 				titleLine = fmt.Sprintf("%s (%s)", title, titleLine)
 				installDir = pathways.Sanitize(title)
 			} else if terr != nil {
-				return err
+				return terr
 			}
 
 			infoLines := make([]string, 0)

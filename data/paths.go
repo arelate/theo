@@ -137,7 +137,7 @@ func GetTitleProperty(id string, rdx redux.Readable) (string, error) {
 		}
 	}
 
-	return "", errors.New("title property not found for " + id)
+	return "", errors.New("title not found for " + id)
 }
 
 func OsLangCode(operatingSystem vangogh_integration.OperatingSystem, langCode string) string {
