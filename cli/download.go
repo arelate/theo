@@ -31,7 +31,7 @@ func DownloadHandler(u *url.URL) error {
 		Origin:          data.VangoghOrigin,
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
-		NoDlc:           q.Has(vangogh_integration.UrlNoDlcParameter),
+		NoDlcs:          q.Has(vangogh_integration.UrlNoDlcsParameter),
 		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
@@ -67,8 +67,9 @@ func Download(id string,
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		[]string{ii.LangCode},
-		ii.NoDlc,
-		true)
+		ii.NoDlcs,
+		false,
+		false)
 
 	if originData == nil {
 		originData, err = originGetData(id, ii, rdx, true)

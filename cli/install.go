@@ -34,7 +34,7 @@ func InstallHandler(u *url.URL) error {
 	ii := &InstallInfo{
 		OperatingSystem:        operatingSystem,
 		LangCode:               langCode,
-		NoDlc:                  q.Has(vangogh_integration.UrlNoDlcParameter),
+		NoDlcs:                 q.Has(vangogh_integration.UrlNoDlcsParameter),
 		Origin:                 data.VangoghOrigin,
 		KeepDownloads:          q.Has(vangogh_integration.UrlKeepDownloadsParameter),
 		NoSteamShortcut:        q.Has(vangogh_integration.UrlNoSteamShortcutParameter),
@@ -71,8 +71,9 @@ func Install(id string, ii *InstallInfo) error {
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		[]string{ii.LangCode},
-		ii.NoDlc,
-		true)
+		ii.NoDlcs,
+		false,
+		false)
 
 	// don't check existing installations for DLCs, Extras
 	if !ii.force {
@@ -110,7 +111,7 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if !ii.NoDlc {
+	if !ii.NoDlcs {
 		if err = originInstallDlcs(id, ii, originData, rdx); err != nil {
 			return err
 		}

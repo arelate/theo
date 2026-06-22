@@ -30,7 +30,7 @@ type InstallInfo struct {
 	OperatingSystem        vangogh_integration.OperatingSystem `json:"os"`
 	LangCode               string                              `json:"lang-code"`
 	Origin                 data.Origin                         `json:"origin"`
-	NoDlc                  bool                                `json:"no-dlc"`
+	NoDlcs                 bool                                `json:"no-dlcs"`
 	DownloadableContent    []string                            `json:"dlc"`
 	Version                string                              `json:"version"`
 	TimeUpdated            string                              `json:"time-updated,omitempty"`
@@ -56,7 +56,7 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 
 		downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
 
-		switch ii.NoDlc {
+		switch ii.NoDlcs {
 		case false:
 			downloadTypes = append(downloadTypes, vangogh_integration.DLC)
 		default:

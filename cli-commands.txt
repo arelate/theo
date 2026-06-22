@@ -21,7 +21,7 @@ download
     id^*
     os&={operating-systems^}
     lang-code&={language-codes^}
-    no-dlc
+    no-dlcs
     manual-url-filter&
     steam
     epic-games
@@ -44,7 +44,7 @@ install
     id^
     os={operating-systems^}
     lang-code={language-codes^}
-    no-dlc
+    no-dlcs
     keep-downloads
     steam
     epic-games

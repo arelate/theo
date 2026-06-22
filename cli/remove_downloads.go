@@ -47,8 +47,9 @@ func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		[]string{ii.LangCode},
-		ii.NoDlc,
-		true)
+		ii.NoDlcs,
+		false,
+		false)
 
 	originData, err := originGetData(id, ii, rdx, false)
 	if err != nil {

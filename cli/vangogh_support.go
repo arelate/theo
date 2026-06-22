@@ -271,7 +271,7 @@ func vangoghProductDetailsSize(productDetails *vangogh_integration.ProductDetail
 	var totalEstimatedBytes int64
 
 	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
-	if !ii.NoDlc {
+	if !ii.NoDlcs {
 		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
 	}
 
@@ -763,7 +763,7 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 	}
 
 	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
-	if !ii.NoDlc {
+	if !ii.NoDlcs {
 		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
 	}
 
@@ -833,7 +833,7 @@ func vangoghRemoveProductDownloadLinks(id string,
 	}
 
 	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
-	if !ii.NoDlc {
+	if !ii.NoDlcs {
 		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
 	}
 
@@ -980,7 +980,7 @@ func vangoghValidateLinks(id string,
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
 	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
-	if !ii.NoDlc {
+	if !ii.NoDlcs {
 		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
 	}
 
