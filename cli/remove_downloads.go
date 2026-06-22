@@ -2,7 +2,6 @@ package cli
 
 import (
 	"net/url"
-	"strings"
 
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
@@ -26,16 +25,9 @@ func RemoveDownloadsHandler(u *url.URL) error {
 		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
-	var downloadTypes []vangogh_integration.DownloadType
-	if q.Has(vangogh_integration.UrlDownloadTypeParameter) {
-		dts := strings.Split(q.Get(vangogh_integration.UrlDownloadTypeParameter), ",")
-		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
-	}
-
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
-		DownloadTypes:   downloadTypes,
 		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
@@ -55,7 +47,7 @@ func RemoveDownloads(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		[]string{ii.LangCode},
-		ii.DownloadTypes,
+		ii.NoDlc,
 		true)
 
 	originData, err := originGetData(id, ii, rdx, false)

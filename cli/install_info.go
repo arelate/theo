@@ -30,7 +30,7 @@ type InstallInfo struct {
 	OperatingSystem        vangogh_integration.OperatingSystem `json:"os"`
 	LangCode               string                              `json:"lang-code"`
 	Origin                 data.Origin                         `json:"origin"`
-	DownloadTypes          []vangogh_integration.DownloadType  `json:"download-types"`
+	NoDlc                  bool                                `json:"no-dlc"`
 	DownloadableContent    []string                            `json:"dlc"`
 	Version                string                              `json:"version"`
 	TimeUpdated            string                              `json:"time-updated,omitempty"`
@@ -54,10 +54,19 @@ func (ii *InstallInfo) reduceOriginData(id string, originData *data.OriginData) 
 
 		setInstallInfoDefaults(ii, originData.ProductDetails.OperatingSystems)
 
+		downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
+
+		switch ii.NoDlc {
+		case false:
+			downloadTypes = append(downloadTypes, vangogh_integration.DLC)
+		default:
+			// do nothing
+		}
+
 		dls := originData.ProductDetails.DownloadLinks.
 			FilterOperatingSystems(ii.OperatingSystem).
 			FilterLanguageCodes(ii.LangCode).
-			FilterDownloadTypes(ii.DownloadTypes...)
+			FilterDownloadTypes(downloadTypes...)
 
 		ii.EstimatedBytes = 0
 		for _, dl := range dls {
@@ -306,9 +315,4 @@ func setInstallInfoDefaults(request *InstallInfo, availableOperatingSystems []va
 	if request.LangCode == "" {
 		request.LangCode = langCodeDefault
 	}
-
-	if len(request.DownloadTypes) == 0 {
-		request.DownloadTypes = []vangogh_integration.DownloadType{vangogh_integration.Installer, vangogh_integration.DLC}
-	}
-
 }

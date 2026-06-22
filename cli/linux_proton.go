@@ -10,6 +10,7 @@ import (
 	"github.com/arelate/southern_light/wine_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -96,7 +97,7 @@ func linuxInitPrefix(absPrefixDir string, _ bool) error {
 	defer lipa.Done()
 
 	if _, err := os.Stat(absPrefixDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(absPrefixDir, 0755); err != nil {
+		if err = os.MkdirAll(absPrefixDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}

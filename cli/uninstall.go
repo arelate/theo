@@ -69,10 +69,9 @@ func Uninstall(id string, request *InstallInfo, purge bool) error {
 		if err = originUninstall(id, installInfo, rdx); err != nil {
 			return err
 		}
-	}
-
-	if err = originPostUninstall(id, installInfo, rdx, purge); err != nil {
-		return err
+		if err = originUninstallDlcs(id, installInfo, rdx); err != nil {
+			return err
+		}
 	}
 
 	if err = LaunchOptions(id, installInfo, new(execTask), true); err != nil {
@@ -101,18 +100,6 @@ func originUninstall(id string, installInfo *InstallInfo, rdx redux.Writeable) e
 	case data.VangoghOrigin:
 		if err = vangoghUninstallProduct(id, installInfo, rdx); err != nil {
 			return err
-		}
-
-		var absInventoryFilename string
-		absInventoryFilename, err = data.AbsInventoryFilename(id, installInfo.LangCode, installInfo.OperatingSystem, rdx)
-		if err != nil {
-			return err
-		}
-
-		if _, err = os.Stat(absInventoryFilename); err == nil {
-			if err = os.Remove(absInventoryFilename); err != nil {
-				return err
-			}
 		}
 	case data.SteamOrigin:
 
@@ -172,17 +159,10 @@ func originPurgeInstallation(id string, installInfo *InstallInfo, rdx redux.Read
 	return nil
 }
 
-func originPostUninstall(id string, ii *InstallInfo, rdx redux.Writeable, purge bool) error {
+func originUninstallDlcs(id string, ii *InstallInfo, rdx redux.Writeable) error {
 	switch ii.Origin {
 	case data.EpicGamesOrigin:
-		switch purge {
-		case true:
-			return nil
-		default:
-			// purge already removed main product installation directory where DLC was installed,
-			// so only uninstall DLC if purge was not set
-			return egsUninstallDownloadableContent(id, ii, rdx)
-		}
+		return egsUninstallDlcs(id, ii, rdx)
 	default:
 		return nil
 	}

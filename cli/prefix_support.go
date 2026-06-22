@@ -9,6 +9,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -71,7 +72,7 @@ func prefixRunInstallers(id string, ii *InstallInfo, dls vangogh_integration.Pro
 
 		absDstDir := filepath.Join(unpackDir, link.LocalFilename)
 		if _, err = os.Stat(absDstDir); os.IsNotExist(err) {
-			if err = os.MkdirAll(absDstDir, 0755); err != nil {
+			if err = os.MkdirAll(absDstDir, pathways.PermUrwGrwOr); err != nil {
 				return err
 			}
 		}

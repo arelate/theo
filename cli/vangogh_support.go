@@ -270,10 +270,15 @@ func vangoghFetchAvailableProducts(kvAvailableProducts kevlar.KeyValues) error {
 func vangoghProductDetailsSize(productDetails *vangogh_integration.ProductDetails, ii *InstallInfo, manualUrlFilter ...string) int64 {
 	var totalEstimatedBytes int64
 
+	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
+	if !ii.NoDlc {
+		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
+	}
+
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
-		FilterDownloadTypes(ii.DownloadTypes...)
+		FilterDownloadTypes(downloadTypes...)
 
 	for _, dl := range dls {
 		if len(manualUrlFilter) > 0 && !slices.Contains(manualUrlFilter, dl.ManualUrl) {
@@ -294,7 +299,7 @@ func vangoghUninstallProduct(id string, ii *InstallInfo, rdx redux.Writeable) er
 		return err
 	}
 
-	return nil
+	return removeInventoryFile(id, ii, rdx)
 }
 
 func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, rdx redux.Readable) (map[steam_grid.Asset]*url.URL, error) {
@@ -485,15 +490,15 @@ func vangoghUpdateSessionToken(password string, rdx redux.Writeable) error {
 	return nil
 }
 
-func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
+func vangoghUnpackPlace(id string, ii *InstallInfo, dt vangogh_integration.DownloadType, originData *data.OriginData, rdx redux.Writeable) error {
 
-	ipa := nod.Begin("installing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
+	ipa := nod.Begin("unpacking and placing %s %s-%s...", id, ii.OperatingSystem, ii.LangCode)
 	defer ipa.Done()
 
 	dls := originData.ProductDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
-		FilterDownloadTypes(ii.DownloadTypes...)
+		FilterDownloadTypes(dt)
 
 	if len(dls) == 0 {
 		ipa.EndWithResult("no links are matching install params")
@@ -566,7 +571,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 		return err
 	}
 
-	if err = writeInventory(id, ii.LangCode, ii.OperatingSystem, rdx, unpackedInventory...); err != nil {
+	if err = appendInventory(id, ii.LangCode, ii.OperatingSystem, rdx, unpackedInventory...); err != nil {
 		return err
 	}
 
@@ -698,7 +703,7 @@ func vangoghPlaceUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLi
 	defer mpda.Done()
 
 	if _, err := os.Stat(absInstallationPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(absInstallationPath, 0755); err != nil {
+		if err = os.MkdirAll(absInstallationPath, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}
@@ -717,7 +722,7 @@ func vangoghPlaceUnpackedLinkPayload(link *vangogh_integration.ProductDownloadLi
 		absDstDir, _ := filepath.Split(absDstPath)
 
 		if _, err = os.Stat(absDstDir); os.IsNotExist(err) {
-			if err = os.MkdirAll(absDstDir, 0755); err != nil {
+			if err = os.MkdirAll(absDstDir, pathways.PermUrwGrwOr); err != nil {
 				return err
 			}
 		}
@@ -757,10 +762,15 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 		dc.SetAuthorizationBearer(token)
 	}
 
+	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
+	if !ii.NoDlc {
+		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
+	}
+
 	dls := originData.ProductDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
-		FilterDownloadTypes(ii.DownloadTypes...)
+		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
 		return errors.New("no links are matching operating params")
@@ -822,10 +832,15 @@ func vangoghRemoveProductDownloadLinks(id string,
 		return nil
 	}
 
+	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
+	if !ii.NoDlc {
+		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
+	}
+
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
-		FilterDownloadTypes(ii.DownloadTypes...)
+		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
 		rdla.EndWithResult("no links are matching operating params")
@@ -964,10 +979,15 @@ func vangoghValidateLinks(id string,
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
+	downloadTypes := []vangogh_integration.DownloadType{vangogh_integration.Installer}
+	if !ii.NoDlc {
+		downloadTypes = append(downloadTypes, vangogh_integration.DLC)
+	}
+
 	dls := productDetails.DownloadLinks.
 		FilterOperatingSystems(ii.OperatingSystem).
 		FilterLanguageCodes(ii.LangCode).
-		FilterDownloadTypes(ii.DownloadTypes...)
+		FilterDownloadTypes(downloadTypes...)
 
 	if len(dls) == 0 {
 		return nil, errors.New("no links are matching operating params")

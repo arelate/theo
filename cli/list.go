@@ -250,21 +250,6 @@ func listInstalled(ii *InstallInfo) error {
 			infoLines = append(infoLines, "os: "+installedInfo.OperatingSystem.String())
 			infoLines = append(infoLines, "lang: "+gog_integration.LanguageNativeName(installedInfo.LangCode))
 
-			switch installedInfo.Origin {
-			case data.VangoghOrigin:
-				pfxDt := "type: "
-				if len(installedInfo.DownloadTypes) > 1 {
-					pfxDt = "types: "
-				}
-				dts := make([]string, 0, len(installedInfo.DownloadTypes))
-				for _, dt := range installedInfo.DownloadTypes {
-					dts = append(dts, dt.HumanReadableString())
-				}
-				infoLines = append(infoLines, pfxDt+strings.Join(dts, ", "))
-			default:
-				// do nothing
-			}
-
 			if installedInfo.Version != "" {
 				infoLines = append(infoLines, "version: "+installedInfo.Version)
 			}

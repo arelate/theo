@@ -24,6 +24,7 @@ import (
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -832,7 +833,7 @@ func egsAssembleFile(chunkedFile *egs_integration.File, featureLevel uint32, chu
 	absOutputDir, _ := filepath.Split(absOutputFilename)
 
 	if _, err = os.Stat(absOutputDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(absOutputDir, 0775); err != nil {
+		if err = os.MkdirAll(absOutputDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}
@@ -1034,15 +1035,11 @@ func egsCatalogItemDlcGameAssets(osGameAssets map[vangogh_integration.OperatingS
 
 func egsInstallDownloadableContent(ii *InstallInfo, catalogItem *egs_integration.CatalogItem) error {
 
-	if !slices.Contains(ii.DownloadTypes, vangogh_integration.DLC) {
-		return nil
-	}
-
 	if len(catalogItem.DlcItemList) == 0 {
 		return nil
 	}
 
-	eidca := nod.Begin("installing available DLCs for %s...", catalogItem.Title)
+	eidca := nod.Begin("installing DLCs for %s...", catalogItem.Title)
 	defer eidca.Done()
 
 	osGameAssets, err := egsGetGameAssets(ii.force)
@@ -1066,7 +1063,7 @@ func egsInstallDownloadableContent(ii *InstallInfo, catalogItem *egs_integration
 	return nil
 }
 
-func egsUninstallDownloadableContent(appName string, ii *InstallInfo, rdx redux.Writeable) error {
+func egsUninstallDlcs(appName string, ii *InstallInfo, rdx redux.Writeable) error {
 
 	eudca := nod.Begin("uninstalling DLCs for %s...", appName)
 	defer eudca.Done()

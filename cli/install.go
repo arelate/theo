@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/url"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -32,16 +31,10 @@ func InstallHandler(u *url.URL) error {
 		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
-	var downloadTypes []vangogh_integration.DownloadType
-	if q.Has(vangogh_integration.UrlDownloadTypeParameter) {
-		dts := strings.Split(q.Get(vangogh_integration.UrlDownloadTypeParameter), ",")
-		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
-	}
-
 	ii := &InstallInfo{
 		OperatingSystem:        operatingSystem,
 		LangCode:               langCode,
-		DownloadTypes:          downloadTypes,
+		NoDlc:                  q.Has(vangogh_integration.UrlNoDlcParameter),
 		Origin:                 data.VangoghOrigin,
 		KeepDownloads:          q.Has(vangogh_integration.UrlKeepDownloadsParameter),
 		NoSteamShortcut:        q.Has(vangogh_integration.UrlNoSteamShortcutParameter),
@@ -70,10 +63,6 @@ func Install(id string, ii *InstallInfo) error {
 	ia := nod.Begin("installing %s...", id)
 	defer ia.Done()
 
-	if len(ii.DownloadTypes) == 1 && ii.DownloadTypes[0] == vangogh_integration.AnyDownloadType {
-		ii.DownloadTypes = []vangogh_integration.DownloadType{vangogh_integration.Installer, vangogh_integration.DLC}
-	}
-
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {
 		return err
@@ -82,11 +71,11 @@ func Install(id string, ii *InstallInfo) error {
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		[]string{ii.LangCode},
-		ii.DownloadTypes,
+		ii.NoDlc,
 		true)
 
 	// don't check existing installations for DLCs, Extras
-	if slices.Contains(ii.DownloadTypes, vangogh_integration.Installer) && !ii.force {
+	if !ii.force {
 		var ok bool
 		if ok, err = hasInstallInfo(id, ii, rdx); ok && err == nil {
 			ia.EndWithResult("already installed")
@@ -117,8 +106,14 @@ func Install(id string, ii *InstallInfo) error {
 		return err
 	}
 
-	if err = originInstall(id, ii, originData, rdx); err != nil {
+	if err = originInstallMainProduct(id, ii, originData, rdx); err != nil {
 		return err
+	}
+
+	if !ii.NoDlc {
+		if err = originInstallDlcs(id, ii, originData, rdx); err != nil {
+			return err
+		}
 	}
 
 	if err = originAddSteamShortcut(id, id, ii, originData, rdx); err != nil {
@@ -236,11 +231,14 @@ func originAddSteamShortcut(id, forId string, ii *InstallInfo, originData *data.
 	return addSteamShortcut(forId, ii, rdx, sgo)
 }
 
-func originInstall(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
+func originInstallMainProduct(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
+
+	oimpa := nod.Begin("installing main product for %s...", id)
+	defer oimpa.Done()
 
 	switch ii.Origin {
 	case data.VangoghOrigin:
-		return vangoghUnpackPlace(id, ii, originData, rdx)
+		return vangoghUnpackPlace(id, ii, vangogh_integration.Installer, originData, rdx)
 	case data.SteamOrigin:
 		// do nothing - SteamCMD app update during Download is equivalent to installation
 		return nil
@@ -258,7 +256,22 @@ func originPostInstall(id string, ii *InstallInfo, originData *data.OriginData, 
 		if err := egsChmodLauncherExe(id, ii, originData, rdx); err != nil {
 			return err
 		}
+	default:
+		// do nothing
+	}
 
+	return nil
+}
+
+func originInstallDlcs(id string, ii *InstallInfo, originData *data.OriginData, rdx redux.Writeable) error {
+
+	oidca := nod.Begin("installing DLCs for %s...", id)
+	defer oidca.Done()
+
+	switch ii.Origin {
+	case data.VangoghOrigin:
+		return vangoghUnpackPlace(id, ii, vangogh_integration.DLC, originData, rdx)
+	case data.EpicGamesOrigin:
 		if err := egsInstallDownloadableContent(ii, originData.CatalogItem); err != nil {
 			return err
 		}

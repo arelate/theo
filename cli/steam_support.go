@@ -18,6 +18,7 @@ import (
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -112,7 +113,7 @@ func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.Opera
 	}
 
 	if _, err = os.Stat(steamAppInstallDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(steamAppInstallDir, 0755); err != nil {
+		if err = os.MkdirAll(steamAppInstallDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}
@@ -150,7 +151,7 @@ func steamValidateApp(steamAppId string, operatingSystem vangogh_integration.Ope
 	}
 
 	if _, err = os.Stat(steamAppInstallDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(steamAppInstallDir, 0755); err != nil {
+		if err = os.MkdirAll(steamAppInstallDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}

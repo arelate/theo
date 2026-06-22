@@ -77,7 +77,7 @@ func createUmuConfig(cfg *UmuConfig, rdx redux.Readable) (string, error) {
 
 	umuConfigDir, _ := filepath.Split(umuConfigPath)
 	if _, err = os.Stat(umuConfigDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(umuConfigDir, 0755); err != nil {
+		if err = os.MkdirAll(umuConfigDir, pathways.PermUrwGrwOr); err != nil {
 			return "", err
 		}
 	}

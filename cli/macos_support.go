@@ -149,7 +149,7 @@ func macOsUnpackLink(link *vangogh_integration.ProductDownloadLink, linkPath, un
 	unpackLinkParentDir, _ := filepath.Split(unpackLinkDir)
 
 	if _, err := os.Stat(unpackLinkParentDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(unpackLinkParentDir, 0755); err != nil {
+		if err = os.MkdirAll(unpackLinkParentDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}
@@ -393,7 +393,7 @@ func macOsCatFiles(srcGlob string, dstPath string) error {
 
 	dstDir, _ := filepath.Split(dstPath)
 	if _, err := os.Stat(dstDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(dstDir, 0755); err != nil {
+		if err = os.MkdirAll(dstDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}

@@ -21,7 +21,7 @@ download
     id^*
     os&={operating-systems^}
     lang-code&={language-codes^}
-    download-type&={download-types^}
+    no-dlc
     manual-url-filter&
     steam
     epic-games
@@ -44,7 +44,7 @@ install
     id^
     os={operating-systems^}
     lang-code={language-codes^}
-    download-type&={download-types^}
+    no-dlc
     keep-downloads
     steam
     epic-games
@@ -99,7 +99,6 @@ remove-downloads
     id^*
     os&={operating-systems^}
     lang-code&={language-codes^}
-    download-type&={download-types^}
 
 reveal
     id^

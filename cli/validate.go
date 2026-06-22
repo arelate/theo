@@ -54,17 +54,10 @@ func ValidateHandler(u *url.URL) error {
 		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
-	var downloadTypes []vangogh_integration.DownloadType
-	if q.Has(vangogh_integration.UrlDownloadTypeParameter) {
-		dts := strings.Split(q.Get(vangogh_integration.UrlDownloadTypeParameter), ",")
-		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
-	}
-
 	ii := &InstallInfo{
 		Origin:          data.VangoghOrigin,
 		OperatingSystem: os,
 		LangCode:        langCode,
-		DownloadTypes:   downloadTypes,
 		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 

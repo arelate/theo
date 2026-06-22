@@ -68,7 +68,7 @@ func InitPathways() error {
 
 	rootDir := filepath.Join(udhd, theoDirname)
 	if _, err = os.Stat(rootDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(rootDir, 0755); err != nil {
+		if err = os.MkdirAll(rootDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}
@@ -81,7 +81,7 @@ func InitPathways() error {
 	for _, ad := range []pathways.AbsDir{Backups, Metadata, Downloads, InstalledApps, SteamApps, Wine, SteamCmd, Logs, Temp} {
 		absDir := filepath.Join(rootDir, string(ad))
 		if _, err = os.Stat(absDir); os.IsNotExist(err) {
-			if err = os.MkdirAll(absDir, 0755); err != nil {
+			if err = os.MkdirAll(absDir, pathways.PermUrwGrwOr); err != nil {
 				return err
 			}
 		}
@@ -110,7 +110,7 @@ func InitPathways() error {
 		for _, ad := range ads {
 			absRelDir := filepath.Join(rootDir, string(ad), string(rd))
 			if _, err = os.Stat(absRelDir); os.IsNotExist(err) {
-				if err = os.MkdirAll(absRelDir, 0755); err != nil {
+				if err = os.MkdirAll(absRelDir, pathways.PermUrwGrwOr); err != nil {
 					return err
 				}
 			}

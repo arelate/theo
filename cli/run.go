@@ -127,7 +127,7 @@ func Run(id string, request *InstallInfo, et *execTask) error {
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		[]string{ii.LangCode},
-		ii.DownloadTypes,
+		ii.NoDlc,
 		true)
 
 	if err = setLastRunDate(rdx, id); err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -80,7 +81,7 @@ func readInventory(id string, ii *InstallInfo, rdx redux.Readable) ([]string, er
 	return relFiles, nil
 }
 
-func writeInventory(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable, inventory ...string) error {
+func appendInventory(id, langCode string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable, inventory ...string) error {
 
 	absInventoryFilename, err := data.AbsInventoryFilename(id, langCode, operatingSystem, rdx)
 	if err != nil {
@@ -91,10 +92,28 @@ func writeInventory(id, langCode string, operatingSystem vangogh_integration.Ope
 
 	pathDir, _ := filepath.Split(absInventoryDir)
 	if _, err = os.Stat(pathDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(pathDir, 0755); err != nil {
+		if err = os.MkdirAll(pathDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}
+
+	var existingInventory []string
+
+	if _, err = os.Stat(absInventoryFilename); err == nil {
+		var inventoryFile *os.File
+		inventoryFile, err = os.Open(absInventoryFilename)
+		if err != nil {
+			return err
+		}
+
+		err = json.UnmarshalRead(inventoryFile, &existingInventory)
+		inventoryFile.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	existingInventory = append(existingInventory, inventory...)
 
 	inventoryFile, err := os.Create(absInventoryFilename)
 	if err != nil {
@@ -102,7 +121,7 @@ func writeInventory(id, langCode string, operatingSystem vangogh_integration.Ope
 	}
 	defer inventoryFile.Close()
 
-	return json.MarshalWrite(inventoryFile, inventory)
+	return json.MarshalWrite(inventoryFile, existingInventory)
 }
 
 func removeInventoriedFiles(id string, ii *InstallInfo, rdx redux.Readable) error {
@@ -142,6 +161,22 @@ func removeInventoriedFiles(id string, ii *InstallInfo, rdx redux.Readable) erro
 
 	if len(relFiles) == 0 {
 		if err = os.RemoveAll(absInstalledPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func removeInventoryFile(id string, ii *InstallInfo, rdx redux.Readable) error {
+
+	absInventoryFilename, err := data.AbsInventoryFilename(id, ii.LangCode, ii.OperatingSystem, rdx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = os.Stat(absInventoryFilename); err == nil {
+		if err = os.Remove(absInventoryFilename); err != nil {
 			return err
 		}
 	}

@@ -420,7 +420,7 @@ func untar(srcPath, dstPath string, options ...string) error {
 
 	if dstPath != "" {
 		if _, err = os.Stat(dstPath); err != nil {
-			if err = os.MkdirAll(dstPath, 0755); err != nil {
+			if err = os.MkdirAll(dstPath, pathways.PermUrwGrwOr); err != nil {
 				return err
 			}
 		}
@@ -449,7 +449,7 @@ func unzip(srcPath, dstPath string, options ...string) error {
 
 	if dstPath != "" {
 		if _, err = os.Stat(dstPath); err != nil {
-			if err = os.MkdirAll(dstPath, 0755); err != nil {
+			if err = os.MkdirAll(dstPath, pathways.PermUrwGrwOr); err != nil {
 				return err
 			}
 		}

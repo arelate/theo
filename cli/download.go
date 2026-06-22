@@ -27,17 +27,11 @@ func DownloadHandler(u *url.URL) error {
 		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
-	var downloadTypes []vangogh_integration.DownloadType
-	if q.Has(vangogh_integration.UrlDownloadTypeParameter) {
-		dts := strings.Split(q.Get(vangogh_integration.UrlDownloadTypeParameter), ",")
-		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
-	}
-
 	ii := &InstallInfo{
 		Origin:          data.VangoghOrigin,
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
-		DownloadTypes:   downloadTypes,
+		NoDlc:           q.Has(vangogh_integration.UrlNoDlcParameter),
 		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
@@ -73,7 +67,7 @@ func Download(id string,
 	vangogh_integration.PrintParams([]string{id},
 		[]vangogh_integration.OperatingSystem{ii.OperatingSystem},
 		[]string{ii.LangCode},
-		ii.DownloadTypes,
+		ii.NoDlc,
 		true)
 
 	if originData == nil {
