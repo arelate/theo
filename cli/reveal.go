@@ -78,6 +78,10 @@ func revealInstalled(id string, request *InstallInfo) error {
 	defer ria.Done()
 
 	rdx, err := redux.NewReader(data.AbsReduxDir(),
+		vangogh_integration.GogTitleProperty,
+		vangogh_integration.SteamTitleProperty,
+		vangogh_integration.EgsTitleProperty,
+		vangogh_integration.GogBundleNameProperty,
 		data.InstallInfoProperty)
 	if err != nil {
 		return err
