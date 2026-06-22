@@ -14,6 +14,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -32,6 +33,8 @@ const (
 	installerTypeGame = "game"
 	installerTypeDlc  = "dlc"
 )
+
+const innoextractBinaryFn = "innoextract"
 
 var (
 	ErrMissingExtractedPayload       = errors.New("cannot locate extracted payload")
@@ -77,6 +80,78 @@ func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 	}
 
 	return nil
+}
+
+func macOsUnpackWindowsInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+
+	ieInstalled := macOsIsInnoextractInstalled()
+
+	switch ieInstalled {
+	case true:
+		return macOsInnoextractInstallers(id, ii, dls, unpackDir)
+	default:
+		return prefixRunInstallers(id, ii, dls, rdx, unpackDir)
+	}
+}
+
+func macOsIsInnoextractInstalled() bool {
+	_, err := exec.LookPath(innoextractBinaryFn)
+
+	switch err {
+	case nil:
+		return true
+	default:
+		return false
+	}
+}
+
+func macOsInnoextractInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
+
+	miia := nod.Begin(" innoextract %s installers for %s-%s...", id, vangogh_integration.Windows, ii.LangCode)
+	defer miia.Done()
+
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+
+	for _, link := range dls {
+
+		if !isLinkExecutable(&link, vangogh_integration.Windows) {
+			continue
+		}
+
+		absDstDir := filepath.Join(unpackDir, link.LocalFilename)
+		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
+			if err = os.MkdirAll(absDstDir, pathways.PermUrwGrwOr); err != nil {
+				return err
+			}
+		}
+
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		absUnpackDir := filepath.Join(unpackDir, link.LocalFilename)
+
+		if err := macOsInnoextract(absInstallerPath, absUnpackDir); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func macOsInnoextract(absSrc string, absDst string) error {
+
+	_, filename := filepath.Split(absSrc)
+
+	mia := nod.Begin(" - innoextract %s...", filename)
+	defer mia.Done()
+
+	iePath, err := exec.LookPath(innoextractBinaryFn)
+	if err != nil {
+		return err
+	}
+
+	args := []string{absSrc, "-d", absDst}
+
+	ieCmd := exec.Command(iePath, args...)
+	return ieCmd.Run()
 }
 
 func macOsUnpackLink(link *vangogh_integration.ProductDownloadLink, linkPath, unpackDir string) error {

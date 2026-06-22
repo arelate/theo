@@ -22,6 +22,7 @@ import (
 	"github.com/boggydigital/dolo"
 	"github.com/boggydigital/kevlar"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -517,7 +518,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 
 	// vangogh installation:
 	// 1. check available space
-	// 2. unpack installers (e.g. pkgutil on macOS, execute .sh on Linux; run setup on Windows)
+	// 2. unpack installers (e.g. innoextract/pkgutil on macOS, extract .sh on Linux; run setup on Windows)
 	// 3. perform post-unpack actions (e.g. reduce bundleName on macOS)
 	// 4. uninstall if installed directory exists and forcing install (will be used for updates)
 	// 5. create inventory of unpacked files
@@ -595,13 +596,17 @@ func vangoghGetUnpackDir(id string, ii *InstallInfo, rdx redux.Readable) (string
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
-			fallthrough
-		case vangogh_integration.Linux:
-			absPrefixDir, err := data.AbsPrefixDir(id, ii.Origin, rdx)
-			if err != nil {
-				return "", err
+
+			ieInstalled := macOsIsInnoextractInstalled()
+			switch ieInstalled {
+			case true:
+				// do nothing
+			case false:
+				return prefixTempUnpackDir(id, ii.Origin, rdx)
 			}
-			return filepath.Join(absPrefixDir, prefixRelDriveCDir, "Temp", id), nil
+
+		case vangogh_integration.Linux:
+			return prefixTempUnpackDir(id, ii.Origin, rdx)
 		default:
 			// do nothing
 		}
@@ -624,7 +629,7 @@ func vangoghUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration
 	}
 
 	if _, err := os.Stat(unpackDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(unpackDir, 0755); err != nil {
+		if err = os.MkdirAll(unpackDir, pathways.PermUrwGrwOr); err != nil {
 			return err
 		}
 	}
@@ -637,9 +642,9 @@ func vangoghUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration
 	case vangogh_integration.Windows:
 		switch data.CurrentOs() {
 		case vangogh_integration.MacOS:
-			fallthrough
+			return macOsUnpackWindowsInstallers(id, ii, dls, rdx, unpackDir)
 		case vangogh_integration.Linux:
-			return prefixUnpackInstallers(id, ii, dls, rdx, unpackDir)
+			return prefixRunInstallers(id, ii, dls, rdx, unpackDir)
 		default:
 			return ii.OperatingSystem.ErrUnsupported()
 		}

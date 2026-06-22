@@ -43,9 +43,17 @@ func prefixInit(id string, origin data.Origin, rdx redux.Readable, verbose bool)
 	}
 }
 
-func prefixUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+func prefixTempUnpackDir(id string, origin data.Origin, rdx redux.Readable) (string, error) {
+	absPrefixDir, err := data.AbsPrefixDir(id, origin, rdx)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(absPrefixDir, prefixRelDriveCDir, "Temp", id), nil
+}
 
-	puia := nod.Begin(" unpacking %s installers for %s-%s...", id, vangogh_integration.Windows, ii.LangCode)
+func prefixRunInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+
+	puia := nod.Begin(" running %s installers for %s-%s...", id, vangogh_integration.Windows, ii.LangCode)
 	defer puia.Done()
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
