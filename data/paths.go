@@ -218,3 +218,7 @@ func AbsSteamAppInstallDir(steamAppId string, operatingSystem vangogh_integratio
 func AbsChunksDownloadDir(appName string, operatingSystem vangogh_integration.OperatingSystem) string {
 	return filepath.Join(Pwd.AbsDirPath(Downloads), fmt.Sprintf("%s-%s", appName, operatingSystem))
 }
+
+func AbsReduxDir() string {
+	return Pwd.AbsRelDirPath(Redux, Metadata)
+}

@@ -34,8 +34,6 @@ const (
 	installerTypeDlc  = "dlc"
 )
 
-const innoextractBinaryFn = "innoextract"
-
 var (
 	ErrMissingExtractedPayload       = errors.New("cannot locate extracted payload")
 	ErrUnknownPostInstallCommand     = errors.New("unknown postinstall command")

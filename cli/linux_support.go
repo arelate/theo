@@ -14,6 +14,7 @@ import (
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
+	"github.com/boggydigital/pathways"
 	"github.com/boggydigital/redux"
 )
 
@@ -23,6 +24,8 @@ const (
 	shExt                  = ".sh"
 	relExtractedDataPath   = "data/noarch"
 )
+
+const innoextractBinaryFn = "innoextract"
 
 func linuxUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLinks, unpackDir string) error {
 
@@ -65,9 +68,46 @@ func linuxExtractInstallerData(linkInstallerPath, absUnpackDir string) error {
 }
 
 func linuxUnpackWindowsInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
-	return prefixRunInstallers(id, ii, dls, rdx, unpackDir)
+
+	absInnoextractBinaryPath, err := data.InnoextractLatestReleasePath(innoextractBinaryFn, rdx)
+
+	if err == nil && absInnoextractBinaryPath != "" {
+		return linuxInnoextractInstallers(id, ii, dls, unpackDir, absInnoextractBinaryPath)
+	} else {
+		return prefixRunInstallers(id, ii, dls, rdx, unpackDir)
+	}
 }
 
+func linuxInnoextractInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, unpackDir, innoextractPath string) error {
+
+	liia := nod.Begin(" innoextract %s installers for %s-%s...", id, vangogh_integration.Windows, ii.LangCode)
+	defer liia.Done()
+
+	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
+
+	for _, link := range dls {
+
+		if !isLinkExecutable(&link, vangogh_integration.Windows) {
+			continue
+		}
+
+		absDstDir := filepath.Join(unpackDir, link.LocalFilename)
+		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
+			if err = os.MkdirAll(absDstDir, pathways.PermUrwGrwOr); err != nil {
+				return err
+			}
+		}
+
+		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
+		absUnpackDir := filepath.Join(unpackDir, link.LocalFilename)
+
+		if err := nixInnoextract(innoextractPath, absInstallerPath, absUnpackDir); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 func linuxPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
 	lufa := nod.Begin(" placing unpacked files for %s...", id)
