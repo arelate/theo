@@ -17,7 +17,7 @@ func SetupSteamCmdHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	force := q.Has("force")
+	force := q.Has(vangogh_integration.UrlForceParameter)
 
 	return SetupSteamCmd(force)
 }

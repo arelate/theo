@@ -16,26 +16,26 @@ func UninstallHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	var langCode string
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
-		verbose:         q.Has("verbose"),
-		force:           q.Has("force"),
+		verbose:         q.Has(vangogh_integration.UrlVerboseParameter),
+		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
-	purge := q.Has("purge")
+	purge := q.Has(vangogh_integration.UrlPurgeParameter)
 
 	return Uninstall(id, ii, purge)
 }

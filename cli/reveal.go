@@ -16,16 +16,16 @@ func RevealHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	langCode := "" // installed info language will be used instead of default
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	ii := &InstallInfo{
@@ -33,9 +33,9 @@ func RevealHandler(u *url.URL) error {
 		LangCode:        langCode,
 	}
 
-	installed := q.Has("installed")
-	downloads := q.Has("downloads")
-	backups := q.Has("backups")
+	installed := q.Has(vangogh_integration.UrlInstalledParameter)
+	downloads := q.Has(vangogh_integration.UrlDownloadsParameter)
+	backups := q.Has(vangogh_integration.UrlBackupsParameter)
 
 	return Reveal(id, ii, installed, downloads, backups)
 }

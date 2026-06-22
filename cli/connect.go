@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 
+	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
@@ -13,29 +14,29 @@ func ConnectHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	urlStr := q.Get("url")
+	urlStr := q.Get(vangogh_integration.UrlUrlParameter)
 
-	username := q.Get("username")
-	password := q.Get("password")
+	username := q.Get(vangogh_integration.UrlUsernameParameter)
+	password := q.Get(vangogh_integration.UrlPasswordParameter)
 
 	var origin data.Origin
 
-	if q.Has("steam") {
+	if q.Has(vangogh_integration.UrlSteamParameter) {
 		origin = data.SteamOrigin
-	} else if q.Has("epic-games") {
+	} else if q.Has(vangogh_integration.UrlEpicGamesParameter) {
 		origin = data.EpicGamesOrigin
 	} else {
 		origin = data.VangoghOrigin
 	}
 
-	cookie := q.Get("cookie")
+	cookies := q.Get(vangogh_integration.UrlCookiesParameter)
 
-	reset := q.Has("reset")
+	reset := q.Has(vangogh_integration.UrlResetParameter)
 
-	return Connect(urlStr, username, password, cookie, origin, reset)
+	return Connect(urlStr, username, password, cookies, origin, reset)
 }
 
-func Connect(urlStr, username, password, cookie string, origin data.Origin, reset bool) error {
+func Connect(urlStr, username, password, cookies string, origin data.Origin, reset bool) error {
 
 	ca := nod.Begin("setting up theo connection...")
 	defer ca.Done()
@@ -54,7 +55,7 @@ func Connect(urlStr, username, password, cookie string, origin data.Origin, rese
 		}
 		return steamSetupConnection(username, rdx, reset)
 	case data.EpicGamesOrigin:
-		return egsSetupConnection(cookie, reset)
+		return egsSetupConnection(cookies, reset)
 	default:
 		return origin.ErrUnsupportedOrigin()
 	}

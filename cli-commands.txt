@@ -14,7 +14,7 @@ connect
     password
     steam
     epic-games
-    cookie
+    cookies
     reset
 
 download
@@ -86,7 +86,7 @@ prefix
     env&
     program={wine-programs}
     mod={prefix-mods}
-    install-wine-binary={wine-binaries-codes}
+    install-binary={binaries-codes}
     verbose
     force
 

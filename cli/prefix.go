@@ -22,47 +22,42 @@ func PrefixHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	var langCode string
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	ii := &InstallInfo{
 		OperatingSystem: vangogh_integration.Windows,
 		LangCode:        langCode,
-		force:           q.Has("force"),
+		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
 	et := new(execTask{
-		exe:     q.Get("exe"),
-		verbose: q.Has("verbose"),
+		exe:     q.Get(vangogh_integration.UrlExeParameter),
+		verbose: q.Has(vangogh_integration.UrlVerboseParameter),
 	})
 
-	if q.Has("env") {
-		et.env = strings.Split(q.Get("env"), ",")
+	if q.Has(vangogh_integration.UrlEnvParameter) {
+		et.env = strings.Split(q.Get(vangogh_integration.UrlEnvParameter), ",")
 	}
 
-	if q.Has("arg") {
-		for _, arg := range strings.Split(q.Get("arg"), ",") {
+	if q.Has(vangogh_integration.UrlArgParameter) {
+		for _, arg := range strings.Split(q.Get(vangogh_integration.UrlArgParameter), ",") {
 			et.args = append(et.args, strings.TrimPrefix(arg, "\\"))
 		}
 	}
 
-	mod := q.Get("mod")
-	program := q.Get("program")
-	wineBinary := q.Get("install-wine-binary")
+	mod := q.Get(vangogh_integration.UrlModParameter)
+	program := q.Get(vangogh_integration.UrlProgramParameter)
+	installBinary := q.Get(vangogh_integration.UrlInstallBinaryParameter)
 
-	return Prefix(id, ii,
-		mod, program, wineBinary,
-		et)
+	return Prefix(id, ii, mod, program, installBinary, et)
 }
 
-func Prefix(id string,
-	request *InstallInfo,
-	mod, program, wineBinary string,
-	et *execTask) error {
+func Prefix(id string, request *InstallInfo, mod, program, wineBinary string, et *execTask) error {
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)
 	if err != nil {

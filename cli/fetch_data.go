@@ -14,22 +14,22 @@ func FetchDataHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	ii := new(InstallInfo{
 		OperatingSystem: vangogh_integration.AnyOperatingSystem,
 		Origin:          data.VangoghOrigin,
 	})
 
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		ii.OperatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		ii.OperatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
-	if q.Has("steam") {
+	if q.Has(vangogh_integration.UrlSteamParameter) {
 		ii.Origin = data.SteamOrigin
 	}
 
-	if q.Has("epic-games") {
+	if q.Has(vangogh_integration.UrlEpicGamesParameter) {
 		ii.Origin = data.EpicGamesOrigin
 	}
 

@@ -18,9 +18,9 @@ func UpdateHandler(u *url.URL) error {
 
 	id := q.Get(vangogh_integration.IdProperty)
 
-	all := q.Has("all")
-	verbose := q.Has("verbose")
-	force := q.Has("force")
+	all := q.Has(vangogh_integration.UrlAllParameter)
+	verbose := q.Has(vangogh_integration.UrlVerboseParameter)
+	force := q.Has(vangogh_integration.UrlForceParameter)
 
 	return Update(id, all, verbose, force)
 }

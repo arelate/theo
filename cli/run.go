@@ -16,68 +16,78 @@ import (
 	"github.com/boggydigital/redux"
 )
 
+type execTask struct {
+	title              string
+	exe                string
+	workDir            string
+	args               []string
+	env                []string
+	protonOptions      []string
+	protonRuntime      string
+	steamProtonRuntime string
+	prefix             string
+	task               string
+	defaultLauncher    bool
+	verbose            bool
+}
+
 func RunHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	var langCode string
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
-		force:           q.Has("force"),
+		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
 	et := &execTask{
-		workDir:         q.Get("work-dir"),
-		verbose:         q.Has("verbose"),
-		task:            q.Get("task"),
-		defaultLauncher: q.Has("default-launcher"),
-		noFix:           q.Has("no-fix"),
+		workDir:         q.Get(vangogh_integration.UrlWorkDirParameter),
+		verbose:         q.Has(vangogh_integration.UrlVerboseParameter),
+		task:            q.Get(vangogh_integration.UrlTaskParameter),
+		defaultLauncher: q.Has(vangogh_integration.UrlDefaultLauncherParameter),
 	}
 
-	if q.Has("env") {
-		et.env = strings.Split(q.Get("env"), ",")
+	if q.Has(vangogh_integration.UrlEnvParameter) {
+		et.env = strings.Split(q.Get(vangogh_integration.UrlEnvParameter), ",")
 	}
 
-	if q.Has("arg") {
-		for _, arg := range strings.Split(q.Get("arg"), ",") {
+	if q.Has(vangogh_integration.UrlArgParameter) {
+		for _, arg := range strings.Split(q.Get(vangogh_integration.UrlArgParameter), ",") {
 			et.args = append(et.args, strings.TrimPrefix(arg, "\\"))
 		}
 	}
 
-	if q.Has("proton-runtime") {
-		protonRuntime := q.Get("proton-runtime")
-		switch protonRuntime {
-		case "umu-proton":
-			et.protonRuntime = wine_integration.UmuProton
-		case "proton-ge":
-			et.protonRuntime = wine_integration.ProtonGe
-		case "proton-cachyos":
-			et.protonRuntime = wine_integration.ProtonCachyOs
-		case "proton-em":
-			et.protonRuntime = wine_integration.ProtonEm
-		}
-	}
-
-	if et.protonRuntime == "" {
+	protonRuntime := q.Get(vangogh_integration.UrlProtonRuntimeParameter)
+	switch protonRuntime {
+	case "umu-proton":
+		et.protonRuntime = wine_integration.UmuProton
+	case "proton-ge":
+		et.protonRuntime = wine_integration.ProtonGe
+	case "proton-cachyos":
+		et.protonRuntime = wine_integration.ProtonCachyOs
+	case "proton-em":
+		et.protonRuntime = wine_integration.ProtonEm
+	default:
 		et.protonRuntime = wine_integration.ProtonGe
 	}
 
-	et.steamProtonRuntime = q.Get("steam-proton-runtime")
+	et.steamProtonRuntime = q.Get(vangogh_integration.UrlSteamProtonRuntimeParameter)
 
-	if q.Has("proton-options") {
-		et.protonOptions = strings.Split(q.Get("proton-options"), ",")
+	if q.Has(vangogh_integration.UrlProtonOptionsParameter) {
+		et.protonOptions = strings.Split(q.Get(vangogh_integration.UrlProtonOptionsParameter), ",")
 	}
 
 	return Run(id, ii, et)

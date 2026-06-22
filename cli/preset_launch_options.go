@@ -15,11 +15,11 @@ func PresetLaunchOptionsHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	ii := new(InstallInfo{
-		OperatingSystem: vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty)),
-		LangCode:        q.Get(vangogh_integration.LanguageCodeProperty),
+		OperatingSystem: vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter)),
+		LangCode:        q.Get(vangogh_integration.UrlLanguageCodeParameter),
 	})
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)

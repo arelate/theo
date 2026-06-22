@@ -22,11 +22,11 @@ func FixHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get("id")
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	ii := &InstallInfo{
@@ -34,15 +34,15 @@ func FixHandler(u *url.URL) error {
 	}
 
 	fx := new(fixes{
-		steamAppId: q.Has("steam-appid"),
+		steamAppId: q.Has(vangogh_integration.UrlSteamAppIdParameter),
 	})
 
-	revert := q.Has("revert")
+	reset := q.Has(vangogh_integration.UrlResetParameter)
 
-	return Fix(id, ii, fx, revert)
+	return Fix(id, ii, fx, reset)
 }
 
-func Fix(id string, ii *InstallInfo, fx *fixes, revert bool) error {
+func Fix(id string, ii *InstallInfo, fx *fixes, reset bool) error {
 
 	sfa := nod.Begin("applying fixes...")
 	defer sfa.Done()
@@ -53,7 +53,7 @@ func Fix(id string, ii *InstallInfo, fx *fixes, revert bool) error {
 	}
 
 	if fx.steamAppId {
-		if err = fixSteamAppId(id, ii, rdx, revert); err != nil {
+		if err = fixSteamAppId(id, ii, rdx, reset); err != nil {
 			return err
 		}
 	}
@@ -61,7 +61,7 @@ func Fix(id string, ii *InstallInfo, fx *fixes, revert bool) error {
 	return nil
 }
 
-func fixSteamAppId(steamAppId string, request *InstallInfo, rdx redux.Writeable, revert bool) error {
+func fixSteamAppId(steamAppId string, request *InstallInfo, rdx redux.Writeable, reset bool) error {
 
 	fsaia := nod.Begin(" applying steam-appid.txt fix...")
 	defer fsaia.Done()
@@ -87,7 +87,7 @@ func fixSteamAppId(steamAppId string, request *InstallInfo, rdx redux.Writeable,
 
 	absSteamAppIdTxtPath := filepath.Join(exeDir, steamAppIdTxt)
 
-	switch revert {
+	switch reset {
 	case true:
 		if err = os.Remove(absSteamAppIdTxtPath); os.IsNotExist(err) {
 			fsaia.EndWithResult("not present")

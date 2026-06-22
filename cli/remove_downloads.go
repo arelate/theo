@@ -14,21 +14,21 @@ func RemoveDownloadsHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	var langCode string
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	var downloadTypes []vangogh_integration.DownloadType
-	if q.Has(vangogh_integration.DownloadTypeProperty) {
-		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
+	if q.Has(vangogh_integration.UrlDownloadTypeParameter) {
+		dts := strings.Split(q.Get(vangogh_integration.UrlDownloadTypeParameter), ",")
 		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
 	}
 
@@ -36,7 +36,7 @@ func RemoveDownloadsHandler(u *url.URL) error {
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
-		force:           q.Has("force"),
+		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
 	rdx, err := redux.NewWriter(data.AbsReduxDir(), data.AllProperties()...)

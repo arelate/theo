@@ -29,28 +29,28 @@ func LaunchOptionsHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	ii := new(InstallInfo{
-		OperatingSystem: vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty)),
-		LangCode:        q.Get(vangogh_integration.LanguageCodeProperty),
+		OperatingSystem: vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter)),
+		LangCode:        q.Get(vangogh_integration.UrlLanguageCodeParameter),
 	})
 
 	et := new(execTask{
-		exe: q.Get("exe"),
+		exe: q.Get(vangogh_integration.UrlExeParameter),
 	})
 
-	if q.Has("env") {
-		et.env = strings.Split(q.Get("env"), ",")
+	if q.Has(vangogh_integration.UrlEnvParameter) {
+		et.env = strings.Split(q.Get(vangogh_integration.UrlEnvParameter), ",")
 	}
 
-	if q.Has("arg") {
-		for _, arg := range strings.Split(q.Get("arg"), ",") {
+	if q.Has(vangogh_integration.UrlArgParameter) {
+		for _, arg := range strings.Split(q.Get(vangogh_integration.UrlArgParameter), ",") {
 			et.args = append(et.args, strings.TrimPrefix(arg, "\\"))
 		}
 	}
 
-	reset := q.Has("reset")
+	reset := q.Has(vangogh_integration.UrlResetParameter)
 
 	return LaunchOptions(id, ii, et, reset)
 }

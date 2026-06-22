@@ -43,54 +43,52 @@ func ListHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	lt := ListTargetUnknown
-	if q.Has("available-products") {
+	if q.Has(vangogh_integration.UrlAvailableProductsParameter) {
 		lt = ListTargetAvailableProducts
-	} else if q.Has("installed") {
+	} else if q.Has(vangogh_integration.UrlInstalledParameter) {
 		lt = ListTargetInstalled
-	} else if q.Has("launch-options") {
+	} else if q.Has(vangogh_integration.UrlLaunchOptionsParameter) {
 		lt = ListTargetLaunchOptions
-	} else if q.Has("steam-shortcuts") {
+	} else if q.Has(vangogh_integration.UrlSteamShortcutsParameter) {
 		lt = ListTargetSteamShortcuts
-	} else if q.Has("tasks") {
+	} else if q.Has(vangogh_integration.UrlTasksParameter) {
 		lt = ListTargetTasks
 	}
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	var langCode string
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
 		Origin:          data.UnknownOrigin,
-		force:           q.Has("force"),
+		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
-	if q.Has("steam") {
+	if q.Has(vangogh_integration.UrlSteamParameter) {
 		ii.Origin = data.SteamOrigin
-	} else if q.Has("epic-games") {
+	} else if q.Has(vangogh_integration.UrlEpicGamesParameter) {
 		ii.Origin = data.EpicGamesOrigin
 	}
 
-	update := q.Has("update")
+	update := q.Has(vangogh_integration.UrlUpdateParameter)
 
-	allShortcutKeys := q.Has("all-shortcut-keys")
-
-	return List(lt, ii, id, allShortcutKeys, update)
+	return List(lt, ii, id, update)
 }
 
 func List(lt listTarget,
 	installInfo *InstallInfo,
-	id string, allShortcutKeys bool, update bool) error {
+	id string, update bool) error {
 
 	switch lt {
 	case ListTargetAvailableProducts:
@@ -100,7 +98,7 @@ func List(lt listTarget,
 	case ListTargetLaunchOptions:
 		return listLaunchOptions(id, installInfo)
 	case ListTargetSteamShortcuts:
-		return listSteamShortcuts(allShortcutKeys)
+		return listSteamShortcuts()
 	case ListTargetTasks:
 		if id == "" {
 			return errors.New("listing tasks requires product id")
@@ -516,7 +514,7 @@ func listEpicGamesTasks(appName string) (map[string][]string, error) {
 	return nil, nil
 }
 
-func listSteamShortcuts(allShortcutKeys bool) error {
+func listSteamShortcuts() error {
 	lssa := nod.Begin("listing Steam shortcuts for all users...")
 	defer lssa.Done()
 
@@ -536,7 +534,7 @@ func listSteamShortcuts(allShortcutKeys bool) error {
 	}
 
 	for _, loginUser := range loginUsers {
-		if err = listUserShortcuts(loginUser, allShortcutKeys); err != nil {
+		if err = listUserShortcuts(loginUser); err != nil {
 			return err
 		}
 	}
@@ -544,7 +542,7 @@ func listSteamShortcuts(allShortcutKeys bool) error {
 	return nil
 }
 
-func listUserShortcuts(loginUser string, allShortcutKeys bool) error {
+func listUserShortcuts(loginUser string) error {
 
 	lusa := nod.Begin("listing shortcuts for %s...", loginUser)
 	defer lusa.Done()
@@ -570,16 +568,7 @@ func listUserShortcuts(loginUser string, allShortcutKeys bool) error {
 		shortcutKey := fmt.Sprintf("shortcut: %s", shortcut.Key)
 
 		for _, kv := range shortcut.Values {
-
-			var addKeyValue bool
-			switch allShortcutKeys {
-			case true:
-				addKeyValue = true
-			case false:
-				addKeyValue = slices.Contains(steamShortcutPrintedKeys, kv.Key) && kv.TypedValue != nil
-			}
-
-			if addKeyValue {
+			if slices.Contains(steamShortcutPrintedKeys, kv.Key) && kv.TypedValue != nil {
 				keyValue := fmt.Sprintf("%s: %v", kv.Key, kv.TypedValue)
 				shortcutValues[shortcutKey] = append(shortcutValues[shortcutKey], keyValue)
 			}

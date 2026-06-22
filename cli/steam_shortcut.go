@@ -59,97 +59,97 @@ func SteamShortcutHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	sgo := &steamGridOptions{
 		logoPosition: defaultLogoPosition(),
 	}
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	langCode := ""
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	ii := &InstallInfo{
 		OperatingSystem: operatingSystem,
 		LangCode:        langCode,
-		force:           q.Has("force"),
+		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
-	if q.Has("origin") {
-		ii.Origin = data.ParseOrigin(q.Get("origin"))
+	if q.Has(vangogh_integration.UrlOriginParameter) {
+		ii.Origin = data.ParseOrigin(q.Get(vangogh_integration.UrlOriginParameter))
 	}
 
 	var forId string
-	if q.Has("for-id") {
-		forId = q.Get("for-id")
+	if q.Has(vangogh_integration.UrlForIdParameter) {
+		forId = q.Get(vangogh_integration.UrlForIdParameter)
 	}
 
 	var err error
 
-	if q.Has("header") {
-		sgo.assets[steam_grid.Header], err = url.Parse(q.Get("header"))
+	if q.Has(vangogh_integration.UrlHeaderParameter) {
+		sgo.assets[steam_grid.Header], err = url.Parse(q.Get(vangogh_integration.UrlHeaderParameter))
 		if err != nil {
 			return err
 		}
 	}
 
-	if q.Has("capsule") {
-		sgo.assets[steam_grid.LibraryCapsule], err = url.Parse(q.Get("capsule"))
+	if q.Has(vangogh_integration.UrlCapsuleParameter) {
+		sgo.assets[steam_grid.LibraryCapsule], err = url.Parse(q.Get(vangogh_integration.UrlCapsuleParameter))
 		if err != nil {
 			return err
 		}
 	}
 
-	if q.Has("hero") {
-		sgo.assets[steam_grid.LibraryHero], err = url.Parse(q.Get("hero"))
+	if q.Has(vangogh_integration.UrlHeroParameter) {
+		sgo.assets[steam_grid.LibraryHero], err = url.Parse(q.Get(vangogh_integration.UrlHeroParameter))
 		if err != nil {
 			return err
 		}
 	}
 
-	if q.Has("logo") {
-		sgo.assets[steam_grid.LibraryLogo], err = url.Parse(q.Get("logo"))
+	if q.Has(vangogh_integration.UrlLogoParameter) {
+		sgo.assets[steam_grid.LibraryLogo], err = url.Parse(q.Get(vangogh_integration.UrlLogoParameter))
 		if err != nil {
 			return err
 		}
 	}
 
-	if q.Has("icon") {
-		sgo.assets[steam_grid.Icon], err = url.Parse(q.Get("icon"))
+	if q.Has(vangogh_integration.UrlIconParameter) {
+		sgo.assets[steam_grid.Icon], err = url.Parse(q.Get(vangogh_integration.UrlIconParameter))
 		if err != nil {
 			return err
 		}
 	}
 
-	if q.Has("pinned-position") {
-		sgo.logoPosition.PinnedPosition = q.Get("pinned-position")
+	if q.Has(vangogh_integration.UrlPinnedPositionParameter) {
+		sgo.logoPosition.PinnedPosition = q.Get(vangogh_integration.UrlPinnedPositionParameter)
 	}
 
-	if q.Has("width-pct") {
+	if q.Has(vangogh_integration.UrlWidthPctParameter) {
 		var wp float64
-		if wp, err = strconv.ParseFloat(q.Get("width-pct"), 64); err == nil {
+		if wp, err = strconv.ParseFloat(q.Get(vangogh_integration.UrlWidthPctParameter), 64); err == nil {
 			sgo.logoPosition.WidthPct = wp
 		} else {
 			return err
 		}
 	}
 
-	if q.Has("height-pct") {
+	if q.Has(vangogh_integration.UrlHeightPctParameter) {
 		var hp float64
-		if hp, err = strconv.ParseFloat(q.Get("height-pct"), 64); err == nil {
+		if hp, err = strconv.ParseFloat(q.Get(vangogh_integration.UrlHeightPctParameter), 64); err == nil {
 			sgo.logoPosition.HeightPct = hp
 		} else {
 			return err
 		}
 	}
 
-	remove := q.Has("remove")
+	remove := q.Has(vangogh_integration.UrlRemoveParameter)
 
 	return SteamShortcut(id, forId, ii, sgo, remove)
 

@@ -20,21 +20,21 @@ func InstallHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	operatingSystem := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		operatingSystem = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	var langCode string
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	var downloadTypes []vangogh_integration.DownloadType
-	if q.Has(vangogh_integration.DownloadTypeProperty) {
-		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
+	if q.Has(vangogh_integration.UrlDownloadTypeParameter) {
+		dts := strings.Split(q.Get(vangogh_integration.UrlDownloadTypeParameter), ",")
 		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
 	}
 
@@ -43,23 +43,23 @@ func InstallHandler(u *url.URL) error {
 		LangCode:               langCode,
 		DownloadTypes:          downloadTypes,
 		Origin:                 data.VangoghOrigin,
-		KeepDownloads:          q.Has("keep-downloads"),
-		NoSteamShortcut:        q.Has("no-steam-shortcut"),
-		NoPresentLaunchOptions: q.Has("no-preset-launch-options"),
-		verbose:                q.Has("verbose"),
-		force:                  q.Has("force"),
+		KeepDownloads:          q.Has(vangogh_integration.UrlKeepDownloadsParameter),
+		NoSteamShortcut:        q.Has(vangogh_integration.UrlNoSteamShortcutParameter),
+		NoPresentLaunchOptions: q.Has(vangogh_integration.UrlNoPresetLaunchOptionsParameter),
+		verbose:                q.Has(vangogh_integration.UrlVerboseParameter),
+		force:                  q.Has(vangogh_integration.UrlForceParameter),
 	}
 
-	if q.Has("steam") {
+	if q.Has(vangogh_integration.UrlSteamParameter) {
 		ii.Origin = data.SteamOrigin
 	}
 
-	if q.Has("epic-games") {
+	if q.Has(vangogh_integration.UrlEpicGamesParameter) {
 		ii.Origin = data.EpicGamesOrigin
 	}
 
-	if q.Has("env") {
-		ii.Env = strings.Split(q.Get("env"), ",")
+	if q.Has(vangogh_integration.UrlEnvParameter) {
+		ii.Env = strings.Split(q.Get(vangogh_integration.UrlEnvParameter), ",")
 	}
 
 	return Install(id, ii)

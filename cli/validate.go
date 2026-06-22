@@ -42,21 +42,21 @@ func ValidateHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	os := vangogh_integration.AnyOperatingSystem
-	if q.Has(vangogh_integration.OperatingSystemsProperty) {
-		os = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.OperatingSystemsProperty))
+	if q.Has(vangogh_integration.UrlOperatingSystemParameter) {
+		os = vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter))
 	}
 
 	var langCode string
-	if q.Has(vangogh_integration.LanguageCodeProperty) {
-		langCode = q.Get(vangogh_integration.LanguageCodeProperty)
+	if q.Has(vangogh_integration.UrlLanguageCodeParameter) {
+		langCode = q.Get(vangogh_integration.UrlLanguageCodeParameter)
 	}
 
 	var downloadTypes []vangogh_integration.DownloadType
-	if q.Has(vangogh_integration.DownloadTypeProperty) {
-		dts := strings.Split(q.Get(vangogh_integration.DownloadTypeProperty), ",")
+	if q.Has(vangogh_integration.UrlDownloadTypeParameter) {
+		dts := strings.Split(q.Get(vangogh_integration.UrlDownloadTypeParameter), ",")
 		downloadTypes = vangogh_integration.ParseManyDownloadTypes(dts)
 	}
 
@@ -65,20 +65,20 @@ func ValidateHandler(u *url.URL) error {
 		OperatingSystem: os,
 		LangCode:        langCode,
 		DownloadTypes:   downloadTypes,
-		force:           q.Has("force"),
+		force:           q.Has(vangogh_integration.UrlForceParameter),
 	}
 
-	if q.Has("steam") {
+	if q.Has(vangogh_integration.UrlSteamParameter) {
 		ii.Origin = data.SteamOrigin
 	}
 
-	if q.Has("epic-games") {
+	if q.Has(vangogh_integration.UrlEpicGamesParameter) {
 		ii.Origin = data.EpicGamesOrigin
 	}
 
 	var manualUrlFilter []string
-	if q.Has("manual-url-filter") {
-		manualUrlFilter = strings.Split(q.Get("manual-url-filter"), ",")
+	if q.Has(vangogh_integration.UrlManualUrlFilterParameter) {
+		manualUrlFilter = strings.Split(q.Get(vangogh_integration.UrlManualUrlFilterParameter), ",")
 	}
 
 	return Validate(id, ii, manualUrlFilter...)
