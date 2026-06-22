@@ -57,7 +57,7 @@ func downloadSteamCmdBinaries(operatingSystem vangogh_integration.OperatingSyste
 	steamCmdDownloads := data.Pwd.AbsRelDirPath(data.BinDownloads, data.SteamCmd)
 
 	query := url.Values{
-		vangogh_integration.OperatingSystemsProperty: {operatingSystem.String()},
+		vangogh_integration.UrlOperatingSystemParameter: {operatingSystem.String()},
 	}
 
 	steamCmdBinaryUrl, err := data.VangoghUrl(data.ApiSteamCmdBinaryFilePath, query, rdx)

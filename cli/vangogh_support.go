@@ -89,7 +89,7 @@ func vangoghFetchRemoteProductDetails(id string, rdx redux.Readable, kvProductDe
 	defer fra.Done()
 
 	query := url.Values{
-		vangogh_integration.IdProperty: {id},
+		vangogh_integration.UrlIdParameter: {id},
 	}
 
 	req, err := data.VangoghApiRequest(http.MethodGet, data.ApiProductDetailsPath, query, rdx)
@@ -328,7 +328,7 @@ func vangoghShortcutAssets(productDetails *vangogh_integration.ProductDetails, r
 
 		if imageId != "" {
 			imageQuery := url.Values{
-				"id": {imageId},
+				vangogh_integration.UrlIdParameter: {imageId},
 			}
 
 			vangoghImageUrl, err := data.VangoghUrl(data.ApiImagePath, imageQuery, rdx)
@@ -449,8 +449,8 @@ func vangoghUpdateSessionToken(password string, rdx redux.Writeable) error {
 	}
 
 	usernamePassword := url.Values{}
-	usernamePassword.Set(author.UsernameParam, username)
-	usernamePassword.Set(author.PasswordParam, password)
+	usernamePassword.Set(vangogh_integration.UrlUsernameParameter, username)
+	usernamePassword.Set(vangogh_integration.UrlPasswordParameter, password)
 
 	req, err := data.VangoghApiRequest(http.MethodPost, data.ApiAuthUserPath, usernamePassword, rdx)
 	if err != nil {
@@ -781,9 +781,9 @@ func vangoghDownloadData(id string, ii *InstallInfo, originData *data.OriginData
 		fa := nod.NewProgress(" - %s...", dl.LocalFilename)
 
 		query := url.Values{
-			"manual-url":    {dl.ManualUrl},
-			"id":            {id},
-			"download-type": {dl.DownloadType.String()},
+			vangogh_integration.UrlManualUrlParameter:    {dl.ManualUrl},
+			vangogh_integration.UrlIdParameter:           {id},
+			vangogh_integration.UrlDownloadTypeParameter: {dl.DownloadType.String()},
 		}
 
 		fileUrl, err := data.VangoghUrl(data.ApiFilePath, query, rdx)

@@ -163,8 +163,8 @@ func downloadWineBinary(binary *vangogh_integration.WineBinaryDetails, rdx redux
 	}
 
 	query := url.Values{
-		"title": {binary.Title},
-		vangogh_integration.OperatingSystemsProperty: {binary.OS.String()},
+		vangogh_integration.UrlTitleParameter:           {binary.Title},
+		vangogh_integration.UrlOperatingSystemParameter: {binary.OS.String()},
 	}
 
 	wineBinaryUrl, err := data.VangoghUrl(data.ApiWineBinaryFilePath, query, rdx)
