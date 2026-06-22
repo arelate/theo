@@ -73,7 +73,7 @@ func main() {
 	}
 
 	if err = cli.Migrate(); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	if err = defs.Serve(u); err != nil {

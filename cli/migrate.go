@@ -101,6 +101,12 @@ func Migrate() error {
 
 	}
 
+	// read again
+	kvRdx, err = kevlar.New(data.AbsReduxDir(), kevlar.GobExt)
+	if err != nil {
+		return err
+	}
+
 	if err = kvRdx.Cut(oldBundleNameProperty); err != nil {
 		return err
 	}
