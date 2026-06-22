@@ -518,7 +518,7 @@ func vangoghUnpackPlace(id string, ii *InstallInfo, originData *data.OriginData,
 
 	// vangogh installation:
 	// 1. check available space
-	// 2. unpack installers (e.g. innoextract/pkgutil on macOS, extract .sh on Linux; run setup on Windows)
+	// 2. unpack installers (e.g. pkgutil on macOS, extract .sh on Linux; innoextract/run setup on Windows)
 	// 3. perform post-unpack actions (e.g. reduce bundleName on macOS)
 	// 4. uninstall if installed directory exists and forcing install (will be used for updates)
 	// 5. create inventory of unpacked files
@@ -644,7 +644,7 @@ func vangoghUnpackInstallers(id string, ii *InstallInfo, dls vangogh_integration
 		case vangogh_integration.MacOS:
 			return macOsUnpackWindowsInstallers(id, ii, dls, rdx, unpackDir)
 		case vangogh_integration.Linux:
-			return prefixRunInstallers(id, ii, dls, rdx, unpackDir)
+			return linuxUnpackWindowsInstallers(id, ii, dls, rdx, unpackDir)
 		default:
 			return ii.OperatingSystem.ErrUnsupported()
 		}

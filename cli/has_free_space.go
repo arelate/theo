@@ -55,8 +55,6 @@ func hasFreeSpaceForBytes(path string, bytes int64) (bool, error) {
 	var err error
 
 	switch currentOs {
-	case vangogh_integration.Windows:
-		availableBytes, err = windowsFreeSpace(path)
 	case vangogh_integration.MacOS:
 		fallthrough
 	case vangogh_integration.Linux:

@@ -64,6 +64,10 @@ func linuxExtractInstallerData(linkInstallerPath, absUnpackDir string) error {
 	return unzip(absDataPath, absUnpackDir)
 }
 
+func linuxUnpackWindowsInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
+	return prefixRunInstallers(id, ii, dls, rdx, unpackDir)
+}
+
 func linuxPlaceUnpackedFiles(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
 	lufa := nod.Begin(" placing unpacked files for %s...", id)
@@ -194,6 +198,19 @@ func nixFreeSpace(path string) (int64, error) {
 	} else {
 		return -1, err
 	}
+}
+
+func nixInnoextract(iePath string, absSrc string, absDst string) error {
+
+	_, filename := filepath.Split(absSrc)
+
+	mia := nod.Begin(" - innoextract %s...", filename)
+	defer mia.Done()
+
+	args := []string{absSrc, "-d", absDst}
+
+	ieCmd := exec.Command(iePath, args...)
+	return ieCmd.Run()
 }
 
 func linuxFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (string, error) {

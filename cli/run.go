@@ -304,8 +304,6 @@ func osFindGogGameInfo(id string, ii *InstallInfo, rdx redux.Readable) (string, 
 			fallthrough
 		case vangogh_integration.Linux:
 			gogGameInfoPath, err = prefixFindGogGameInfo(id, ii, rdx)
-		case vangogh_integration.Windows:
-			gogGameInfoPath, err = windowsFindGogGameInfo(id, ii, rdx)
 		default:
 			return "", currentOs.ErrUnsupported()
 		}
@@ -344,8 +342,6 @@ func osExecTaskGogGameInfo(absGogGameInfoPath string, operatingSystem vangogh_in
 			return macOsExecTaskGogGameInfo(absGogGameInfoPath, gogGameInfo, et)
 		case vangogh_integration.Linux:
 			return linuxExecTaskGogGameInfo(absGogGameInfoPath, gogGameInfo, et)
-		case vangogh_integration.Windows:
-			return windowsExecTaskGogGameInfo(absGogGameInfoPath, gogGameInfo, et)
 		default:
 			return nil, currentOs.ErrUnsupported()
 		}
@@ -371,8 +367,6 @@ func osFindDefaultLauncher(id string, ii *InstallInfo, rdx redux.Readable) (stri
 			fallthrough
 		case vangogh_integration.Linux:
 			defaultLauncherPath, err = prefixFindGogGamesLnk(id, ii, rdx)
-		case vangogh_integration.Windows:
-			defaultLauncherPath, err = windowsFindGogGamesLnk(id, ii, rdx)
 		default:
 			return "", currentOs.ErrUnsupported()
 		}
@@ -408,8 +402,6 @@ func osExecTaskDefaultLauncher(absDefaultLauncherPath string, operatingSystem va
 			fallthrough
 		case vangogh_integration.Linux:
 			et.exe = absDefaultLauncherPath
-		case vangogh_integration.Windows:
-			return windowsExecTaskLnk(absDefaultLauncherPath, et)
 		default:
 			return nil, currentOs.ErrUnsupported()
 		}

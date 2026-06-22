@@ -13,6 +13,8 @@ import (
 	"github.com/boggydigital/redux"
 )
 
+const exeExt = ".exe"
+
 const (
 	ProtonEnableWayland = "enable-wayland"
 	ProtonPreferSdl     = "prefer-sdl"

@@ -129,11 +129,9 @@ func currentOsReveal(path string) error {
 	switch data.CurrentOs() {
 	case vangogh_integration.MacOS:
 		return macOsReveal(path)
-	case vangogh_integration.Windows:
-		return windowsReveal(path)
 	case vangogh_integration.Linux:
 		return linuxReveal(path)
 	default:
-		return errors.New("cannot reveal on unknown operating system")
+		return data.CurrentOs().ErrUnsupported()
 	}
 }

@@ -84,9 +84,9 @@ func macOsUnpackInstallers(id string, dls vangogh_integration.ProductDownloadLin
 
 func macOsUnpackWindowsInstallers(id string, ii *InstallInfo, dls vangogh_integration.ProductDownloadLinks, rdx redux.Readable, unpackDir string) error {
 
-	ieInstalled := macOsIsInnoextractInstalled()
+	innoextractInstalled := macOsIsInnoextractInstalled()
 
-	switch ieInstalled {
+	switch innoextractInstalled {
 	case true:
 		return macOsInnoextractInstallers(id, ii, dls, unpackDir)
 	default:
@@ -112,6 +112,11 @@ func macOsInnoextractInstallers(id string, ii *InstallInfo, dls vangogh_integrat
 
 	downloadsDir := data.Pwd.AbsDirPath(data.Downloads)
 
+	innoextractPath, err := exec.LookPath(innoextractBinaryFn)
+	if err != nil {
+		return err
+	}
+
 	for _, link := range dls {
 
 		if !isLinkExecutable(&link, vangogh_integration.Windows) {
@@ -119,7 +124,7 @@ func macOsInnoextractInstallers(id string, ii *InstallInfo, dls vangogh_integrat
 		}
 
 		absDstDir := filepath.Join(unpackDir, link.LocalFilename)
-		if _, err := os.Stat(absDstDir); os.IsNotExist(err) {
+		if _, err = os.Stat(absDstDir); os.IsNotExist(err) {
 			if err = os.MkdirAll(absDstDir, pathways.PermUrwGrwOr); err != nil {
 				return err
 			}
@@ -128,30 +133,12 @@ func macOsInnoextractInstallers(id string, ii *InstallInfo, dls vangogh_integrat
 		absInstallerPath := filepath.Join(downloadsDir, id, link.LocalFilename)
 		absUnpackDir := filepath.Join(unpackDir, link.LocalFilename)
 
-		if err := macOsInnoextract(absInstallerPath, absUnpackDir); err != nil {
+		if err = nixInnoextract(innoextractPath, absInstallerPath, absUnpackDir); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func macOsInnoextract(absSrc string, absDst string) error {
-
-	_, filename := filepath.Split(absSrc)
-
-	mia := nod.Begin(" - innoextract %s...", filename)
-	defer mia.Done()
-
-	iePath, err := exec.LookPath(innoextractBinaryFn)
-	if err != nil {
-		return err
-	}
-
-	args := []string{absSrc, "-d", absDst}
-
-	ieCmd := exec.Command(iePath, args...)
-	return ieCmd.Run()
 }
 
 func macOsUnpackLink(link *vangogh_integration.ProductDownloadLink, linkPath, unpackDir string) error {
