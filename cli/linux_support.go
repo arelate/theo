@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/arelate/southern_light/gog_integration"
+	"github.com/arelate/southern_light/mojosetup_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -54,11 +55,11 @@ func linuxExtractInstallerData(linkInstallerPath, absUnpackDir string) error {
 	leida := nod.Begin(" extracting %s data...", filename)
 	defer leida.Done()
 
-	if err := MojosetupExtract(new(ExtractOptions{Src: linkInstallerPath, Dst: absUnpackDir, Data: true})); err != nil {
+	if err := mojosetup_integration.Extract(new(mojosetup_integration.Options{Src: linkInstallerPath, Dst: absUnpackDir, Data: true})); err != nil {
 		return err
 	}
 
-	absDataPath := filepath.Join(absUnpackDir, DataFn)
+	absDataPath := filepath.Join(absUnpackDir, mojosetup_integration.DataFn)
 
 	return unzip(absDataPath, absUnpackDir)
 }
