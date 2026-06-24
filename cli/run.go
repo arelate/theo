@@ -71,23 +71,18 @@ func RunHandler(u *url.URL) error {
 	}
 
 	protonRuntime := q.Get(vangogh_integration.UrlProtonRuntimeParameter)
-	switch protonRuntime {
-	case "umu-proton":
-		et.protonRuntime = wine_integration.UmuProton
-	case "proton-ge":
-		et.protonRuntime = wine_integration.ProtonGe
-	case "proton-cachyos":
-		et.protonRuntime = wine_integration.ProtonCachyOs
-	case "proton-em":
-		et.protonRuntime = wine_integration.ProtonEm
-	default:
-		et.protonRuntime = wine_integration.ProtonGe
+
+	for runtime, runtimeName := range wine_integration.ProtonRuntimesNames {
+		if runtimeName == protonRuntime {
+			et.protonRuntime = runtime
+			break
+		}
 	}
 
 	et.steamProtonRuntime = q.Get(vangogh_integration.UrlSteamProtonRuntimeParameter)
 
-	if q.Has(vangogh_integration.UrlProtonOptionsParameter) {
-		et.protonOptions = strings.Split(q.Get(vangogh_integration.UrlProtonOptionsParameter), ",")
+	if q.Has(vangogh_integration.UrlProtonOptionParameter) {
+		et.protonOptions = strings.Split(q.Get(vangogh_integration.UrlProtonOptionParameter), ",")
 	}
 
 	return Run(id, ii, et)

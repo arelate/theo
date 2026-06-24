@@ -117,9 +117,9 @@ run
     task
     default-launcher
     work-dir
-    proton-runtime=proton-ge,umu-proton,proton-cachyos,proton-em
+    proton-runtime={proton-runtimes}
     steam-proton-runtime={steam-proton-runtimes}
-    proton-options&=enable-wayland,prefer-sdl,disable-hidraw,enable-hdr,no-steaminput
+    proton-option&={proton-options}
     no-fix
     verbose
     force

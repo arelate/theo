@@ -20,7 +20,7 @@ func UmuRunLatestReleasePath(rdx redux.Readable) (string, error) {
 func ProtonLatestReleasePath(runtime string, rdx redux.Readable) (string, error) {
 
 	if runtime == "" {
-		runtime = wine_integration.ProtonGe
+		runtime = wine_integration.ProtonGeCustom
 	}
 
 	return githubLatestReleasePath("", runtime, rdx)

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,22 +18,6 @@ import (
 const exeExt = ".exe"
 
 const (
-	ProtonEnableWayland = "enable-wayland"
-	ProtonPreferSdl     = "prefer-sdl"
-	ProtonDisableHidRaw = "disable-hidraw"
-	ProtonEnableHdr     = "enable-hdr"
-	ProtonNoSteamInput  = "no-steaminput"
-)
-
-var protonOptionsEnv = map[string]string{
-	ProtonEnableWayland: "PROTON_ENABLE_WAYLAND",
-	ProtonPreferSdl:     "PROTON_PREFER_SDL",
-	ProtonDisableHidRaw: "PROTON_DISABLE_HIDRAW",
-	ProtonEnableHdr:     "PROTON_ENABLE_HDR",
-	ProtonNoSteamInput:  "PROTON_NO_STEAMINPUT",
-}
-
-const (
 	relSteamAppsCommonPath        = "Steam/steamapps/common"
 	relSteamCompatibilityToolPath = "Steam/compatibilitytools.d"
 )
@@ -45,6 +30,11 @@ func linuxProtonExecTask(id string, et *execTask) error {
 	if et.verbose && len(et.env) > 0 {
 		pea := nod.Begin(" env:")
 		pea.EndWithResult(strings.Join(et.env, " "))
+	}
+
+	if et.verbose && len(et.protonOptions) > 0 {
+		poa := nod.Begin(" proton:")
+		poa.EndWithResult(strings.Join(et.protonOptions, " "))
 	}
 
 	reduxDir := data.Pwd.AbsRelDirPath(data.Redux, data.Metadata)
@@ -83,6 +73,12 @@ func linuxProtonExecTask(id string, et *execTask) error {
 	}
 
 	cmd.Env = append(os.Environ(), et.env...)
+
+	for _, option := range et.protonOptions {
+		if optionEnv, ok := wine_integration.ProtonOptionsEnv[option]; ok {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=1", optionEnv))
+		}
+	}
 
 	if et.verbose {
 		cmd.Stdout = os.Stdout
