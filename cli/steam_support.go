@@ -22,6 +22,10 @@ import (
 	"github.com/boggydigital/redux"
 )
 
+const (
+	eaPlayPfx = "link2ea://launchgame/"
+)
+
 func steamGetAppInfoKv(steamAppId string, rdx redux.Writeable, force bool) (steam_vdf.ValveDataFile, error) {
 
 	steamAppInfoDir := data.Pwd.AbsRelDirPath(data.SteamAppInfo, data.Metadata)
@@ -563,6 +567,15 @@ func steamDefaultTask(steamAppId string, appInfoKv steam_vdf.ValveDataFile, ii *
 		if lcOperatingSystem != ii.OperatingSystem ||
 			slc.Executable == "" ||
 			slc.OsArch == "32" {
+			continue
+		}
+
+		if lcOperatingSystem == vangogh_integration.Windows &&
+			!strings.HasSuffix(slc.Executable, ".exe") {
+			continue
+		}
+
+		if strings.HasPrefix(slc.Executable, eaPlayPfx) {
 			continue
 		}
 

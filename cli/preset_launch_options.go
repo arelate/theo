@@ -56,7 +56,7 @@ func PresetLaunchOptions(id string, request *InstallInfo, rdx redux.Writeable) e
 	switch id {
 	case "1456460669":
 		// Baldur's Gate 3
-		return presetBaldursGate3Exe(ii, et)
+		return presetBaldursGate3Exe(id, ii, et)
 	case "241300":
 		// Card City Nights 2
 		return fixSteamAppId(id, ii, rdx, false)
@@ -79,7 +79,7 @@ func PresetLaunchOptions(id string, request *InstallInfo, rdx redux.Writeable) e
 	return nil
 }
 
-func presetBaldursGate3Exe(ii *InstallInfo, et *execTask) error {
+func presetBaldursGate3Exe(id string, ii *InstallInfo, et *execTask) error {
 	switch ii.OperatingSystem {
 	case vangogh_integration.MacOS:
 		dir, fn := filepath.Split(et.exe)
@@ -90,7 +90,7 @@ func presetBaldursGate3Exe(ii *InstallInfo, et *execTask) error {
 		// do nothing
 	}
 
-	return nil
+	return LaunchOptions(id, ii, et, false)
 }
 
 func presetEpicPortalArg(appName string, ii *InstallInfo) error {

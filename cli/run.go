@@ -21,6 +21,7 @@ type execTask struct {
 	exe                string
 	workDir            string
 	args               []string
+	clearArgs          bool
 	env                []string
 	protonOptions      []string
 	protonRuntime      string
