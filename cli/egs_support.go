@@ -688,7 +688,7 @@ func egsReduceCatalogItem(appName, catalogItemId string, kvCatalogItems kevlar.K
 
 	catalogItem := catalogItemMap[catalogItemId]
 
-	if err = rdx.ReplaceValues(vangogh_integration.EgsMainGameProperty, appName, catalogItem.Title); err != nil {
+	if err = rdx.ReplaceValues(vangogh_integration.EgsTitleProperty, appName, catalogItem.Title); err != nil {
 		return err
 	}
 
