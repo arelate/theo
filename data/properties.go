@@ -48,7 +48,7 @@ func AllProperties() []string {
 			vangogh_integration.EgsTitleProperty,
 			vangogh_integration.EgsMainGameProperty,
 			vangogh_integration.GogSteamAppIdProperty,
-			vangogh_integration.OperatingSystemsProperty,
+			vangogh_integration.GogOperatingSystemsProperty,
 			vangogh_integration.GogDevelopersProperty,
 			vangogh_integration.GogPublishersProperty,
 			vangogh_integration.GogVerticalImageProperty,

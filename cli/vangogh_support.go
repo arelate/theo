@@ -139,7 +139,7 @@ func vangoghReduceProductDetails(id string, productDetails *vangogh_integration.
 	reductionProperties := []string{
 		vangogh_integration.GogSteamAppIdProperty,
 		vangogh_integration.GogTitleProperty,
-		vangogh_integration.OperatingSystemsProperty,
+		vangogh_integration.GogOperatingSystemsProperty,
 		vangogh_integration.GogDevelopersProperty,
 		vangogh_integration.GogPublishersProperty,
 		vangogh_integration.GogVerticalImageProperty,
@@ -160,7 +160,7 @@ func vangoghReduceProductDetails(id string, productDetails *vangogh_integration.
 			values = []string{productDetails.SteamAppId}
 		case vangogh_integration.GogTitleProperty:
 			values = []string{productDetails.Title}
-		case vangogh_integration.OperatingSystemsProperty:
+		case vangogh_integration.GogOperatingSystemsProperty:
 			values = oss
 		case vangogh_integration.GogDevelopersProperty:
 			values = productDetails.Developers

@@ -16,7 +16,7 @@ func UpdateHandler(u *url.URL) error {
 
 	q := u.Query()
 
-	id := q.Get(vangogh_integration.IdProperty)
+	id := q.Get(vangogh_integration.UrlIdParameter)
 
 	all := q.Has(vangogh_integration.UrlAllParameter)
 	verbose := q.Has(vangogh_integration.UrlVerboseParameter)
