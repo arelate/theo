@@ -22,6 +22,7 @@ var osEnvDefaults = map[vangogh_integration.OperatingSystem][]string{
 		"D3DM_ENABLE_METALFX=1",
 		"DXMT_ENABLE_NVEXT=1",
 		// "MTL_HUD_ENABLED=1", // not a candidate for default value, adding for reference
+		// "FEX_X87REDUCEDPRECISION=1", // not a candidate for default value, adding for reference
 	},
 }
 
