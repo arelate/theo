@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/url"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
@@ -55,7 +56,7 @@ func Connect(urlStr, username, password, cookies string, origin data.Origin, res
 		}
 		return steamSetupConnection(username, rdx, reset)
 	case data.EpicGamesOrigin:
-		return egsSetupConnection(cookies, reset)
+		return egs_integration.SetupConnection(cookies, reset)
 	default:
 		return origin.ErrUnsupportedOrigin()
 	}

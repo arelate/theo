@@ -138,12 +138,12 @@ func listAvailableProducts(ii *InstallInfo, update bool) error {
 		}
 	case data.EpicGamesOrigin:
 		var osGameAssets map[vangogh_integration.OperatingSystem][]egs_integration.GameAsset
-		osGameAssets, err = egsGetGameAssets(updateAvailable)
+		osGameAssets, err = egs_integration.GetGameAssets(updateAvailable)
 		if err != nil {
 			return err
 		}
 
-		if availableProducts, err = egsGameAssetsAvailableProducts(osGameAssets, ii, rdx); err != nil {
+		if availableProducts, err = egs_integration.GameAssetsAvailableProducts(osGameAssets, ii.OperatingSystem, rdx, ii.force); err != nil {
 			return err
 		}
 	default:

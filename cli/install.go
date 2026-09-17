@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/gog_integration"
 	"github.com/arelate/southern_light/steam_grid"
 	"github.com/arelate/southern_light/vangogh_integration"
@@ -215,7 +216,7 @@ func originAddSteamShortcut(id, forId string, ii *InstallInfo, originData *data.
 		}
 
 		if originData.CatalogItem != nil {
-			pda, err = egsCatalogItemAssets(originData.CatalogItem)
+			pda, err = egs_integration.CatalogItemAssets(originData.CatalogItem)
 			if err != nil {
 				return err
 			}

@@ -105,7 +105,7 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 	case data.EpicGamesOrigin:
 
 		var gameAssetsOs []vangogh_integration.OperatingSystem
-		gameAssetsOs, err = egsGameAssetOperatingSystems(id, force)
+		gameAssetsOs, err = egs_integration.GameAssetOperatingSystems(id, force)
 		if err != nil {
 			return nil, err
 		}
@@ -113,18 +113,18 @@ func originGetData(id string, ii *InstallInfo, rdx redux.Writeable, force bool) 
 		setInstallInfoDefaults(ii, gameAssetsOs)
 
 		var gameAsset *egs_integration.GameAsset
-		if gameAsset, err = egsGetGameAsset(id, ii); err != nil {
+		if gameAsset, err = egs_integration.GetGameAsset(id, ii.OperatingSystem, force); err != nil {
 			return nil, err
 		}
-		if originData.CatalogItem, err = egsGetCatalogItem(gameAsset, ii, rdx, force); err != nil {
+		if originData.CatalogItem, err = egs_integration.GetCatalogItem(gameAsset, rdx, force); err != nil {
 			return nil, err
 		}
 
 		// the data items below must be the latest version from the origin when downloading, don't remove force parameter
-		if originData.GameManifest, err = egsGetGameManifest(gameAsset, ii, force); err != nil {
+		if originData.GameManifest, err = egs_integration.GetGameManifest(gameAsset, ii.OperatingSystem, force); err != nil {
 			return nil, err
 		}
-		if originData.Manifest, err = egsGetManifest(gameAsset.AppName, originData.GameManifest, ii.OperatingSystem, force); err != nil {
+		if originData.Manifest, err = egs_integration.GetManifest(gameAsset.AppName, originData.GameManifest, ii.OperatingSystem, force); err != nil {
 			return nil, err
 		}
 
