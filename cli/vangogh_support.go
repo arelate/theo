@@ -71,7 +71,7 @@ func vangoghShortcutAssets(gogAssets map[string]string, rdx redux.Readable) (map
 		var imageId string
 		switch asset {
 		case steam_grid.Header:
-			imageId = gogAssets[vangogh_integration.GogImageProperty]
+			imageId = gogAssets[vangogh_integration.GogHorizontalImageProperty]
 		case steam_grid.LibraryCapsule:
 			imageId = gogAssets[vangogh_integration.GogVerticalImageProperty]
 		case steam_grid.LibraryHero:
@@ -982,7 +982,7 @@ func vangoghApiProductShortcutAssets(apiProduct *gog_integration.ApiProduct) map
 	}
 
 	assetImageTypes := []gog_integration.ImageType{
-		gog_integration.Image,
+		gog_integration.HorizontalImage,
 		gog_integration.VerticalImage,
 		gog_integration.Hero,
 		gog_integration.Background,
@@ -996,7 +996,7 @@ func vangoghApiProductShortcutAssets(apiProduct *gog_integration.ApiProduct) map
 		var getImage func() string
 
 		switch it {
-		case gog_integration.Image:
+		case gog_integration.HorizontalImage:
 			getImage = apiProduct.GetImage
 		case gog_integration.VerticalImage:
 			getImage = apiProduct.GetVerticalImage

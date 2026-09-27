@@ -52,7 +52,7 @@ func AllProperties() []string {
 			vangogh_integration.GogDevelopersProperty,
 			vangogh_integration.GogPublishersProperty,
 			vangogh_integration.GogVerticalImageProperty,
-			vangogh_integration.GogImageProperty,
+			vangogh_integration.GogHorizontalImageProperty,
 			vangogh_integration.GogHeroProperty,
 			vangogh_integration.GogLogoProperty,
 			vangogh_integration.GogIconProperty,
