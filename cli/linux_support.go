@@ -69,10 +69,23 @@ func linuxExtractInstallerData(linkInstallerPath, absUnpackDir string) error {
 
 func linuxUnpackWindowsInstallers(id string, ii *InstallInfo, localFilenames []string, rdx redux.Readable, unpackDir string) error {
 
-	if absInnoextractBinaryPath, err := data.InnoextractLatestReleasePath(innoextractBinaryFn, rdx); err == nil && absInnoextractBinaryPath != "" {
-		return linuxInnoextractInstallers(id, ii, localFilenames, unpackDir, absInnoextractBinaryPath)
-	} else {
+	absInnoextractBinaryPath, err := data.InnoextractLatestReleasePath(innoextractBinaryFn, rdx)
+	if err != nil {
+		return err
+	}
+
+	switch ii.NoInnoextract {
+	case true:
+		absInnoextractBinaryPath = ""
+	default:
+		// do nothing
+	}
+
+	switch absInnoextractBinaryPath {
+	case "":
 		return prefixRunInstallers(id, ii, localFilenames, rdx, unpackDir)
+	default:
+		return linuxInnoextractInstallers(id, ii, localFilenames, unpackDir, absInnoextractBinaryPath)
 	}
 }
 

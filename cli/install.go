@@ -42,6 +42,7 @@ func InstallHandler(u *url.URL) error {
 		NoSteamShortcut:        q.Has(vangogh_integration.UrlNoSteamShortcutParameter),
 		NoPresentLaunchOptions: q.Has(vangogh_integration.UrlNoPresetLaunchOptionsParameter),
 		NoValidation:           q.Has(vangogh_integration.UrlNoValidationParameter),
+		NoInnoextract:          q.Has(vangogh_integration.UrlNoInnoextractParameter),
 		verbose:                q.Has(vangogh_integration.UrlVerboseParameter),
 		force:                  q.Has(vangogh_integration.UrlForceParameter),
 	}

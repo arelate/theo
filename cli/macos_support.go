@@ -86,7 +86,13 @@ func macOsUnpackInstallers(id string, downloadsList vangogh_integration.Download
 
 func macOsUnpackWindowsInstallers(id string, ii *InstallInfo, localFilenames []string, rdx redux.Readable, unpackDir string) error {
 
-	innoextractInstalled := macOsIsInnoextractInstalled()
+	var innoextractInstalled bool
+	switch ii.NoInnoextract {
+	case false:
+		innoextractInstalled = macOsIsInnoextractInstalled()
+	default:
+		// do nothing
+	}
 
 	switch innoextractInstalled {
 	case true:
