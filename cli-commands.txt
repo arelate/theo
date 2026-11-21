@@ -21,7 +21,7 @@ download
     id^*
     os&={operating-systems^}
     lang-code&={language-codes^}
-    optional-dlc
+    optional-dlc&
     no-dlcs
     manual-url-filter&
     steam
@@ -48,7 +48,7 @@ install
     keep-downloads
     steam
     epic-games
-    optional-dlc
+    optional-dlc&
     no-dlcs
     no-preset-launch-options
     no-steam-shortcut
@@ -170,7 +170,7 @@ validate
     os&={operating-systems^}
     lang-code&={language-codes^}
     manual-url-filter&
-    optional-dlc
+    optional-dlc&
     steam
     epic-games
     force
