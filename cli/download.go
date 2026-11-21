@@ -43,6 +43,10 @@ func DownloadHandler(u *url.URL) error {
 		ii.Origin = data.EpicGamesOrigin
 	}
 
+	if q.Has(vangogh_integration.UrlOptionalDlcParameter) {
+		ii.OptionalDownloadableContent = strings.Split(q.Get(vangogh_integration.UrlOptionalDlcParameter), ",")
+	}
+
 	var manualUrlFilter []string
 	if q.Has(vangogh_integration.UrlManualUrlFilterParameter) {
 		manualUrlFilter = strings.Split(q.Get(vangogh_integration.UrlManualUrlFilterParameter), ",")

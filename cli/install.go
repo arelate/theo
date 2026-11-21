@@ -47,6 +47,10 @@ func InstallHandler(u *url.URL) error {
 		force:                  q.Has(vangogh_integration.UrlForceParameter),
 	}
 
+	if q.Has(vangogh_integration.UrlOptionalDlcParameter) {
+		ii.OptionalDownloadableContent = strings.Split(q.Get(vangogh_integration.UrlOptionalDlcParameter), ",")
+	}
+
 	if q.Has(vangogh_integration.UrlSteamParameter) {
 		ii.Origin = data.SteamOrigin
 	}

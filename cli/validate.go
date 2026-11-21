@@ -69,6 +69,10 @@ func ValidateHandler(u *url.URL) error {
 		ii.Origin = data.EpicGamesOrigin
 	}
 
+	if q.Has(vangogh_integration.UrlOptionalDlcParameter) {
+		ii.OptionalDownloadableContent = strings.Split(q.Get(vangogh_integration.UrlOptionalDlcParameter), ",")
+	}
+
 	var manualUrlFilter []string
 	if q.Has(vangogh_integration.UrlManualUrlFilterParameter) {
 		manualUrlFilter = strings.Split(q.Get(vangogh_integration.UrlManualUrlFilterParameter), ",")
@@ -98,7 +102,7 @@ func Validate(id string,
 	case data.VangoghOrigin:
 		return vangoghValidateData(id, ii, originData, rdx, manualUrlFilter...)
 	case data.SteamOrigin:
-		return steamUpdateApp(id, ii.OperatingSystem, rdx)
+		return steamUpdateApp(id, ii.OperatingSystem, rdx, ii.OptionalDownloadableContent...)
 	case data.EpicGamesOrigin:
 		return egsValidateChunks(id, ii, originData)
 	default:

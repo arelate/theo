@@ -92,7 +92,7 @@ func steamFetchAppInfo(steamAppId string, kvSteamAppInfo kevlar.KeyValues, rdx r
 	return nil
 }
 
-func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
+func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable, optionalDlc ...string) error {
 
 	var steamAppName string
 	if san, ok := rdx.GetLastVal(vangogh_integration.SteamTitleProperty, steamAppId); ok && san != "" {
@@ -127,45 +127,7 @@ func steamUpdateApp(steamAppId string, operatingSystem vangogh_integration.Opera
 		return err
 	}
 
-	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername, false)
-}
-
-func steamValidateApp(steamAppId string, operatingSystem vangogh_integration.OperatingSystem, rdx redux.Readable) error {
-
-	var steamAppName string
-	if san, ok := rdx.GetLastVal(vangogh_integration.SteamTitleProperty, steamAppId); ok && san != "" {
-		steamAppName = san
-	} else {
-		return errors.New("cannot resolve Steam app title")
-	}
-
-	var steamUsername string
-	if sun, ok := rdx.GetLastVal(data.SteamUsernameProperty, data.SteamUsernameProperty); ok && sun != "" {
-		steamUsername = sun
-	} else {
-		return errors.New("cannot resolve Steam username")
-	}
-
-	scaua := nod.Begin("updating and verifying %s (%s) for %s with SteamCMD, please wait...", steamAppName, steamAppId, operatingSystem)
-	defer scaua.Done()
-
-	steamAppInstallDir, err := data.AbsSteamAppInstallDir(steamAppId, operatingSystem, rdx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = os.Stat(steamAppInstallDir); os.IsNotExist(err) {
-		if err = os.MkdirAll(steamAppInstallDir, camino.DefaultFileMode); err != nil {
-			return err
-		}
-	}
-
-	absSteamCmdPath, err := data.AbsSteamCmdBinPath(vangogh_integration.CurrentOs())
-	if err != nil {
-		return err
-	}
-
-	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername, true)
+	return steamcmd.AppUpdate(absSteamCmdPath, steamAppId, operatingSystem, steamAppInstallDir, steamUsername, optionalDlc...)
 }
 
 func steamReduceAppInfo(steamAppId string, appInfoKv steam_vdf.ValveDataFile, rdx redux.Writeable) error {
@@ -318,6 +280,7 @@ func steamAppInfoVersion(steamAppId string, appInfoKv steam_vdf.ValveDataFile) (
 	if buildId, ok := appInfoKv.Val(steamAppId, "depots", "branches", "public", "buildid"); ok && buildId != "" {
 		return buildId, nil
 	}
+
 	return "", errors.New("appinfo is missing depots/branches/public/buildid")
 }
 
@@ -448,7 +411,7 @@ func steamDownloadData(steamAppId string, ii *InstallInfo, originData *data.Orig
 		return err
 	}
 
-	return steamUpdateApp(steamAppId, ii.OperatingSystem, rdx)
+	return steamUpdateApp(steamAppId, ii.OperatingSystem, rdx, ii.OptionalDownloadableContent...)
 }
 
 func steamGetExecTask(steamAppId string, ii *InstallInfo, originData *data.OriginData, rdx redux.Readable, et *execTask) (*execTask, error) {
