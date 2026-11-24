@@ -40,6 +40,7 @@ type InstallInfo struct {
 	NoValidation                bool                                `json:"no-validation"`
 	NoInnoextract               bool                                `json:"no-innoextract"`
 	Env                         []string                            `json:"env"`
+	EgsAuthPassword             bool                                `json:"egs-auth-password"`
 	verbose                     bool                                // won't be serialized
 	force                       bool                                // won't be serialized
 }

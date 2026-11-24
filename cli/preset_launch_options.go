@@ -16,6 +16,7 @@ const (
 	defaulEpicUsername   = "epicusername"
 	defaultEpicUserId    = "epicuserid"
 	defaultEpicSandboxId = "epicsandboxid"
+	defaultAuthPassword  = "AUTH_PASSWORD"
 )
 
 func PresetLaunchOptionsHandler(u *url.URL) error {
@@ -27,6 +28,7 @@ func PresetLaunchOptionsHandler(u *url.URL) error {
 	ii := new(InstallInfo{
 		OperatingSystem: vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter)),
 		LangCode:        q.Get(vangogh_integration.UrlLanguageCodeParameter),
+		EgsAuthPassword: q.Has("epic-games-auth-password"),
 	})
 
 	rdx, err := redux.NewWriter(vangogh_integration.AbsReduxDir(), data.AllProperties()...)
@@ -109,31 +111,46 @@ func presetEpicStandaloneMode(appName string, ii *InstallInfo) error {
 	epicUsername := defaulEpicUsername
 	epicUserId := defaultEpicUserId
 	epicSandboxId := defaultEpicSandboxId
+	epicAuthPassword := defaultAuthPassword
 
-	if ptr, err := egs_integration.GetStoredPostTokenResponse(); err == nil {
-		epicUsername = ptr.DisplayName
-		epicUserId = ptr.AccountId
-	} else {
+	client, err := egs_integration.GetClient()
+	if err != nil {
 		return err
 	}
 
-	if gameAssets, err := egs_integration.ReadLocalGameAssets(ii.OperatingSystem); err == nil {
+	ptr, err := egs_integration.VerifyToken(client)
+	if err != nil {
+		return err
+	}
 
-		for _, ga := range gameAssets {
-			if ga.AppName == appName {
-				epicSandboxId = ga.Namespace
-				break
-			}
+	epicUsername = ptr.DisplayName
+	epicUserId = ptr.AccountId
+
+	gameAssets, err := egs_integration.ReadLocalGameAssets(ii.OperatingSystem)
+	if err != nil {
+		return err
+	}
+
+	for _, ga := range gameAssets {
+		if ga.AppName == appName {
+			epicSandboxId = ga.Namespace
+			break
+		}
+	}
+
+	if ii.EgsAuthPassword {
+		et, err := egs_integration.ExchangeToken(ptr.AccessToken, client)
+		if err != nil {
+			return err
 		}
 
-	} else {
-		return err
+		epicAuthPassword = et.Code
 	}
 
 	return LaunchOptions(appName, ii, new(execTask{args: []string{
 		"-AUTH_LOGIN=unused",
 		"-AUTH_TYPE=exchangecode",
-		"-AUTH_PASSWORD=AUTH_PASSWORD",
+		"-AUTH_PASSWORD=" + epicAuthPassword,
 		"-epicapp=" + appName,
 		"-epicenv=Prod",
 		"-EpicPortal",

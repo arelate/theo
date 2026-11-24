@@ -43,6 +43,7 @@ func InstallHandler(u *url.URL) error {
 		NoPresentLaunchOptions: q.Has(vangogh_integration.UrlNoPresetLaunchOptionsParameter),
 		NoValidation:           q.Has(vangogh_integration.UrlNoValidationParameter),
 		NoInnoextract:          q.Has(vangogh_integration.UrlNoInnoextractParameter),
+		EgsAuthPassword:        q.Has(vangogh_integration.UrlEgsAuthPassword),
 		verbose:                q.Has(vangogh_integration.UrlVerboseParameter),
 		force:                  q.Has(vangogh_integration.UrlForceParameter),
 	}
