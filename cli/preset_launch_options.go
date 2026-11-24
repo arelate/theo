@@ -5,10 +5,17 @@ import (
 	"net/url"
 	"path/filepath"
 
+	"github.com/arelate/southern_light/egs_integration"
 	"github.com/arelate/southern_light/vangogh_integration"
 	"github.com/arelate/theo/data"
 	"github.com/boggydigital/nod"
 	"github.com/boggydigital/redux"
+)
+
+const (
+	defaulEpicUsername   = "epicusername"
+	defaultEpicUserId    = "epicuserid"
+	defaultEpicSandboxId = "epicsandboxid"
 )
 
 func PresetLaunchOptionsHandler(u *url.URL) error {
@@ -98,5 +105,41 @@ func presetEpicPortalArg(appName string, ii *InstallInfo) error {
 }
 
 func presetEpicStandaloneMode(appName string, ii *InstallInfo) error {
-	return LaunchOptions(appName, ii, new(execTask{args: []string{"-AUTH_LOGIN=unused", "-AUTH_TYPE=exchangecode", "-AUTH_PASSWORD=", "-EpicPortal", "-epicuserid=1234567890", "-epicusername=EpicUsername"}}), false)
+
+	epicUsername := defaulEpicUsername
+	epicUserId := defaultEpicUserId
+	epicSandboxId := defaultEpicSandboxId
+
+	if ptr, err := egs_integration.GetStoredPostTokenResponse(); err == nil {
+		epicUsername = ptr.DisplayName
+		epicUserId = ptr.AccountId
+	} else {
+		return err
+	}
+
+	if gameAssets, err := egs_integration.ReadLocalGameAssets(ii.OperatingSystem); err == nil {
+
+		for _, ga := range gameAssets {
+			if ga.AppName == appName {
+				epicSandboxId = ga.Namespace
+				break
+			}
+		}
+
+	} else {
+		return err
+	}
+
+	return LaunchOptions(appName, ii, new(execTask{args: []string{
+		"-AUTH_LOGIN=unused",
+		"-AUTH_TYPE=exchangecode",
+		"-AUTH_PASSWORD=AUTH_PASSWORD",
+		"-epicapp=" + appName,
+		"-epicenv=Prod",
+		"-EpicPortal",
+		"-epicusername=" + epicUsername,
+		"-epicuserid=" + epicUserId,
+		"-epiclocale=en",
+		"-epicsandboxid=" + epicSandboxId,
+	}}), false)
 }
