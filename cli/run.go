@@ -18,6 +18,7 @@ import (
 
 type execTask struct {
 	title              string
+	wrapper            string
 	exe                string
 	workDir            string
 	args               []string
@@ -55,6 +56,7 @@ func RunHandler(u *url.URL) error {
 	}
 
 	et := &execTask{
+		wrapper:         q.Get(vangogh_integration.UrlWrapperParameter),
 		workDir:         q.Get(vangogh_integration.UrlWorkDirParameter),
 		verbose:         q.Has(vangogh_integration.UrlVerboseParameter),
 		task:            q.Get(vangogh_integration.UrlTaskParameter),

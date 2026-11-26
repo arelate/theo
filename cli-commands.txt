@@ -118,6 +118,7 @@ run
     id^
     os={operating-systems^}
     lang-code={language-codes^}
+    wrapper
     env&
     arg&
     task

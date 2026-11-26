@@ -53,6 +53,14 @@ func linuxProtonExecTask(id string, et *execTask) error {
 		return err
 	}
 
+	switch et.wrapper {
+	case "":
+		// do nothing
+	default:
+		et.exe = et.wrapper
+		et.args = append([]string{et.exe}, et.args...)
+	}
+
 	umuCfg := &UmuConfig{
 		GogId:   id,
 		Prefix:  et.prefix,

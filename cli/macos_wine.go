@@ -52,7 +52,13 @@ func macOsWineExecTask(id string, et *execTask) error {
 	if strings.HasSuffix(et.exe, ".lnk") {
 		et.args = append([]string{"--start", et.exe}, et.args...)
 	} else {
-		et.args = append([]string{et.exe}, et.args...)
+
+		switch et.wrapper {
+		case "":
+			et.args = append([]string{et.exe}, et.args...)
+		default:
+			et.args = append([]string{et.wrapper, et.exe}, et.args...)
+		}
 	}
 
 	et.args = append([]string{"--bottle", et.prefix}, et.args...)

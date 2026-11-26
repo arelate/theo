@@ -389,6 +389,7 @@ func listTasks(id string, request *InstallInfo) error {
 		tasksSummary, err = listGogInfoPlayTasks(id, installedInfo, rdx)
 	case data.SteamOrigin:
 		tasksSummary, err = listSteamAppInfoTasks(id, rdx, installedInfo.force)
+	case data.EpicGamesOrigin:
 	default:
 		err = installedInfo.Origin.ErrUnsupportedOrigin()
 	}
