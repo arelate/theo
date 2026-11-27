@@ -37,6 +37,21 @@ func macOsWineExecTask(id string, et *execTask) error {
 	mwra := nod.Begin(" running %s with WINE, please wait...", et.title)
 	defer mwra.Done()
 
+	if et.verbose && et.wrapper != "" {
+		pwa := nod.Begin(" wrapper:")
+		pwa.EndWithResult(et.wrapper)
+	}
+
+	if et.verbose {
+		pea := nod.Begin(" exe:")
+		pea.EndWithResult(et.exe)
+	}
+
+	if et.verbose && len(et.args) > 0 {
+		paa := nod.Begin(" arg:")
+		paa.EndWithResult(strings.Join(et.args, " "))
+	}
+
 	if et.verbose && len(et.env) > 0 {
 		pea := nod.Begin(" env:")
 		pea.EndWithResult(strings.Join(et.env, " "))

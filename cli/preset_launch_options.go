@@ -28,7 +28,7 @@ func PresetLaunchOptionsHandler(u *url.URL) error {
 	ii := new(InstallInfo{
 		OperatingSystem: vangogh_integration.ParseOperatingSystem(q.Get(vangogh_integration.UrlOperatingSystemParameter)),
 		LangCode:        q.Get(vangogh_integration.UrlLanguageCodeParameter),
-		EgsAuthPassword: q.Has("epic-games-auth-password"),
+		EgsAuthPassword: q.Has(vangogh_integration.UrlEgsAuthPassword),
 	})
 
 	rdx, err := redux.NewWriter(vangogh_integration.AbsReduxDir(), data.AllProperties()...)
@@ -51,6 +51,8 @@ func PresetLaunchOptions(id string, request *InstallInfo, rdx redux.Writeable) e
 	} else if err != nil {
 		return err
 	}
+
+	ii.EgsAuthPassword = request.EgsAuthPassword
 
 	originData, err := originGetData(id, ii, rdx, false)
 	if err != nil {

@@ -51,7 +51,7 @@ install
     optional-dlc&
     no-dlcs
     no-preset-launch-options
-    epic-games-auth-password
+    egs-auth-password
     no-steam-shortcut
     no-validation
     no-innoextract
@@ -99,7 +99,7 @@ preset-launch-options
     id^*
     os={operating-systems^}
     lang-code={language-codes^}
-    epic-games-auth-password
+    egs-auth-password
 
 remove-downloads
     id^*
